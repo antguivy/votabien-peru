@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/credenza";
 import { Badge } from "@/components/ui/badge";
 import { HistorialPartido, PartidoDetail } from "@/interfaces/politics";
+import Image from "next/image";
 
 export default function PartidoDialog({
   partido,
@@ -84,10 +85,11 @@ export default function PartidoDialog({
                 {/* Logo */}
                 {partido.logo_url ? (
                   <div className=" w-12 h-12 bg-card rounded-xl p-2 shadow-lg flex-shrink-0">
-                    <img
+                    <Image
                       src={partido.logo_url}
                       alt={partido.nombre}
-                      className="w-full h-full object-contain"
+                      fill
+                      className="object-contain"
                     />
                   </div>
                 ) : (

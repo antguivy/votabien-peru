@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building2 } from "lucide-react";
 import PartidoDialog from "./partido-dialog";
 import { PartidoDetail } from "@/interfaces/politics";
+import Image from "next/image";
 
 
 interface PartidosListProps {
@@ -71,10 +72,11 @@ const PartidosList = ({ partidos }: PartidosListProps) => {
                   <div className="absolute inset-0 flex items-center justify-center p-4">
                     {partido.logo_url ? (
                       <div className="relative w-16 h-16 md:w-20 md:h-20 bg-card rounded-lg p-2 shadow-lg ring-2 ring-white/20 group-hover:ring-white/40 transition-all group-hover:scale-110 duration-300">
-                        <img
+                        <Image
                           src={partido.logo_url}
                           alt={partido.nombre}
-                          className="w-full h-full object-contain"
+                          fill
+                          className="object-contain"
                         />
                       </div>
                     ) : (

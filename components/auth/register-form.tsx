@@ -44,7 +44,7 @@ export const RegisterForm = () => {
     startTransition(async () => {
       try {
         // Registrar usuario usando tu AuthProvider
-        const user = await serverRegister({
+        await serverRegister({
           email: values.email,
           password: values.password,
           name: values.name,
