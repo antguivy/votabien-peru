@@ -1,0 +1,76 @@
+# =========================================
+# Node / Next.js base
+# =========================================
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Turbopack cache
+.turbo/
+
+# =========================================
+# Environment & secrets
+# =========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================================
+# Logs & debug
+# =========================================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+debug.log
+*.log
+
+# =========================================
+# OS / Editor files
+# =========================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# =========================================
+# Test / Coverage
+# =========================================
+coverage/
+*.lcov
+
+# =========================================
+# Typescript
+# =========================================
+*.tsbuildinfo
+
+# =========================================
+# Local exports or static data
+# =========================================
+public/uploads/
+public/temp/
+tmp/
+.cache/
+
+# =========================================
+# Next.js custom cache folders
+# =========================================
+.next/cache/
+.vercel/
+
+# =========================================
+# Lock files (optional)
+# =========================================
+# Si usas pnpm, ignora los otros:
+yarn.lock
+package-lock.json
+# Si usas npm o yarn, cambia según corresponda
+# pnpm-lock.yaml
