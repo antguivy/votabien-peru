@@ -84,12 +84,13 @@ export default function PartidoDialog({
               <div className="flex items-center gap-4">
                 {/* Logo */}
                 {partido.logo_url ? (
-                  <div className=" w-12 h-12 bg-card rounded-xl p-2 shadow-lg flex-shrink-0">
+                  <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl flex items-center justify-center shadow-md ring-1 ring-border overflow-hidden flex-shrink-0">
                     <Image
                       src={partido.logo_url}
                       alt={partido.nombre}
                       fill
-                      className="object-contain"
+                      className="object-contain p-1"
+                      sizes="64px"
                     />
                   </div>
                 ) : (
@@ -400,7 +401,7 @@ export default function PartidoDialog({
 // Componente de Timeline
 const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
   const sortedEvents = [...events].sort((a, b) => b.año - a.año);
-  
+
   return (
     <div className="relative space-y-6 sm:space-y-8">
       {sortedEvents.map((event, idx) => (
@@ -418,7 +419,7 @@ const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
           <div className="flex-shrink-0 flex flex-col items-center">
             {/* Punto */}
             <div className="relative z-10 w-3 h-3 rounded-full bg-primary ring-4 ring-background group-hover:ring-primary/20 group-hover:scale-125 transition-all duration-300 mt-2" />
-            
+
             {/* Línea conectora (ocultar en el último elemento) */}
             {idx < sortedEvents.length - 1 && (
               <div className="w-px flex-1 bg-gradient-to-b from-primary/80 via-primary/40 to-primary/20 min-h-[3rem]" />
@@ -435,7 +436,7 @@ const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
           </div>
         </div>
       ))}
-      
+
       {/* Punto final decorativo */}
       <div className="relative flex gap-4 sm:gap-6">
         <div className="flex-shrink-0 w-16 sm:w-20" />

@@ -6,13 +6,14 @@ import PartidoDialog from "./partido-dialog";
 import { PartidoDetail } from "@/interfaces/politics";
 import Image from "next/image";
 
-
 interface PartidosListProps {
   partidos: PartidoDetail[];
 }
 
 const PartidosList = ({ partidos }: PartidosListProps) => {
-  const [selectedPartido, setSelectedPartido] = useState<PartidoDetail | null>(null);
+  const [selectedPartido, setSelectedPartido] = useState<PartidoDetail | null>(
+    null
+  );
   if (!partidos || partidos.length === 0) {
     return (
       <div className="text-center py-16 md:py-20">
@@ -70,20 +71,19 @@ const PartidosList = ({ partidos }: PartidosListProps) => {
 
                   {/* Logo del partido */}
                   <div className="absolute inset-0 flex items-center justify-center p-4">
-                    {partido.logo_url ? (
-                      <div className="relative w-16 h-16 md:w-20 md:h-20 bg-card rounded-lg p-2 shadow-lg ring-2 ring-white/20 group-hover:ring-white/40 transition-all group-hover:scale-110 duration-300">
+                    <div className="relative w-20 h-20 md:w-24 md:h-24 bg-white rounded-xl flex items-center justify-center shadow-md overflow-hidden ring-1 ring-border group-hover:ring-primary/30 transition-all duration-300">
+                      {partido.logo_url ? (
                         <Image
                           src={partido.logo_url}
                           alt={partido.nombre}
                           fill
-                          className="object-contain"
+                          className="object-contain p-1"
+                          sizes="80px"
                         />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-card rounded-full flex items-center justify-center shadow-lg ring-2 ring-white/20 group-hover:ring-white/40 transition-all group-hover:scale-110 duration-300">
-                        <Building2 className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
-                      </div>
-                    )}
+                      ) : (
+                        <Building2 className="w-10 h-10 text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                 </div>
 
