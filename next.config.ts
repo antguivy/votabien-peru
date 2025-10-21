@@ -26,6 +26,18 @@ const nextConfig: NextConfig = {
         hostname: "upload.wikimedia.org",
         pathname: "/**"
         
+      },
+      {
+        protocol: "https",
+        hostname: "live.staticflickr.com",
+        pathname: "/**"
+        
+      },
+      {
+        protocol: "https",
+        hostname: "example.com",
+        pathname: "/**"
+        
       }
     ]
   }
