@@ -32,7 +32,6 @@ const ROUTE_CONFIG = {
     "/auth/reset-password",
     "/auth/verify-email",
     "/auth/new-verification",
-    "/candidatos"
   ],
 
   public: [
@@ -40,7 +39,6 @@ const ROUTE_CONFIG = {
     "/legisladores",
     "/legisladores/[id]",
     "/partidos",
-    // "/candidatos",
     "/about",
     "/contact",
     "/auth/login",
@@ -83,7 +81,11 @@ class RouteChecker {
   }
 
   static isPublic(pathname: string): boolean {
-    return ROUTE_CONFIG.public.some((path) => pathname.startsWith(path));
+    return ROUTE_CONFIG.public.some(
+      (path) =>
+        pathname === path ||
+        (path !== "/" && pathname.startsWith(path))
+    );
   }
 
   static isApiExcluded(pathname: string): boolean {
@@ -429,6 +431,15 @@ class SecurityManager {
 // ============= MIDDLEWARE PRINCIPAL =============
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  if (process.env.NODE_ENV === "development") {
+    console.log(`🧭 Ruta detectada: ${pathname}`);
+    console.log({
+      isPublic: RouteChecker.isPublic(pathname),
+      isProtected: RouteChecker.isProtected(pathname),
+      isApiExcluded: RouteChecker.isApiExcluded(pathname),
+      isStaticFile: RouteChecker.isStaticFile(pathname),
+    });
+  }
 
   if (process.env.NODE_ENV === "development") {
     console.log(`🔍 [${new Date().toISOString()}] ${pathname}`);
