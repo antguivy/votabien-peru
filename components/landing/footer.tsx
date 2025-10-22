@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <section className="bg-blue-600 py-16">
@@ -10,18 +12,18 @@ export default function Footer() {
           representantes. Conoce sus proyectos, asistencias, expedientes y más.
         </p>
         <div className="flex gap-4 justify-center">
-          <a
+          <Link
             href="/legisladores"
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
           >
             Explorar Congresistas
-          </a>
-          <a
+          </Link>
+          <Link
             href="/about"
             className="inline-flex items-center px-6 py-3 border-2 border-white text-base font-medium rounded-md text-white hover:bg-blue-700"
           >
             Sobre este proyecto
-          </a>
+          </Link>
         </div>
       </div>
     </section>
