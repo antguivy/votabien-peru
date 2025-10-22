@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import {
-  MapPin,
-  Building2,
-  ChevronRight,
-  Users,
-} from "lucide-react";
+import { MapPin, Building2, ChevronRight, Users } from "lucide-react";
 import { FilterPanel, FilterField } from "@/components/ui/filter-panel";
 import {
   Card,
@@ -19,8 +14,12 @@ import {
 import CandidatoDialog from "@/components/politics/candidato-dialog";
 import { Badge } from "../ui/badge";
 import { Skeleton } from "../ui/skeleton";
-import { CandidaturaDetail, DistritoElectoral, PartidoPoliticoBase } from "@/interfaces/politics";
-
+import {
+  CandidaturaDetail,
+  DistritoElectoral,
+  PartidoPoliticoBase,
+} from "@/interfaces/politics";
+import { cn } from "@/lib/utils";
 
 interface CandidatosListProps {
   candidaturas: CandidaturaDetail[];
@@ -225,7 +224,7 @@ const CandidatosList = ({
       type: "select",
       placeholder: "Tipo",
       options: [
-        { value: "congresista", label: "Congresista" },
+        { value: "presidente", label: "Presidente" },
         { value: "senador", label: "Senador" },
         { value: "diputado", label: "Diputado" },
       ],
@@ -317,21 +316,24 @@ const CandidatosList = ({
                   </div>
                 )}
 
-                {/* Verificación */}
-                {/* {candidato.verificado_jne && (
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="absolute top-2 right-2">
-                          <CheckCircle2 className="w-4 h-4 text-success drop-shadow-md" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="text-xs">
-                        Verificado por JNE
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )} */}
+                {/* Tipo candidatura */}
+                {candidato.tipo && (
+                  <div className="absolute top-2 right-2">
+                    <Badge
+                      className={cn(
+                        "text-[10px] md:text-xs font-semibold uppercase border shadow-md backdrop-blur-sm",
+                        candidato.tipo === "Presidente" &&
+                          "bg-primary text-primary-foreground",
+                        candidato.tipo === "Senador" &&
+                          "bg-info text-info-foreground",
+                        candidato.tipo === "Diputado" &&
+                          "bg-success text-success-foreground"
+                      )}
+                    >
+                      {candidato.tipo}
+                    </Badge>
+                  </div>
+                )}
               </div>
 
               {/* Información */}
