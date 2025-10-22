@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Marketing App",
+  title: "Vota Bien Perú",
 };
 
 export default async function RootLayout({

@@ -66,19 +66,18 @@ export default function DetailLegislador({
 }) {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
 
-  // 🔍 Encontrar el periodo ACTIVO
   const periodoActivo = persona.periodos_legislativos?.find(
     (p) => p.esta_activo
   );
 
-  // 📊 Ordenar periodos por fecha (más reciente primero)
+  // Ordenar periodos por fecha DESC
   const periodosOrdenados = [...(persona.periodos_legislativos || [])].sort(
     (a, b) =>
       new Date(b.periodo_inicio).getTime() -
       new Date(a.periodo_inicio).getTime()
   );
 
-  // 📈 Calcular años totales de servicio
+  // Años totales de servicio
   const calcularAniosServicio = () => {
     if (!persona.periodos_legislativos?.length) return 0;
     const primerPeriodo = periodosOrdenados[periodosOrdenados.length - 1];
@@ -111,7 +110,6 @@ export default function DetailLegislador({
     },
   ];
 
-  // 🎨 Función para obtener color según estado
   const getEstadoBadgeVariant = (activo: boolean) => {
     return activo ? "success" : "secondary";
   };
@@ -121,7 +119,7 @@ export default function DetailLegislador({
     (persona.antecedentes_judiciales &&
       persona.antecedentes_judiciales.length > 0);
 
-  // 🎓 Verificar si tiene información educativa
+  // tiene información educativa?
   const tieneEducacion =
     persona.educacion_tecnica ||
     persona.educacion_universitaria ||
@@ -129,7 +127,7 @@ export default function DetailLegislador({
     persona.titulo_profesional ||
     persona.post_grado;
 
-  // ⚖️ Obtener color del badge de antecedentes
+  // Color del badge de antecedentes?
   const getAntecedentesBadgeColor = (estado: string) => {
     switch (estado?.toLowerCase()) {
       case "rehabilitado":
@@ -232,7 +230,7 @@ export default function DetailLegislador({
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* --- COLUMNA PRINCIPAL --- */}
           <div className="lg:col-span-2 space-y-4">
-            {/* 📝 Biografía */}
+            {/* Biografía */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -251,7 +249,7 @@ export default function DetailLegislador({
               </CardContent>
             </Card>
 
-            {/* 🎓 Formación Académica - MEJORADA */}
+            {/* Formación Académica */}
             {tieneEducacion && (
               <Card className="shadow-sm">
                 <CardHeader>
@@ -262,7 +260,6 @@ export default function DetailLegislador({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Educación Técnica */}
                     {persona.educacion_tecnica &&
                       persona.educacion_tecnica !== "No" && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg">
@@ -278,7 +275,6 @@ export default function DetailLegislador({
                         </div>
                       )}
 
-                    {/* Educación Universitaria */}
                     {persona.educacion_universitaria &&
                       persona.educacion_universitaria !== "No" && (
                         <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 rounded-lg">
@@ -296,7 +292,6 @@ export default function DetailLegislador({
                         </div>
                       )}
 
-                    {/* Grado Académico */}
                     {persona.grado_academico &&
                       persona.grado_academico !== "No" && (
                         <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg">
@@ -312,7 +307,6 @@ export default function DetailLegislador({
                         </div>
                       )}
 
-                    {/* Título Profesional */}
                     {persona.titulo_profesional &&
                       persona.titulo_profesional !== "No" && (
                         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
@@ -328,7 +322,6 @@ export default function DetailLegislador({
                         </div>
                       )}
 
-                    {/* Post Grado */}
                     {persona.post_grado && persona.post_grado !== "No" && (
                       <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg md:col-span-2">
                         <div className="flex items-center gap-2 mb-1.5">
@@ -347,7 +340,7 @@ export default function DetailLegislador({
               </Card>
             )}
 
-            {/* ⚖️ Antecedentes - MEJORADO */}
+            {/* Antecedentes */}
             {tieneAntecedentes && (
               <Card className="shadow-sm border-orange-200">
                 <CardHeader>
@@ -357,7 +350,6 @@ export default function DetailLegislador({
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {/* Antecedentes Penales */}
                   {persona.antecedentes_penales &&
                     persona.antecedentes_penales.length > 0 && (
                       <div className="space-y-2">
@@ -407,7 +399,6 @@ export default function DetailLegislador({
                       </div>
                     )}
 
-                  {/* Antecedentes Judiciales */}
                   {persona.antecedentes_judiciales &&
                     persona.antecedentes_judiciales.length > 0 && (
                       <div className="space-y-2">
@@ -460,7 +451,7 @@ export default function DetailLegislador({
               </Card>
             )}
 
-            {/* 📜 Historial Legislativo - MEJORADO */}
+            {/* Historial Legislativo */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -487,7 +478,6 @@ export default function DetailLegislador({
                         }`}
                       >
                         <div className="space-y-2">
-                          {/* Header: Título y Badge */}
                           <div className="flex items-center justify-between gap-2">
                             <h4 className="font-semibold text-sm">
                               {periodo.camara}
@@ -501,7 +491,6 @@ export default function DetailLegislador({
                             </Badge>
                           </div>
 
-                          {/* Primera línea: Fecha y Distrito */}
                           <div className="flex items-center justify-between gap-3 text-xs text-foreground/70">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="size-3 flex-shrink-0" />
@@ -520,7 +509,6 @@ export default function DetailLegislador({
                             )}
                           </div>
 
-                          {/* Segunda línea: Partido */}
                           {periodo.partido && (
                             <div className="flex items-center gap-1.5 text-xs text-foreground/70">
                               <Briefcase className="size-3 flex-shrink-0" />
@@ -530,7 +518,6 @@ export default function DetailLegislador({
                             </div>
                           )}
 
-                          {/* Email si existe */}
                           {periodo.email_congreso && (
                             <div className="flex items-center gap-1.5 text-xs text-foreground/70 pt-1">
                               <Mail className="size-3 flex-shrink-0" />
@@ -549,7 +536,7 @@ export default function DetailLegislador({
               </CardContent>
             </Card>
 
-            {/* 📄 Proyectos de Ley */}
+            {/* Proyectos de Ley */}
             {periodoActivo?.proyectos_ley && (
               <Card className="shadow-sm">
                 <CardHeader>
@@ -605,7 +592,7 @@ export default function DetailLegislador({
 
           {/* --- BARRA LATERAL --- */}
           <div className="space-y-4">
-            {/* 📊 Resumen de Actividad */}
+            {/* Resumen de Actividad */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Resumen de Actividad</CardTitle>
@@ -628,7 +615,7 @@ export default function DetailLegislador({
               </CardContent>
             </Card>
 
-            {/* 📧 Información de Contacto */}
+            {/* Información de Contacto */}
             {periodoActivo?.email_congreso && (
               <Card className="shadow-sm">
                 <CardHeader>
@@ -672,7 +659,7 @@ export default function DetailLegislador({
               </Card>
             )}
 
-            {/* 🌐 Redes Sociales */}
+            {/* Redes Sociales */}
             {(persona.facebook_url ||
               persona.twitter_url ||
               persona.instagram_url) && (
@@ -723,7 +710,7 @@ export default function DetailLegislador({
               </Card>
             )}
 
-            {/* 📋 Información Personal */}
+            {/* Información Personal */}
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Información Personal</CardTitle>

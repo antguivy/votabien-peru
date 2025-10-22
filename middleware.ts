@@ -20,12 +20,11 @@ interface TokenValidationResult {
   payload?: JWTPayload;
   reason?: string;
   needsRefresh?: boolean;
-  canBeRefreshed?: boolean; // NUEVO: indica si hay refresh_token disponible
+  canBeRefreshed?: boolean;
 }
 
 // ============= CONFIGURACIÓN DE RUTAS =============
 const ROUTE_CONFIG = {
-  // Rutas de autenticación - requieren estar NO autenticado
   auth: [
     "/auth/login",
     "/auth/register",
@@ -33,20 +32,17 @@ const ROUTE_CONFIG = {
     "/auth/reset-password",
     "/auth/verify-email",
     "/auth/new-verification",
+    "/candidatos"
   ],
 
-  // Rutas públicas - accesibles sin autenticación
   public: [
-    "/", // Landing page principal
-    "/congresistas", // Lista de congresistas
-    "/congresistas/[id]", // Detalle de congresista (patrón)
-    "/partidos", // Lista de partidos
-    "/partidos/[id]", // Detalle de partido
-    "/candidatos", // Candidatos 2026
-    "/candidatos/[id]", // Detalle de candidato
-    "/procesos-electorales", // Procesos electorales
-    "/about", // Acerca de
-    "/contact", // Contacto
+    "/",
+    "/legisladores",
+    "/legisladores/[id]",
+    "/partidos",
+    // "/candidatos",
+    "/about",
+    "/contact",
     "/auth/login",
     "/auth/register",
     "/auth/verify-email",
@@ -57,7 +53,7 @@ const ROUTE_CONFIG = {
     "/maintenance",
   ],
 
-  // Rutas de API que no pasan por middleware de auth
+  // Rutas API no pasan por middleware de auth
   apiExcluded: [
     "/api/auth/login",
     "/api/auth/register",
@@ -68,18 +64,13 @@ const ROUTE_CONFIG = {
     "/api/health",
     "/api/public",
   ],
-
-  // Ruta dashboard (root protegida)
   defaultProtectedRoute: "/",
-
-  // Ruta de login
   loginRoute: "/auth/login",
 } as const;
 
 // ============= UTILIDADES =============
 class RouteChecker {
   static isProtected(pathname: string): boolean {
-    // Todo es protegido excepto las rutas públicas y estáticos
     return (
       !this.isPublic(pathname) &&
       !this.isApiExcluded(pathname) &&
@@ -119,10 +110,8 @@ class JWTUtils {
    * Decodifica base64url correctamente (maneja padding)
    */
   private static base64UrlDecode(str: string): string {
-    // Convertir base64url a base64 estándar
     let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
 
-    // Agregar padding si es necesario
     const pad = base64.length % 4;
     if (pad) {
       if (pad === 1) {
@@ -180,7 +169,7 @@ class JWTUtils {
    * Valida el formato del access_key
    */
   private static isValidAccessKey(accessKey: string): boolean {
-    // Tu access_key es generado por secrets.token_urlsafe(50)
+    // access_key es generado por secrets.token_urlsafe(50)
     // token_urlsafe genera base64url: A-Za-z0-9_-
     // 50 bytes → ~66-68 caracteres en base64url
 
@@ -256,7 +245,7 @@ class JWTUtils {
 
       // Validar estructura del payload según tu implementación de FastAPI
 
-      // 1. Validar 'sub' (user_id codificado)
+      // 'sub' (user_id codificado)
       if (!this.isValidEncodedField(parsedPayload.sub)) {
         if (process.env.NODE_ENV === "development") {
           console.warn("JWT: Invalid sub field");
@@ -264,7 +253,7 @@ class JWTUtils {
         return null;
       }
 
-      // 2. Validar 'a' (access_key)
+      // 'a' (access_key)
       if (!this.isValidAccessKey(parsedPayload.a)) {
         if (process.env.NODE_ENV === "development") {
           console.warn("JWT: Invalid access_key field");
@@ -272,7 +261,7 @@ class JWTUtils {
         return null;
       }
 
-      // 3. Validar 'r' (user_token_id codificado)
+      // 'r' (user_token_id codificado)
       if (!this.isValidEncodedField(parsedPayload.r)) {
         if (process.env.NODE_ENV === "development") {
           console.warn("JWT: Invalid r field");
@@ -280,7 +269,7 @@ class JWTUtils {
         return null;
       }
 
-      // 4. Validar 'iat'
+      // 'iat'
       if (!parsedPayload.iat || typeof parsedPayload.iat !== "number") {
         if (process.env.NODE_ENV === "development") {
           console.warn("JWT: Invalid or missing iat");
@@ -288,7 +277,7 @@ class JWTUtils {
         return null;
       }
 
-      // 5. Validar 'exp' si existe (DEBERÍAS agregarlo en FastAPI)
+      // 'exp'
       if (
         parsedPayload.exp !== undefined &&
         typeof parsedPayload.exp !== "number"
@@ -310,7 +299,6 @@ class JWTUtils {
 
       return parsedPayload;
     } catch (error) {
-      // No loguear error completo en producción por seguridad
       if (process.env.NODE_ENV === "development") {
         console.error("Failed to decode JWT:", error);
       }
@@ -442,7 +430,6 @@ class SecurityManager {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
-  // Log solo en desarrollo
   if (process.env.NODE_ENV === "development") {
     console.log(`🔍 [${new Date().toISOString()}] ${pathname}`);
   }

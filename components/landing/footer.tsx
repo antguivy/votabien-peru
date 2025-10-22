@@ -11,7 +11,7 @@ export default function Footer() {
         </p>
         <div className="flex gap-4 justify-center">
           <a
-            href="/congresistas"
+            href="/legisladores"
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50"
           >
             Explorar Congresistas

@@ -241,7 +241,6 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
     return active;
   }, [filters, fields, defaultFilters, emptyValue]);
-  console.log("activeFilters", activeFilters);
   const hasActiveFilters = activeFilters.length > 0;
 
   // Renderizar campo según tipo para DESKTOP

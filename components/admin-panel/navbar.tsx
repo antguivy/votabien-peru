@@ -60,7 +60,7 @@ const Navbar = ({ user }: NavbarProps) => {
 
   const adminLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Settings },
-    { href: "/admin/congresistas", label: "Gestión Congresistas", icon: Plus },
+    { href: "/admin/legisladores", label: "Gestión Legisladores", icon: Plus },
     { href: "/admin/partidos", label: "Gestión Partidos", icon: Plus },
     { href: "/admin/expedientes", label: "Expedientes", icon: Plus }
   ];

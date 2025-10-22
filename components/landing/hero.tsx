@@ -37,7 +37,7 @@ export default function Hero() {
           {/* CTA Buttons - Stack en móvil, row en desktop */}
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center mb-12 md:mb-16 px-4">
             <Link
-              href="/congresistas"
+              href="/legisladores"
               className="group inline-flex items-center justify-center px-6 md:px-8 py-3.5 md:py-4 bg-primary-foreground text-primary font-semibold rounded-lg md:rounded-xl hover:bg-primary-foreground/95 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:translate-y-0"
             >
               <svg

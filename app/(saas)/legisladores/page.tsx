@@ -15,17 +15,14 @@ interface PageProps {
 }
 
 export default async function LegisladoresPage({ searchParams }: PageProps) {
-  // Verificar si es admin
   const params = await searchParams;
   const userResult = await serverGetUser();
   const isAdmin = userResult.success && userResult.user?.is_admin;
 
-  // Parsear parámetros
-
-  const limit = 10;
+  const limit = 30;
 
   const apiParams = {
-    es_legislador_activo: true, // Asegúrate que esto esté presente
+    es_legislador_activo: true,
     camara: params.camara && params.camara !== "all" ? params.camara : undefined,
     search: params.search || undefined,
     partidos: params.partidos && params.partidos !== "all" ? params.partidos : undefined,
@@ -44,13 +41,12 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
   };
 
   try {
-    // Obtener datos en paralelo
     const [initialLegisladores, partidos, distritos] = await Promise.all([
       publicApi.getPersonas(apiParams) as Promise<PersonaList[]>,
       publicApi.getPartidos(true) as Promise<PartidoPoliticoBase[]>,
       publicApi.getDistritos() as Promise<DistritoElectoral[]>,
     ]);
-    console.log("legisladores", initialLegisladores)
+
     return (
       <div className="container mx-auto px-4">
         {/* Admin Actions */}
@@ -58,7 +54,7 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
           <AdminActions
             actions={[
               {
-                label: "Nuevo Congresista",
+                label: "Nuevo Legislador",
                 href: "/admin/legisladores/nuevo",
                 icon: "plus",
               },

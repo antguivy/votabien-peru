@@ -15,7 +15,7 @@ const SaasPage = async () => {
     const [personas, partidos, procesosElectorales] = await Promise.all([
       publicApi.getPersonas({
         es_legislador_activo: true,
-        limit: 10, // Mostrar primeros 12 en landing
+        limit: 10,
       }) as Promise<PersonaList[]>,
       publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
       publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
@@ -23,15 +23,14 @@ const SaasPage = async () => {
 
     // Calcular estadísticas
     const stats = {
-      totalCongresistas: personas.length,
+      totalLegisladores: personas.length,
       totalPartidos: partidos.length,
-      congresistasSuspendidos: 0, // Calcular según condición
-      proyectosEnCurso: 0, // Calcular desde API
+      legisladoresSuspendidos: 0,
+      proyectosEnCurso: 0,
     };
 
     return (
       <div className="min-h-screen">
-        {/* Proceso Electoral Banner (si hay activo) */}
         {procesosElectorales.length > 0 && (
           <ProcesosElectoralesBanner procesos={procesosElectorales} />
         )}
@@ -42,7 +41,7 @@ const SaasPage = async () => {
         {/* Estadísticas */}
         <Stats stats={stats} />
 
-        {/* Congresistas Destacados */}
+        {/* Legisladores Destacados */}
         <section className="container mx-auto px-4 py-12 md:py-16 lg:py-20">
           <div className="mb-8 md:mb-10">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-2">
@@ -56,7 +55,7 @@ const SaasPage = async () => {
                 </p>
               </div>
               <Link
-                href="/congresistas"
+                href="/legisladores"
                 className="hidden md:inline-flex items-center text-primary hover:text-primary/80 font-medium text-sm transition-colors group"
               >
                 Ver todos
@@ -93,7 +92,7 @@ const SaasPage = async () => {
           {/* CTA móvil */}
           <div className="text-center mt-6 md:mt-8">
             <Link
-              href="/congresistas"
+              href="/legisladores"
               className="inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-3.5 bg-primary text-primary-foreground font-semibold rounded-lg md:rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <svg

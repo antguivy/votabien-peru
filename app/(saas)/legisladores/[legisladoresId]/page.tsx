@@ -7,16 +7,16 @@ interface PageProps {
     params: { legisladoresId: string };
 }
 
-export default async function CongresistaDetailPage({ params }: PageProps) {
+export default async function LegisladorDetailPage({ params }: PageProps) {
     try {
-        const congresista = await publicApi.getPersonaById(
+        const legislador = await publicApi.getPersonaById(
         params.legisladoresId
         ) as PersonaDetail;
-        if (!congresista) notFound();
+        if (!legislador) notFound();
 
-        return <DetailLegislador persona={congresista} />;
+        return <DetailLegislador persona={legislador} />;
     } catch (error) {
-        console.error("Error al obtener datos del congresista:", error);
+        console.error("Error al obtener datos del legislador:", error);
         notFound();
     }
 }

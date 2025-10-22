@@ -1,7 +1,12 @@
 import { publicApi } from "@/lib/public-api";
 import CandidatosList from "@/components/politics/candidatos-list";
 import { Calendar, Timer } from "lucide-react";
-import { CandidaturaDetail, DistritoElectoral, PartidoPoliticoBase, ProcesoElectoral } from "@/interfaces/politics";
+import {
+  CandidaturaDetail,
+  DistritoElectoral,
+  PartidoPoliticoBase,
+  ProcesoElectoral,
+} from "@/interfaces/politics";
 import Link from "next/link";
 
 interface PageProps {
@@ -15,12 +20,11 @@ interface PageProps {
 
 const CandidatosPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
-  const limit = 10;
+  const limit = 30;
 
   const apiParams = {
-    es_legislador_activo: true, // Asegúrate que esto esté presente
-    tipo:
-      params.tipo && params.tipo !== "all" ? params.tipo : undefined,
+    es_legislador_activo: true,
+    tipo: params.tipo && params.tipo !== "all" ? params.tipo : undefined,
     search: params.search || undefined,
     partidos:
       params.partidos && params.partidos !== "all"
@@ -35,7 +39,6 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
   };
 
   try {
-    // Obtener proceso electoral activo
     const procesosActivos = (await publicApi.getProcesosElectorales(
       true
     )) as ProcesoElectoral[];
@@ -81,14 +84,12 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
 
     const procesoActivo = procesosActivos[0];
 
-    // Obtener datos en paralelo
     const [candidaturas, partidos, distritos] = await Promise.all([
       publicApi.getCandidaturas(apiParams) as Promise<CandidaturaDetail[]>,
       publicApi.getPartidos(true) as Promise<PartidoPoliticoBase[]>,
       publicApi.getDistritos() as Promise<DistritoElectoral[]>,
     ]);
 
-    // Formatear fecha de elecciones
     const fechaElecciones = new Date(procesoActivo.fecha_elecciones);
     const fechaFormateada = fechaElecciones.toLocaleDateString("es-PE", {
       year: "numeric",
@@ -96,12 +97,11 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       day: "numeric",
     });
 
-    // Calcular días restantes
+    // Días restantes
     const hoy = new Date();
     const diasRestantes = Math.ceil(
       (fechaElecciones.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
     );
-    console.log("candidaturas", candidaturas);
     return (
       <div className="min-h-screen bg-background">
         {/* Header con información del proceso */}
@@ -143,7 +143,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
               search: params.search || "",
               partidos: params.partidos || "all",
               distritos: params.distritos || "all",
-              tipo: params.tipo || "all"
+              tipo: params.tipo || "all",
             }}
           />
         </section>
