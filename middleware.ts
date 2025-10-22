@@ -389,12 +389,10 @@ class SecurityManager {
         const isProduction = process.env.NODE_ENV === "production";
 
         const scriptSrc = isProduction
-          ? "script-src 'self'"
+          ? "script-src 'self' 'unsafe-inline'"
           : "script-src 'self' 'unsafe-eval' 'unsafe-inline'";
 
-        const styleSrc = isProduction
-          ? "style-src 'self' https://fonts.googleapis.com"
-          : "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com";
+        const styleSrc = "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com";
 
         baseHeaders["Content-Security-Policy"] = [
           "default-src 'self'",
