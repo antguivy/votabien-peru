@@ -27,7 +27,7 @@ interface TokenValidationResult {
 const ROUTE_CONFIG = {
   auth: [
     "/auth/login",
-    "/auth/register",
+    // "/auth/register",
     "/auth/forgot-password",
     "/auth/reset-password",
     "/auth/verify-email",
@@ -38,11 +38,12 @@ const ROUTE_CONFIG = {
     "/",
     "/legisladores",
     "/legisladores/[id]",
+    "/candidatos",
     "/partidos",
     "/about",
     "/contact",
     "/auth/login",
-    "/auth/register",
+    // "/auth/register",
     "/auth/verify-email",
     "/auth/new-verification",
     "/auth/forgot-password",
@@ -54,7 +55,7 @@ const ROUTE_CONFIG = {
   // Rutas API no pasan por middleware de auth
   apiExcluded: [
     "/api/auth/login",
-    "/api/auth/register",
+    // "/api/auth/register",
     "/api/auth/refresh",
     "/api/auth/verify-email",
     "/api/auth/forgot-password",
@@ -83,8 +84,7 @@ class RouteChecker {
   static isPublic(pathname: string): boolean {
     return ROUTE_CONFIG.public.some(
       (path) =>
-        pathname === path ||
-        (path !== "/" && pathname.startsWith(path))
+        pathname === path || (path !== "/" && pathname.startsWith(path)),
     );
   }
 
@@ -97,7 +97,7 @@ class RouteChecker {
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/static/") ||
       /\.(ico|png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|eot|css|js|map)$/.test(
-        pathname
+        pathname,
       ) ||
       pathname === "/favicon.ico" ||
       pathname === "/robots.txt" ||
@@ -145,7 +145,7 @@ class JWTUtils {
     if (!base85Regex.test(field)) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
-          `Invalid Base85 field (invalid chars): "${field.substring(0, 20)}..."`
+          `Invalid Base85 field (invalid chars): "${field.substring(0, 20)}..."`,
         );
       }
       return false;
@@ -158,7 +158,7 @@ class JWTUtils {
     if (field.length < 2 || field.length > 100) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
-          `Base85 field length out of range: ${field.length} (expected 2-100)`
+          `Base85 field length out of range: ${field.length} (expected 2-100)`,
         );
       }
       return false;
@@ -193,7 +193,7 @@ class JWTUtils {
     if (accessKey.length < 40 || accessKey.length > 100) {
       if (process.env.NODE_ENV === "development") {
         console.warn(
-          `❌ access_key length ${accessKey.length} is out of range (40-100)`
+          `❌ access_key length ${accessKey.length} is out of range (40-100)`,
         );
       }
       return false;
@@ -209,7 +209,7 @@ class JWTUtils {
       const invalidChars = accessKey.match(/[^a-zA-Z0-9_-]/g);
       if (invalidChars) {
         console.warn(
-          `Invalid characters found: ${[...new Set(invalidChars)].join(", ")}`
+          `Invalid characters found: ${[...new Set(invalidChars)].join(", ")}`,
         );
       }
     }
@@ -392,7 +392,8 @@ class SecurityManager {
           ? "script-src 'self' 'unsafe-inline'"
           : "script-src 'self' 'unsafe-eval' 'unsafe-inline'";
 
-        const styleSrc = "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com";
+        const styleSrc =
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com";
 
         baseHeaders["Content-Security-Policy"] = [
           "default-src 'self'",
@@ -469,7 +470,7 @@ export function middleware(request: NextRequest) {
       ) {
         if (process.env.NODE_ENV === "development") {
           console.log(
-            `🔄 Token expired, redirecting to refresh (reason: ${tokenValidation.reason})`
+            `🔄 Token expired, redirecting to refresh (reason: ${tokenValidation.reason})`,
           );
         }
 
@@ -483,7 +484,7 @@ export function middleware(request: NextRequest) {
     if (RouteChecker.isProtected(pathname) && !RouteChecker.isAuth(pathname)) {
       if (process.env.NODE_ENV === "development") {
         console.log(
-          `🔄 No access_token but refresh_token exists → Redirecting to refresh`
+          `🔄 No access_token but refresh_token exists → Redirecting to refresh`,
         );
       }
 
@@ -504,7 +505,7 @@ export function middleware(request: NextRequest) {
         const callbackUrl = pathname + search;
         loginUrl.searchParams.set(
           "callbackUrl",
-          encodeURIComponent(callbackUrl)
+          encodeURIComponent(callbackUrl),
         );
       }
 
@@ -530,7 +531,7 @@ export function middleware(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-      new URL(ROUTE_CONFIG.defaultProtectedRoute, request.url)
+      new URL(ROUTE_CONFIG.defaultProtectedRoute, request.url),
     );
   }
 

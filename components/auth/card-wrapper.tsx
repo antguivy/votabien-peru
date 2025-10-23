@@ -1,12 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { BackButton } from "@/components/auth/back-button";
-
 
 interface CardWrapperProps {
   children: React.ReactNode;
@@ -23,9 +19,9 @@ export const CardWrapper = ({
   welcomeMessage,
   backButtonLabel,
   backButtonHref,
-  singleColumn = false
+  singleColumn = false,
 }: CardWrapperProps) => {
-    if (singleColumn) {
+  if (singleColumn) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-lg">
@@ -43,9 +39,7 @@ export const CardWrapper = ({
             </div>
 
             {/* Contenido (children) */}
-            <div className="mb-6">
-              {children}
-            </div>
+            <div className="mb-6">{children}</div>
 
             {/* Back Button */}
             <BackButton href={backButtonHref} label={backButtonLabel} />
@@ -74,9 +68,7 @@ export const CardWrapper = ({
             </div>
 
             {/* Formulario (children) */}
-            <div className="flex-1">
-              {children}
-            </div>
+            <div className="flex-1">{children}</div>
 
             {/* Back Button */}
             <div className="mt-6">
@@ -84,29 +76,37 @@ export const CardWrapper = ({
             </div>
           </div>
 
-          {/* Columna derecha - Imagen */}
+          {/* Columna derecha - Imagen de fondo */}
           <div className="relative hidden md:block">
-            {/* Logo discreto en esquina superior izquierda */}
-            {/* <div className="absolute top-4 left-4 z-10 w-20 h-12">
-              <Image
-                src={main_logo}
-                alt="Logo"
-                fill
-                priority
-                className="object-contain drop-shadow-lg filter invert brightness-0"
-              />
-            </div> */}
-
             {/* Imagen de fondo */}
             <Image
-              src="/images/ascending.jpg"
-              alt="Background"
+              src="/background_auth.png"
+              alt="Fondo institucional"
               fill
-              className="h-full w-full object-cover"
+              priority
+              sizes="(max-width: 768px) 0px, 50vw"
+              className="object-cover"
             />
-            
-            {/* Overlay oscuro opcional para mejor contraste del logo */}
-            {/* <div className="absolute inset-0 bg-black/20" /> */}
+
+            {/* Overlay para contraste */}
+            <div className="absolute inset-0 bg-black/30" />
+
+            {/* Logo superior izquierdo */}
+            <div className="absolute top-6 left-6 z-10">
+              <Image
+                src="/logo_completo.png"
+                alt="Logo institucional"
+                width={140}
+                height={40}
+                priority
+                className="drop-shadow-md"
+              />
+            </div>
+
+            {/* Texto opcional inferior */}
+            <div className="absolute bottom-6 left-6 z-10 text-white text-sm opacity-80">
+              <p>© 2025 VotaBien Perú</p>
+            </div>
           </div>
         </CardContent>
       </Card>

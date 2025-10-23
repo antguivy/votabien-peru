@@ -78,8 +78,8 @@ export const LoginForm = () => {
     <CardWrapper
       headerLabel="¡Hola de nuevo!"
       welcomeMessage="Inicia sesión en tu cuenta"
-      backButtonLabel="Regístrate ahora"
-      backButtonHref="/auth/register"
+      backButtonLabel="Volver al inicio"
+      backButtonHref="/"
       singleColumn={false}
     >
       <Form {...form}>
