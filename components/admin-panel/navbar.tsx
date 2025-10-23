@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, User, LogOut, Settings, Plus } from "lucide-react";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  LogOut,
+  Settings,
+  Plus,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,31 +47,30 @@ const Navbar = ({ user }: NavbarProps) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Shortcut para abrir login (Ctrl/Cmd + K)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        if (!user) {
-          window.location.href = "/admin/login";
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [user]);
+  // // Shortcut para abrir login (Ctrl/Cmd + K)
+  // useEffect(() => {
+  //   const handleKeyDown = (e: KeyboardEvent) => {
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+  //       e.preventDefault();
+  //       if (!user) {
+  //         window.location.href = "/admin/login";
+  //       }
+  //     }
+  //   };
+  //   window.addEventListener("keydown", handleKeyDown);
+  //   return () => window.removeEventListener("keydown", handleKeyDown);
+  // }, [user]);
 
   const publicLinks = [
     { href: "/candidatos", label: "Candidatos 2026" },
     { href: "/legisladores", label: "Congresistas" },
-    { href: "/partidos", label: "Partidos" }
+    { href: "/partidos", label: "Partidos" },
   ];
 
   const adminLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Settings },
     { href: "/admin/legisladores", label: "Gestión Legisladores", icon: Plus },
     { href: "/admin/partidos", label: "Gestión Partidos", icon: Plus },
-    { href: "/admin/expedientes", label: "Expedientes", icon: Plus }
   ];
 
   const isActiveLink = (href: string) => {
@@ -95,24 +103,16 @@ const Navbar = ({ user }: NavbarProps) => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-              <svg
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
-              </svg>
+            <div className="flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Image
+                src="/logo_completo.png"
+                alt="Logo institucional"
+                width={140}
+                height={40}
+                priority
+                className="drop-shadow-md"
+              />
             </div>
-            <span className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-              CongresoTransparente
-            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -134,7 +134,7 @@ const Navbar = ({ user }: NavbarProps) => {
 
           {/* User Menu / Admin Controls */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {user && (
               <>
                 {/* Admin Quick Actions */}
                 {user.is_admin && (
@@ -168,7 +168,9 @@ const Navbar = ({ user }: NavbarProps) => {
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                         <User className="w-4 h-4 text-white" />
                       </div>
-                      <span className="max-w-[100px] truncate">{user.name}</span>
+                      <span className="max-w-[100px] truncate">
+                        {user.name}
+                      </span>
                       <ChevronDown className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -205,12 +207,13 @@ const Navbar = ({ user }: NavbarProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : (
-              // Hint sutil para admin (opcional)
-              <div className="text-xs text-gray-400 italic">
-                Presiona Ctrl+K
-              </div>
             )}
+
+            {/* : (
+               <div className="text-xs text-gray-400 italic">
+                 Presiona Ctrl+K
+               </div>
+             ) */}
           </div>
 
           {/* Mobile Menu Button */}
