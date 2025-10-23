@@ -2,12 +2,18 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-customizable"
+    }
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "commit": "git-cz"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -40,11 +46,14 @@
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/cz-commitlint": "^20.1.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "commitizen": "^4.3.1",
+    "cz-customizable": "^7.5.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "lefthook": "^2.0.0",
