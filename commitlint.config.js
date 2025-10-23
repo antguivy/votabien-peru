@@ -5,7 +5,7 @@ module.exports = {
     "   o sigue el formato: tipo(scope): descripción\n",
   rules: {
     "scope-enum": [
-      2,
+      1,
       "always",
       [
         "legislators",
@@ -18,6 +18,6 @@ module.exports = {
         "deps",
       ],
     ],
-    "scope-empty": [2, "never"], // Obligatorio
+    "scope-empty": [0],
   },
 };
