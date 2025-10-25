@@ -5,42 +5,41 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "www.congreso.gob.pe",
-        pathname: "/**"
-        
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "sroppublico.jne.gob.pe",
-        pathname: "/**"
-        
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "commons.wikimedia.org",
-        pathname: "/**"
-        
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "upload.wikimedia.org",
-        pathname: "/**"
-        
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "live.staticflickr.com",
-        pathname: "/**"
-        
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "example.com",
-        pathname: "/**"
-        
-      }
-    ]
-  }
+        pathname: "/**",
+      },
+    ],
+  },
   /* config options here */
 };
 
