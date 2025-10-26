@@ -1,9 +1,5 @@
 import { publicApi } from "@/lib/public-api";
-import LegisladoresList from "@/components/politics/legisladores-list";
 import PartidosList from "@/components/politics/partidos-list";
-import ProcesosElectoralesBanner from "@/components/politics/procesos-banner";
-import Hero from "@/components/landing/hero";
-import Stats from "@/components/landing/stats";
 import Footer from "@/components/landing/footer";
 import ErrorLanding from "@/components/landing/error-landing";
 import {
@@ -18,28 +14,17 @@ import HeroDualSplit from "@/components/landing/hero-dual-split";
 const SaasPage = async () => {
   try {
     // Obtener datos en paralelo
-    const [personas, partidos, procesosElectorales] = await Promise.all([
+    const [personas, partidos] = await Promise.all([
       publicApi.getPersonas({
         es_legislador_activo: true,
         limit: 10,
       }) as Promise<PersonaList[]>,
       publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
-      publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
     ]);
+    // publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
 
     // Calcular estadísticas
-    const stats = {
-      totalLegisladores: personas.length,
-      totalPartidos: partidos.length,
-      legisladoresSuspendidos: 0,
-      proyectosEnCurso: 0,
-    };
-    const legislador = personas.map((p) => p.periodo_activo);
-    const asistencia = legislador.map((l) => l.asistencias);
-    const denuncias = legislador.map((l) => l.denuncias);
 
-    console.log("asistencias", asistencia);
-    console.log("denuncias", denuncias);
     return (
       <div className="min-h-screen">
         {/* Hero Dual Split */}
