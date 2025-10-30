@@ -7,7 +7,6 @@ import {
   FileText,
   ExternalLink,
   Mail,
-  Info,
   Briefcase,
   Check,
   Copy,
@@ -15,14 +14,13 @@ import {
   GraduationCap,
   AlertTriangle,
   History,
-  Facebook,
-  Twitter,
-  Instagram,
   Award,
   BookOpen,
   Microscope,
+  Home,
 } from "lucide-react";
-
+import { SlSocialFacebook, SlSocialTwitter } from "react-icons/sl";
+import { PiTiktokLogo } from "react-icons/pi";
 import {
   Field,
   FieldGroup,
@@ -44,20 +42,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { PersonaDetail, ProyectoLey } from "@/interfaces/politics";
-
-const NoDataMessage = ({
-  text,
-  icon: Icon = Info,
-}: {
-  text: string;
-  icon?: React.ElementType;
-}) => (
-  <div className="flex items-center gap-3 text-sm text-slate-500 p-4 bg-slate-50 rounded-lg">
-    <Icon className="size-4 text-slate-400" />
-    <span>{text}</span>
-  </div>
-);
+import { Antecedente, PersonaDetail, ProyectoLey } from "@/interfaces/politics";
+import { formatFechaJsonable } from "@/lib/utils";
+import { NoDataMessage } from "@/components/no-data-messge";
 
 export default function DetailLegislador({
   persona,
@@ -67,14 +54,14 @@ export default function DetailLegislador({
   const { copyToClipboard, isCopied } = useCopyToClipboard();
 
   const periodoActivo = persona.periodos_legislativos?.find(
-    (p) => p.esta_activo
+    (p) => p.esta_activo,
   );
 
   // Ordenar periodos por fecha DESC
   const periodosOrdenados = [...(persona.periodos_legislativos || [])].sort(
     (a, b) =>
       new Date(b.periodo_inicio).getTime() -
-      new Date(a.periodo_inicio).getTime()
+      new Date(a.periodo_inicio).getTime(),
   );
 
   // Años totales de servicio
@@ -114,11 +101,6 @@ export default function DetailLegislador({
     return activo ? "success" : "secondary";
   };
 
-  const tieneAntecedentes =
-    (persona.antecedentes_penales && persona.antecedentes_penales.length > 0) ||
-    (persona.antecedentes_judiciales &&
-      persona.antecedentes_judiciales.length > 0);
-
   // tiene información educativa?
   const tieneEducacion =
     persona.educacion_tecnica ||
@@ -147,9 +129,15 @@ export default function DetailLegislador({
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="container mx-auto px-4 pb-4">
+      <div className="container mx-auto p-4">
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">
+                <Home className="size-5" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink href="/legisladores">Legisladores</BreadcrumbLink>
             </BreadcrumbItem>
@@ -187,10 +175,15 @@ export default function DetailLegislador({
                 )}
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-3 text-primary-foreground mt-4">
-                  {periodoActivo?.partido && (
+                  {periodoActivo?.partido_actual ? (
                     <div className="inline-flex items-center gap-2 font-medium">
                       <Briefcase className="size-4" />
-                      <span>{periodoActivo.partido.nombre}</span>
+                      <span>{periodoActivo.partido_actual.nombre}</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 font-medium text-foreground/70">
+                      <Briefcase className="size-4" />
+                      <span>No agrupados</span>
                     </div>
                   )}
                   {periodoActivo?.distrito && (
@@ -204,7 +197,7 @@ export default function DetailLegislador({
                 <div className="mt-5 flex items-center justify-center md:justify-start gap-3">
                   <Badge
                     variant={getEstadoBadgeVariant(
-                      periodoActivo?.esta_activo ?? false
+                      periodoActivo?.esta_activo ?? false,
                     )}
                     className="text-sm px-3 py-1"
                   >
@@ -235,16 +228,94 @@ export default function DetailLegislador({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="size-5" />
-                  Biografía
+                  Trayectoria y Biografía
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {persona.biografia_corta ? (
-                  <p className="leading-relaxed whitespace-pre-line text-foreground/80">
-                    {persona.biografia_corta}
-                  </p>
+                {persona.biografia_detallada &&
+                persona.biografia_detallada.length > 0 ? (
+                  <div className="relative space-y-6">
+                    {/* Timeline line */}
+                    <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary/50 via-primary/30 to-transparent" />
+
+                    {persona.biografia_detallada
+                      .sort(
+                        (a, b) =>
+                          new Date(a.fecha).getTime() -
+                          new Date(b.fecha).getTime(),
+                      )
+                      .map((item, index) => (
+                        <div key={index} className="relative pl-8 group">
+                          {/* Timeline dot */}
+                          <div className="absolute left-0 top-2 w-4 h-4 bg-background border-2 border-primary rounded-full shadow-sm transition-transform group-hover:scale-125 group-hover:shadow-md" />
+
+                          <div className="flex flex-col gap-2 pb-6 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0">
+                            {/* Header */}
+                            <div className="flex flex-wrap items-start gap-2">
+                              <h4 className="font-semibold text-base leading-tight flex-1 min-w-0">
+                                {item.titulo}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs capitalize font-normal"
+                                >
+                                  {item.tipo}
+                                </Badge>
+                                {item.relevancia && (
+                                  <Badge
+                                    variant={
+                                      item.relevancia === "Alta"
+                                        ? "destructive"
+                                        : item.relevancia === "Media"
+                                          ? "default"
+                                          : "secondary"
+                                    }
+                                    className="text-xs font-medium"
+                                  >
+                                    {item.relevancia}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {item.descripcion}
+                            </p>
+
+                            {/* Footer metadata */}
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5" />
+                                <time dateTime={item.fecha}>
+                                  {formatFechaJsonable(item.fecha)}
+                                </time>
+                              </div>
+
+                              {item.fuente && item.fuente_url && (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-600">
+                                    •
+                                  </span>
+                                  <Link
+                                    href={item.fuente_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 hover:underline text-primary transition-colors underline-offset-2"
+                                    aria-label={`Fuente: ${item.fuente}`}
+                                  >
+                                    <span>{item.fuente}</span>
+                                  </Link>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 ) : (
-                  <NoDataMessage text="No hay biografía registrada." />
+                  <NoDataMessage text="No hay información detallada de la biografía." />
                 )}
               </CardContent>
             </Card>
@@ -341,7 +412,7 @@ export default function DetailLegislador({
             )}
 
             {/* Antecedentes */}
-            {tieneAntecedentes && (
+            {persona.antecedentes && persona.antecedentes.length > 0 ? (
               <Card className="shadow-sm border-orange-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-orange-800">
@@ -349,106 +420,65 @@ export default function DetailLegislador({
                     Antecedentes Registrados
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {persona.antecedentes_penales &&
-                    persona.antecedentes_penales.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="destructive" className="text-xs">
-                            Penales
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {persona.antecedentes_penales.length}{" "}
-                            {persona.antecedentes_penales.length === 1
-                              ? "registro"
-                              : "registros"}
-                          </span>
-                        </div>
-                        {persona.antecedentes_penales.map(
-                          (antecedente, index: number) => (
-                            <div
-                              key={index}
-                              className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <span className="text-xs font-semibold text-red-900 dark:text-red-300 uppercase">
-                                  {antecedente.tipo}
-                                </span>
-                                {antecedente.estado && (
-                                  <Badge
-                                    variant={getAntecedentesBadgeColor(
-                                      antecedente.estado
-                                    )}
-                                    className="text-xs"
-                                  >
-                                    {antecedente.estado}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-red-800 dark:text-red-200 mb-1">
-                                {antecedente.descripcion}
-                              </p>
-                              {antecedente.año && (
-                                <span className="text-xs text-red-600 dark:text-red-400">
-                                  Año: {antecedente.año}
-                                </span>
-                              )}
-                            </div>
-                          )
-                        )}
+                <CardContent className="space-y-5">
+                  {Object.entries(
+                    persona.antecedentes.reduce<Record<string, Antecedente[]>>(
+                      (acc, ant) => {
+                        const tipo = ant.tipo || "Otros";
+                        if (!acc[tipo]) acc[tipo] = [];
+                        acc[tipo].push(ant);
+                        return acc;
+                      },
+                      {},
+                    ),
+                  ).map(([tipo, lista]) => (
+                    <div key={tipo} className="space-y-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {tipo}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {lista.length}{" "}
+                          {lista.length === 1 ? "registro" : "registros"}
+                        </span>
                       </div>
-                    )}
 
-                  {persona.antecedentes_judiciales &&
-                    persona.antecedentes_judiciales.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="warning" className="text-xs">
-                            Judiciales
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {persona.antecedentes_judiciales.length}{" "}
-                            {persona.antecedentes_judiciales.length === 1
-                              ? "registro"
-                              : "registros"}
-                          </span>
-                        </div>
-                        {persona.antecedentes_judiciales.map(
-                          (antecedente, index: number) => (
-                            <div
-                              key={index}
-                              className="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-lg"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-2">
-                                <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
-                                  {antecedente.tipo}
-                                </span>
-                                {antecedente.estado && (
-                                  <Badge
-                                    variant={getAntecedentesBadgeColor(
-                                      antecedente.estado
-                                    )}
-                                    className="text-xs"
-                                  >
-                                    {antecedente.estado}
-                                  </Badge>
+                      {lista.map((antecedente, i) => (
+                        <div
+                          key={i}
+                          className="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-lg"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
+                              {antecedente.titulo || antecedente.tipo}
+                            </span>
+                            {antecedente.estado && (
+                              <Badge
+                                variant={getAntecedentesBadgeColor(
+                                  antecedente.estado,
                                 )}
-                              </div>
-                              <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
-                                {antecedente.descripcion}
-                              </p>
-                              {antecedente.año && (
-                                <span className="text-xs text-orange-600 dark:text-orange-400">
-                                  Año: {antecedente.año}
-                                </span>
-                              )}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
+                                className="text-xs"
+                              >
+                                {antecedente.estado}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
+                            {antecedente.descripcion}
+                          </p>
+                          {antecedente.fecha && (
+                            <span className="text-xs text-orange-600 dark:text-orange-400">
+                              Fecha: {formatFechaJsonable(antecedente.fecha)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
+            ) : (
+              <NoDataMessage text="No se registran antecedentes." />
             )}
 
             {/* Historial Legislativo */}
@@ -509,14 +539,12 @@ export default function DetailLegislador({
                             )}
                           </div>
 
-                          {periodo.partido && (
-                            <div className="flex items-center gap-1.5 text-xs text-foreground/70">
-                              <Briefcase className="size-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {periodo.partido.nombre}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 text-xs text-foreground/70">
+                            <Briefcase className="size-3 flex-shrink-0" />
+                            <span className="truncate">
+                              {periodo.partido_actual?.nombre || "No agrupados"}
+                            </span>
+                          </div>
 
                           {periodo.email_congreso && (
                             <div className="flex items-center gap-1.5 text-xs text-foreground/70 pt-1">
@@ -566,7 +594,7 @@ export default function DetailLegislador({
                                 <span>
                                   Presentado el{" "}
                                   {new Date(
-                                    proyecto.fecha_presentacion
+                                    proyecto.fecha_presentacion,
                                   ).toLocaleDateString("es-ES", {
                                     year: "numeric",
                                     month: "long",
@@ -579,7 +607,7 @@ export default function DetailLegislador({
                               <FieldSeparator className="my-2" />
                             )}
                           </div>
-                        )
+                        ),
                       )
                     ) : (
                       <NoDataMessage text="No se registran proyectos de ley en el periodo actual." />
@@ -638,7 +666,7 @@ export default function DetailLegislador({
                             onClick={() =>
                               copyToClipboard(
                                 periodoActivo.email_congreso,
-                                "email"
+                                "email",
                               )
                             }
                             title={
@@ -662,7 +690,7 @@ export default function DetailLegislador({
             {/* Redes Sociales */}
             {(persona.facebook_url ||
               persona.twitter_url ||
-              persona.instagram_url) && (
+              persona.tiktok_url) && (
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>Redes Sociales</CardTitle>
@@ -676,7 +704,7 @@ export default function DetailLegislador({
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 text-sm text-blue-600 hover:underline p-2 -m-2 rounded-md hover:bg-blue-50 transition-colors"
                       >
-                        <Facebook className="size-4" />
+                        <SlSocialFacebook className="size-4" />
                         <span>Facebook</span>
                         <ExternalLink className="size-3 ml-auto" />
                       </a>
@@ -688,20 +716,20 @@ export default function DetailLegislador({
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 text-sm text-sky-600 hover:underline p-2 -m-2 rounded-md hover:bg-sky-50 transition-colors"
                       >
-                        <Twitter className="size-4" />
+                        <SlSocialTwitter className="size-4" />
                         <span>Twitter / X</span>
                         <ExternalLink className="size-3 ml-auto" />
                       </a>
                     )}
-                    {persona.instagram_url && (
+                    {persona.tiktok_url && (
                       <a
-                        href={persona.instagram_url}
+                        href={persona.tiktok_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 text-sm text-pink-600 hover:underline p-2 -m-2 rounded-md hover:bg-pink-50 transition-colors"
+                        className="flex items-center gap-3 text-sm text-gray-900 hover:text-[#69C9D0] p-2 -m-2 rounded-md hover:bg-gray-100 transition-colors"
                       >
-                        <Instagram className="size-4" />
-                        <span>Instagram</span>
+                        <PiTiktokLogo className="size-4" />
+                        <span>Tiktok</span>
                         <ExternalLink className="size-3 ml-auto" />
                       </a>
                     )}
@@ -732,7 +760,7 @@ export default function DetailLegislador({
                           year: "numeric",
                           month: "long",
                           day: "numeric",
-                        }
+                        },
                       )}
                     </span>
                   </div>

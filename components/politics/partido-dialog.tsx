@@ -5,19 +5,21 @@ import {
   CheckCircle2,
   DollarSign,
   ExternalLink,
-  Facebook,
   Globe,
-  Instagram,
   Mail,
   MapPin,
   Phone,
   Sparkles,
   TrendingUp,
-  Twitter,
   Users,
-  Youtube,
   TrendingDown,
 } from "lucide-react";
+import {
+  SlSocialFacebook,
+  SlSocialTwitter,
+  SlSocialYoutube,
+} from "react-icons/sl";
+import { PiTiktokLogo } from "react-icons/pi";
 import {
   Credenza,
   CredenzaBody,
@@ -39,16 +41,6 @@ export default function PartidoDialog({
   onClose: () => void;
 }) {
   const partidoColor = partido.color_hex || "oklch(0.45 0.15 260)";
-
-  // Parse timeline
-  //   let timeline: TimelineEvent[] = [];
-  //   try {
-  //     if (partido.historia_timeline) {
-  //       timeline = JSON.parse(partido.historia_timeline);
-  //     }
-  //   } catch (e) {
-  //     console.error("Error parsing timeline:", e);
-  //   }
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return "No disponible";
@@ -139,7 +131,7 @@ export default function PartidoDialog({
             {/* Descripción */}
             {partido.descripcion && (
               <div className="bg-muted/50 rounded-xl p-4">
-                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">
+                <p className="text-sm sm:text-base text-foreground/90 text-justify leading-relaxed">
                   {partido.descripcion}
                 </p>
               </div>
@@ -157,15 +149,13 @@ export default function PartidoDialog({
                 </div>
               )}
 
-              {partido.total_militantes && (
+              {partido.total_afiliados && (
                 <div className="bg-card border border-border rounded-lg p-3 text-center">
                   <Users className="w-5 h-5 text-primary mx-auto mb-1" />
                   <div className="text-xl sm:text-2xl font-bold text-foreground">
-                    {formatNumber(partido.total_militantes)}
+                    {formatNumber(partido.total_afiliados)}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    militantes
-                  </div>
+                  <div className="text-xs text-muted-foreground">afiliados</div>
                 </div>
               )}
 
@@ -258,7 +248,7 @@ export default function PartidoDialog({
                         Sitio Web
                       </div>
                       <a
-                        href={partido.sitio_web}
+                        href={`https://${partido.sitio_web}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline inline-flex items-center gap-1"
@@ -275,7 +265,7 @@ export default function PartidoDialog({
             {/* Redes Sociales */}
             {(partido.facebook_url ||
               partido.twitter_url ||
-              partido.instagram_url ||
+              partido.tiktok_url ||
               partido.youtube_url) && (
               <div className="space-y-3">
                 <h3 className="text-lg font-bold text-foreground">
@@ -290,7 +280,7 @@ export default function PartidoDialog({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
-                      <Facebook className="w-4 h-4" />
+                      <SlSocialFacebook className="w-4 h-4" />
                       <span className="text-sm font-medium">Facebook</span>
                     </a>
                   )}
@@ -302,20 +292,20 @@ export default function PartidoDialog({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#1DA1F2] text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
-                      <Twitter className="w-4 h-4" />
+                      <SlSocialTwitter className="w-4 h-4" />
                       <span className="text-sm font-medium">Twitter</span>
                     </a>
                   )}
 
-                  {partido.instagram_url && (
+                  {partido.tiktok_url && (
                     <a
-                      href={partido.instagram_url}
+                      href={partido.tiktok_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] text-white rounded-lg hover:opacity-90 transition-opacity"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#010101] via-[#121212] to-[#343434] text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
-                      <Instagram className="w-4 h-4" />
-                      <span className="text-sm font-medium">Instagram</span>
+                      <PiTiktokLogo className="w-4 h-4" />
+                      <span className="text-sm font-medium">Tiktok</span>
                     </a>
                   )}
 
@@ -326,7 +316,7 @@ export default function PartidoDialog({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF0000] text-white rounded-lg hover:opacity-90 transition-opacity"
                     >
-                      <Youtube className="w-4 h-4" />
+                      <SlSocialYoutube className="w-4 h-4" />
                       <span className="text-sm font-medium">YouTube</span>
                     </a>
                   )}

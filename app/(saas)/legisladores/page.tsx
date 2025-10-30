@@ -2,7 +2,11 @@ import { publicApi } from "@/lib/public-api";
 import LegisladoresList from "@/components/politics/legisladores-list";
 import { serverGetUser } from "@/lib/auth-actions";
 import AdminActions from "@/components/admin/admin-actions";
-import { DistritoElectoral, PartidoPoliticoBase, PersonaList } from "@/interfaces/politics";
+import {
+  DistritoElectoral,
+  PartidoPoliticoBase,
+  PersonaList,
+} from "@/interfaces/politics";
 import Link from "next/link";
 
 interface PageProps {
@@ -10,7 +14,7 @@ interface PageProps {
     camara?: string;
     search?: string;
     partidos?: string | string[];
-    distritos?: string | string[]
+    distritos?: string | string[];
   };
 }
 
@@ -23,10 +27,17 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
 
   const apiParams = {
     es_legislador_activo: true,
-    camara: params.camara && params.camara !== "all" ? params.camara : undefined,
+    camara:
+      params.camara && params.camara !== "all" ? params.camara : undefined,
     search: params.search || undefined,
-    partidos: params.partidos && params.partidos !== "all" ? params.partidos : undefined,
-    distritos: params.distritos && params.distritos !== "all" ? params.distritos : undefined,
+    partidos:
+      params.partidos && params.partidos !== "all"
+        ? params.partidos
+        : undefined,
+    distritos:
+      params.distritos && params.distritos !== "all"
+        ? params.distritos
+        : undefined,
     skip: 0,
     limit: limit,
   };
@@ -46,7 +57,6 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
       publicApi.getPartidos(true) as Promise<PartidoPoliticoBase[]>,
       publicApi.getDistritos() as Promise<DistritoElectoral[]>,
     ]);
-
     return (
       <div className="container mx-auto px-4">
         {/* Admin Actions */}

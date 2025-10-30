@@ -106,7 +106,6 @@ const CandidatosList = ({
       });
     }
 
-    // 🔥 CORRECCIÓN: Usar currentSkip en lugar de page * 10
     params.append("skip", String(currentSkip));
     params.append("limit", "10");
 
@@ -132,7 +131,6 @@ const CandidatosList = ({
         setHasMore(false);
       } else {
         setCandidatos((prev) => [...prev, ...newCandidtos]);
-        // 🔥 CORRECCIÓN: Incrementar skip por la cantidad de registros obtenidos
         setCurrentSkip((prev) => prev + newCandidtos.length);
 
         if (newCandidtos.length < 10) {
@@ -147,7 +145,6 @@ const CandidatosList = ({
     }
   }, [infiniteScroll, loading, hasMore, buildQueryString]);
 
-  // Intersection Observer
   useEffect(() => {
     if (!infiniteScroll) return;
     const observer = new IntersectionObserver(
@@ -156,7 +153,7 @@ const CandidatosList = ({
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     const currentTarget = observerTarget.current;
@@ -171,7 +168,6 @@ const CandidatosList = ({
     };
   }, [infiniteScroll, hasMore, loading, loadMore]);
 
-  // 🔥 CORRECCIÓN: Resetear skip también cuando cambien filtros
   useEffect(() => {
     setCandidatos(initialCandidaturas);
     setCurrentSkip(initialCandidaturas.length);
@@ -184,7 +180,6 @@ const CandidatosList = ({
     currentFilters.distritos,
   ]);
 
-  // Configurar campos de filtro
   const filterFields: FilterField[] = [
     {
       id: "search",
@@ -327,7 +322,7 @@ const CandidatosList = ({
                         candidato.tipo === "Senador" &&
                           "bg-info text-info-foreground",
                         candidato.tipo === "Diputado" &&
-                          "bg-success text-success-foreground"
+                          "bg-success text-success-foreground",
                       )}
                     >
                       {candidato.tipo}
