@@ -26,8 +26,12 @@ import {
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CandidaturaDetail } from "@/interfaces/politics";
+import { Antecedente, CandidaturaDetail } from "@/interfaces/politics";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { formatFechaJsonable } from "@/lib/utils";
+import { NoDataMessage } from "../no-data-messge";
+import Link from "next/link";
 
 interface CandidatoDialogProps {
   candidato: CandidaturaDetail;
@@ -56,7 +60,7 @@ const CandidatoDialog = ({
   const totalProyectos =
     candidato.periodos_legislativos?.reduce(
       (acc, periodo) => acc + (periodo.proyectos_ley?.length || 0),
-      0
+      0,
     ) || 0;
 
   // Verificar si tiene educación
@@ -67,12 +71,6 @@ const CandidatoDialog = ({
     (persona.grado_academico && persona.grado_academico !== "No") ||
     (persona.titulo_profesional && persona.titulo_profesional !== "No") ||
     (persona.post_grado && persona.post_grado !== "No");
-
-  // Verificar si tiene antecedentes
-  const tieneAntecedentes =
-    (persona.antecedentes_penales && persona.antecedentes_penales.length > 0) ||
-    (persona.antecedentes_judiciales &&
-      persona.antecedentes_judiciales.length > 0);
 
   // Helper para el color de badge de antecedentes
   const getAntecedentesBadgeColor = (estado: string) => {
@@ -112,7 +110,7 @@ const CandidatoDialog = ({
                       Experiencia en Congreso
                     </Badge>
                   )}
-                  {tieneAntecedentes && (
+                  {candidato.persona.antecedentes && (
                     <Badge variant="destructive" className="gap-1">
                       <AlertTriangle className="w-3 h-3" />
                       Antecedentes
@@ -208,22 +206,94 @@ const CandidatoDialog = ({
               </div>
 
               {/* Biografía */}
-              {persona.biografia_corta && (
-                <div>
-                  <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" />
-                    Biografía
-                  </h3>
-                  <div className="bg-muted/30 rounded-lg p-4 border">
-                    <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-                      {persona.biografia_corta}
-                    </p>
-                  </div>
+              {persona.biografia_detallada &&
+              persona.biografia_detallada.length > 0 ? (
+                <div className="relative space-y-6">
+                  {/* Timeline line */}
+                  <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary/50 via-primary/30 to-transparent" />
+
+                  {persona.biografia_detallada
+                    .sort(
+                      (a, b) =>
+                        new Date(a.fecha).getTime() -
+                        new Date(b.fecha).getTime(),
+                    )
+                    .map((item, index) => (
+                      <div key={index} className="relative pl-8 group">
+                        {/* Timeline dot */}
+                        <div className="absolute left-0 top-2 w-4 h-4 bg-background border-2 border-primary rounded-full shadow-sm transition-transform group-hover:scale-125 group-hover:shadow-md" />
+
+                        <div className="flex flex-col gap-2 pb-6 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0">
+                          {/* Header */}
+                          <div className="flex flex-wrap items-start gap-2">
+                            <h4 className="font-semibold text-base leading-tight flex-1 min-w-0">
+                              {item.titulo}
+                            </h4>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge
+                                variant="outline"
+                                className="text-xs capitalize font-normal"
+                              >
+                                {item.tipo}
+                              </Badge>
+                              {item.relevancia && (
+                                <Badge
+                                  variant={
+                                    item.relevancia === "Alta"
+                                      ? "destructive"
+                                      : item.relevancia === "Media"
+                                        ? "default"
+                                        : "secondary"
+                                  }
+                                  className="text-xs font-medium"
+                                >
+                                  {item.relevancia}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {item.descripcion}
+                          </p>
+
+                          {/* Footer metadata */}
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <time dateTime={item.fecha}>
+                                {formatFechaJsonable(item.fecha)}
+                              </time>
+                            </div>
+
+                            {item.fuente && item.fuente_url && (
+                              <>
+                                <span className="text-slate-300 dark:text-slate-600">
+                                  •
+                                </span>
+                                <Link
+                                  href={item.fuente_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 hover:underline text-primary transition-colors underline-offset-2"
+                                  aria-label={`Fuente: ${item.fuente}`}
+                                >
+                                  <span>{item.fuente}</span>
+                                </Link>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                 </div>
+              ) : (
+                <NoDataMessage text="No hay información detallada de la biografía." />
               )}
 
               {/* Educación */}
-               {tieneEducacion ? (
+              {tieneEducacion ? (
                 <div>
                   <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
                     <GraduationCap className="w-4 h-4 text-primary" />
@@ -327,7 +397,7 @@ const CandidatoDialog = ({
               )}
 
               {/* Experiencia Laboral */}
-            {persona.experiencia_laboral &&
+              {persona.experiencia_laboral &&
                 persona.experiencia_laboral.length > 0 && (
                   <div>
                     <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -335,149 +405,109 @@ const CandidatoDialog = ({
                       Experiencia Laboral
                     </h3>
                     <div className="space-y-3">
-                      {persona.experiencia_laboral.map(
-                        (exp, idx: number) => (
-                          <div
-                            key={idx}
-                            className="bg-muted/30 rounded-lg p-4 border"
-                          >
-                            {exp.cargo && (
-                              <p className="text-sm font-semibold mb-1">
-                                {exp.cargo}
-                              </p>
-                            )}
-                            {exp.empresa && (
-                              <p className="text-sm text-muted-foreground mb-1">
-                                {exp.empresa}
-                              </p>
-                            )}
-                            {exp.periodo && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                                <Calendar className="w-3 h-3" />
-                                {exp.periodo}
-                              </p>
-                            )}
-                            {exp.descripcion && (
-                              <p className="text-sm text-foreground/80 leading-relaxed">
-                                {exp.descripcion}
-                              </p>
-                            )}
-                          </div>
-                        )
-                      )}
+                      {persona.experiencia_laboral.map((exp, idx: number) => (
+                        <div
+                          key={idx}
+                          className="bg-muted/30 rounded-lg p-4 border"
+                        >
+                          {exp.cargo && (
+                            <p className="text-sm font-semibold mb-1">
+                              {exp.cargo}
+                            </p>
+                          )}
+                          {exp.empresa && (
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {exp.empresa}
+                            </p>
+                          )}
+                          {exp.periodo && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+                              <Calendar className="w-3 h-3" />
+                              {exp.periodo}
+                            </p>
+                          )}
+                          {exp.descripcion && (
+                            <p className="text-sm text-foreground/80 leading-relaxed">
+                              {exp.descripcion}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
               {/* Antecedentes */}
-          {tieneAntecedentes && (
-                <div>
-                  <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-orange-600" />
-                    Antecedentes Registrados
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Antecedentes Penales */}
-                    {persona.antecedentes_penales &&
-                      persona.antecedentes_penales.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="destructive" className="text-xs">
-                              Penales
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {persona.antecedentes_penales.length}{" "}
-                              {persona.antecedentes_penales.length === 1
-                                ? "registro"
-                                : "registros"}
-                            </span>
-                          </div>
-                          {persona.antecedentes_penales.map(
-                            (antecedente, index: number) => (
-                              <div
-                                key={index}
-                                className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg"
-                              >
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <span className="text-xs font-semibold text-red-900 dark:text-red-300 uppercase">
-                                    {antecedente.tipo}
-                                  </span>
-                                  {antecedente.estado && (
-                                    <Badge
-                                      variant={getAntecedentesBadgeColor(
-                                        antecedente.estado
-                                      )}
-                                      className="text-xs"
-                                    >
-                                      {antecedente.estado}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-red-800 dark:text-red-200 mb-1">
-                                  {antecedente.descripcion}
-                                </p>
-                                {antecedente.año && (
-                                  <span className="text-xs text-red-600 dark:text-red-400">
-                                    Año: {antecedente.año}
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          )}
+              {candidato.persona.antecedentes &&
+              candidato.persona.antecedentes.length > 0 ? (
+                <Card className="shadow-sm border-orange-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-orange-800">
+                      <AlertTriangle className="size-5" />
+                      Antecedentes Registrados
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {Object.entries(
+                      persona.antecedentes.reduce<
+                        Record<string, Antecedente[]>
+                      >((acc, ant) => {
+                        const tipo = ant.tipo || "Otros";
+                        if (!acc[tipo]) acc[tipo] = [];
+                        acc[tipo].push(ant);
+                        return acc;
+                      }, {}),
+                    ).map(([tipo, lista]) => (
+                      <div key={tipo} className="space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
+                            {tipo}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {lista.length}{" "}
+                            {lista.length === 1 ? "registro" : "registros"}
+                          </span>
                         </div>
-                      )}
 
-                    {/* Antecedentes Judiciales */}
-                    {persona.antecedentes_judiciales &&
-                      persona.antecedentes_judiciales.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="warning" className="text-xs">
-                              Judiciales
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {persona.antecedentes_judiciales.length}{" "}
-                              {persona.antecedentes_judiciales.length === 1
-                                ? "registro"
-                                : "registros"}
-                            </span>
-                          </div>
-                          {persona.antecedentes_judiciales.map(
-                            (antecedente, index: number) => (
-                              <div
-                                key={index}
-                                className="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-lg"
-                              >
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                  <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
-                                    {antecedente.tipo}
-                                  </span>
-                                  {antecedente.estado && (
-                                    <Badge
-                                      variant={getAntecedentesBadgeColor(
-                                        antecedente.estado
-                                      )}
-                                      className="text-xs"
-                                    >
-                                      {antecedente.estado}
-                                    </Badge>
+                        {lista.map((antecedente, i) => (
+                          <div
+                            key={i}
+                            className="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 rounded-lg"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
+                                {antecedente.titulo || antecedente.tipo}
+                              </span>
+                              {antecedente.estado && (
+                                <Badge
+                                  variant={getAntecedentesBadgeColor(
+                                    antecedente.estado,
                                   )}
-                                </div>
-                                <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
-                                  {antecedente.descripcion}
-                                </p>
-                                {antecedente.año && (
-                                  <span className="text-xs text-orange-600 dark:text-orange-400">
-                                    Año: {antecedente.año}
-                                  </span>
-                                )}
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-                  </div>
-                </div>
+                                  className="text-xs"
+                                >
+                                  {antecedente.estado}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
+                              {antecedente.descripcion}
+                            </p>
+                            {antecedente.fecha && (
+                              <span className="text-xs text-orange-600 dark:text-orange-400">
+                                Fecha: {formatFechaJsonable(antecedente.fecha)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : (
+                <NoDataMessage text="No se registran antecedentes." />
               )}
             </TabsContent>
 
@@ -534,7 +564,7 @@ const CandidatoDialog = ({
                   <div className="space-y-4">
                     {candidato.periodos_legislativos.map((periodo) => {
                       const inicio = new Date(
-                        periodo.periodo_inicio
+                        periodo.periodo_inicio,
                       ).getFullYear();
                       const fin = periodo.periodo_fin
                         ? new Date(periodo.periodo_fin).getFullYear()
@@ -572,12 +602,13 @@ const CandidatoDialog = ({
                             </div>
 
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                              {periodo.partido?.nombre && (
-                                <span className="flex items-center gap-1">
-                                  <Users className="w-3 h-3" />
-                                  {periodo.partido.nombre}
+                              <div className="flex items-center gap-1.5 text-xs text-foreground/70">
+                                <Briefcase className="size-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {periodo.partido_actual?.nombre ||
+                                    "No agrupados"}
                                 </span>
-                              )}
+                              </div>
                               {periodo.distrito?.nombre && (
                                 <span className="flex items-center gap-1">
                                   <MapPin className="w-3 h-3" />
@@ -620,7 +651,7 @@ const CandidatoDialog = ({
                                     )}
                                     <p className="text-xs text-muted-foreground mt-1.5">
                                       {new Date(
-                                        proyecto.fecha_presentacion
+                                        proyecto.fecha_presentacion,
                                       ).toLocaleDateString("es-PE", {
                                         day: "2-digit",
                                         month: "short",

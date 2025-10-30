@@ -3,10 +3,8 @@ import PartidosList from "@/components/politics/partidos-list";
 import { PartidoDetail } from "@/interfaces/politics";
 import { publicApi } from "@/lib/public-api";
 
-
 const PartidoPage = async () => {
   try {
-    // Obtener datos en paralelo
     const [partidos] = await Promise.all([
       publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
     ]);

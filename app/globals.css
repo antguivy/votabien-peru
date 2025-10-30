@@ -186,4 +186,13 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+
+  /* Agregar esto al final */
+  .text-contrast {
+    color: var(--foreground);
+  }
+
+  .bg-overlay {
+    background: oklch(from var(--background) l c h / 0.95);
+  }
 }

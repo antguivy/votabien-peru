@@ -2,34 +2,107 @@ import { publicApi } from "@/lib/public-api";
 import PartidosList from "@/components/politics/partidos-list";
 import Footer from "@/components/landing/footer";
 import ErrorLanding from "@/components/landing/error-landing";
-import {
-  PartidoDetail,
-  PersonaList,
-  ProcesoElectoral,
-} from "@/interfaces/politics";
+import { PartidoDetail } from "@/interfaces/politics";
 import Link from "next/link";
+import { Suspense } from "react";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
-// import ComparadorVelada from "@/components/vs-destacado";
+import { Skeleton } from "@/components/ui/skeleton";
+import ComparadorServer from "@/components/comparador/comparador-server";
 
-const SaasPage = async () => {
+function ComparadorSkeleton() {
+  return (
+    <section className="relative w-full min-h-screen bg-background overflow-hidden">
+      {/* Fondo difuminado */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/40 to-background pointer-events-none" />
+
+      {/* Contenedor split 50/50 constante (mobile también) */}
+      <div className="relative z-10 flex w-full h-full min-h-[720px]">
+        {/* Lado izquierdo (50%) */}
+        <div className="w-1/2 flex flex-col border-r border-border bg-card">
+          {/* Imagen / retrato */}
+          <div className="w-full aspect-[3/4]">
+            <Skeleton className="w-full h-full rounded-none" />
+          </div>
+
+          {/* Info */}
+          <div className="p-6 flex flex-col gap-3">
+            <Skeleton className="h-7 w-52 rounded-md" /> {/* Apellido grande */}
+            <Skeleton className="h-4 w-40 rounded-md" /> {/* Nombre */}
+            <Skeleton className="h-8 w-56 rounded-full" />{" "}
+            {/* Partido (chip) */}
+            <Skeleton className="h-4 w-36 rounded-md" /> {/* Bancada */}
+            <Skeleton className="h-4 w-28 rounded-md" /> {/* Región */}
+          </div>
+
+          {/* Barra inferior tipo stats */}
+          <div className="mt-auto border-t border-border px-6 py-5 bg-muted/30">
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-44 rounded-md" />
+              <Skeleton className="h-4 w-36 rounded-md" />
+              <Skeleton className="h-4 w-28 rounded-md" />
+            </div>
+          </div>
+        </div>
+
+        {/* Lado derecho (50%) */}
+        <div className="w-1/2 flex flex-col bg-card">
+          <div className="w-full aspect-[3/4]">
+            <Skeleton className="w-full h-full rounded-none" />
+          </div>
+
+          <div className="p-6 flex flex-col gap-3">
+            <Skeleton className="h-7 w-52 rounded-md" /> {/* Apellido grande */}
+            <Skeleton className="h-4 w-40 rounded-md" /> {/* Nombre */}
+            <Skeleton className="h-8 w-56 rounded-full" />{" "}
+            {/* Partido (chip) */}
+            <Skeleton className="h-4 w-36 rounded-md" /> {/* Bancada */}
+            <Skeleton className="h-4 w-28 rounded-md" /> {/* Región */}
+          </div>
+
+          <div className="mt-auto border-t border-border px-6 py-5 bg-muted/30">
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-44 rounded-md" />
+              <Skeleton className="h-4 w-36 rounded-md" />
+              <Skeleton className="h-4 w-28 rounded-md" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* VS gris centrado entre las dos mitades */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center"
+      >
+        <div className="relative flex items-center justify-center">
+          {/* halo sutil */}
+          <div className="absolute w-20 h-20 rounded-full bg-gray-300/20 blur-md" />
+          {/* círculo gris sólido con texto VS */}
+          <div className="relative w-16 h-16 rounded-full bg-gray-200 border border-gray-300 flex items-center justify-center shadow-md">
+            <span className="text-sm font-semibold text-gray-700">VS</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default async function SaasPage() {
   try {
     // Obtener datos en paralelo
-    const [personas, partidos] = await Promise.all([
-      publicApi.getPersonas({
-        es_legislador_activo: true,
-        limit: 10,
-      }) as Promise<PersonaList[]>,
+    const [partidos] = await Promise.all([
       publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
     ]);
     // publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
 
     // Calcular estadísticas
-
     return (
       <div className="min-h-screen">
         {/* Hero Dual Split */}
         <HeroDualSplit />
-        {/* <ComparadorVelada legisladores={personas}/> */}
+        <Suspense fallback={<ComparadorSkeleton />}>
+          <ComparadorServer />
+        </Suspense>
 
         {/* Partidos Políticos */}
         <section className="bg-muted/30 py-12 md:py-16 lg:py-20">
@@ -102,6 +175,4 @@ const SaasPage = async () => {
     console.error("Error cargando datos de landing:", error);
     return <ErrorLanding />;
   }
-};
-
-export default SaasPage;
+}

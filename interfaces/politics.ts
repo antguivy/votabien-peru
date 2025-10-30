@@ -23,9 +23,25 @@ export enum EstadoCandidatura {
 
 export interface Antecedente {
   tipo: string;
+  titulo: string;
   descripcion: string;
-  estado: string;
-  año: number;
+  estado: string | null;
+  sancion: string | null;
+  fecha: string;
+  periodo: string | null;
+  fuente: string;
+  fuente_url: string | null;
+}
+
+export interface BiografiaDetlle {
+  tipo: string;
+  fecha: string;
+  titulo: string;
+  descripcion: string;
+  relevancia?: string;
+  fuente: string;
+  fuente_tipo: string;
+  fuente_url?: string;
 }
 
 export interface ExperienciaLaboral {
@@ -37,7 +53,7 @@ export interface ExperienciaLaboral {
 
 export interface HistorialPartido {
   año: number;
-  evento: string
+  evento: string;
 }
 // ============= INTERFACES BASE =============
 
@@ -85,9 +101,9 @@ export interface PartidoDetail extends PartidoPoliticoBase {
   historia_timeline: HistorialPartido[] | [];
   facebook_url: string | null;
   twitter_url: string | null;
-  instagram_url: string | null;
   youtube_url: string | null;
-  total_militantes: number | null;
+  tiktok_url: string | null;
+  total_afiliados: number | null;
   total_escaños: number | null;
 }
 // ============= PERSONA Y LEGISLADOR =============
@@ -101,7 +117,7 @@ export interface PersonaBase {
   foto_url: string | null;
   profesion: string | null;
   fecha_nacimiento: Date | null;
-  biografia_corta: string | null;
+  biografia_detallada: BiografiaDetlle[] | [];
   educacion_tecnica: string | null;
   educacion_universitaria: string | null;
   grado_academico: string | null;
@@ -109,12 +125,12 @@ export interface PersonaBase {
   post_grado: string | null;
   hoja_vida_url: string | null;
   experiencia_laboral: ExperienciaLaboral[] | [];
-  antecedentes_penales: Antecedente[]  | [];
-  antecedentes_judiciales: Antecedente[]  | [];
+  antecedentes: Antecedente[] | [];
   facebook_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;
-  created_at: Date
+  tiktok_url: string | null;
+  created_at: Date;
 }
 
 export interface PeriodoLegislador {
@@ -124,15 +140,19 @@ export interface PeriodoLegislador {
   periodo_fin: string;
   esta_activo: boolean;
   email_congreso: string | null;
-  partido: PartidoPoliticoBase;
+  bancada_nombre: string | null;
+  partido_origen: PartidoPoliticoBase;
+  partido_actual?: PartidoPoliticoBase;
+
   distrito: DistritoElectoral;
-  proyectos_ley: ProyectoLey[]
+  proyectos_ley: ProyectoLey[];
+  asistencias: Asistencia[];
+  denuncias: Denuncia[];
+  created_at: string;
 }
 
 export interface PersonaList extends PersonaBase {
   periodo_activo: PeriodoLegislador;
-  // tiene_antecedentes_penales: boolean;
-  // tiene_antecedentes_judiciales: boolean;
 }
 
 export interface PersonaDetail extends PersonaBase {
@@ -165,11 +185,11 @@ export interface CandidaturaDetail extends CandidaturaBase {
   partido: PartidoPoliticoBase;
   distrito: DistritoElectoral | null;
   proceso_electoral: ProcesoElectoral;
-  
+
   // Propuestas y documentos
   propuestas: string | null;
   plan_gobierno_url: string | null;
-  
+
   created_at: string;
 }
 

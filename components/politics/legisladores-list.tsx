@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterField, FilterPanel } from "../ui/filter-panel";
-import { DistritoElectoral, PartidoPoliticoBase, PersonaList } from "@/interfaces/politics";
-
-
+import {
+  DistritoElectoral,
+  PartidoPoliticoBase,
+  PersonaList,
+} from "@/interfaces/politics";
 
 interface LegisladoresListProps {
   legisladores: PersonaList[];
@@ -37,7 +39,6 @@ interface LegisladoresListProps {
   infiniteScroll?: boolean;
 }
 
-// Skeleton Card Component
 const LegisladorSkeleton = () => (
   <Card className="pt-0 overflow-hidden border flex flex-col h-full">
     <Skeleton className="aspect-[3/4] w-full" />
@@ -67,7 +68,7 @@ const LegisladoresList = ({
     useState<PersonaList[]>(initialLegisladores);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialLegisladores.length >= 10);
-  const [currentSkip, setCurrentSkip] = useState(initialLegisladores.length); // 🔥 CLAVE: Comenzar desde la cantidad ya cargada
+  const [currentSkip, setCurrentSkip] = useState(initialLegisladores.length);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const buildQueryString = useCallback(() => {
@@ -103,7 +104,6 @@ const LegisladoresList = ({
       });
     }
 
-    // 🔥 CORRECCIÓN: Usar currentSkip en lugar de page * 10
     params.append("skip", String(currentSkip));
     params.append("limit", "10");
 
@@ -129,7 +129,6 @@ const LegisladoresList = ({
         setHasMore(false);
       } else {
         setLegisladores((prev) => [...prev, ...newLegisladores]);
-        // 🔥 CORRECCIÓN: Incrementar skip por la cantidad de registros obtenidos
         setCurrentSkip((prev) => prev + newLegisladores.length);
 
         if (newLegisladores.length < 10) {
@@ -154,7 +153,7 @@ const LegisladoresList = ({
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     const currentTarget = observerTarget.current;
@@ -169,7 +168,6 @@ const LegisladoresList = ({
     };
   }, [infiniteScroll, hasMore, loading, loadMore]);
 
-  // 🔥 CORRECCIÓN: Resetear skip también cuando cambien filtros
   useEffect(() => {
     setLegisladores(initialLegisladores);
     setCurrentSkip(initialLegisladores.length);
