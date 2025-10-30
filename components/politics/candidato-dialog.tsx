@@ -28,9 +28,9 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Antecedente, CandidaturaDetail } from "@/interfaces/politics";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { formatFechaJsonable } from "@/lib/utils";
-import { NoDataMessage } from "../no-data-messge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatFechaJsonable } from "@/lib/utils/date";
+import { NoDataMessage } from "@/components/no-data-message";
 import Link from "next/link";
 
 interface CandidatoDialogProps {

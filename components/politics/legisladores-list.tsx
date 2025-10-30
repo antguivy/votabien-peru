@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterField, FilterPanel } from "../ui/filter-panel";
+import { FilterField, FilterPanel } from "@/components/ui/filter-panel";
 import {
   DistritoElectoral,
   PartidoPoliticoBase,

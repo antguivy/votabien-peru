@@ -43,8 +43,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Antecedente, PersonaDetail, ProyectoLey } from "@/interfaces/politics";
-import { formatFechaJsonable } from "@/lib/utils";
-import { NoDataMessage } from "@/components/no-data-messge";
+import { formatFechaJsonable } from "@/lib/utils/date";
+import { NoDataMessage } from "@/components/no-data-message";
 
 export default function DetailLegislador({
   persona,

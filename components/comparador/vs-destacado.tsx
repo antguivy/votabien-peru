@@ -20,6 +20,8 @@ import { PersonaList } from "@/interfaces/politics";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import React from "react";
 
 export interface ComparadorContentProps {
   legisladorA: PersonaList;
@@ -75,59 +77,131 @@ export function ComparadorContent({
   onShuffleClick,
 }: ComparadorContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isLandscapeMobile = useMediaQuery("(max-height: 600px)");
+  const isMobilePortrait = useMediaQuery(
+    "(max-width: 768px) and (min-height: 600px)",
+  );
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"],
+    offset: ["start end", "end center"],
   });
 
   // Animaciones suaves sin zoom para evitar desplazamiento
-  const photoBlur = useTransform(scrollYProgress, [0, 0.4, 1], [0, 2, 2]);
-
+  const photoBlur = useTransform(
+    scrollYProgress,
+    isLandscapeMobile ? [0, 0.1, 1] : [0, 0.4, 1],
+    [0, 2, 2],
+  );
   // Overlay más dramático
   const overlayOpacity = useTransform(
     scrollYProgress,
-    [0, 0.4, 1],
+    isLandscapeMobile ? [0, 0.1, 1] : [0, 0.4, 1],
     [0, 0.6, 0.6],
   );
 
   // Animación específica para los nombres (aparecen primero)
   const nameOpacity = useTransform(
     scrollYProgress,
-    [0, 0.15, 0.4],
-    [0, 0.5, 1],
+    isLandscapeMobile
+      ? [0, 0.05]
+      : isMobilePortrait
+        ? [0, 0.1, 0.25]
+        : [0, 0.15, 0.4],
+    isLandscapeMobile ? [0, 1] : isMobilePortrait ? [0, 0.5, 1] : [0, 0.5, 1],
   );
-  const nameY = useTransform(scrollYProgress, [0, 0.15, 0.4], [80, 30, 0]);
+
+  const nameY = useTransform(
+    scrollYProgress,
+    isLandscapeMobile
+      ? [0, 0.05]
+      : isMobilePortrait
+        ? [0, 0.1, 0.25]
+        : [0, 0.15, 0.4],
+    isLandscapeMobile ? [20, 0] : isMobilePortrait ? [50, 20, 0] : [80, 30, 0],
+  );
+
   const nameScale = useTransform(
     scrollYProgress,
-    [0, 0.15, 0.4],
-    [0.9, 0.95, 1],
+    isLandscapeMobile
+      ? [0, 0.05]
+      : isMobilePortrait
+        ? [0, 0.1, 0.25]
+        : [0, 0.15, 0.4],
+    isLandscapeMobile
+      ? [0.95, 1]
+      : isMobilePortrait
+        ? [0.92, 0.96, 1]
+        : [0.9, 0.95, 1],
   );
 
-  // Animación para badges (aparecen después de los nombres)
   const badgeOpacity = useTransform(
     scrollYProgress,
-    [0.1, 0.25, 0.5],
-    [0, 0.4, 1],
-  );
-  const badgeY = useTransform(scrollYProgress, [0.1, 0.25, 0.5], [60, 20, 0]);
-  const badgeScale = useTransform(
-    scrollYProgress,
-    [0.1, 0.25, 0.5],
-    [0.8, 0.9, 1],
+    isLandscapeMobile
+      ? [0.05, 0.1]
+      : isMobilePortrait
+        ? [0.1, 0.18, 0.35]
+        : [0.1, 0.25, 0.5],
+    isLandscapeMobile ? [0, 1] : isMobilePortrait ? [0, 0.5, 1] : [0, 0.4, 1],
   );
 
-  // Animación para stats (aparecen al final)
+  const badgeY = useTransform(
+    scrollYProgress,
+    isLandscapeMobile
+      ? [0.05, 0.1]
+      : isMobilePortrait
+        ? [0.1, 0.18, 0.35]
+        : [0.1, 0.25, 0.5],
+    isLandscapeMobile ? [15, 0] : isMobilePortrait ? [40, 15, 0] : [60, 20, 0],
+  );
+
+  const badgeScale = useTransform(
+    scrollYProgress,
+    isLandscapeMobile
+      ? [0.05, 0.1]
+      : isMobilePortrait
+        ? [0.1, 0.18, 0.35]
+        : [0.1, 0.25, 0.5],
+    isLandscapeMobile
+      ? [0.9, 1]
+      : isMobilePortrait
+        ? [0.85, 0.92, 1]
+        : [0.8, 0.9, 1],
+  );
+
   const statsOpacity = useTransform(
     scrollYProgress,
-    [0.2, 0.4, 0.6],
-    [0, 0.5, 1],
+    isLandscapeMobile
+      ? [0.1, 0.15]
+      : isMobilePortrait
+        ? [0.15, 0.25, 0.45]
+        : [0.2, 0.4, 0.6],
+    isLandscapeMobile ? [0, 1] : isMobilePortrait ? [0, 0.5, 1] : [0, 0.5, 1],
   );
-  const statsY = useTransform(scrollYProgress, [0.2, 0.4, 0.6], [80, 30, 0]);
+
+  const statsY = useTransform(
+    scrollYProgress,
+    isLandscapeMobile
+      ? [0.1, 0.15]
+      : isMobilePortrait
+        ? [0.15, 0.25, 0.45]
+        : [0.2, 0.4, 0.6],
+    isLandscapeMobile ? [20, 0] : isMobilePortrait ? [50, 20, 0] : [80, 30, 0],
+  );
+
   const statsScale = useTransform(
     scrollYProgress,
-    [0.2, 0.4, 0.6],
-    [0.85, 0.92, 1],
+    isLandscapeMobile
+      ? [0.1, 0.15]
+      : isMobilePortrait
+        ? [0.15, 0.25, 0.45]
+        : [0.2, 0.4, 0.6],
+    isLandscapeMobile
+      ? [0.92, 1]
+      : isMobilePortrait
+        ? [0.88, 0.94, 1]
+        : [0.85, 0.92, 1],
   );
 
   const statsA = calcularStats(legisladorA);
@@ -171,7 +245,7 @@ export function ComparadorContent({
 
       {/* Comparador */}
       <div className="w-full mb-10 md:mb-12 md:container md:mx-auto md:px-4">
-        <div ref={containerRef} className="relative min-h-[100vh]">
+        <div ref={containerRef} className="relative min-h-[80vh]">
           <AnimatePresence mode="wait">
             <motion.div
               initial={{ opacity: 0 }}
@@ -217,8 +291,32 @@ export function ComparadorContent({
                   statsY={statsY}
                   statsScale={statsScale}
                 />
-
+                <div className="md:hidden">
+                  <ComparisonStats
+                    statsA={statsA}
+                    statsB={statsB}
+                    colorA={colorA}
+                    colorB={colorB}
+                    statsOpacity={statsOpacity}
+                    statsY={statsY}
+                    statsScale={statsScale}
+                  />
+                </div>
                 <VSBadge colorA={colorA} colorB={colorB} />
+                <Button
+                  onClick={onShuffleClick}
+                  disabled={isAnimating}
+                  size="sm"
+                  variant="outline"
+                  className="group absolute bottom-4 left-1/2 -translate-x-1/2 overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Shuffle
+                    className={`w-4 h-4 transition-transform duration-300 ${
+                      isAnimating ? "animate-spin" : "group-hover:rotate-180"
+                    }`}
+                  />
+                  <span className="font-semibold">Cambiar Legisladores</span>
+                </Button>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -234,21 +332,6 @@ export function ComparadorContent({
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
         >
-          <Button
-            onClick={onShuffleClick}
-            disabled={isAnimating}
-            size="lg"
-            variant="outline"
-            className="group relative overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Shuffle
-              className={`w-4 h-4 transition-transform duration-300 ${
-                isAnimating ? "animate-spin" : "group-hover:rotate-180"
-              }`}
-            />
-            <span className="font-semibold">Cambiar Legisladores</span>
-          </Button>
-
           <Link href="/comparador">
             <Button
               size="lg"
@@ -395,8 +478,9 @@ function LegisladorSide({
 
       {/* Animaciones */}
       <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-8 lg:p-12">
+        <div className="flex-1" />
         {/* Info del legislador - Animación progresiva por capas */}
-        <div className={`mb-6 ${isLeft ? "text-left" : "text-right"}`}>
+        <div className={`mb-2 ${isLeft ? "text-left" : "text-right"}`}>
           {/* CAPA 1: Nombres - Aparecen primero con ESCALA */}
           <motion.div
             style={{
@@ -405,10 +489,17 @@ function LegisladorSide({
               scale: nameScale,
             }}
           >
-            <h3 className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-1 leading-tight uppercase tracking-tight drop-shadow-2xl">
+            <h3
+              className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-1 leading-tight uppercase tracking-tight 
+             drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+            >
               {legislador.apellidos}
             </h3>
-            <p className="text-lg md:text-2xl lg:text-3xl font-bold text-white/95 mb-3 drop-shadow-lg">
+
+            <p
+              className="text-lg md:text-2xl lg:text-3xl font-bold text-white/95 mb-3 
+             drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
+            >
               {legislador.nombres}
             </p>
           </motion.div>
@@ -469,11 +560,12 @@ function LegisladorSide({
           >
             {legislador.periodo_activo.distrito.nombre}
           </motion.p>
+          <div className="h-40 md:h-0" />
         </div>
 
-        {/* CAPA 3: Stats - Aparecen al final con ESCALA */}
+        {/* CAPA 3: Stats - solo Desktop */}
         <motion.div
-          className="space-y-2 md:space-y-3 backdrop-blur-xl bg-black/20 rounded-2xl p-3 md:p-4 border border-white/10"
+          className="hidden md:block space-y-2 md:space-y-3 backdrop-blur-xl bg-black/20 rounded-2xl mb-10 md:mb-6 p-3 md:p-4 border border-white/10"
           style={{
             opacity: statsOpacity,
             y: statsY,
@@ -629,6 +721,105 @@ function StatBar({
         </div>
       )}
     </div>
+  );
+}
+
+interface ComparisonStatsProps {
+  statsA: ReturnType<typeof calcularStats>;
+  statsB: ReturnType<typeof calcularStats>;
+  colorA: string;
+  colorB: string;
+  statsOpacity: MotionValue<number>;
+  statsY: MotionValue<number>;
+  statsScale: MotionValue<number>;
+}
+// Estadísticas Mobile
+function ComparisonStats({
+  statsA,
+  statsB,
+  colorA,
+  colorB,
+  statsOpacity,
+  statsY,
+  statsScale,
+}: ComparisonStatsProps) {
+  const items = [
+    {
+      icon: <TrendingUp className="w-3.5 h-3.5 text-white/90" />,
+      label: "Asistencia",
+      valueA: `${statsA.asistencia.porcentaje ?? "—"}%`,
+      valueB: `${statsB.asistencia.porcentaje ?? "—"}%`,
+    },
+    {
+      icon: <FileCheck className="w-3.5 h-3.5 text-white/90" />,
+      label: "Proyectos",
+      valueA: statsA.proyectos.total,
+      valueB: statsB.proyectos.total,
+    },
+    {
+      icon: <AlertCircle className="w-3.5 h-3.5 text-white/90" />,
+      label: "Alertas",
+      valueA: statsA.alertas.total,
+      valueB: statsB.alertas.total,
+      alertColor: true,
+    },
+  ];
+
+  return (
+    <motion.div
+      className="absolute bottom-16 left-1/2 -translate-x-1/2 w-[90%] max-w-md backdrop-blur-xl bg-black/30 rounded-2xl p-4 border border-white/10 z-10 shadow-lg"
+      style={{
+        opacity: statsOpacity,
+        y: statsY,
+        scale: statsScale,
+      }}
+    >
+      <div className="grid grid-cols-3 gap-2 text-center">
+        {items.map((item, idx) => (
+          <React.Fragment key={idx}>
+            {/* Columna izquierda (A) */}
+            <div
+              className="flex flex-col items-center justify-center"
+              style={{ color: colorA }}
+            >
+              <span className="text-sm font-bold">
+                {item.alertColor && statsA.alertas.total > 0
+                  ? statsA.alertas.total
+                  : item.valueA}
+              </span>
+            </div>
+
+            {/* Columna central (etiqueta + icono) */}
+            <div className="flex flex-col items-center justify-center gap-0.5">
+              <div className="flex items-center gap-1">
+                {item.icon}
+                <span className="text-[11px] font-medium text-white">
+                  {item.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Columna derecha (B) */}
+            <div
+              className="flex flex-col items-center justify-center"
+              style={{ color: colorB }}
+            >
+              <span
+                className="text-sm font-bold"
+                style={{
+                  color:
+                    item.alertColor && statsB.alertas.total > 0
+                      ? "#ef4444"
+                      : colorB,
+                }}
+              >
+                {item.valueB}
+              </span>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

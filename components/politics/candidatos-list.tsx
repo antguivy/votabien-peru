@@ -12,8 +12,8 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import CandidatoDialog from "@/components/politics/candidato-dialog";
-import { Badge } from "../ui/badge";
-import { Skeleton } from "../ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   CandidaturaDetail,
   DistritoElectoral,

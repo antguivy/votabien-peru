@@ -2,7 +2,7 @@ import { publicApi } from "@/lib/public-api";
 import PartidosList from "@/components/politics/partidos-list";
 import Footer from "@/components/landing/footer";
 import ErrorLanding from "@/components/landing/error-landing";
-import { PartidoDetail } from "@/interfaces/politics";
+import { PartidoDetail, ProcesoElectoral } from "@/interfaces/politics";
 import Link from "next/link";
 import { Suspense } from "react";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
@@ -90,16 +90,15 @@ function ComparadorSkeleton() {
 export default async function SaasPage() {
   try {
     // Obtener datos en paralelo
-    const [partidos] = await Promise.all([
+    const [partidos, proceso_electoral] = await Promise.all([
       publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
+      publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
     ]);
-    // publicApi.getProcesosElectorales(true) as Promise<ProcesoElectoral[]>,
-
     // Calcular estadísticas
     return (
       <div className="min-h-screen">
         {/* Hero Dual Split */}
-        <HeroDualSplit />
+        <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
         <Suspense fallback={<ComparadorSkeleton />}>
           <ComparadorServer />
         </Suspense>

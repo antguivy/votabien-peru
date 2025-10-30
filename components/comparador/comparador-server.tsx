@@ -6,7 +6,7 @@ export default async function ComparadorServer() {
   const [personas] = await Promise.all([
     publicApi.getPersonas({
       es_legislador_activo: true,
-      limit: 10,
+      limit: 40,
     }) as Promise<PersonaList[]>,
   ]);
 

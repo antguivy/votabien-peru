@@ -5,70 +5,64 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, Columns } from "lucide-react";
+import { ProcesoElectoral } from "@/interfaces/politics";
+import { calcularDiasRestantes, formatFechaPeru } from "@/lib/utils/date";
 
-// --- (El hook 'useCountdown' no cambia, está perfecto) ---
-const useCountdown = (fechaElecciones: string) => {
-  const fecha = useMemo(() => new Date(fechaElecciones), [fechaElecciones]);
-  const [diasRestantes, setDiasRestantes] = useState<number>(() => {
-    const hoy = new Date();
-    return Math.max(
-      0,
-      Math.ceil((fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)),
-    );
-  });
+const useCountdown = (fechaElecciones?: string) => {
+  const [diasRestantes, setDiasRestantes] = useState(() =>
+    fechaElecciones ? calcularDiasRestantes(fechaElecciones) : 0,
+  );
 
   useEffect(() => {
-    const id = setInterval(
+    if (!fechaElecciones) return;
+
+    const intervalo = setInterval(
       () => {
-        const hoy = new Date();
-        setDiasRestantes(
-          Math.max(
-            0,
-            Math.ceil(
-              (fecha.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),
-            ),
-          ),
-        );
+        setDiasRestantes(calcularDiasRestantes(fechaElecciones));
       },
-      1000 * 60 * 60,
+      1000 * 60 * 60 * 24,
     );
-    return () => clearInterval(id);
-  }, [fecha]);
+
+    return () => clearInterval(intervalo);
+  }, [fechaElecciones]);
 
   const fechaFormateada = useMemo(
     () =>
-      fecha.toLocaleString("es-PE", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-    [fecha],
+      fechaElecciones
+        ? formatFechaPeru(fechaElecciones)
+        : "Fecha no disponible",
+    [fechaElecciones],
   );
 
   return { diasRestantes, fechaFormateada };
 };
 
 export default function HeroDualSplit({
-  fechaElecciones = "2026-04-11",
+  proceso_electoral,
 }: {
-  fechaElecciones?: string;
+  proceso_electoral: ProcesoElectoral;
 }) {
-  const { diasRestantes, fechaFormateada } = useCountdown(fechaElecciones);
+  const { diasRestantes, fechaFormateada } = useCountdown(
+    proceso_electoral.fecha_elecciones,
+  );
 
   return (
     // --- MEJORA: Sección principal es 'flex flex-col' y 'min-h-screen' ---
     // Esto ordena el Título (arriba) y los Paneles (abajo)
     <section className="relative w-full min-h-screen overflow-hidden rounded-md border border-border/40 flex flex-col">
+      {/* <div className="absolute inset-0 bg-black/25 mix-blend-multiply z-[1] pointer-events-none" /> */}
+
       {/* === FONDO GLOBAL === */}
       {/* Se mantiene absoluto y se le da z-0 para estar detrás de todo */}
       <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 mix-blend-multiply" />
         {/* Imagen izquierda */}
         <div className="absolute top-0 left-0 w-full h-1/2 md:w-1/2 md:h-full">
           <Image
             src="/images/hero-left.jpg"
             alt="Congreso actual"
             fill
-            className="object-cover object-center grayscale brightness-70"
+            className="object-cover object-center grayscale-[1] brightness-[0.55] contrast-[1.1]"
             priority
           />
         </div>
@@ -79,7 +73,7 @@ export default function HeroDualSplit({
             src="/images/hero-right.jpg"
             alt="Nuevo Congreso 2026"
             fill
-            className="object-cover object-center saturate-125"
+            className="object-cover object-center saturate-[1.15] brightness-[0.65] contrast-[1.05]"
             priority
           />
         </div>
@@ -110,9 +104,8 @@ export default function HeroDualSplit({
         <p className="mt-4 text-base md:text-lg text-white/80 max-w-2xl mx-auto font-medium drop-shadow">
           Del Congreso Unicameral al nuevo Sistema Bicameral.
         </p>
-        <p className="mt-2 text-sm text-white/70">
-          Elecciones el{" "}
-          <span className="font-semibold text-white">{fechaFormateada}</span> —{" "}
+        <p className="mt-2 text-sm text-white font-semibold">
+          Elecciones el <span>{fechaFormateada}</span> —{" "}
           <span className="text-warning font-bold">{diasRestantes}</span> días
           restantes.
         </p>
