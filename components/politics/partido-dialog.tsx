@@ -3,7 +3,6 @@ import {
   History,
   Calendar,
   CheckCircle2,
-  DollarSign,
   ExternalLink,
   Globe,
   Mail,
@@ -12,7 +11,6 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-  TrendingDown,
 } from "lucide-react";
 import {
   SlSocialFacebook,
@@ -28,7 +26,7 @@ import {
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { Badge } from "@/components/ui/badge";
-import { HistorialPartido, PartidoDetail } from "@/interfaces/politics";
+import { PartyHistory, PoliticalPartyDetail } from "@/interfaces/politics";
 import Image from "next/image";
 
 export default function PartidoDialog({
@@ -36,29 +34,19 @@ export default function PartidoDialog({
   isOpen,
   onClose,
 }: {
-  partido: PartidoDetail;
+  partido: PoliticalPartyDetail;
   isOpen: boolean;
   onClose: () => void;
 }) {
   const partidoColor = partido.color_hex || "oklch(0.45 0.15 260)";
-
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (!amount) return "No disponible";
-    return new Intl.NumberFormat("es-PE", {
-      style: "currency",
-      currency: "PEN",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatNumber = (num: number | null | undefined) => {
     if (!num) return "No disponible";
     return new Intl.NumberFormat("es-PE").format(num);
   };
 
-  const añosFundacion = partido.fecha_fundacion
-    ? new Date().getFullYear() - new Date(partido.fecha_fundacion).getFullYear()
+  const añosFundacion = partido.foundation_date
+    ? new Date().getFullYear() - new Date(partido.foundation_date).getFullYear()
     : null;
 
   return (
@@ -79,7 +67,7 @@ export default function PartidoDialog({
                   <div className="relative w-14 h-14 sm:w-16 sm:h-16 bg-white rounded-xl flex items-center justify-center shadow-md ring-1 ring-border overflow-hidden flex-shrink-0">
                     <Image
                       src={partido.logo_url}
-                      alt={partido.nombre}
+                      alt={partido.name}
                       fill
                       className="object-contain p-1"
                       sizes="64px"
@@ -94,17 +82,17 @@ export default function PartidoDialog({
                 {/* Título y metadata */}
                 <div className="flex-1 min-w-0">
                   <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 leading-tight">
-                    {partido.nombre}
+                    {partido.name}
                   </h2>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {partido.sigla && (
+                    {partido.acronym && (
                       <Badge className="bg-background/30 text-info-foreground border-0 font-bold text-sm">
-                        {partido.sigla}
+                        {partido.acronym}
                       </Badge>
                     )}
 
-                    {partido.activo ? (
+                    {partido.active ? (
                       <Badge className="bg-success/70 text-success-foreground border-success/30">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         Activo
@@ -113,9 +101,9 @@ export default function PartidoDialog({
                       <Badge variant="secondary">Inactivo</Badge>
                     )}
 
-                    {partido.ideologia && (
+                    {partido.ideology && (
                       <Badge className="bg-background/30 text-white border-0">
-                        {partido.ideologia}
+                        {partido.ideology}
                       </Badge>
                     )}
                   </div>
@@ -129,10 +117,10 @@ export default function PartidoDialog({
         <CredenzaBody className="overflow-y-auto flex-1">
           <div className="space-y-6 sm:px-4">
             {/* Descripción */}
-            {partido.descripcion && (
+            {partido.description && (
               <div className="bg-muted/50 rounded-xl p-4">
                 <p className="text-sm sm:text-base text-foreground/90 text-justify leading-relaxed">
-                  {partido.descripcion}
+                  {partido.description}
                 </p>
               </div>
             )}
@@ -149,35 +137,35 @@ export default function PartidoDialog({
                 </div>
               )}
 
-              {partido.total_afiliados && (
+              {partido.total_afiliates && (
                 <div className="bg-card border border-border rounded-lg p-3 text-center">
                   <Users className="w-5 h-5 text-primary mx-auto mb-1" />
                   <div className="text-xl sm:text-2xl font-bold text-foreground">
-                    {formatNumber(partido.total_afiliados)}
+                    {formatNumber(partido.total_afiliates)}
                   </div>
                   <div className="text-xs text-muted-foreground">afiliados</div>
                 </div>
               )}
 
-              {partido.total_escaños !== null &&
-                partido.total_escaños !== undefined && (
+              {partido.total_seats !== null &&
+                partido.total_seats !== undefined && (
                   <div className="bg-card border border-border rounded-lg p-3 text-center">
                     <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
                     <div className="text-xl sm:text-2xl font-bold text-foreground">
-                      {partido.total_escaños}
+                      {partido.total_seats}
                     </div>
                     <div className="text-xs text-muted-foreground">escaños</div>
                   </div>
                 )}
 
-              {partido.fundador && (
+              {partido.founder && (
                 <div className="bg-card border border-border rounded-lg p-3 text-center col-span-2 sm:col-span-1">
                   <Sparkles className="w-5 h-5 text-primary mx-auto mb-1" />
                   <div
                     className="text-xs font-semibold text-foreground truncate"
-                    title={partido.fundador}
+                    title={partido.founder}
                   >
-                    {partido.fundador}
+                    {partido.founder}
                   </div>
                   <div className="text-xs text-muted-foreground">fundador</div>
                 </div>
@@ -192,7 +180,7 @@ export default function PartidoDialog({
               </h3>
 
               <div className="grid gap-3">
-                {partido.sede_nacional && (
+                {partido.main_office && (
                   <div className="flex items-start gap-3 bg-muted/30 rounded-lg p-3">
                     <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -200,13 +188,13 @@ export default function PartidoDialog({
                         Sede Nacional
                       </div>
                       <div className="text-sm text-foreground">
-                        {partido.sede_nacional}
+                        {partido.main_office}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {partido.telefono && (
+                {partido.phone && (
                   <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3">
                     <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -214,10 +202,10 @@ export default function PartidoDialog({
                         Teléfono
                       </div>
                       <a
-                        href={`tel:${partido.telefono}`}
+                        href={`tel:${partido.phone}`}
                         className="text-sm text-primary hover:underline"
                       >
-                        {partido.telefono}
+                        {partido.phone}
                       </a>
                     </div>
                   </div>
@@ -240,7 +228,7 @@ export default function PartidoDialog({
                   </div>
                 )}
 
-                {partido.sitio_web && (
+                {partido.website && (
                   <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3">
                     <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -248,7 +236,7 @@ export default function PartidoDialog({
                         Sitio Web
                       </div>
                       <a
-                        href={`https://${partido.sitio_web}`}
+                        href={`https://${partido.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline inline-flex items-center gap-1"
@@ -324,63 +312,19 @@ export default function PartidoDialog({
               </div>
             )}
 
-            {/* Financiamiento */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              {partido.financiamiento_anual && (
-                <div className="group relative overflow-hidden rounded-xl border border-success/30 bg-gradient-to-br from-success/10 to-success/5 p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-success/80">
-                      Financiamiento Anual
-                    </span>
-                    <DollarSign className="w-5 h-5 text-success/80 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-2xl font-bold text-success">
-                    {formatCurrency(partido.financiamiento_anual)}
-                  </div>
-                </div>
-              )}
+            {/* Timeline histórico */}
+            {partido.party_timeline && partido.party_timeline.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary" />
+                  Historia del Partido
+                </h3>
 
-              {partido.gasto_campana_ultima && (
-                <div className="group relative overflow-hidden rounded-xl border border-warning/30 bg-gradient-to-br from-warning/10 to-warning/5 p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-warning/80">
-                      Gasto Última Campaña
-                    </span>
-                    <TrendingDown className="w-5 h-5 text-warning/80 group-hover:scale-110 transition-transform" />
-                  </div>
-                  <div className="text-2xl font-bold text-warning-foreground">
-                    {formatCurrency(partido.gasto_campana_ultima)}
-                  </div>
+                <div className="bg-gradient-to-br from-primary/5 to-primary/0 rounded-xl p-4 sm:p-6">
+                  <TimelineComponent items={partido.party_timeline} />
                 </div>
-              )}
-            </div>
-            {partido.fuente_financiamiento && (
-              <div className="bg-muted/30 rounded-lg p-4">
-                {" "}
-                <div className="text-xs text-muted-foreground mb-2 font-semibold">
-                  {" "}
-                  Fuentes de Financiamiento{" "}
-                </div>{" "}
-                <p className="text-sm text-foreground/90 leading-relaxed">
-                  {" "}
-                  {partido.fuente_financiamiento}{" "}
-                </p>{" "}
               </div>
             )}
-            {/* Timeline histórico */}
-            {partido.historia_timeline &&
-              partido.historia_timeline.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <History className="w-5 h-5 text-primary" />
-                    Historia del Partido
-                  </h3>
-
-                  <div className="bg-gradient-to-br from-primary/5 to-primary/0 rounded-xl p-4 sm:p-6">
-                    <TimelineComponent events={partido.historia_timeline} />
-                  </div>
-                </div>
-              )}
           </div>
         </CredenzaBody>
       </CredenzaContent>
@@ -389,18 +333,18 @@ export default function PartidoDialog({
 }
 
 // Componente de Timeline
-const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
-  const sortedEvents = [...events].sort((a, b) => b.año - a.año);
+const TimelineComponent = ({ items }: { items: PartyHistory[] }) => {
+  const sortedItems = [...items].sort((a, b) => b.year - a.year);
 
   return (
     <div className="relative space-y-6 sm:space-y-8">
-      {sortedEvents.map((event, idx) => (
+      {sortedItems.map((item, idx) => (
         <div key={idx} className="relative flex gap-4 sm:gap-6 group">
           {/* Columna de tiempo - Fixed width */}
           <div className="flex-shrink-0 w-16 sm:w-20 text-right pt-1">
             <div className="inline-flex items-center justify-center w-full">
               <span className="text-lg sm:text-xl font-bold text-primary tabular-nums">
-                {event.año}
+                {item.year}
               </span>
             </div>
           </div>
@@ -411,7 +355,7 @@ const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
             <div className="relative z-10 w-3 h-3 rounded-full bg-primary ring-4 ring-background group-hover:ring-primary/20 group-hover:scale-125 transition-all duration-300 mt-2" />
 
             {/* Línea conectora (ocultar en el último elemento) */}
-            {idx < sortedEvents.length - 1 && (
+            {idx < sortedItems.length - 1 && (
               <div className="w-px flex-1 bg-gradient-to-b from-primary/80 via-primary/40 to-primary/20 min-h-[3rem]" />
             )}
           </div>
@@ -420,7 +364,7 @@ const TimelineComponent = ({ events }: { events: HistorialPartido[] }) => {
           <div className="flex-1 pb-2 pt-0.5 min-w-0">
             <div className="bg-muted/40 hover:bg-muted/70 border border-border/50 hover:border-primary/30 rounded-xl p-3 sm:p-4 transition-all duration-300 group-hover:shadow-md">
               <p className="text-sm sm:text-base text-foreground leading-relaxed">
-                {event.evento}
+                {item.event}
               </p>
             </div>
           </div>

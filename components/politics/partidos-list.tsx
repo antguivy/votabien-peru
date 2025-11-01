@@ -3,17 +3,16 @@
 import { useState } from "react";
 import { Building2 } from "lucide-react";
 import PartidoDialog from "./partido-dialog";
-import { PartidoDetail } from "@/interfaces/politics";
+import { PoliticalPartyDetail } from "@/interfaces/politics";
 import Image from "next/image";
 
 interface PartidosListProps {
-  partidos: PartidoDetail[];
+  partidos: PoliticalPartyDetail[];
 }
 
 const PartidosList = ({ partidos }: PartidosListProps) => {
-  const [selectedPartido, setSelectedPartido] = useState<PartidoDetail | null>(
-    null
-  );
+  const [selectedPartido, setSelectedPartido] =
+    useState<PoliticalPartyDetail | null>(null);
   if (!partidos || partidos.length === 0) {
     return (
       <div className="text-center py-16 md:py-20">
@@ -75,7 +74,7 @@ const PartidosList = ({ partidos }: PartidosListProps) => {
                       {partido.logo_url ? (
                         <Image
                           src={partido.logo_url}
-                          alt={partido.nombre}
+                          alt={partido.name}
                           fill
                           className="object-contain p-1"
                           sizes="80px"
@@ -89,35 +88,35 @@ const PartidosList = ({ partidos }: PartidosListProps) => {
 
                 {/* Contenido */}
                 <div className="p-4 md:p-5">
-                  {partido.sigla && (
+                  {partido.acronym && (
                     <div className="mb-3">
                       <span
                         className="inline-flex items-center px-2.5 md:px-3 py-1 rounded-full text-xs font-bold text-white shadow-sm"
                         style={{ backgroundColor: partidoColor }}
                       >
-                        {partido.sigla}
+                        {partido.acronym}
                       </span>
                     </div>
                   )}
 
                   <h3 className="font-bold text-base md:text-lg text-foreground mb-3 group-hover:text-primary transition-colors line-clamp-2 min-h-[3rem] md:min-h-[3.5rem] leading-tight">
-                    {partido.nombre}
+                    {partido.name}
                   </h3>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2 md:px-2.5 py-1 rounded-full text-xs font-medium ${
-                        partido.activo
+                        partido.active
                           ? "bg-success/10 text-success border border-success/20"
                           : "bg-muted text-muted-foreground border border-border"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          partido.activo ? "bg-success" : "bg-muted-foreground"
+                          partido.active ? "bg-success" : "bg-muted-foreground"
                         }`}
                       ></span>
-                      {partido.activo ? "Activo" : "Inactivo"}
+                      {partido.active ? "Activo" : "Inactivo"}
                     </span>
 
                     <span className="inline-flex items-center text-primary group-hover:text-primary/80 font-medium text-xs md:text-sm transition-colors">

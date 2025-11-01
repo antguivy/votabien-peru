@@ -15,16 +15,16 @@ import CandidatoDialog from "@/components/politics/candidato-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  CandidaturaDetail,
-  DistritoElectoral,
-  PartidoPoliticoBase,
+  CandidateDetail,
+  ElectoralDistrict,
+  PoliticalPartyBase,
 } from "@/interfaces/politics";
 import { cn } from "@/lib/utils";
 
 interface CandidatosListProps {
-  candidaturas: CandidaturaDetail[];
-  partidos: PartidoPoliticoBase[];
-  distritos: DistritoElectoral[];
+  candidaturas: CandidateDetail[];
+  partidos: PoliticalPartyBase[];
+  distritos: ElectoralDistrict[];
   procesoId: string;
   currentFilters: {
     search: string;
@@ -62,9 +62,9 @@ const CandidatosList = ({
   infiniteScroll = true,
 }: CandidatosListProps) => {
   const [candidatos, setCandidatos] =
-    useState<CandidaturaDetail[]>(initialCandidaturas);
+    useState<CandidateDetail[]>(initialCandidaturas);
   const [selectedCandidato, setSelectedCandidato] =
-    useState<CandidaturaDetail | null>(null);
+    useState<CandidateDetail | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Carga Scroll
@@ -125,7 +125,7 @@ const CandidatosList = ({
         throw new Error("Error al cargar candidatos");
       }
 
-      const newCandidtos: CandidaturaDetail[] = await response.json();
+      const newCandidtos: CandidateDetail[] = await response.json();
 
       if (newCandidtos.length === 0) {
         setHasMore(false);
@@ -196,8 +196,8 @@ const CandidatosList = ({
       placeholder: "Partido",
       options: [
         ...partidos.map((p) => ({
-          value: p.nombre,
-          label: p.nombre,
+          value: p.name,
+          label: p.name,
         })),
       ],
     },
@@ -208,8 +208,8 @@ const CandidatosList = ({
       placeholder: "Distrito",
       options: [
         ...distritos.map((d) => ({
-          value: d.nombre,
-          label: d.nombre,
+          value: d.name,
+          label: d.name,
         })),
       ],
     },
@@ -232,7 +232,7 @@ const CandidatosList = ({
     tipo: "",
   };
 
-  const handleOpenDialog = (candidato: CandidaturaDetail) => {
+  const handleOpenDialog = (candidato: CandidateDetail) => {
     setSelectedCandidato(candidato);
     setIsDialogOpen(true);
   };
@@ -284,10 +284,10 @@ const CandidatosList = ({
             >
               {/* Foto */}
               <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/80 to-primary overflow-hidden">
-                {candidato.persona.foto_url ? (
+                {candidato.person.image_url ? (
                   <Image
-                    src={candidato.persona.foto_url}
-                    alt={`${candidato.persona.nombre_completo}`}
+                    src={candidato.person.image_url}
+                    alt={`${candidato.person.fullname}`}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -301,31 +301,31 @@ const CandidatosList = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
                 {/* Número de lista */}
-                {candidato.numero_lista && (
+                {candidato.list_number && (
                   <div className="absolute top-2 left-2">
                     <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center border border-border shadow-md">
                       <span className="text-xs md:text-sm font-bold text-foreground">
-                        {candidato.numero_lista}
+                        {candidato.list_number}
                       </span>
                     </div>
                   </div>
                 )}
 
                 {/* Tipo candidatura */}
-                {candidato.tipo && (
+                {candidato.type && (
                   <div className="absolute top-2 right-2">
                     <Badge
                       className={cn(
                         "text-[10px] md:text-xs font-semibold uppercase border shadow-md backdrop-blur-sm",
-                        candidato.tipo === "Presidente" &&
+                        candidato.type === "Presidente" &&
                           "bg-primary text-primary-foreground",
-                        candidato.tipo === "Senador" &&
+                        candidato.type === "Senador" &&
                           "bg-info text-info-foreground",
-                        candidato.tipo === "Diputado" &&
+                        candidato.type === "Diputado" &&
                           "bg-success text-success-foreground",
                       )}
                     >
-                      {candidato.tipo}
+                      {candidato.type}
                     </Badge>
                   </div>
                 )}
@@ -334,28 +334,32 @@ const CandidatosList = ({
               {/* Información */}
               <CardHeader>
                 <CardTitle className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-tight">
-                  {candidato.persona.nombre_completo}
+                  {candidato.person.fullname}
                 </CardTitle>
               </CardHeader>
 
               <CardContent className="space-y-1.5 flex-grow">
-                {candidato.partido && (
+                {candidato.political_party && (
                   <Badge
                     className={`text-[10px] md:text-xs font-medium gap-1 border backdrop-blur-sm`}
-                    style={{ backgroundColor: candidato.partido.color_hex }}
+                    style={{
+                      backgroundColor: candidato.political_party.color_hex,
+                    }}
                   >
                     <Building2 className="size-3 flex-shrink-0" />
-                    <span className="truncate">{candidato.partido.nombre}</span>
+                    <span className="truncate">
+                      {candidato.political_party.name}
+                    </span>
                   </Badge>
                 )}
 
-                {candidato.distrito && (
+                {candidato.electoral_district && (
                   <div
                     className={`flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground line-clamp-1`}
                   >
                     <MapPin className="size-3 flex-shrink-0" />
                     <span className="truncate">
-                      {candidato.distrito.nombre}
+                      {candidato.electoral_district.name}
                     </span>
                   </div>
                 )}

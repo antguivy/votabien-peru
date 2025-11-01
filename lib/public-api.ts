@@ -1,24 +1,19 @@
-import { EstadoCandidatura, TipoCamara, TipoCandidatura } from "@/interfaces/politics";
+import {
+  CandidacyStatus,
+  ChamberType,
+  CandidacyType,
+  FiltersPerson,
+} from "@/interfaces/politics";
 import { API_BASE_URL } from "./config";
 
 // ============= INTERFACES DE PARAMETROS =============
 
-export interface GetPersonasParams {
-  es_legislador_activo?: boolean;
-  camara?: TipoCamara | string;
-  partidos?: string | string[]; // 👈 Lista de nombres de partidos
-  distritos?: string | string[]; // 👈 Lista de nombres de distritos
-  search?: string;
-  skip?: number;
-  limit?: number;
-}
-
 export interface GetCandidaturasParams {
   proceso_id?: string;
-  tipo?: TipoCandidatura | string;
+  tipo?: CandidacyType | string;
   partidos?: string[] | string; // 👈 Lista de nombres de partidos
   distritos?: string[] | string; // 👈 Lista de nombres de distritos
-  estado?: EstadoCandidatura;
+  estado?: CandidacyStatus;
   search?: string;
   skip?: number;
   limit?: number;
@@ -42,13 +37,13 @@ class PublicApiClient {
     if (!params) return "";
 
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value === undefined || value === null) return;
-      
+
       // Si es un array, agregar cada elemento como parámetro separado
       if (Array.isArray(value)) {
-        value.forEach(item => {
+        value.forEach((item) => {
           if (item !== undefined && item !== null) {
             searchParams.append(key, String(item));
           }
@@ -64,7 +59,7 @@ class PublicApiClient {
 
   private async request<T = unknown>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
@@ -84,7 +79,8 @@ class PublicApiClient {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.detail || `API Error: ${response.status} - ${response.statusText}`
+          errorData.detail ||
+            `API Error: ${response.status} - ${response.statusText}`,
         );
       }
 
@@ -111,7 +107,7 @@ class PublicApiClient {
   /**
    * Obtener lista de personas políticas (legisladores actuales)
    */
-  async getPersonas(params?: GetPersonasParams) {
+  async getPersonas(params?: FiltersPerson) {
     const query = this.buildQueryParams(params as Record<string, unknown>);
     return this.get(`/api/v1/politics/personas${query}`);
   }
@@ -128,10 +124,26 @@ class PublicApiClient {
    */
   async getPersonaProyectos(id: string, skip = 0, limit = 50) {
     return this.get(
-      `/api/v1/politics/personas/${id}/proyectos?skip=${skip}&limit=${limit}`
+      `/api/v1/politics/personas/${id}/proyectos?skip=${skip}&limit=${limit}`,
     );
   }
 
+  // ============= ENDPOINTS DE LEGISLADORES =============
+
+  /**
+   * Obtener lista de grupos parlamentarios de legisladores activos
+   */
+  async getParliamentaryGroups(active: boolean = true) {
+    return this.get(`/api/v1/politics/legislators/groups?active=${active}`);
+  }
+  // ============= ENDPOINTS DE ESCAÑOS =============
+
+  /**
+   * Obtener lista de candidaturas con filtros
+   */
+  async getSeatParliamentary(chamber: ChamberType) {
+    return this.get(`/api/v1/politics/seats?chamber=${chamber}`);
+  }
   // ============= ENDPOINTS DE CANDIDATURAS =============
 
   /**
@@ -162,7 +174,7 @@ class PublicApiClient {
   /**
    * Obtener detalle de un proceso electoral
    */
-  async getProcesoElectoralById(id: string) {
+  async getElectoralProcessById(id: string) {
     return this.get(`/api/v1/politics/procesos-electorales/${id}`);
   }
 
@@ -200,11 +212,13 @@ export const publicApi = new PublicApiClient();
  * Hook para obtener legisladores actuales del Congreso
  * Usar en Client Components con SWR o React Query
  */
-export const useLegisladoresActuales = (params?: Omit<GetPersonasParams, 'es_legislador_activo'>) => {
+export const useLegisladoresActuales = (
+  params?: Omit<FiltersPerson, "is_legislator_active">,
+) => {
   return publicApi.getPersonas({
     ...params,
-    es_legislador_activo: true,
-    camara: TipoCamara.CONGRESO,
+    is_legislator_active: true,
+    chamber: ChamberType.CONGRESO,
   });
 };
 
@@ -213,7 +227,7 @@ export const useLegisladoresActuales = (params?: Omit<GetPersonasParams, 'es_leg
  */
 export const useCandidatos2026 = (
   procesoElectoralId: string,
-  params?: Omit<GetCandidaturasParams, 'proceso_id'>
+  params?: Omit<GetCandidaturasParams, "proceso_id">,
 ) => {
   return publicApi.getCandidaturas({
     ...params,

@@ -1,12 +1,12 @@
 import ErrorLanding from "@/components/landing/error-landing";
 import PartidosList from "@/components/politics/partidos-list";
-import { PartidoDetail } from "@/interfaces/politics";
+import { PoliticalPartyDetail } from "@/interfaces/politics";
 import { publicApi } from "@/lib/public-api";
 
 const PartidoPage = async () => {
   try {
     const [partidos] = await Promise.all([
-      publicApi.getPartidos(true) as Promise<PartidoDetail[]>,
+      publicApi.getPartidos(true) as Promise<PoliticalPartyDetail[]>,
     ]);
 
     return (

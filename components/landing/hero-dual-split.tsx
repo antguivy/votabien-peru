@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, Columns } from "lucide-react";
-import { ProcesoElectoral } from "@/interfaces/politics";
+import { ElectoralProcess } from "@/interfaces/politics";
 import { calcularDiasRestantes, formatFechaPeru } from "@/lib/utils/date";
+import YouTubeVideoDialog from "@/components/youtube-video-dialog";
 
 const useCountdown = (fechaElecciones?: string) => {
   const [diasRestantes, setDiasRestantes] = useState(() =>
@@ -40,20 +41,14 @@ const useCountdown = (fechaElecciones?: string) => {
 export default function HeroDualSplit({
   proceso_electoral,
 }: {
-  proceso_electoral: ProcesoElectoral;
+  proceso_electoral: ElectoralProcess;
 }) {
   const { diasRestantes, fechaFormateada } = useCountdown(
-    proceso_electoral.fecha_elecciones,
+    proceso_electoral.election_date,
   );
 
   return (
-    // --- MEJORA: Sección principal es 'flex flex-col' y 'min-h-screen' ---
-    // Esto ordena el Título (arriba) y los Paneles (abajo)
     <section className="relative w-full min-h-screen overflow-hidden rounded-md border border-border/40 flex flex-col">
-      {/* <div className="absolute inset-0 bg-black/25 mix-blend-multiply z-[1] pointer-events-none" /> */}
-
-      {/* === FONDO GLOBAL === */}
-      {/* Se mantiene absoluto y se le da z-0 para estar detrás de todo */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 mix-blend-multiply" />
         {/* Imagen izquierda */}
@@ -85,13 +80,6 @@ export default function HeroDualSplit({
         <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] -translate-x-1/2 -translate-y-1/2 bg-white/5 blur-3xl rounded-full pointer-events-none" />
       </div>
 
-      {/* === TÍTULO CENTRAL (Parte del flow) === */}
-      {/* MEJORA: 
-        - Es 'relative z-10' (en lugar de 'absolute z-20')
-        - 'flex-1' hace que ocupe el espacio disponible
-        - 'justify-center' centra el contenido verticalmente
-        - Esto "empuja" los paneles hacia abajo de forma natural
-      */}
       <motion.div
         className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 pt-24 pb-16 md:pt-32 md:pb-24"
         initial={{ opacity: 0, y: 20 }}
@@ -111,11 +99,6 @@ export default function HeroDualSplit({
         </p>
       </motion.div>
 
-      {/* === PANELES DE CONTENIDO (Parte del flow) === */}
-      {/* MEJORA: 
-        - Es 'relative z-10' (en lugar de 'z-30')
-        - Ya no necesita 'absolute'. Sigue al Título.
-      */}
       <div className="relative z-10 flex flex-col md:flex-row">
         {/* PANEL IZQUIERDO */}
         <motion.div
@@ -127,10 +110,6 @@ export default function HeroDualSplit({
           {/* Overlay oscuro */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
 
-          {/* MEJORA: 
-            - Reducimos el 'min-h' porque el título ya ocupa espacio.
-            - Esto evita que la página sea excesivamente larga.
-          */}
           <div className="relative z-10 flex flex-col justify-end w-full h-full text-white p-8 md:p-12 min-h-[60vh] md:min-h-[50vh]">
             <div className="md:max-w-md ml-auto text-center md:text-right flex flex-col items-center md:items-end">
               <div className="w-16 h-16 mb-6 rounded-2xl flex items-center justify-center bg-white/10 border border-white/20 backdrop-blur-sm">
@@ -199,24 +178,16 @@ export default function HeroDualSplit({
                   <span className="text-2xl font-bold text-white">190</span>
                 </div>
               </div>
-
-              <Link
-                href="#sistema-bicameral"
-                className="relative inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-gradient-to-r from-warning to-warning/90 text-warning-foreground font-semibold hover:brightness-105 transition-shadow shadow-lg"
-              >
-                Entiende el Cambio
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              <YouTubeVideoDialog
+                videoId="66mCo_zW_sk"
+                buttonText="Entiende el Cambio"
+                buttonIcon={<ArrowRight className="w-4 h-4" />}
+                autoplay={true}
+              />
             </div>
           </div>
         </motion.div>
       </div>
-
-      {/* MEJORA: 
-        - Eliminado el gradiente inferior 'absolute'.
-        - Los gradientes 'from-black/90' dentro de cada panel ya hacen ese trabajo.
-        - Esto simplifica el DOM.
-      */}
     </section>
   );
 }

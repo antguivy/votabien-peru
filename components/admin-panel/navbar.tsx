@@ -62,9 +62,10 @@ const Navbar = ({ user }: NavbarProps) => {
   // }, [user]);
 
   const publicLinks = [
-    { href: "/candidatos", label: "Candidatos 2026" },
     { href: "/legisladores", label: "Congresistas" },
     { href: "/partidos", label: "Partidos" },
+    { href: "/candidatos", label: "Candidatos 2026" },
+    { href: "/comparator", label: "Comparador" },
   ];
 
   const adminLinks = [

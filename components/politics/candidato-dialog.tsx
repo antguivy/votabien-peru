@@ -26,7 +26,7 @@ import {
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Antecedente, CandidaturaDetail } from "@/interfaces/politics";
+import { PreviousCase, CandidateDetail } from "@/interfaces/politics";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatFechaJsonable } from "@/lib/utils/date";
@@ -34,7 +34,7 @@ import { NoDataMessage } from "@/components/no-data-message";
 import Link from "next/link";
 
 interface CandidatoDialogProps {
-  candidato: CandidaturaDetail;
+  candidato: CandidateDetail;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -44,36 +44,33 @@ const CandidatoDialog = ({
   isOpen,
   onClose,
 }: CandidatoDialogProps) => {
-  const { persona } = candidato;
+  const { person } = candidato;
 
-  const edad = persona.fecha_nacimiento
-    ? new Date().getFullYear() -
-      new Date(persona.fecha_nacimiento).getFullYear()
+  const edad = person.birth_date
+    ? new Date().getFullYear() - new Date(person.birth_date).getFullYear()
     : null;
 
   // Verificar si tiene experiencia legislativa
   const tieneExperiencia =
-    candidato.periodos_legislativos &&
-    candidato.periodos_legislativos.length > 0;
+    candidato.legislative_periods && candidato.legislative_periods.length > 0;
 
   // Contar total de proyectos de ley
   const totalProyectos =
-    candidato.periodos_legislativos?.reduce(
-      (acc, periodo) => acc + (periodo.proyectos_ley?.length || 0),
+    candidato.legislative_periods?.reduce(
+      (acc, periodo) => acc + (periodo.bills?.length || 0),
       0,
     ) || 0;
 
   // Verificar si tiene educación
   const tieneEducacion =
-    (persona.educacion_tecnica && persona.educacion_tecnica !== "No") ||
-    (persona.educacion_universitaria &&
-      persona.educacion_universitaria !== "No") ||
-    (persona.grado_academico && persona.grado_academico !== "No") ||
-    (persona.titulo_profesional && persona.titulo_profesional !== "No") ||
-    (persona.post_grado && persona.post_grado !== "No");
+    (person.technical_education && person.technical_education !== "No") ||
+    (person.university_education && person.university_education !== "No") ||
+    (person.academic_degree && person.academic_degree !== "No") ||
+    (person.professional_title && person.professional_title !== "No") ||
+    (person.postgraduate_education && person.postgraduate_education !== "No");
 
   // Helper para el color de badge de antecedentes
-  const getAntecedentesBadgeColor = (estado: string) => {
+  const getPreviousCasesBadgeColor = (estado: string) => {
     const estadoLower = estado?.toLowerCase() || "";
     if (estadoLower.includes("activo") || estadoLower.includes("vigente"))
       return "destructive";
@@ -91,17 +88,17 @@ const CandidatoDialog = ({
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <h2 className="text-2xl sm:text-3xl font-bold leading-tight text-primary mb-2">
-                  {persona.nombre_completo}
+                  {person.fullname}
                 </h2>
                 <div className="flex items-center flex-wrap gap-2 text-sm">
-                  {candidato.partido && (
+                  {candidato.political_party && (
                     <Badge variant="outline" className="font-semibold">
-                      {candidato.partido.nombre}
+                      {candidato.political_party.name}
                     </Badge>
                   )}
-                  {candidato.numero_lista && (
+                  {candidato.list_number && (
                     <Badge variant="default" className="font-extrabold">
-                      #{candidato.numero_lista}
+                      #{candidato.list_number}
                     </Badge>
                   )}
                   {tieneExperiencia && (
@@ -110,10 +107,10 @@ const CandidatoDialog = ({
                       Experiencia en Congreso
                     </Badge>
                   )}
-                  {candidato.persona.antecedentes && (
+                  {candidato.person.previous_cases && (
                     <Badge variant="destructive" className="gap-1">
                       <AlertTriangle className="w-3 h-3" />
-                      Antecedentes
+                      PreviousCases
                     </Badge>
                   )}
                 </div>
@@ -126,10 +123,10 @@ const CandidatoDialog = ({
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="font-semibold">
-                    {candidato.periodos_legislativos.length}
+                    {candidato.legislative_periods.length}
                   </span>
                   <span className="text-muted-foreground">
-                    {candidato.periodos_legislativos.length === 1
+                    {candidato.legislative_periods.length === 1
                       ? "periodo"
                       : "periodos"}
                   </span>
@@ -168,12 +165,12 @@ const CandidatoDialog = ({
                   Datos Personales
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {persona.dni && (
+                  {person.dni && (
                     <div className="bg-muted/50 rounded-lg p-3 border">
                       <p className="text-xs text-muted-foreground mb-0.5">
                         DNI
                       </p>
-                      <p className="text-sm font-semibold">{persona.dni}</p>
+                      <p className="text-sm font-semibold">{person.dni}</p>
                     </div>
                   )}
                   {edad && (
@@ -184,13 +181,13 @@ const CandidatoDialog = ({
                       <p className="text-sm font-semibold">{edad} años</p>
                     </div>
                   )}
-                  {candidato.distrito?.nombre && (
+                  {candidato.electoral_district?.name && (
                     <div className="bg-muted/50 rounded-lg p-3 border">
                       <p className="text-xs text-muted-foreground mb-0.5">
                         Distrito Electoral
                       </p>
                       <p className="text-sm font-semibold">
-                        {candidato.distrito.nombre}
+                        {candidato.electoral_district.name}
                       </p>
                     </div>
                   )}
@@ -199,24 +196,23 @@ const CandidatoDialog = ({
                       Estado
                     </p>
                     <p className="text-sm font-semibold capitalize">
-                      {candidato.estado}
+                      {candidato.status}
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Biografía */}
-              {persona.biografia_detallada &&
-              persona.biografia_detallada.length > 0 ? (
+              {person.detailed_biography &&
+              person.detailed_biography.length > 0 ? (
                 <div className="relative space-y-6">
                   {/* Timeline line */}
                   <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary/50 via-primary/30 to-transparent" />
 
-                  {persona.biografia_detallada
+                  {person.detailed_biography
                     .sort(
                       (a, b) =>
-                        new Date(a.fecha).getTime() -
-                        new Date(b.fecha).getTime(),
+                        new Date(a.date).getTime() - new Date(b.date).getTime(),
                     )
                     .map((item, index) => (
                       <div key={index} className="relative pl-8 group">
@@ -227,27 +223,27 @@ const CandidatoDialog = ({
                           {/* Header */}
                           <div className="flex flex-wrap items-start gap-2">
                             <h4 className="font-semibold text-base leading-tight flex-1 min-w-0">
-                              {item.titulo}
+                              {item.title}
                             </h4>
                             <div className="flex flex-wrap items-center gap-1.5">
                               <Badge
                                 variant="outline"
                                 className="text-xs capitalize font-normal"
                               >
-                                {item.tipo}
+                                {item.type}
                               </Badge>
-                              {item.relevancia && (
+                              {item.relevance && (
                                 <Badge
                                   variant={
-                                    item.relevancia === "Alta"
+                                    item.relevance === "Alta"
                                       ? "destructive"
-                                      : item.relevancia === "Media"
+                                      : item.relevance === "Media"
                                         ? "default"
                                         : "secondary"
                                   }
                                   className="text-xs font-medium"
                                 >
-                                  {item.relevancia}
+                                  {item.relevance}
                                 </Badge>
                               )}
                             </div>
@@ -255,31 +251,31 @@ const CandidatoDialog = ({
 
                           {/* Description */}
                           <p className="text-sm text-muted-foreground leading-relaxed">
-                            {item.descripcion}
+                            {item.description}
                           </p>
 
                           {/* Footer metadata */}
                           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5" />
-                              <time dateTime={item.fecha}>
-                                {formatFechaJsonable(item.fecha)}
+                              <time dateTime={item.date}>
+                                {formatFechaJsonable(item.date)}
                               </time>
                             </div>
 
-                            {item.fuente && item.fuente_url && (
+                            {item.source && item.source_url && (
                               <>
                                 <span className="text-slate-300 dark:text-slate-600">
                                   •
                                 </span>
                                 <Link
-                                  href={item.fuente_url}
+                                  href={item.source_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 hover:underline text-primary transition-colors underline-offset-2"
-                                  aria-label={`Fuente: ${item.fuente}`}
+                                  aria-label={`Fuente: ${item.source}`}
                                 >
-                                  <span>{item.fuente}</span>
+                                  <span>{item.source}</span>
                                 </Link>
                               </>
                             )}
@@ -301,8 +297,8 @@ const CandidatoDialog = ({
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Educación Técnica */}
-                    {persona.educacion_tecnica &&
-                      persona.educacion_tecnica !== "No" && (
+                    {person.technical_education &&
+                      person.technical_education !== "No" && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -311,14 +307,14 @@ const CandidatoDialog = ({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                            {persona.educacion_tecnica}
+                            {person.technical_education}
                           </p>
                         </div>
                       )}
 
                     {/* Educación Universitaria */}
-                    {persona.educacion_universitaria &&
-                      persona.educacion_universitaria !== "No" && (
+                    {person.university_education &&
+                      person.university_education !== "No" && (
                         <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -327,16 +323,16 @@ const CandidatoDialog = ({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                            {persona.educacion_universitaria === "Si"
+                            {person.university_education === "Si"
                               ? "Concluida"
-                              : persona.educacion_universitaria}
+                              : person.university_education}
                           </p>
                         </div>
                       )}
 
                     {/* Grado Académico */}
-                    {persona.grado_academico &&
-                      persona.grado_academico !== "No" && (
+                    {person.academic_degree &&
+                      person.academic_degree !== "No" && (
                         <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <Award className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -345,14 +341,14 @@ const CandidatoDialog = ({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                            {persona.grado_academico}
+                            {person.academic_degree}
                           </p>
                         </div>
                       )}
 
                     {/* Título Profesional */}
-                    {persona.titulo_profesional &&
-                      persona.titulo_profesional !== "No" && (
+                    {person.professional_title &&
+                      person.professional_title !== "No" && (
                         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -361,25 +357,26 @@ const CandidatoDialog = ({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                            {persona.titulo_profesional}
+                            {person.professional_title}
                           </p>
                         </div>
                       )}
 
                     {/* Post Grado */}
-                    {persona.post_grado && persona.post_grado !== "No" && (
-                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg md:col-span-2">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Microscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                          <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide">
-                            Estudios de Postgrado
-                          </span>
+                    {person.postgraduate_education &&
+                      person.postgraduate_education !== "No" && (
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg md:col-span-2">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <Microscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                            <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide">
+                              Estudios de Postgrado
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                            {person.postgraduate_education}
+                          </p>
                         </div>
-                        <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
-                          {persona.post_grado}
-                        </p>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
               ) : (
@@ -397,62 +394,61 @@ const CandidatoDialog = ({
               )}
 
               {/* Experiencia Laboral */}
-              {persona.experiencia_laboral &&
-                persona.experiencia_laboral.length > 0 && (
-                  <div>
-                    <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-primary" />
-                      Experiencia Laboral
-                    </h3>
-                    <div className="space-y-3">
-                      {persona.experiencia_laboral.map((exp, idx: number) => (
-                        <div
-                          key={idx}
-                          className="bg-muted/30 rounded-lg p-4 border"
-                        >
-                          {exp.cargo && (
-                            <p className="text-sm font-semibold mb-1">
-                              {exp.cargo}
-                            </p>
-                          )}
-                          {exp.empresa && (
-                            <p className="text-sm text-muted-foreground mb-1">
-                              {exp.empresa}
-                            </p>
-                          )}
-                          {exp.periodo && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                              <Calendar className="w-3 h-3" />
-                              {exp.periodo}
-                            </p>
-                          )}
-                          {exp.descripcion && (
-                            <p className="text-sm text-foreground/80 leading-relaxed">
-                              {exp.descripcion}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+              {person.work_experience && person.work_experience.length > 0 && (
+                <div>
+                  <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-primary" />
+                    Experiencia Laboral
+                  </h3>
+                  <div className="space-y-3">
+                    {person.work_experience.map((exp, idx: number) => (
+                      <div
+                        key={idx}
+                        className="bg-muted/30 rounded-lg p-4 border"
+                      >
+                        {exp.positon && (
+                          <p className="text-sm font-semibold mb-1">
+                            {exp.positon}
+                          </p>
+                        )}
+                        {exp.organization && (
+                          <p className="text-sm text-muted-foreground mb-1">
+                            {exp.organization}
+                          </p>
+                        )}
+                        {exp.period && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
+                            <Calendar className="w-3 h-3" />
+                            {exp.period}
+                          </p>
+                        )}
+                        {exp.description && (
+                          <p className="text-sm text-foreground/80 leading-relaxed">
+                            {exp.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-              {/* Antecedentes */}
-              {candidato.persona.antecedentes &&
-              candidato.persona.antecedentes.length > 0 ? (
+              {/* PreviousCases */}
+              {candidato.person.previous_cases &&
+              candidato.person.previous_cases.length > 0 ? (
                 <Card className="shadow-sm border-orange-200">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-orange-800">
                       <AlertTriangle className="size-5" />
-                      Antecedentes Registrados
+                      PreviousCases Registrados
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-5">
                     {Object.entries(
-                      persona.antecedentes.reduce<
-                        Record<string, Antecedente[]>
+                      person.previous_cases.reduce<
+                        Record<string, PreviousCase[]>
                       >((acc, ant) => {
-                        const tipo = ant.tipo || "Otros";
+                        const tipo = ant.type || "Otros";
                         if (!acc[tipo]) acc[tipo] = [];
                         acc[tipo].push(ant);
                         return acc;
@@ -479,25 +475,25 @@ const CandidatoDialog = ({
                           >
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
-                                {antecedente.titulo || antecedente.tipo}
+                                {antecedente.title || antecedente.type}
                               </span>
-                              {antecedente.estado && (
+                              {antecedente.status && (
                                 <Badge
-                                  variant={getAntecedentesBadgeColor(
-                                    antecedente.estado,
+                                  variant={getPreviousCasesBadgeColor(
+                                    antecedente.status,
                                   )}
                                   className="text-xs"
                                 >
-                                  {antecedente.estado}
+                                  {antecedente.status}
                                 </Badge>
                               )}
                             </div>
                             <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
-                              {antecedente.descripcion}
+                              {antecedente.description}
                             </p>
-                            {antecedente.fecha && (
+                            {antecedente.date && (
                               <span className="text-xs text-orange-600 dark:text-orange-400">
-                                Fecha: {formatFechaJsonable(antecedente.fecha)}
+                                Fecha: {formatFechaJsonable(antecedente.date)}
                               </span>
                             )}
                           </div>
@@ -513,7 +509,7 @@ const CandidatoDialog = ({
 
             {/* TAB: PROPUESTAS */}
             <TabsContent value="propuestas" className="space-y-4">
-              {candidato.propuestas ? (
+              {candidato.proposals ? (
                 <div>
                   <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary" />
@@ -521,13 +517,13 @@ const CandidatoDialog = ({
                   </h3>
                   <div className="bg-muted/30 rounded-lg p-4 border">
                     <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-                      {candidato.propuestas}
+                      {candidato.proposals}
                     </p>
                   </div>
 
-                  {candidato.plan_gobierno_url && (
+                  {candidato.government_plan_url && (
                     <a
-                      href={candidato.plan_gobierno_url}
+                      href={candidato.government_plan_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-primary hover:underline"
@@ -562,12 +558,10 @@ const CandidatoDialog = ({
                   </h3>
 
                   <div className="space-y-4">
-                    {candidato.periodos_legislativos.map((periodo) => {
-                      const inicio = new Date(
-                        periodo.periodo_inicio,
-                      ).getFullYear();
-                      const fin = periodo.periodo_fin
-                        ? new Date(periodo.periodo_fin).getFullYear()
+                    {candidato.legislative_periods.map((periodo) => {
+                      const inicio = new Date(periodo.start_date).getFullYear();
+                      const fin = periodo.end_date
+                        ? new Date(periodo.end_date).getFullYear()
                         : "Actualidad";
 
                       return (
@@ -582,17 +576,13 @@ const CandidatoDialog = ({
                                 <div className="flex items-center gap-2 mb-1">
                                   <Badge
                                     variant={
-                                      periodo.esta_activo
-                                        ? "default"
-                                        : "secondary"
+                                      periodo.active ? "default" : "secondary"
                                     }
                                   >
-                                    {periodo.esta_activo
-                                      ? "Activo"
-                                      : "Finalizado"}
+                                    {periodo.active ? "Activo" : "Finalizado"}
                                   </Badge>
                                   <Badge variant="outline">
-                                    {periodo.camara}
+                                    {periodo.chamber}
                                   </Badge>
                                 </div>
                                 <p className="text-sm font-semibold">
@@ -605,62 +595,60 @@ const CandidatoDialog = ({
                               <div className="flex items-center gap-1.5 text-xs text-foreground/70">
                                 <Briefcase className="size-3 flex-shrink-0" />
                                 <span className="truncate">
-                                  {periodo.partido_actual?.nombre ||
+                                  {periodo.current_party?.name ||
                                     "No agrupados"}
                                 </span>
                               </div>
-                              {periodo.distrito?.nombre && (
+                              {periodo.electoral_district?.name && (
                                 <span className="flex items-center gap-1">
                                   <MapPin className="w-3 h-3" />
-                                  {periodo.distrito.nombre}
+                                  {periodo.electoral_district.name}
                                 </span>
                               )}
                             </div>
                           </div>
 
                           {/* Proyectos de ley */}
-                          {periodo.proyectos_ley &&
-                          periodo.proyectos_ley.length > 0 ? (
+                          {periodo.bills && periodo.bills.length > 0 ? (
                             <div className="p-4">
                               <p className="text-sm font-medium mb-3 flex items-center gap-2">
                                 <ScrollText className="w-4 h-4" />
-                                Proyectos de Ley ({periodo.proyectos_ley.length}
-                                )
+                                Proyectos de Ley ({periodo.bills.length})
                               </p>
                               <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                                {periodo.proyectos_ley.map((proyecto) => (
+                                {periodo.bills.map((proyecto) => (
                                   <div
                                     key={proyecto.id}
                                     className="bg-background border rounded-lg p-3 hover:border-primary/50 transition-colors"
                                   >
                                     <div className="flex items-start justify-between gap-2 mb-1">
                                       <p className="text-sm font-medium leading-tight flex-1">
-                                        {proyecto.numero}: {proyecto.titulo}
+                                        {proyecto.number}: {proyecto.title}
                                       </p>
                                       <Badge
                                         variant="outline"
                                         className="text-xs shrink-0"
                                       >
-                                        {proyecto.estado}
+                                        {proyecto.status}
                                       </Badge>
                                     </div>
-                                    {proyecto.resumen && (
+                                    {proyecto.summary && (
                                       <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                        {proyecto.resumen}
+                                        {proyecto.summary}
                                       </p>
                                     )}
                                     <p className="text-xs text-muted-foreground mt-1.5">
                                       {new Date(
-                                        proyecto.fecha_presentacion,
+                                        proyecto.submission_date,
                                       ).toLocaleDateString("es-PE", {
                                         day: "2-digit",
                                         month: "short",
                                         year: "numeric",
                                       })}
                                     </p>
-                                    {proyecto.url_documento && (
+                                    {proyecto.document_url && (
                                       <a
-                                        href={proyecto.url_documento}
+                                        href={proyecto.document_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1.5"
@@ -695,9 +683,9 @@ const CandidatoDialog = ({
 
               <div className="space-y-3">
                 {/* Hoja de vida */}
-                {persona.hoja_vida_url ? (
+                {person.resume_url ? (
                   <a
-                    href={persona.hoja_vida_url}
+                    href={person.resume_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-4 bg-card border rounded-lg hover:border-primary/50 hover:bg-accent transition-all group"
@@ -730,9 +718,9 @@ const CandidatoDialog = ({
                 )}
 
                 {/* Plan de gobierno */}
-                {candidato.plan_gobierno_url ? (
+                {candidato.government_plan_url ? (
                   <a
-                    href={candidato.plan_gobierno_url}
+                    href={candidato.government_plan_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-4 bg-card border rounded-lg hover:border-primary/50 hover:bg-accent transition-all group"
@@ -767,7 +755,7 @@ const CandidatoDialog = ({
                 )}
               </div>
 
-              {!persona.hoja_vida_url && !candidato.plan_gobierno_url && (
+              {!person.resume_url && !candidato.government_plan_url && (
                 <div className="text-center py-8">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
                     <Download className="w-8 h-8 text-muted-foreground" />

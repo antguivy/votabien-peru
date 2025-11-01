@@ -2,19 +2,15 @@ import { publicApi } from "@/lib/public-api";
 import LegisladoresList from "@/components/politics/legisladores-list";
 import { serverGetUser } from "@/lib/auth-actions";
 import AdminActions from "@/components/admin/admin-actions";
-import {
-  DistritoElectoral,
-  PartidoPoliticoBase,
-  PersonaList,
-} from "@/interfaces/politics";
+import { ElectoralDistrict, PersonList } from "@/interfaces/politics";
 import Link from "next/link";
 
 interface PageProps {
   searchParams: {
-    camara?: string;
+    chamber?: string;
     search?: string;
-    partidos?: string | string[];
-    distritos?: string | string[];
+    groups?: string | string[];
+    districts?: string | string[];
   };
 }
 
@@ -26,17 +22,15 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
   const limit = 30;
 
   const apiParams = {
-    es_legislador_activo: true,
-    camara:
-      params.camara && params.camara !== "all" ? params.camara : undefined,
+    is_legislator_active: true,
+    chamber:
+      params.chamber && params.chamber !== "all" ? params.chamber : undefined,
     search: params.search || undefined,
-    partidos:
-      params.partidos && params.partidos !== "all"
-        ? params.partidos
-        : undefined,
-    distritos:
-      params.distritos && params.distritos !== "all"
-        ? params.distritos
+    groups:
+      params.groups && params.groups !== "all" ? params.groups : undefined,
+    districts:
+      params.districts && params.districts !== "all"
+        ? params.districts
         : undefined,
     skip: 0,
     limit: limit,
@@ -44,19 +38,20 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
 
   const currentParams = {
     search: params.search || "",
-    camara: params.camara || "all",
-    partidos: params.partidos || [],
-    distritos: params.distritos || [],
+    chamber: params.chamber || "all",
+    groups: params.groups || [],
+    districts: params.districts || [],
     skip: 0,
     limit,
   };
 
   try {
-    const [initialLegisladores, partidos, distritos] = await Promise.all([
-      publicApi.getPersonas(apiParams) as Promise<PersonaList[]>,
-      publicApi.getPartidos(true) as Promise<PartidoPoliticoBase[]>,
-      publicApi.getDistritos() as Promise<DistritoElectoral[]>,
-    ]);
+    const [initialLegisladores, distritos, parliamentaryGroups] =
+      await Promise.all([
+        publicApi.getPersonas(apiParams) as Promise<PersonList[]>,
+        publicApi.getDistritos() as Promise<ElectoralDistrict[]>,
+        publicApi.getParliamentaryGroups() as Promise<string[]>,
+      ]);
     return (
       <div className="container mx-auto px-4">
         {/* Admin Actions */}
@@ -83,12 +78,14 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
         )}
 
         {/* Resultados */}
-        <LegisladoresList
-          legisladores={initialLegisladores}
-          partidos={partidos}
-          distritos={distritos}
-          currentFilters={currentParams}
-        />
+        <div className="py-4">
+          <LegisladoresList
+            legisladores={initialLegisladores}
+            bancadas={parliamentaryGroups}
+            distritos={distritos}
+            currentFilters={currentParams}
+          />
+        </div>
       </div>
     );
   } catch (error) {

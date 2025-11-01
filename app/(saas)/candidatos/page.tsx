@@ -2,10 +2,10 @@ import { publicApi } from "@/lib/public-api";
 import CandidatosList from "@/components/politics/candidatos-list";
 import { Calendar, Timer } from "lucide-react";
 import {
-  CandidaturaDetail,
-  DistritoElectoral,
-  PartidoPoliticoBase,
-  ProcesoElectoral,
+  CandidateDetail,
+  ElectoralDistrict,
+  PoliticalPartyBase,
+  ElectoralProcess,
 } from "@/interfaces/politics";
 import Link from "next/link";
 
@@ -40,8 +40,8 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
 
   try {
     const procesosActivos = (await publicApi.getProcesosElectorales(
-      true
-    )) as ProcesoElectoral[];
+      true,
+    )) as ElectoralProcess[];
 
     if (!procesosActivos || procesosActivos.length === 0) {
       return (
@@ -85,12 +85,12 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     const procesoActivo = procesosActivos[0];
 
     const [candidaturas, partidos, distritos] = await Promise.all([
-      publicApi.getCandidaturas(apiParams) as Promise<CandidaturaDetail[]>,
-      publicApi.getPartidos(true) as Promise<PartidoPoliticoBase[]>,
-      publicApi.getDistritos() as Promise<DistritoElectoral[]>,
+      publicApi.getCandidaturas(apiParams) as Promise<CandidateDetail[]>,
+      publicApi.getPartidos(true) as Promise<PoliticalPartyBase[]>,
+      publicApi.getDistritos() as Promise<ElectoralDistrict[]>,
     ]);
 
-    const fechaElecciones = new Date(procesoActivo.fecha_elecciones);
+    const fechaElecciones = new Date(procesoActivo.election_date);
     const fechaFormateada = fechaElecciones.toLocaleDateString("es-PE", {
       year: "numeric",
       month: "long",
@@ -100,7 +100,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     // Días restantes
     const hoy = new Date();
     const diasRestantes = Math.ceil(
-      (fechaElecciones.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
+      (fechaElecciones.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),
     );
     return (
       <div className="min-h-screen bg-background">
@@ -109,7 +109,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-                {procesoActivo.nombre}
+                {procesoActivo.name}
               </h1>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 text-sm md:text-base">

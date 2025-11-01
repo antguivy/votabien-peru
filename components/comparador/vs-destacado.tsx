@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
-import { PersonaList } from "@/interfaces/politics";
+import { PersonList } from "@/interfaces/politics";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,39 +24,39 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import React from "react";
 
 export interface ComparadorContentProps {
-  legisladorA: PersonaList;
-  legisladorB: PersonaList;
+  legisladorA: PersonList;
+  legisladorB: PersonList;
   isAnimating: boolean;
   onShuffleClick: () => void;
 }
 
-function calcularStats(legislador: PersonaList) {
-  const asistencias = legislador.periodo_activo.asistencias || [];
-  const proyectos = legislador.periodo_activo.proyectos_ley || [];
-  const antecedentes = legislador.antecedentes || [];
-  const biografia = legislador.biografia_detallada || [];
+function calcularStats(legislador: PersonList) {
+  const asistencias = legislador.active_period?.attendances || [];
+  const proyectos = legislador.active_period.bills || [];
+  const antecedentes = legislador.previous_cases || [];
+  const biografia = legislador.detailed_biography || [];
 
-  const totalAsistencias = asistencias.length;
-  const asistenciasConfirmadas = asistencias.filter((a) => a.asistio).length;
-  const porcentajeAsistencia =
-    totalAsistencias > 0
-      ? Math.round((asistenciasConfirmadas / totalAsistencias) * 100)
+  const totalAttendances = asistencias.length;
+  const asistenciasConfirmadas = asistencias.filter((a) => a.attended).length;
+  const porcentajeAttendance =
+    totalAttendances > 0
+      ? Math.round((asistenciasConfirmadas / totalAttendances) * 100)
       : null;
 
   const totalProyectos = proyectos.length;
   const proyectosAprobados = proyectos.filter((p) =>
-    p.estado?.toLowerCase().includes("aprobado"),
+    p.status?.toLowerCase().includes("aprobado"),
   ).length;
 
   const controversias = biografia.filter(
-    (b) => b.tipo === "Controversia",
+    (b) => b.type === "Controversia",
   ).length;
   const totalAlertas = controversias + antecedentes.length;
 
   return {
     asistencia: {
-      porcentaje: porcentajeAsistencia,
-      total: totalAsistencias,
+      porcentaje: porcentajeAttendance,
+      total: totalAttendances,
     },
     proyectos: {
       total: totalProyectos,
@@ -81,7 +81,6 @@ export function ComparadorContent({
   const isMobilePortrait = useMediaQuery(
     "(max-width: 768px) and (min-height: 600px)",
   );
-  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -207,9 +206,9 @@ export function ComparadorContent({
   const statsA = calcularStats(legisladorA);
   const statsB = calcularStats(legisladorB);
   const colorA =
-    legisladorA.periodo_activo.partido_actual?.color_hex || "#6b7280";
+    legisladorA.active_period.original_party?.color_hex || "#6b7280";
   const colorB =
-    legisladorB.periodo_activo.partido_actual?.color_hex || "#6b7280";
+    legisladorB.active_period.original_party?.color_hex || "#6b7280";
 
   return (
     <section className="relative py-12 md:py-20 overflow-hidden bg-gradient-to-b from-background via-muted/50 to-background">
@@ -244,7 +243,7 @@ export function ComparadorContent({
       </div>
 
       {/* Comparador */}
-      <div className="w-full mb-10 md:mb-12 md:container md:mx-auto md:px-4">
+      <div className="w-full mb-6 md:mb-8 md:container md:mx-auto md:px-4">
         <div ref={containerRef} className="relative min-h-[80vh]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -306,16 +305,16 @@ export function ComparadorContent({
                 <Button
                   onClick={onShuffleClick}
                   disabled={isAnimating}
-                  size="sm"
+                  size="lg"
                   variant="outline"
-                  className="group absolute bottom-4 left-1/2 -translate-x-1/2 overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group absolute top-2/5 sm:top-2/3 left-1/2 -translate-x-1/2 overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Shuffle
                     className={`w-4 h-4 transition-transform duration-300 ${
                       isAnimating ? "animate-spin" : "group-hover:rotate-180"
                     }`}
                   />
-                  <span className="font-semibold">Cambiar Legisladores</span>
+                  <span className="font-semibold">Cambiar</span>
                 </Button>
               </div>
             </motion.div>
@@ -332,7 +331,7 @@ export function ComparadorContent({
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
         >
-          <Link href="/comparador">
+          <Link href="/comparator">
             <Button
               size="lg"
               className="group relative overflow-hidden bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/90 hover:via-primary hover:to-primary shadow-lg hover:shadow-xl hover:shadow-primary/25 transition-all duration-300"
@@ -362,7 +361,7 @@ export function ComparadorContent({
 
 // Componente para cada lado del split
 interface LegisladorSideProps {
-  legislador: PersonaList;
+  legislador: PersonList;
   stats: ReturnType<typeof calcularStats>;
   side: "left" | "right";
   color: string;
@@ -409,10 +408,10 @@ function LegisladorSide({
           filter: `blur(${photoBlur}px)`,
         }}
       >
-        {legislador.foto_url ? (
+        {legislador.image_url ? (
           <Image
-            src={legislador.foto_url}
-            alt={`${legislador.nombres} ${legislador.apellidos}`}
+            src={legislador.image_url}
+            alt={`${legislador.name} ${legislador.lastname}`}
             fill
             priority
             sizes="50vw"
@@ -477,7 +476,7 @@ function LegisladorSide({
       />
 
       {/* Animaciones */}
-      <div className="absolute inset-0 flex flex-col justify-end p-4 md:p-8 lg:p-12">
+      <div className="absolute inset-0 flex flex-col justify-end p-4 md:px-12">
         <div className="flex-1" />
         {/* Info del legislador - Animación progresiva por capas */}
         <div className={`mb-2 ${isLeft ? "text-left" : "text-right"}`}>
@@ -493,14 +492,14 @@ function LegisladorSide({
               className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-1 leading-tight uppercase tracking-tight 
              drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
             >
-              {legislador.apellidos}
+              {legislador.lastname}
             </h3>
 
             <p
               className="text-lg md:text-2xl lg:text-3xl font-bold text-white/95 mb-3 
              drop-shadow-[0_2px_3px_rgba(0,0,0,0.8)]"
             >
-              {legislador.nombres}
+              {legislador.name}
             </p>
           </motion.div>
 
@@ -516,27 +515,27 @@ function LegisladorSide({
             {/* Partido actual o "No agrupados" */}
             <Badge
               className={`!whitespace-normal px-3 py-1.5 md:px-4 md:py-2 rounded-full backdrop-blur-xl border shadow-2xl text-white font-bold text-xs md:text-sm leading-tight text-center max-w-[220px] ${
-                legislador.periodo_activo.partido_actual
+                legislador.active_period.original_party
                   ? "border-white/30"
                   : "border-gray-400/30 bg-gray-500/70 text-white/90"
               } ${isLeft ? "self-start" : "self-end"}`}
               style={
-                legislador.periodo_activo.partido_actual
+                legislador.active_period.original_party
                   ? { backgroundColor: `${color}F0` }
                   : undefined
               }
             >
               <span className="break-words hyphens-auto" lang="es">
-                {legislador.periodo_activo.partido_actual
-                  ? legislador.periodo_activo.partido_actual.nombre
+                {legislador.active_period.original_party
+                  ? legislador.active_period.original_party.name
                   : "No agrupados"}
               </span>
             </Badge>
 
             {/* Bancada */}
-            {legislador.periodo_activo.bancada_nombre &&
-              legislador.periodo_activo.partido_actual?.nombre !==
-                legislador.periodo_activo.bancada_nombre && (
+            {legislador.active_period.parliamentary_group &&
+              legislador.active_period.original_party?.name !==
+                legislador.active_period.parliamentary_group && (
                 <Badge
                   variant="secondary"
                   className={`!whitespace-normal px-3 py-1 rounded-full bg-black/30 backdrop-blur-xl border border-white/20 text-white/90 text-[10px] md:text-xs leading-tight text-center max-w-[220px] ${
@@ -544,7 +543,7 @@ function LegisladorSide({
                   }`}
                 >
                   <span className="break-words hyphens-auto" lang="es">
-                    Bancada: {legislador.periodo_activo.bancada_nombre}
+                    Bancada: {legislador.active_period.parliamentary_group}
                   </span>
                 </Badge>
               )}
@@ -558,14 +557,14 @@ function LegisladorSide({
               y: badgeY,
             }}
           >
-            {legislador.periodo_activo.distrito.nombre}
+            {legislador.active_period.electoral_district.name}
           </motion.p>
-          <div className="h-40 md:h-0" />
+          <div className="h-28 md:h-0" />
         </div>
 
         {/* CAPA 3: Stats - solo Desktop */}
         <motion.div
-          className="hidden md:block space-y-2 md:space-y-3 backdrop-blur-xl bg-black/20 rounded-2xl mb-10 md:mb-6 p-3 md:p-4 border border-white/10"
+          className="hidden md:block space-y-2 md:space-y-3 backdrop-blur-xl bg-black/20 rounded-2xl p-3 md:p-4 border border-white/10"
           style={{
             opacity: statsOpacity,
             y: statsY,
@@ -574,7 +573,7 @@ function LegisladorSide({
         >
           <StatBar
             icon={<TrendingUp className="w-3 h-3 md:w-4 md:h-4" />}
-            label="Asistencia"
+            label="Attendance"
             value={stats.asistencia.porcentaje}
             total={stats.asistencia.total}
             color={color}
@@ -746,7 +745,7 @@ function ComparisonStats({
   const items = [
     {
       icon: <TrendingUp className="w-3.5 h-3.5 text-white/90" />,
-      label: "Asistencia",
+      label: "Attendance",
       valueA: `${statsA.asistencia.porcentaje ?? "—"}%`,
       valueB: `${statsB.asistencia.porcentaje ?? "—"}%`,
     },
@@ -767,7 +766,7 @@ function ComparisonStats({
 
   return (
     <motion.div
-      className="absolute bottom-16 left-1/2 -translate-x-1/2 w-[90%] max-w-md backdrop-blur-xl bg-black/30 rounded-2xl p-4 border border-white/10 z-10 shadow-lg"
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md backdrop-blur-xl bg-black/30 rounded-2xl p-4 border border-white/10 z-10 shadow-lg"
       style={{
         opacity: statsOpacity,
         y: statsY,

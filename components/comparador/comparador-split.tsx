@@ -1,31 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { PersonaList } from "@/interfaces/politics";
+import { PersonList } from "@/interfaces/politics";
 import { ComparadorContent } from "./vs-destacado";
 
 interface ComparadorProps {
-  legisladores: PersonaList[];
+  legisladores: PersonList[];
 }
 
-function getInitialPair(
-  legisladores: PersonaList[],
-): [PersonaList, PersonaList] {
+function getInitialPair(legisladores: PersonList[]): [PersonList, PersonList] {
   return [legisladores[0], legisladores[1]];
 }
 
-function getRandomPair(
-  legisladores: PersonaList[],
-): [PersonaList, PersonaList] {
+function getRandomPair(legisladores: PersonList[]): [PersonList, PersonList] {
   const shuffled = [...legisladores].sort(() => Math.random() - 0.5);
   return [shuffled[0], shuffled[1]];
 }
 
 export default function ComparadorSplit({ legisladores }: ComparadorProps) {
-  const [legisladorA, setLegisladorA] = useState<PersonaList>(
+  const [legisladorA, setLegisladorA] = useState<PersonList>(
     () => getInitialPair(legisladores)[0],
   );
-  const [legisladorB, setLegisladorB] = useState<PersonaList>(
+  const [legisladorB, setLegisladorB] = useState<PersonList>(
     () => getInitialPair(legisladores)[1],
   );
   const [isAnimating, setIsAnimating] = useState(false);

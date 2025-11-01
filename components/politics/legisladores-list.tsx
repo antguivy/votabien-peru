@@ -21,21 +21,16 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterField, FilterPanel } from "@/components/ui/filter-panel";
 import {
-  DistritoElectoral,
-  PartidoPoliticoBase,
-  PersonaList,
+  ElectoralDistrict,
+  PersonList,
+  FiltersPerson,
 } from "@/interfaces/politics";
 
 interface LegisladoresListProps {
-  legisladores: PersonaList[];
-  partidos: PartidoPoliticoBase[];
-  distritos: DistritoElectoral[];
-  currentFilters: {
-    camara: string;
-    search: string;
-    partidos: string | string[];
-    distritos: string | string[];
-  };
+  legisladores: PersonList[];
+  bancadas: string[];
+  distritos: ElectoralDistrict[];
+  currentFilters: FiltersPerson;
   infiniteScroll?: boolean;
 }
 
@@ -59,13 +54,13 @@ const LegisladorSkeleton = () => (
 
 const LegisladoresList = ({
   legisladores: initialLegisladores,
-  partidos,
+  bancadas,
   distritos,
   currentFilters,
   infiniteScroll = true,
 }: LegisladoresListProps) => {
   const [legisladores, setLegisladores] =
-    useState<PersonaList[]>(initialLegisladores);
+    useState<PersonList[]>(initialLegisladores);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialLegisladores.length >= 10);
   const [currentSkip, setCurrentSkip] = useState(initialLegisladores.length);
@@ -74,38 +69,38 @@ const LegisladoresList = ({
   const buildQueryString = useCallback(() => {
     const params = new URLSearchParams();
 
-    if (currentFilters.camara && currentFilters.camara !== "all") {
-      params.append("camara", currentFilters.camara);
+    if (currentFilters.chamber && currentFilters.chamber !== "all") {
+      params.append("chamber", currentFilters.chamber);
     }
 
     if (currentFilters.search) {
       params.append("search", currentFilters.search);
     }
 
-    if (currentFilters.partidos && currentFilters.partidos !== "all") {
+    if (currentFilters.groups && currentFilters.groups !== "all") {
       const partidosArray =
-        typeof currentFilters.partidos === "string"
-          ? currentFilters.partidos.split(",")
-          : currentFilters.partidos;
+        typeof currentFilters.groups === "string"
+          ? currentFilters.groups.split(",")
+          : currentFilters.groups;
 
       partidosArray.forEach((p) => {
-        if (p && p !== "all") params.append("partidos", p.trim());
+        if (p && p !== "all") params.append("groups", p.trim());
       });
     }
 
-    if (currentFilters.distritos && currentFilters.distritos !== "all") {
+    if (currentFilters.districts && currentFilters.districts !== "all") {
       const distritosArray =
-        typeof currentFilters.distritos === "string"
-          ? currentFilters.distritos.split(",")
-          : currentFilters.distritos;
+        typeof currentFilters.districts === "string"
+          ? currentFilters.districts.split(",")
+          : currentFilters.districts;
 
       distritosArray.forEach((d) => {
-        if (d && d !== "all") params.append("distritos", d.trim());
+        if (d && d !== "all") params.append("districts", d.trim());
       });
     }
 
     params.append("skip", String(currentSkip));
-    params.append("limit", "10");
+    params.append("limit", "30");
 
     return params.toString();
   }, [currentFilters, currentSkip]);
@@ -118,12 +113,11 @@ const LegisladoresList = ({
     try {
       const queryString = buildQueryString();
       const response = await fetch(`/api/legisladores?${queryString}`);
-
       if (!response.ok) {
         throw new Error("Error al cargar legisladores");
       }
 
-      const newLegisladores: PersonaList[] = await response.json();
+      const newLegisladores: PersonList[] = await response.json();
 
       if (newLegisladores.length === 0) {
         setHasMore(false);
@@ -174,10 +168,10 @@ const LegisladoresList = ({
     setHasMore(initialLegisladores.length >= 10);
   }, [
     initialLegisladores,
-    currentFilters.camara,
+    currentFilters.chamber,
     currentFilters.search,
-    currentFilters.partidos,
-    currentFilters.distritos,
+    currentFilters.groups,
+    currentFilters.districts,
   ]);
 
   const filterFields: FilterField[] = [
@@ -190,31 +184,31 @@ const LegisladoresList = ({
       defaultValue: "",
     },
     {
-      id: "partidos",
+      id: "groups",
       label: "Partido Político",
       type: "multi-select",
-      placeholder: "Partido",
+      placeholder: "Bancadas",
       options: [
-        ...partidos.map((p) => ({
-          value: p.nombre,
-          label: p.nombre,
+        ...bancadas.map((p) => ({
+          value: p,
+          label: p,
         })),
       ],
     },
     {
-      id: "distritos",
+      id: "districts",
       label: "Distrito Electoral",
       type: "multi-select",
       placeholder: "Distrito",
       options: [
         ...distritos.map((d) => ({
-          value: d.nombre.toLowerCase().replace(" ", "_"),
-          label: d.nombre,
+          value: d.name.toLowerCase().replace(" ", "_"),
+          label: d.name,
         })),
       ],
     },
     {
-      id: "camara",
+      id: "chamber",
       label: "Cámara",
       type: "select",
       placeholder: "Cámara",
@@ -228,9 +222,9 @@ const LegisladoresList = ({
 
   const defaultFilters = {
     search: "",
-    camara: "",
-    partidos: [],
-    distritos: [],
+    chamber: "",
+    groups: [],
+    districts: [],
   };
 
   return (
@@ -264,10 +258,10 @@ const LegisladoresList = ({
             <Link key={c.id} href={`/legisladores/${c.id}`}>
               <Card className="pt-0 group cursor-pointer overflow-hidden border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex flex-col h-full">
                 <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/80 to-primary overflow-hidden">
-                  {c.foto_url ? (
+                  {c.image_url ? (
                     <Image
-                      src={c.foto_url}
-                      alt={`${c.nombres} ${c.apellidos}`}
+                      src={c.image_url}
+                      alt={`${c.name} ${c.lastname}`}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -286,24 +280,22 @@ const LegisladoresList = ({
                         <div className="absolute top-2 right-2">
                           <Badge
                             className={`text-[10px] md:text-xs font-medium border backdrop-blur-sm ${
-                              c.periodo_activo.esta_activo
+                              c.active_period.active
                                 ? "bg-success/90 text-success-foreground border-success/30"
                                 : "bg-muted/70 text-muted-foreground border-border"
                             }`}
                           >
-                            {c.periodo_activo.esta_activo ? (
+                            {c.active_period.active ? (
                               <UserCheck className="size-3" />
                             ) : (
                               <Info className="size-3" />
                             )}
-                            {c.periodo_activo.esta_activo
-                              ? "Activo"
-                              : "Inactivo"}
+                            {c.active_period.active ? "Activo" : "Inactivo"}
                           </Badge>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="left" className="text-xs">
-                        {c.periodo_activo.esta_activo
+                        {c.active_period.active
                           ? "Actualmente en funciones"
                           : "Fuera de funciones"}
                       </TooltipContent>
@@ -313,13 +305,13 @@ const LegisladoresList = ({
 
                 <CardHeader>
                   <CardTitle className="text-sm font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-tight">
-                    {c.nombres} {c.apellidos}
+                    {c.name} {c.lastname}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1.5 flex-grow">
-                  {c.profesion && (
+                  {c.profession && (
                     <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-2">
-                      {c.profesion}
+                      {c.profession}
                     </p>
                   )}
                   <p className="text-[10px] md:text-xs text-muted-foreground/80 font-mono">

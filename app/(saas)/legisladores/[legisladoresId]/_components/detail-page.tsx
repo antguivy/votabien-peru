@@ -42,44 +42,41 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Antecedente, PersonaDetail, ProyectoLey } from "@/interfaces/politics";
+import { PreviousCase, PersonDetail, Bill } from "@/interfaces/politics";
 import { formatFechaJsonable } from "@/lib/utils/date";
 import { NoDataMessage } from "@/components/no-data-message";
 
 export default function DetailLegislador({
   persona,
 }: {
-  persona: PersonaDetail;
+  persona: PersonDetail;
 }) {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
 
-  const periodoActivo = persona.periodos_legislativos?.find(
-    (p) => p.esta_activo,
-  );
+  const periodoActivo = persona.legislative_periods?.find((p) => p.active);
 
   // Ordenar periodos por fecha DESC
-  const periodosOrdenados = [...(persona.periodos_legislativos || [])].sort(
+  const periodosOrdenados = [...(persona.legislative_periods || [])].sort(
     (a, b) =>
-      new Date(b.periodo_inicio).getTime() -
-      new Date(a.periodo_inicio).getTime(),
+      new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
   );
 
   // Años totales de servicio
   const calcularAniosServicio = () => {
-    if (!persona.periodos_legislativos?.length) return 0;
+    if (!persona.legislative_periods?.length) return 0;
     const primerPeriodo = periodosOrdenados[periodosOrdenados.length - 1];
     const ultimoPeriodo = periodosOrdenados[0];
-    const inicio = new Date(primerPeriodo.periodo_inicio).getFullYear();
+    const inicio = new Date(primerPeriodo.start_date).getFullYear();
     const fin = periodoActivo
       ? new Date().getFullYear()
-      : new Date(ultimoPeriodo.periodo_fin).getFullYear();
+      : new Date(ultimoPeriodo.end_date).getFullYear();
     return fin - inicio;
   };
 
   const stats = [
     {
       label: "Periodos Legislativos",
-      value: persona.periodos_legislativos?.length || 0,
+      value: persona.legislative_periods?.length || 0,
       icon: History,
       color: "text-info",
     },
@@ -91,7 +88,7 @@ export default function DetailLegislador({
     },
     {
       label: "Proyectos de Ley",
-      value: periodoActivo?.proyectos_ley?.length || 0,
+      value: periodoActivo?.bills?.length || 0,
       icon: FileText,
       color: "text-success",
     },
@@ -103,14 +100,14 @@ export default function DetailLegislador({
 
   // tiene información educativa?
   const tieneEducacion =
-    persona.educacion_tecnica ||
-    persona.educacion_universitaria ||
-    persona.grado_academico ||
-    persona.titulo_profesional ||
-    persona.post_grado;
+    persona.technical_education ||
+    persona.university_education ||
+    persona.academic_degree ||
+    persona.professional_title ||
+    persona.postgraduate_education;
 
   // Color del badge de antecedentes?
-  const getAntecedentesBadgeColor = (estado: string) => {
+  const getPreviousCasesBadgeColor = (estado: string) => {
     switch (estado?.toLowerCase()) {
       case "rehabilitado":
       case "archivado":
@@ -143,7 +140,7 @@ export default function DetailLegislador({
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{persona.nombre_completo}</BreadcrumbPage>
+              <BreadcrumbPage>{persona.fullname}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -156,8 +153,8 @@ export default function DetailLegislador({
             <div className="relative flex flex-col md:flex-row items-center gap-8">
               <div className="relative w-40 h-40 flex-shrink-0 rounded-full overflow-hidden border-4 border-white/20">
                 <Image
-                  src={persona.foto_url || "/images/default-avatar.svg"}
-                  alt={`Foto de ${persona.nombre_completo}`}
+                  src={persona.image_url || "/images/default-avatar.svg"}
+                  alt={`Foto de ${persona.fullname}`}
                   fill
                   className="object-cover"
                 />
@@ -165,20 +162,20 @@ export default function DetailLegislador({
 
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
-                  {persona.nombre_completo}
+                  {persona.fullname}
                 </h1>
 
-                {persona.profesion && (
+                {persona.profession && (
                   <p className="text-lg text-primary-foreground/90 mt-2">
-                    {persona.profesion}
+                    {persona.profession}
                   </p>
                 )}
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-3 text-primary-foreground mt-4">
-                  {periodoActivo?.partido_actual ? (
+                  {periodoActivo?.current_party ? (
                     <div className="inline-flex items-center gap-2 font-medium">
                       <Briefcase className="size-4" />
-                      <span>{periodoActivo.partido_actual.nombre}</span>
+                      <span>{periodoActivo.current_party.name}</span>
                     </div>
                   ) : (
                     <div className="inline-flex items-center gap-2 font-medium text-foreground/70">
@@ -186,10 +183,10 @@ export default function DetailLegislador({
                       <span>No agrupados</span>
                     </div>
                   )}
-                  {periodoActivo?.distrito && (
+                  {periodoActivo?.electoral_district && (
                     <div className="inline-flex items-center gap-2">
                       <MapPin className="size-4" />
-                      <span>{periodoActivo.distrito.nombre}</span>
+                      <span>{periodoActivo.electoral_district.name}</span>
                     </div>
                   )}
                 </div>
@@ -197,19 +194,19 @@ export default function DetailLegislador({
                 <div className="mt-5 flex items-center justify-center md:justify-start gap-3">
                   <Badge
                     variant={getEstadoBadgeVariant(
-                      periodoActivo?.esta_activo ?? false,
+                      periodoActivo?.active ?? false,
                     )}
                     className="text-sm px-3 py-1"
                   >
-                    {periodoActivo?.esta_activo ? "En Ejercicio" : "Inactivo"}
+                    {periodoActivo?.active ? "En Ejercicio" : "Inactivo"}
                   </Badge>
                   {periodoActivo && (
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="size-4" />
                       <span>
                         Periodo{" "}
-                        {new Date(periodoActivo.periodo_inicio).getFullYear()} -{" "}
-                        {new Date(periodoActivo.periodo_fin).getFullYear()}
+                        {new Date(periodoActivo.start_date).getFullYear()} -{" "}
+                        {new Date(periodoActivo.end_date).getFullYear()}
                       </span>
                     </div>
                   )}
@@ -232,17 +229,17 @@ export default function DetailLegislador({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {persona.biografia_detallada &&
-                persona.biografia_detallada.length > 0 ? (
+                {persona.detailed_biography &&
+                persona.detailed_biography.length > 0 ? (
                   <div className="relative space-y-6">
                     {/* Timeline line */}
                     <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary/50 via-primary/30 to-transparent" />
 
-                    {persona.biografia_detallada
+                    {persona.detailed_biography
                       .sort(
                         (a, b) =>
-                          new Date(a.fecha).getTime() -
-                          new Date(b.fecha).getTime(),
+                          new Date(a.date).getTime() -
+                          new Date(b.date).getTime(),
                       )
                       .map((item, index) => (
                         <div key={index} className="relative pl-8 group">
@@ -253,27 +250,27 @@ export default function DetailLegislador({
                             {/* Header */}
                             <div className="flex flex-wrap items-start gap-2">
                               <h4 className="font-semibold text-base leading-tight flex-1 min-w-0">
-                                {item.titulo}
+                                {item.title}
                               </h4>
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <Badge
                                   variant="outline"
                                   className="text-xs capitalize font-normal"
                                 >
-                                  {item.tipo}
+                                  {item.type}
                                 </Badge>
-                                {item.relevancia && (
+                                {item.relevance && (
                                   <Badge
                                     variant={
-                                      item.relevancia === "Alta"
+                                      item.relevance === "Alta"
                                         ? "destructive"
-                                        : item.relevancia === "Media"
+                                        : item.relevance === "Media"
                                           ? "default"
                                           : "secondary"
                                     }
                                     className="text-xs font-medium"
                                   >
-                                    {item.relevancia}
+                                    {item.relevance}
                                   </Badge>
                                 )}
                               </div>
@@ -281,31 +278,31 @@ export default function DetailLegislador({
 
                             {/* Description */}
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                              {item.descripcion}
+                              {item.description}
                             </p>
 
                             {/* Footer metadata */}
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                               <div className="flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5" />
-                                <time dateTime={item.fecha}>
-                                  {formatFechaJsonable(item.fecha)}
+                                <time dateTime={item.date}>
+                                  {formatFechaJsonable(item.date)}
                                 </time>
                               </div>
 
-                              {item.fuente && item.fuente_url && (
+                              {item.source && item.source_url && (
                                 <>
                                   <span className="text-slate-300 dark:text-slate-600">
                                     •
                                   </span>
                                   <Link
-                                    href={item.fuente_url}
+                                    href={item.source_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 hover:underline text-primary transition-colors underline-offset-2"
-                                    aria-label={`Fuente: ${item.fuente}`}
+                                    aria-label={`source: ${item.source}`}
                                   >
-                                    <span>{item.fuente}</span>
+                                    <span>{item.source}</span>
                                   </Link>
                                 </>
                               )}
@@ -331,8 +328,8 @@ export default function DetailLegislador({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {persona.educacion_tecnica &&
-                      persona.educacion_tecnica !== "No" && (
+                    {persona.technical_education &&
+                      persona.technical_education !== "No" && (
                         <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -341,13 +338,13 @@ export default function DetailLegislador({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                            {persona.educacion_tecnica}
+                            {persona.technical_education}
                           </p>
                         </div>
                       )}
 
-                    {persona.educacion_universitaria &&
-                      persona.educacion_universitaria !== "No" && (
+                    {persona.university_education &&
+                      persona.university_education !== "No" && (
                         <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <GraduationCap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -356,15 +353,15 @@ export default function DetailLegislador({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
-                            {persona.educacion_universitaria === "Si"
+                            {persona.university_education === "Si"
                               ? "Concluida"
-                              : persona.educacion_universitaria}
+                              : persona.university_education}
                           </p>
                         </div>
                       )}
 
-                    {persona.grado_academico &&
-                      persona.grado_academico !== "No" && (
+                    {persona.academic_degree &&
+                      persona.academic_degree !== "No" && (
                         <div className="p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <Award className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -373,13 +370,13 @@ export default function DetailLegislador({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-green-900 dark:text-green-100">
-                            {persona.grado_academico}
+                            {persona.academic_degree}
                           </p>
                         </div>
                       )}
 
-                    {persona.titulo_profesional &&
-                      persona.titulo_profesional !== "No" && (
+                    {persona.professional_title &&
+                      persona.professional_title !== "No" && (
                         <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg">
                           <div className="flex items-center gap-2 mb-1.5">
                             <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -388,49 +385,49 @@ export default function DetailLegislador({
                             </span>
                           </div>
                           <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                            {persona.titulo_profesional}
+                            {persona.professional_title}
                           </p>
                         </div>
                       )}
 
-                    {persona.post_grado && persona.post_grado !== "No" && (
-                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg md:col-span-2">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Microscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                          <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide">
-                            Estudios de Postgrado
-                          </span>
+                    {persona.postgraduate_education &&
+                      persona.postgraduate_education !== "No" && (
+                        <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg md:col-span-2">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <Microscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                            <span className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 uppercase tracking-wide">
+                              Estudios de Postgrado
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+                            {persona.postgraduate_education}
+                          </p>
                         </div>
-                        <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
-                          {persona.post_grado}
-                        </p>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Antecedentes */}
-            {persona.antecedentes && persona.antecedentes.length > 0 ? (
+            {/* PreviousCases */}
+            {persona.previous_cases && persona.previous_cases.length > 0 ? (
               <Card className="shadow-sm border-orange-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-orange-800">
                     <AlertTriangle className="size-5" />
-                    Antecedentes Registrados
+                    PreviousCases Registrados
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {Object.entries(
-                    persona.antecedentes.reduce<Record<string, Antecedente[]>>(
-                      (acc, ant) => {
-                        const tipo = ant.tipo || "Otros";
-                        if (!acc[tipo]) acc[tipo] = [];
-                        acc[tipo].push(ant);
-                        return acc;
-                      },
-                      {},
-                    ),
+                    persona.previous_cases.reduce<
+                      Record<string, PreviousCase[]>
+                    >((acc, ant) => {
+                      const tipo = ant.type || "Otros";
+                      if (!acc[tipo]) acc[tipo] = [];
+                      acc[tipo].push(ant);
+                      return acc;
+                    }, {}),
                   ).map(([tipo, lista]) => (
                     <div key={tipo} className="space-y-2">
                       <div className="flex items-center gap-2 mb-2">
@@ -450,25 +447,25 @@ export default function DetailLegislador({
                         >
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <span className="text-xs font-semibold text-orange-900 dark:text-orange-300 uppercase">
-                              {antecedente.titulo || antecedente.tipo}
+                              {antecedente.title || antecedente.type}
                             </span>
-                            {antecedente.estado && (
+                            {antecedente.status && (
                               <Badge
-                                variant={getAntecedentesBadgeColor(
-                                  antecedente.estado,
+                                variant={getPreviousCasesBadgeColor(
+                                  antecedente.status,
                                 )}
                                 className="text-xs"
                               >
-                                {antecedente.estado}
+                                {antecedente.status}
                               </Badge>
                             )}
                           </div>
                           <p className="text-sm text-orange-800 dark:text-orange-200 mb-1">
-                            {antecedente.descripcion}
+                            {antecedente.description}
                           </p>
-                          {antecedente.fecha && (
+                          {antecedente.date && (
                             <span className="text-xs text-orange-600 dark:text-orange-400">
-                              Fecha: {formatFechaJsonable(antecedente.fecha)}
+                              Fecha: {formatFechaJsonable(antecedente.date)}
                             </span>
                           )}
                         </div>
@@ -502,7 +499,7 @@ export default function DetailLegislador({
                       <div
                         key={periodo.id}
                         className={`p-3 border rounded-lg transition-all hover:shadow-md ${
-                          periodo.esta_activo
+                          periodo.active
                             ? "bg-green-50 border-green-200"
                             : "bg-slate-50 border-slate-200"
                         }`}
@@ -510,14 +507,12 @@ export default function DetailLegislador({
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <h4 className="font-semibold text-sm">
-                              {periodo.camara}
+                              {periodo.chamber}
                             </h4>
                             <Badge
-                              variant={
-                                periodo.esta_activo ? "success" : "secondary"
-                              }
+                              variant={periodo.active ? "success" : "secondary"}
                             >
-                              {periodo.esta_activo ? "Actual" : "Finalizado"}
+                              {periodo.active ? "Actual" : "Finalizado"}
                             </Badge>
                           </div>
 
@@ -525,15 +520,15 @@ export default function DetailLegislador({
                             <div className="flex items-center gap-1.5">
                               <Calendar className="size-3 flex-shrink-0" />
                               <span>
-                                {new Date(periodo.periodo_inicio).getFullYear()}{" "}
-                                - {new Date(periodo.periodo_fin).getFullYear()}
+                                {new Date(periodo.start_date).getFullYear()} -{" "}
+                                {new Date(periodo.end_date).getFullYear()}
                               </span>
                             </div>
-                            {periodo.distrito && (
+                            {periodo.electoral_district && (
                               <div className="flex items-center gap-1.5">
                                 <MapPin className="size-3 flex-shrink-0" />
                                 <span className="truncate">
-                                  {periodo.distrito.nombre}
+                                  {periodo.electoral_district.name}
                                 </span>
                               </div>
                             )}
@@ -542,15 +537,15 @@ export default function DetailLegislador({
                           <div className="flex items-center gap-1.5 text-xs text-foreground/70">
                             <Briefcase className="size-3 flex-shrink-0" />
                             <span className="truncate">
-                              {periodo.partido_actual?.nombre || "No agrupados"}
+                              {periodo.current_party?.name || "No agrupados"}
                             </span>
                           </div>
 
-                          {periodo.email_congreso && (
+                          {periodo.institutional_email && (
                             <div className="flex items-center gap-1.5 text-xs text-foreground/70 pt-1">
                               <Mail className="size-3 flex-shrink-0" />
                               <span className="truncate">
-                                {periodo.email_congreso}
+                                {periodo.institutional_email}
                               </span>
                             </div>
                           )}
@@ -565,7 +560,7 @@ export default function DetailLegislador({
             </Card>
 
             {/* Proyectos de Ley */}
-            {periodoActivo?.proyectos_ley && (
+            {periodoActivo?.bills && (
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -575,26 +570,26 @@ export default function DetailLegislador({
                 </CardHeader>
                 <CardContent>
                   <FieldGroup>
-                    {periodoActivo.proyectos_ley.length > 0 ? (
-                      periodoActivo.proyectos_ley.map(
-                        (proyecto: ProyectoLey, index: number) => (
+                    {periodoActivo.bills.length > 0 ? (
+                      periodoActivo.bills.map(
+                        (proyecto: Bill, index: number) => (
                           <div key={proyecto.id}>
                             <Link
                               href={`/proyectos/${proyecto.id}`}
                               className="block p-4 -m-4 rounded-lg hover:bg-slate-100/80 transition-colors duration-200"
                             >
                               <FieldTitle className="text-base hover:text-primary">
-                                {proyecto.titulo}
+                                {proyecto.title}
                               </FieldTitle>
                               <FieldDescription className="mt-1">
-                                {proyecto.resumen}
+                                {proyecto.summary}
                               </FieldDescription>
                               <FieldContent className="flex-row items-center gap-2 text-xs text-muted-foreground mt-3">
                                 <Calendar className="w-3.5 h-3.5" />
                                 <span>
                                   Presentado el{" "}
                                   {new Date(
-                                    proyecto.fecha_presentacion,
+                                    proyecto.submission_date,
                                   ).toLocaleDateString("es-ES", {
                                     year: "numeric",
                                     month: "long",
@@ -603,7 +598,7 @@ export default function DetailLegislador({
                                 </span>
                               </FieldContent>
                             </Link>
-                            {index < periodoActivo.proyectos_ley.length - 1 && (
+                            {index < periodoActivo.bills.length - 1 && (
                               <FieldSeparator className="my-2" />
                             )}
                           </div>
@@ -644,7 +639,7 @@ export default function DetailLegislador({
             </Card>
 
             {/* Información de Contacto */}
-            {periodoActivo?.email_congreso && (
+            {periodoActivo?.institutional_email && (
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle>Información de Contacto</CardTitle>
@@ -657,7 +652,7 @@ export default function DetailLegislador({
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <Mail className="size-4 flex-shrink-0" />
                             <span className="break-all text-sm">
-                              {periodoActivo.email_congreso}
+                              {periodoActivo.institutional_email}
                             </span>
                           </div>
                           <Button
@@ -665,7 +660,7 @@ export default function DetailLegislador({
                             variant="ghost"
                             onClick={() =>
                               copyToClipboard(
-                                periodoActivo.email_congreso,
+                                periodoActivo.institutional_email,
                                 "email",
                               )
                             }
@@ -748,13 +743,13 @@ export default function DetailLegislador({
                   <span className="text-foreground/70">DNI:</span>
                   <span className="font-medium">{persona.dni}</span>
                 </div>
-                {persona.fecha_nacimiento && (
+                {persona.birth_date && (
                   <div className="flex justify-between">
                     <span className="text-foreground/70">
                       Fecha de Nacimiento:
                     </span>
                     <span className="font-medium">
-                      {new Date(persona.fecha_nacimiento).toLocaleDateString(
+                      {new Date(persona.birth_date).toLocaleDateString(
                         "es-ES",
                         {
                           year: "numeric",

@@ -1,12 +1,12 @@
 // ============= ENUMS =============
 
-export enum TipoCamara {
+export enum ChamberType {
   CONGRESO = "congreso",
   SENADO = "senado",
   DIPUTADOS = "diputados",
 }
 
-export enum TipoCandidatura {
+export enum CandidacyType {
   PRESIDENTE = "Presidente",
   VICEPRESIDENTE = "Vicepresidente",
   SENADOR = "Senador",
@@ -14,118 +14,116 @@ export enum TipoCandidatura {
   CONGRESISTA = "Congresista",
 }
 
-export enum EstadoCandidatura {
+export enum CandidacyStatus {
   INSCRITO = "Inscrito",
   HABIL = "Hábil",
   INHABILITADO = "Inhabilitado",
   TACADO = "Tacado",
 }
 
-export interface Antecedente {
-  tipo: string;
-  titulo: string;
-  descripcion: string;
-  estado: string | null;
-  sancion: string | null;
-  fecha: string;
-  periodo: string | null;
-  fuente: string;
-  fuente_url: string | null;
+export interface PreviousCase {
+  type: string;
+  title: string;
+  description: string;
+  status: string | null;
+  sanction: string | null;
+  date: string;
+  period: string | null;
+  source: string;
+  source_type: string;
+  source_url: string | null;
 }
 
-export interface BiografiaDetlle {
-  tipo: string;
-  fecha: string;
-  titulo: string;
-  descripcion: string;
-  relevancia?: string;
-  fuente: string;
-  fuente_tipo: string;
-  fuente_url?: string;
+export interface BiographyDetail {
+  type: string;
+  date: string;
+  title: string;
+  description: string;
+  relevance: string | null;
+  source: string;
+  source_tipo: string;
+  source_url: string | null;
 }
 
-export interface ExperienciaLaboral {
-  cargo?: string;
-  empresa?: string;
-  periodo?: string;
-  descripcion?: string;
+export interface WorkExperience {
+  positon: string;
+  organization: string;
+  period: string;
+  description: string;
 }
 
-export interface HistorialPartido {
-  año: number;
-  evento: string;
+export interface PartyHistory {
+  year: number;
+  event: string;
 }
 // ============= INTERFACES BASE =============
 
-export interface PartidoPoliticoBase {
+export interface PoliticalPartyBase {
   id: string;
-  nombre: string;
-  sigla: string;
+  name: string;
+  acronym: string;
   logo_url: string | null;
   color_hex: string;
-  activo: boolean;
+  active: boolean;
   created_at: string;
 }
 
-export interface DistritoElectoral {
+export interface ElectoralDistrict {
   id: string;
-  nombre: string;
-  codigo: string;
-  es_distrito_nacional: boolean;
-  num_senadores: number;
-  num_diputados: number;
-  activo: boolean;
+  name: string;
+  code: string;
+  is_national: boolean;
+  num_senators: number;
+  num_deputies: number;
+  active: boolean;
 }
 
-export interface ProcesoElectoral {
+export interface ElectoralProcess {
   id: string;
-  nombre: string;
-  año: number;
-  fecha_elecciones: string;
-  activo: boolean;
+  name: string;
+  year: number;
+  election_date: string;
+  active: boolean;
   created_at: string;
 }
 // ============= PARTIDO ==========================
-export interface PartidoDetail extends PartidoPoliticoBase {
-  fundador: string | null;
-  fecha_fundacion: Date | null;
-  descripcion: string | null;
-  ideologia: string | null;
-  sede_nacional: string | null;
-  telefono: string | null;
+export interface PoliticalPartyDetail extends PoliticalPartyBase {
+  founder: string | null;
+  foundation_date: Date | null;
+  description: string | null;
+  ideology: string | null;
+  main_office: string | null;
+  phone: string | null;
   email: string | null;
-  sitio_web: string | null;
-  financiamiento_anual: number | null;
-  gasto_campana_ultima: number | null;
-  fuente_financiamiento: string | null;
-  historia_timeline: HistorialPartido[] | [];
+  website: string | null;
+  party_timeline: PartyHistory[] | [];
   facebook_url: string | null;
   twitter_url: string | null;
   youtube_url: string | null;
   tiktok_url: string | null;
-  total_afiliados: number | null;
-  total_escaños: number | null;
+  total_afiliates: number;
+  total_seats: number;
 }
 // ============= PERSONA Y LEGISLADOR =============
 
-export interface PersonaBase {
+export interface PersonBase {
   id: string;
   dni: string;
-  nombres: string;
-  apellidos: string;
-  nombre_completo: string;
-  foto_url: string | null;
-  profesion: string | null;
-  fecha_nacimiento: Date | null;
-  biografia_detallada: BiografiaDetlle[] | [];
-  educacion_tecnica: string | null;
-  educacion_universitaria: string | null;
-  grado_academico: string | null;
-  titulo_profesional: string | null;
-  post_grado: string | null;
-  hoja_vida_url: string | null;
-  experiencia_laboral: ExperienciaLaboral[] | [];
-  antecedentes: Antecedente[] | [];
+  name: string;
+  lastname: string;
+  fullname: string;
+  image_url: string | null;
+  profession: string | null;
+  birth_date: Date | null;
+  detailed_biography: BiographyDetail[] | [];
+  technical_education: string | null;
+  university_education: string | null;
+  academic_degree: string | null;
+  professional_title: string | null;
+  postgraduate_education: string | null;
+  resume_url: string | null;
+  work_experience: WorkExperience[] | [];
+  previous_cases: PreviousCase[] | [];
   facebook_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;
@@ -133,115 +131,125 @@ export interface PersonaBase {
   created_at: Date;
 }
 
-export interface PeriodoLegislador {
+export interface LegislatorDetail {
   id: string;
-  camara: TipoCamara;
-  periodo_inicio: string;
-  periodo_fin: string;
-  esta_activo: boolean;
-  email_congreso: string | null;
-  bancada_nombre: string | null;
-  partido_origen: PartidoPoliticoBase;
-  partido_actual?: PartidoPoliticoBase;
+  chamber: ChamberType;
+  start_date: string;
+  end_date: string;
+  active: boolean;
+  institutional_email: string | null;
+  parliamentary_group: string | null;
+  original_party: PoliticalPartyBase;
+  current_party?: PoliticalPartyBase;
 
-  distrito: DistritoElectoral;
-  proyectos_ley: ProyectoLey[];
-  asistencias: Asistencia[];
-  denuncias: Denuncia[];
+  electoral_district: ElectoralDistrict;
+  bills: Bill[];
+  attendances: Attendance[];
+  created_at: Date;
+}
+
+export interface LegislatorWithParty {
+  chamber: string;
+  start_date: string;
+  end_date: string;
+  active: boolean;
+  institutional_email: string | null;
+  parliamentary_group: string | null;
   created_at: string;
+  original_party: PoliticalPartyBase;
+}
+export interface PersonList extends PersonBase {
+  active_period: LegislatorDetail;
 }
 
-export interface PersonaList extends PersonaBase {
-  periodo_activo: PeriodoLegislador;
-}
-
-export interface PersonaDetail extends PersonaBase {
-  // Historial político
-  periodos_legislativos: PeriodoLegislador[];
-  candidaturas: CandidaturaList[];
+export interface PersonDetail extends PersonBase {
+  legislative_periods: LegislatorDetail[];
+  candidacies: CandidateList[];
 }
 
 // ============= CANDIDATURAS =============
 
-export interface CandidaturaBase {
+export interface CandidateBase {
   id: string;
-  tipo: TipoCandidatura;
-  numero_lista: number | null;
-  estado: EstadoCandidatura;
-  votos_obtenidos: number | null;
-  fue_elegido: boolean;
+  type: CandidacyType;
+  list_number: number | null;
+  status: CandidacyStatus;
+  votes_obtained: number | null;
+  was_elected: boolean;
 }
 
-export interface CandidaturaList extends CandidaturaBase {
-  persona: PersonaBase;
-  partido: PartidoPoliticoBase;
-  distrito: DistritoElectoral | null;
-  proceso_electoral: ProcesoElectoral;
+export interface CandidateList extends CandidateBase {
+  person: PersonBase;
+  political_party: PoliticalPartyBase;
+  electoral_district: ElectoralDistrict | null;
+  electoral_process: ElectoralProcess;
 }
 
-export interface CandidaturaDetail extends CandidaturaBase {
-  persona: PersonaBase;
-  periodos_legislativos: PeriodoLegislador[] | [];
-  partido: PartidoPoliticoBase;
-  distrito: DistritoElectoral | null;
-  proceso_electoral: ProcesoElectoral;
+export interface CandidateDetail extends CandidateBase {
+  person: PersonBase;
+  legislative_periods: LegislatorDetail[] | [];
+  political_party: PoliticalPartyBase;
+  electoral_district: ElectoralDistrict | null;
+  electoral_process: ElectoralProcess;
 
   // Propuestas y documentos
-  propuestas: string | null;
-  plan_gobierno_url: string | null;
+  proposals: string | null;
+  government_plan_url: string | null;
 
-  created_at: string;
+  created_at: Date;
 }
 
 // ============= PROYECTOS DE LEY =============
 
-export interface ProyectoLey {
+export interface Bill {
   id: string;
-  numero: string;
-  titulo: string;
-  resumen: string;
-  fecha_presentacion: string;
-  estado: string;
-  url_documento: string | null;
-  created_at: string;
+  number: string;
+  title: string;
+  summary: string;
+  submission_date: Date;
+  status: string;
+  document_url: string | null;
+  created_at: Date;
 }
 
 // ============= ASISTENCIAS Y DENUNCIAS =============
 
-export interface Asistencia {
+export interface Attendance {
   id: string;
-  fecha: string;
-  tipo_sesion: string;
-  asistio: boolean;
-  created_at: string;
+  date: Date;
+  session_type: string;
+  attended: boolean;
+  created_at: Date;
 }
 
-export interface Denuncia {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  tipo: string;
-  fecha_denuncia: string;
-  estado: string;
-  resolucion: string | null;
-  url_documento: string | null;
-  created_at: string;
+// ============= ESCAÑOS =============
+
+export interface SeatParliamentary {
+  chamber: string;
+  number_seat: number;
+  row: number;
+  legislator: LegislatorWithParty | null;
+  created_at: Date;
 }
 
 // ============= FILTROS Y OPCIONES =============
 
-export interface FiltrosPersonas {
-  camara?: TipoCamara;
-  partidos?: string[];
-  distritos?: string[];
+export interface FiltersPerson {
+  is_legislator_active?: boolean;
+  chamber?: ChamberType | string;
+  groups?: string | string[];
+  districts?: string | string[];
   search?: string;
+  skip?: number;
+  limit?: number;
+  [key: string]: unknown;
 }
 
-export interface FiltrosCandidaturas {
-  tipo?: TipoCandidatura;
-  partidos?: string[];
-  distritos?: string[];
-  estado?: EstadoCandidatura;
+export interface FiltersCandidates {
+  type?: CandidacyType;
+  parties?: string[];
+  districts?: string[];
+  status?: CandidacyStatus;
   search?: string;
 }
 
@@ -261,7 +269,7 @@ export interface PaginatedResponse<T> {
 
 // ============= HELPERS DE TIPOS =============
 
-export type PersonaListArray = PersonaList[];
-export type CandidaturaListArray = CandidaturaList[];
-export type PartidoArray = PartidoPoliticoBase[];
-export type DistritoArray = DistritoElectoral[];
+export type PersonListArray = PersonList[];
+export type CandidateListArray = CandidateList[];
+export type PartidoArray = PoliticalPartyBase[];
+export type DistritoArray = ElectoralDistrict[];

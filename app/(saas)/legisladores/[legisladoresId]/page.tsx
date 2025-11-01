@@ -1,22 +1,24 @@
 import { publicApi } from "@/lib/public-api";
 import { notFound } from "next/navigation";
 import DetailLegislador from "./_components/detail-page";
-import { PersonaDetail } from "@/interfaces/politics";
+import { PersonDetail } from "@/interfaces/politics";
 
 interface PageProps {
-    params: { legisladoresId: string };
+  params: { legisladoresId: string };
 }
 
 export default async function LegisladorDetailPage({ params }: PageProps) {
-    try {
-        const legislador = await publicApi.getPersonaById(
-        params.legisladoresId
-        ) as PersonaDetail;
-        if (!legislador) notFound();
+  const { legisladoresId } = await params;
 
-        return <DetailLegislador persona={legislador} />;
-    } catch (error) {
-        console.error("Error al obtener datos del legislador:", error);
-        notFound();
-    }
+  try {
+    const legislador = (await publicApi.getPersonaById(
+      legisladoresId,
+    )) as PersonDetail;
+    if (!legislador) notFound();
+
+    return <DetailLegislador persona={legislador} />;
+  } catch (error) {
+    console.error("Error al obtener datos del legislador:", error);
+    notFound();
+  }
 }
