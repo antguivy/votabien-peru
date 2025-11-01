@@ -307,7 +307,7 @@ export function ComparadorContent({
                   disabled={isAnimating}
                   size="lg"
                   variant="outline"
-                  className="group absolute top-2/5 sm:top-2/3 left-1/2 -translate-x-1/2 overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group absolute top-3/8 sm:top-2/3 left-1/2 -translate-x-1/2 overflow-hidden bg-card/80 backdrop-blur-sm border-2 border-border hover:border-primary/50 hover:bg-accent text-foreground transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Shuffle
                     className={`w-4 h-4 transition-transform duration-300 ${
@@ -415,7 +415,7 @@ function LegisladorSide({
             fill
             priority
             sizes="50vw"
-            className="object-cover object-top"
+            className="object-cover object-[center_20%] md:object-top scale-110 md:scale-100"
           />
         ) : (
           <div
@@ -435,11 +435,11 @@ function LegisladorSide({
             background: `linear-gradient(
               to bottom,
               transparent 0%,
-              transparent 40%,
-              ${color}04 55%,
-              ${color}12 70%,
-              ${color}30 82%,
-              ${color}60 92%,
+              transparent 30%,
+              ${color}04 45%,
+              ${color}12 60%,
+              ${color}30 75%,
+              ${color}60 88%,
               ${color}B3 100%
             )`,
           }}
@@ -454,11 +454,11 @@ function LegisladorSide({
           background: `linear-gradient(
             to bottom,
             transparent 0%,
-            transparent 40%,
-            rgba(0,0,0,0.12) 55%,
-            rgba(0,0,0,0.30) 70%,
-            rgba(0,0,0,0.50) 82%,
-            rgba(0,0,0,0.60) 100%
+            transparent 30%,
+            rgba(0,0,0,0.12) 45%,
+            rgba(0,0,0,0.30) 60%,
+            rgba(0,0,0,0.50) 75%,
+            rgba(0,0,0,0.65) 100%
           )`,
         }}
       />
@@ -469,8 +469,8 @@ function LegisladorSide({
         style={{
           background: `radial-gradient(
             ellipse at center,
-            transparent 30%,
-            rgba(0,0,0,0.4) 100%
+            transparent 20%,
+            rgba(0,0,0,0.3) 100%
           )`,
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Building2, Calendar, ExternalLink, Users } from "lucide-react";
 import {
   PoliticalPartyBase,
@@ -18,12 +18,12 @@ interface ParliamentaryGroup {
   name: string;
   seats: number;
   color: string;
-  logo_url: string | null;
-  acronym: string | null;
   mainPartyId: string;
   composition: Array<{
     partyId: string;
     partyName: string;
+    partyLogoUrl: string | null;
+    partyAcronym: string | null;
     count: number;
   }>;
 }
@@ -103,6 +103,8 @@ function processSeatsForHemiciclo(
         .map((p) => ({
           partyId: p.party.id,
           partyName: p.party.name,
+          partyLogoUrl: p.party.logo_url,
+          partyAcronym: p.party.acronym,
           count: p.count,
         }))
         .sort((a, b) => b.count - a.count);
@@ -111,8 +113,6 @@ function processSeatsForHemiciclo(
         name: groupName,
         seats: groupData.seats,
         color: (mainParty as PoliticalPartyBase).color_hex || "#94a3b8",
-        logo_url: (mainParty as PoliticalPartyBase).logo_url,
-        acronym: (mainParty as PoliticalPartyBase).acronym || groupName,
         mainPartyId: (mainParty as PoliticalPartyBase).id,
         composition,
       });
@@ -130,15 +130,12 @@ export default function PartidosSection({
   const [selectedPartido, setSelectedPartido] =
     useState<PoliticalPartyDetail | null>(null);
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
-  const [mobileTooltip, setMobileTooltip] = useState<{
-    group: ParliamentaryGroup;
-    x: number;
-    y: number;
-  } | null>(null);
+  const [selectedGroupMobile, setSelectedGroupMobile] = useState<string | null>(
+    null,
+  );
   const [mounted, setMounted] = useState(false);
 
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const hemicicloRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -157,30 +154,30 @@ export default function PartidosSection({
   const svgConfig = useMemo(() => {
     if (isMobile) {
       return {
-        viewBox: "0 0 1000 450",
+        viewBox: "0 0 1000 550",
         cx: 500,
-        cy: 400,
-        bubbleRadius: 15,
+        cy: 480,
+        bubbleRadius: 18,
         rows: [
-          { radius: 400, count: 32 },
-          { radius: 360, count: 29 },
-          { radius: 320, count: 26 },
-          { radius: 280, count: 23 },
-          { radius: 240, count: 20 },
+          { radius: 450, count: 32 },
+          { radius: 400, count: 29 },
+          { radius: 350, count: 26 },
+          { radius: 300, count: 23 },
+          { radius: 250, count: 20 },
         ],
       };
     }
     return {
-      viewBox: "0 0 800 450",
+      viewBox: "0 0 800 500",
       cx: 400,
-      cy: 400,
-      bubbleRadius: 15,
+      cy: 450,
+      bubbleRadius: 14,
       rows: [
-        { radius: 350, count: 32 },
-        { radius: 310, count: 29 },
-        { radius: 270, count: 26 },
-        { radius: 230, count: 23 },
-        { radius: 190, count: 20 },
+        { radius: 380, count: 32 },
+        { radius: 340, count: 29 },
+        { radius: 300, count: 26 },
+        { radius: 260, count: 23 },
+        { radius: 220, count: 20 },
       ],
     };
   }, [isMobile]);
@@ -239,133 +236,106 @@ export default function PartidosSection({
 
     return result;
   }, [seatsData, parliamentaryGroups, svgConfig]);
-
   const formatNumber = (num: number): string => {
     return new Intl.NumberFormat("es-PE").format(num);
+  };
+  const getColor = (bubble: Bubble): string => {
+    if (!bubble.seat.legislator) return "hsl(var(--muted))";
+    return bubble.group?.color || "#94a3b8";
   };
   const calcularAños = (fecha: Date | null): number | null => {
     if (!fecha) return null;
     return new Date().getFullYear() - new Date(fecha).getFullYear();
   };
-  const getColor = (bubble: Bubble): string => {
-    if (!bubble.seat.legislator) return "#e2e8f0";
-    return bubble.group?.color || "#94a3b8";
+  const handleLegendClick = (groupName: string) => {
+    if (!isMobile) return;
+    setSelectedGroupMobile(
+      selectedGroupMobile === groupName ? null : groupName,
+    );
   };
-
-  const handleBubbleClick = (
-    bubble: Bubble,
-    event: React.MouseEvent<SVGCircleElement>,
-  ) => {
-    if (!isMobile || !bubble.group) return;
-
-    const rect = hemicicloRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const svgX = (event.clientX - rect.left) / rect.width;
-    const svgY = (event.clientY - rect.top) / rect.height;
-
-    setMobileTooltip({
-      group: bubble.group,
-      x: svgX * 100,
-      y: svgY * 100,
-    });
-  };
-
-  // Cerrar tooltip móvil al hacer click fuera
-  useEffect(() => {
-    if (!isMobile || !mobileTooltip) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!hemicicloRef.current?.contains(e.target as Node)) {
-        setMobileTooltip(null);
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [isMobile, mobileTooltip]);
 
   const TooltipContent = ({ group }: { group: ParliamentaryGroup }) => (
-    <div className="bg-white dark:bg-slate-800 border-2 border-indigo-500/50 rounded-xl shadow-2xl p-4 min-w-[280px] max-w-[320px] backdrop-blur-sm">
+    <div className="bg-card border-2 border-primary/50 rounded-xl shadow-2xl p-4 backdrop-blur-sm w-[88vw]  md:w-auto md:min-w-[280px]">
       <div className="flex items-center gap-3 mb-3">
-        {group.logo_url ? (
-          <Image
-            src={group.logo_url}
-            alt={group.name}
-            width={40}
-            height={40}
-            className="w-10 h-10 object-contain flex-shrink-0"
-          />
-        ) : (
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg"
-            style={{ backgroundColor: group.color }}
-          >
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-        )}
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0"
+          style={{ backgroundColor: group.color }}
+        >
+          <Building2 className="w-5 h-5 text-white" />
+        </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+          <div className="font-bold text-sm text-card-foreground leading-tight">
             {group.name}
           </div>
-          <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+          <div className="text-xs text-muted-foreground font-medium">
             Grupo Parlamentario
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-        <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-2">
-          <div className="text-slate-600 dark:text-slate-400 mb-1 text-xs">
-            Escaños
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <div className="bg-primary/10 rounded-lg px-3 py-1">
+            <div className="text-[10px] text-muted-foreground">Escaños</div>
+            <div className="font-bold text-lg text-primary">{group.seats}</div>
           </div>
-          <div className="font-bold text-xl text-indigo-600 dark:text-indigo-400">
-            {group.seats}
-          </div>
-        </div>
-        <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-2">
-          <div className="text-slate-600 dark:text-slate-400 mb-1 text-xs">
-            % Poder
-          </div>
-          <div className="font-bold text-xl text-slate-900 dark:text-white">
-            {((group.seats / totalSeats) * 100).toFixed(1)}%
+          <div className="bg-muted rounded-lg px-3 py-1">
+            <div className="text-[10px] text-muted-foreground">% Poder</div>
+            <div className="font-bold text-lg text-foreground">
+              {((group.seats / totalSeats) * 100).toFixed(1)}%
+            </div>
           </div>
         </div>
       </div>
 
-      {group.composition.length > 1 && (
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">
+      {group.composition.length > 0 && (
+        <div className="pt-2 border-t border-border">
+          <div className="text-xs text-muted-foreground mb-2 font-semibold">
             Composición:
           </div>
-          {group.composition.map((comp, idx) => (
-            <div
-              key={idx}
-              className="text-xs text-slate-700 dark:text-slate-300 flex justify-between"
-            >
-              <span className="truncate mr-2">{comp.partyName}</span>
-              <span className="font-semibold flex-shrink-0">{comp.count}</span>
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-2">
+            {group.composition.map((comp, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 text-xs bg-muted/30 rounded-lg p-2"
+              >
+                {comp.partyLogoUrl ? (
+                  <Image
+                    src={comp.partyLogoUrl}
+                    alt={comp.partyName}
+                    width={24}
+                    height={24}
+                    className="w-6 h-6 object-contain flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-6 h-6 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-3 h-3 text-muted-foreground" />
+                  </div>
+                )}
+                <span className="flex-1 text-card-foreground font-medium">
+                  {comp.partyName}
+                </span>
+                <span className="font-bold flex-shrink-0 text-primary">
+                  {comp.count}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
-
   return (
     <section className="bg-gradient-to-b from-muted/30 pb-10 md:pb-16 to-background overflow-hidden">
       <div className="container mx-auto px-3 sm:px-4">
-        <div className="mb-12 md:mb-20">
-          <div className="text-center mb-8 md:mb-12 space-y-3 md:space-y-4">
-            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-slate-900 dark:text-white px-2">
-              El Congreso en Tiempo Real
+        <div className="mb-8 md:mb-16">
+          <div className="text-center mb-6 md:mb-10 space-y-3 md:space-y-4">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground px-2">
+              El Congreso Actual
             </h2>
-            <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto px-4">
-              <span className="text-2xl md:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              <span className="text-2xl md:text-3xl font-bold text-primary">
                 {totalSeats}
               </span>{" "}
               escaños organizados en{" "}
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+              <span className="font-semibold text-primary">
                 {parliamentaryGroups.length}
               </span>{" "}
               grupos parlamentarios
@@ -373,15 +343,12 @@ export default function PartidosSection({
           </div>
 
           {/* Layout optimizado: Hemiciclo + Leyenda lado a lado en desktop */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl shadow-2xl p-3 sm:p-4 md:p-6 mb-4 md:mb-6">
-            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-              {/* Hemiciclo */}
-              <div className="flex-1 lg:min-w-0">
-                <div
-                  ref={hemicicloRef}
-                  className="relative mb-4 lg:mb-0 aspect-[2/1]"
-                >
-                  <svg viewBox={svgConfig.viewBox} className="w-full h-full">
+          <div className="bg-card rounded-xl md:rounded-2xl shadow-2xl p-3 sm:p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6 min-h-0">
+              {/* === HEMICICLO === */}
+              <div className="flex-1 flex justify-center lg:min-w-0">
+                <div className="relative w-full max-w-[900px]">
+                  <svg viewBox={svgConfig.viewBox} className="w-full h-auto">
                     <defs>
                       <filter id="bubbleShadow">
                         <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
@@ -412,25 +379,30 @@ export default function PartidosSection({
                       ))}
                     </defs>
 
-                    {/* Guide lines */}
+                    {/* Guías */}
                     {svgConfig.rows.map((row, idx) => (
                       <path
                         key={idx}
                         d={`M ${svgConfig.cx - row.radius} ${svgConfig.cy} A ${row.radius} ${row.radius} 0 0 1 ${svgConfig.cx + row.radius} ${svgConfig.cy}`}
                         fill="none"
-                        stroke="rgba(148, 163, 184, 0.15)"
+                        stroke="hsl(var(--border))"
                         strokeWidth="1"
                         strokeDasharray="5 5"
+                        opacity="0.3"
                       />
                     ))}
 
-                    {/* Bubbles */}
+                    {/* Burbujas */}
                     {bubbles.map((bubble, idx) => {
                       const groupName =
                         bubble.seat.legislator?.parliamentary_group || null;
                       const isHovered = hoveredGroup === groupName;
+                      const isSelected = selectedGroupMobile === groupName;
                       const isOtherHovered =
-                        hoveredGroup !== null && hoveredGroup !== groupName;
+                        hoveredGroup && hoveredGroup !== groupName;
+                      const isOtherSelected =
+                        selectedGroupMobile &&
+                        selectedGroupMobile !== groupName;
                       const color = getColor(bubble);
 
                       return (
@@ -440,23 +412,32 @@ export default function PartidosSection({
                           cy={bubble.y}
                           r={svgConfig.bubbleRadius}
                           fill={color}
-                          opacity={isOtherHovered ? 0.3 : isHovered ? 1 : 0.9}
-                          stroke="white"
-                          strokeWidth={isHovered ? 3 : 1.5}
+                          opacity={
+                            isMobile
+                              ? isOtherSelected
+                                ? 0.2
+                                : isSelected
+                                  ? 1
+                                  : 0.7
+                              : isOtherHovered
+                                ? 0.3
+                                : isHovered
+                                  ? 1
+                                  : 0.9
+                          }
+                          stroke="hsl(var(--background))"
+                          strokeWidth={isHovered || isSelected ? 3 : 1.5}
                           filter={
-                            isHovered && groupName
+                            (isHovered || isSelected) && groupName
                               ? `url(#glow-${groupName})`
                               : "url(#bubbleShadow)"
                           }
-                          className="cursor-pointer transition-all duration-300"
+                          className={`transition-all duration-300 ${!isMobile ? "cursor-pointer" : ""}`}
                           onMouseEnter={() =>
                             !isMobile && groupName && setHoveredGroup(groupName)
                           }
                           onMouseLeave={() =>
                             !isMobile && setHoveredGroup(null)
-                          }
-                          onClick={(e) =>
-                            isMobile && handleBubbleClick(bubble, e)
                           }
                           style={{
                             animation: mounted
@@ -467,13 +448,12 @@ export default function PartidosSection({
                       );
                     })}
 
-                    {/* Central text */}
+                    {/* Texto central */}
                     <circle
                       cx={svgConfig.cx}
                       cy={svgConfig.cy - 50}
-                      r={isMobile ? 100 : 60}
-                      fill="white"
-                      stroke="rgb(226, 232, 240)"
+                      r={isMobile ? 100 : 80}
+                      className="fill-card stroke-border"
                       strokeWidth="2"
                       filter="url(#bubbleShadow)"
                     />
@@ -481,9 +461,10 @@ export default function PartidosSection({
                       x={svgConfig.cx}
                       y={svgConfig.cy - 60}
                       textAnchor="middle"
-                      fontSize={isMobile ? "64" : "32"}
+                      fontSize={isMobile ? "64" : "54"}
                       fontWeight="bold"
-                      fill="rgb(99, 102, 241)"
+                      fill="currentColor"
+                      className="text-primary"
                     >
                       {totalSeats}
                     </text>
@@ -491,37 +472,16 @@ export default function PartidosSection({
                       x={svgConfig.cx}
                       y={svgConfig.cy - 24}
                       textAnchor="middle"
-                      fontSize={isMobile ? "32" : "12"}
+                      fontSize={isMobile ? "32" : "24"}
                       fontWeight="600"
-                      fill="rgb(100, 116, 139)"
-                      letterSpacing="1"
+                      fill="currentColor"
+                      className="text-muted-foreground tracking-[1px]"
                     >
                       ESCAÑOS
                     </text>
                   </svg>
 
-                  {/* Mobile Tooltip */}
-                  {isMobile && mobileTooltip && (
-                    <div
-                      className="absolute z-20 animate-in fade-in zoom-in-95 duration-200"
-                      style={{
-                        left: `${mobileTooltip.x}%`,
-                        top: `${mobileTooltip.y}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => setMobileTooltip(null)}
-                        className="absolute -top-2 -right-2 bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-10"
-                      >
-                        ×
-                      </button>
-                      <TooltipContent group={mobileTooltip.group} />
-                    </div>
-                  )}
-
-                  {/* Desktop Tooltip - Posición fija arriba */}
+                  {/* Tooltip escritorio */}
                   {!isMobile && hoveredGroup && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-200">
                       <TooltipContent
@@ -534,23 +494,34 @@ export default function PartidosSection({
                     </div>
                   )}
                 </div>
-
-                {/* Instrucción para mobile */}
-                {isMobile && (
-                  <p className="text-xs text-center text-slate-500 dark:text-slate-400 mt-2">
-                    Toca un escaño para ver detalles
-                  </p>
-                )}
               </div>
 
-              {/* Legend - Lateral en desktop, abajo en mobile */}
-              <div className="lg:w-80 lg:flex-shrink-0">
-                <h3 className="text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 text-center lg:text-left uppercase tracking-wide">
+              {/* Leyenda */}
+              <div className="lg:w-80 lg:flex-shrink-0 mt-4 lg:mt-0">
+                <h3 className="text-xs md:text-sm font-semibold text-card-foreground mb-3 text-center lg:text-left uppercase tracking-wide">
                   Grupos Parlamentarios
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-1 space-y-2 max-h-[400px] overflow-y-auto lg:pr-2 custom-scrollbar">
+
+                {/* Layout horizontal en mobile */}
+                <div
+                  className="
+                    flex md:grid 
+                    md:grid-cols-1 
+                    gap-2 md:space-y-2 
+                    overflow-x-auto md:overflow-x-hidden 
+                    md:overflow-y-auto
+                    pb-2 md:pb-0
+                    md:max-h-[500px]
+                  "
+                  style={{
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "hsl(var(--primary)) hsl(var(--muted))",
+                  }}
+                >
                   {parliamentaryGroups.map((group, idx) => {
                     const isHovered = hoveredGroup === group.name;
+                    const isSelected = selectedGroupMobile === group.name;
+                    const isActive = isHovered || isSelected;
 
                     return (
                       <button
@@ -559,12 +530,15 @@ export default function PartidosSection({
                           !isMobile && setHoveredGroup(group.name)
                         }
                         onMouseLeave={() => !isMobile && setHoveredGroup(null)}
+                        onClick={() =>
+                          isMobile && handleLegendClick(group.name)
+                        }
                         className={`
-                          w-full group flex items-center gap-2 md:gap-3 p-2 rounded-lg border-2 transition-all duration-300
+                          flex items-center gap-2 md:gap-3 p-2 rounded-lg border-2 transition-all duration-300 flex-shrink-0 md:flex-shrink
                           ${
-                            isHovered
-                              ? "border-indigo-500 shadow-lg bg-indigo-50 dark:bg-indigo-900/20"
-                              : "border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 bg-white dark:bg-slate-800/50"
+                            isActive
+                              ? "border-primary shadow-lg bg-primary/10"
+                              : "border-border hover:border-primary/50 bg-card"
                           }
                         `}
                         style={{
@@ -573,35 +547,26 @@ export default function PartidosSection({
                             : "none",
                         }}
                       >
-                        {group.logo_url ? (
-                          <Image
-                            src={group.logo_url}
-                            alt={group.acronym || group.name}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 object-contain flex-shrink-0"
-                          />
-                        ) : (
-                          <div
-                            className="w-8 h-8 rounded-md flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 flex-shrink-0"
-                            style={{ backgroundColor: group.color }}
-                          >
-                            <Building2 className="w-4 h-4 text-white" />
-                          </div>
-                        )}
+                        <div
+                          className="w-8 h-8 rounded-md flex items-center justify-center shadow-md transition-transform duration-300 hover:scale-110 flex-shrink-0"
+                          style={{ backgroundColor: group.color }}
+                        >
+                          <Building2 className="w-4 h-4 text-white" />
+                        </div>
                         <div className="flex-1 text-left min-w-0">
-                          <div className="text-xs md:text-sm font-bold text-slate-900 dark:text-white truncate">
-                            {group.acronym}
-                          </div>
-                          <div className="text-[10px] text-slate-600 dark:text-slate-400 truncate">
+                          <div className="text-xs md:text-sm font-bold text-card-foreground truncate">
                             {group.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            {group.composition.length} partido
+                            {group.composition.length !== 1 ? "s" : ""}
                           </div>
                         </div>
                         <div className="flex-shrink-0 text-right">
-                          <div className="text-base font-bold text-slate-900 dark:text-white">
+                          <div className="text-base font-bold text-card-foreground">
                             {group.seats}
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                          <div className="text-[10px] text-muted-foreground">
                             {((group.seats / totalSeats) * 100).toFixed(1)}%
                           </div>
                         </div>
@@ -610,26 +575,39 @@ export default function PartidosSection({
                   })}
 
                   {vacantSeats > 0 && (
-                    <div className="flex items-center gap-2 md:gap-3 p-2 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/30">
-                      <div className="w-8 h-8 rounded-md bg-slate-400 dark:bg-slate-600 flex-shrink-0 flex items-center justify-center">
-                        <Users className="w-4 h-4 text-white" />
+                    <div className="flex items-center gap-2 md:gap-3 p-2 rounded-lg border-2 border-dashed border-border bg-muted/50 flex-shrink-0 md:flex-shrink">
+                      <div className="w-8 h-8 rounded-md bg-muted-foreground/50 flex-shrink-0 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-background" />
                       </div>
                       <div className="flex-1 text-left min-w-0">
-                        <div className="text-xs md:text-sm font-bold text-slate-700 dark:text-slate-300">
+                        <div className="text-xs md:text-sm font-bold text-muted-foreground">
                           Vacantes
                         </div>
-                        <div className="text-[10px] text-slate-600 dark:text-slate-400">
+                        <div className="text-[10px] text-muted-foreground/70">
                           Sin asignar
                         </div>
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <div className="text-base font-bold text-slate-700 dark:text-slate-300">
+                        <div className="text-base font-bold text-muted-foreground">
                           {vacantSeats}
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
+
+                {/* Tooltip móvil */}
+                {isMobile && selectedGroupMobile && (
+                  <div className="mt-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <TooltipContent
+                      group={
+                        parliamentaryGroups.find(
+                          (g) => g.name === selectedGroupMobile,
+                        )!
+                      }
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -644,18 +622,17 @@ export default function PartidosSection({
 
           <div className="text-center mb-8 md:mb-12 space-y-3 md:space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground px-2">
-              El Futuro en Disputa
+              Conoce a los Partidos Políticos
             </h2>
 
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              <span className="text-2xl md:text-3xl font-bold text-warning">
+              <span className="text-2xl md:text-3xl font-bold text-primary">
                 {totalPartidos}
               </span>{" "}
-              partidos compiten por representar tu voz en 2026. Aquí puedes
-              conocerlos y decidir informado.
+              partidos políticos registrados buscan tu voto en 2026. Conoce sus
+              propuestas, trayectoria y decide con información.
             </p>
           </div>
-
           {/* Grid de partidos preview */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12">
             {partidosPreview.map((partido, idx) => {
@@ -673,14 +650,14 @@ export default function PartidosSection({
                 <Card
                   key={partido.id}
                   onClick={() => setSelectedPartido(partido)}
-                  className="group p-0 relative overflow-hidden border-2 hover:border-primary/50 rounded-xl md:rounded-2xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer text-left"
+                  className="group p-0 relative overflow-hidden border-2 hover:border-primary/50 rounded-xl md:rounded-2xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer text-left flex flex-col"
                   style={{
                     animation: mounted
                       ? `fadeInUp 0.6s ease-out ${idx * 0.1}s both`
                       : "none",
                   }}
                 >
-                  <CardHeader className="relative h-20 md:h-28 p-0 overflow-hidden">
+                  <CardHeader className="relative h-20 md:h-28 p-0 overflow-hidden flex-shrink-0">
                     <div
                       className="absolute inset-0"
                       style={{
@@ -710,18 +687,20 @@ export default function PartidosSection({
                     </div>
                   </CardHeader>
 
-                  <CardContent className="p-4 md:p-6 pt-6 md:pt-10">
-                    <h3 className="font-bold text-sm md:text-base lg:text-lg text-foreground mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                  <CardContent className="p-4 md:p-6 pt-6 md:pt-10 flex flex-col flex-1">
+                    <h3 className="font-bold text-sm md:text-base lg:text-lg text-foreground mb-2 line-clamp-2 h-10 md:h-12 group-hover:text-primary transition-colors">
                       {partido.name}
                     </h3>
 
-                    {partido.ideology && (
-                      <p className="text-xs text-muted-foreground mb-3 line-clamp-1">
-                        {partido.ideology}
-                      </p>
-                    )}
+                    <div className="h-5 mb-3">
+                      {partido.ideology && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {partido.ideology}
+                        </p>
+                      )}
+                    </div>
 
-                    <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4 flex-wrap text-xs md:text-sm">
+                    <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4 flex-wrap text-xs md:text-sm min-h-[1.5rem]">
                       {partido.total_afiliates > 0 && (
                         <div className="flex items-center gap-1">
                           <Users className="w-3 h-3 text-primary" />
@@ -746,7 +725,7 @@ export default function PartidosSection({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-end pt-2 md:pt-3 border-t border-border">
+                    <div className="flex items-center justify-end pt-2 md:pt-3 border-t border-border mt-auto">
                       <Button
                         variant="secondary"
                         className="px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm border border-border hover:border-primary/50 transition-all duration-300 group-hover:scale-105"
