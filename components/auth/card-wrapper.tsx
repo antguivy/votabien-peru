@@ -105,7 +105,7 @@ export const CardWrapper = ({
 
             {/* Texto opcional inferior */}
             <div className="absolute bottom-6 left-6 z-10 text-white text-sm opacity-80">
-              <p>© 2025 VotaBien Perú</p>
+              <p>© 2026 VotaBien Perú</p>
             </div>
           </div>
         </CardContent>

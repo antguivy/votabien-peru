@@ -1,14 +1,14 @@
 module.exports = {
   types: [
-    { value: "feat", name: "feat:     ✨ Nueva funcionalidad" },
-    { value: "fix", name: "fix:      🐛 Corrección de bug" },
-    { value: "docs", name: "docs:     📚 Documentación" },
-    { value: "style", name: "style:    💎 Formato de código" },
-    { value: "refactor", name: "refactor: 📦 Refactorización" },
-    { value: "test", name: "test:     🚨 Tests" },
-    { value: "chore", name: "chore:    ♻️  Mantenimiento" },
-    { value: "ci", name: "ci:       🔧 CI/CD" },
-    { value: "build", name: "build:    🏗️  Build system" },
+    { value: "feat", name: "feat:     Nueva funcionalidad" },
+    { value: "fix", name: "fix:      Corrección de bug" },
+    { value: "docs", name: "docs:     Documentación" },
+    { value: "style", name: "style:    Formato de código" },
+    { value: "refactor", name: "refactor: Refactorización" },
+    { value: "test", name: "test:     Tests" },
+    { value: "chore", name: "chore:    Mantenimiento" },
+    { value: "ci", name: "ci:       CI/CD" },
+    { value: "build", name: "build:    Build system" },
   ],
 
   scopes: [
@@ -20,6 +20,7 @@ module.exports = {
     { name: "config", description: "Configuración del proyecto" },
     { name: "tooling", description: "Herramientas de desarrollo" },
     { name: "deps", description: "Dependencias" },
+    { name: "docs", description: "Documentación" },
   ],
 
   scopeOverrides: {
