@@ -1084,6 +1084,42 @@ export type Database = {
           },
         ];
       };
+      team: {
+        Row: {
+          id: string;
+          first_name: string;
+          last_name: string;
+          linkedin_url: string | null;
+          portfolio_url: string | null;
+          is_principal: boolean;
+          email: string;
+          role: string;
+          image_url: string | null;
+        };
+        Insert: {
+          id: string;
+          first_name: string;
+          last_name: string;
+          linkedin_url?: string | null;
+          portfolio_url?: string | null;
+          is_principal?: boolean;
+          email: string;
+          role: string;
+          image_url: string | null;
+        };
+        Update: {
+          id?: string;
+          first_name?: string;
+          last_name?: string;
+          linkedin_url?: string | null;
+          portfolio_url?: string | null;
+          is_principal?: boolean;
+          email?: string;
+          role?: string;
+          image_url?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       party_seats_by_district: {

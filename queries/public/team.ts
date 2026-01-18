@@ -2,9 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-/**
- * Team member interface for displaying project team information
- */
 export interface TeamMember {
   id: string;
   first_name: string;
@@ -14,16 +11,13 @@ export interface TeamMember {
   is_principal: boolean;
   email: string;
   role: string;
+  image_url: string | null;
 }
 
-/**
- * Get all team members
- */
 export async function getTeam(): Promise<TeamMember[]> {
   const supabase = await createClient();
 
-  //WIP
-  const TABLE_NAME = "parliamentarygroup";
+  const TABLE_NAME = "team";
 
   const query = supabase
     .from(TABLE_NAME)
@@ -36,7 +30,8 @@ export async function getTeam(): Promise<TeamMember[]> {
       portfolio_url,
       is_principal,
       email,
-      role
+      role,
+      image_url
     `,
     )
     .order("first_name", { ascending: true });
@@ -51,17 +46,11 @@ export async function getTeam(): Promise<TeamMember[]> {
   return data as unknown as TeamMember[];
 }
 
-/**
- * Get principal team members only
- */
 export async function getPrincipalTeamMembers(): Promise<TeamMember[]> {
   const team = await getTeam();
   return team.filter((member) => member.is_principal);
 }
 
-/**
- * Get team member by ID
- */
 export async function getTeamMemberById(
   id: string,
 ): Promise<TeamMember | null> {
@@ -69,9 +58,6 @@ export async function getTeamMemberById(
   return team.find((member) => member.id === id) || null;
 }
 
-/**
- * Get team members by role
- */
 export async function getTeamMembersByRole(
   role: string,
 ): Promise<TeamMember[]> {

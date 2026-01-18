@@ -11,8 +11,16 @@ import {
   UserX,
   AlertTriangle,
 } from "lucide-react";
+import TeamList from "@/app/(platform)/nosotros/[nosotrosId]/_components/team-list";
+import { getTeam, type TeamMember } from "@/queries/public/team";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  let team: TeamMember[] = [];
+  try {
+    team = await getTeam();
+  } catch (error) {
+    console.error("Error al obtener el equipo:", error);
+  }
   const sources = [
     "Andina",
     "BBC",
@@ -378,85 +386,11 @@ export default function AboutPage() {
             Equipo y Desarrollo
           </h2>
 
-          <div className="space-y-6 text-muted-foreground">
-            <div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
-                Sobre el Proyecto
-              </h3>
-              <p className="mb-4">
-                VotaBienPerú es un proyecto ciudadano independiente impulsado
-                por ciudadanos comprometidos con la transparencia democrática en
-                el Perú.
-              </p>
-              <p>
-                El proyecto opera de manera independiente, sin afiliación
-                política ni financiamiento de partidos, gobiernos o grupos de
-                interés. Es un esfuerzo voluntario motivado por el objetivo de
-                facilitar el acceso ciudadano a información política
-                verificable.
-              </p>
-            </div>
-
-            {/* <div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
-                Desarrollo Actual
-              </h3>
-              <p className="mb-4">
-                La plataforma está siendo desarrollada por un equipo reducido de
-                colaboradores voluntarios que dedican tiempo a la investigación,
-                verificación y actualización de datos.
-              </p>
-              <p>
-                El desarrollo técnico, diseño de la plataforma y coordinación
-                general son realizados actualmente por el fundador del proyecto,
-                con el apoyo de investigadores que colaboran en la recopilación
-                y verificación de información.
-              </p>
-            </div> */}
-
-            {/* <div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
-                Sostenibilidad
-              </h3>
-              <p>
-                Este es un proyecto sin fines de lucro. Los costos de operación
-                (hosting, herramientas) son actualmente cubiertos por los
-                colaboradores. No aceptamos publicidad ni patrocinios que puedan
-                comprometer la neutralidad e independencia del proyecto.
-              </p>
-            </div> */}
-
-            <div className="pt-6 border-t border-border">
-              <h3 className="text-xl font-semibold text-foreground mb-4">
-                Colaboración
-              </h3>
-              <p className="mb-4">
-                Estamos abiertos a colaboraciones con periodistas,
-                organizaciones de la sociedad civil y ciudadanos interesados en
-                contribuir a la transparencia democrática.
-              </p>
-              <p className="mb-6">
-                Si deseas colaborar, reportar información incorrecta o sugerir
-                mejoras, puedes contactarnos:
-              </p>
-
-              {/* <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-primary" />
-                  <div>
-                    <span className="text-sm font-medium text-foreground block">
-                      Correo Electrónico
-                    </span>
-                    <Link
-                      href="mailto:avyllesca@gmail.com"
-                      className="text-primary hover:underline"
-                    >
-                      avyllesca@gmail.com
-                    </Link>
-                  </div>
-                </div>
-              </div> */}
-            </div>
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-foreground mb-6">
+              Nuestro Equipo
+            </h3>
+            <TeamList members={team} />
           </div>
         </div>
       </section>
