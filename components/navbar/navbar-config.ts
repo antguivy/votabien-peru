@@ -10,6 +10,8 @@ import {
   // UserCog,
   // Settings,
   BookHeadphones,
+  Users,
+  DollarSign,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
 
@@ -26,10 +28,23 @@ export const publicNavGroups: NavGroup[] = [
         label: "Comparador",
         icon: GitCompare,
       },
-      { href: "/nosotros", label: "Nosotros", icon: Info },
     ],
   },
 ];
+
+export const aboutNavGroup: NavGroup = {
+  label: "Nosotros",
+  requiresAuth: false,
+  links: [
+    { href: "/nosotros/equipo", label: "Equipo", icon: Users },
+    {
+      href: "/nosotros/financiamiento",
+      label: "Financiamiento",
+      icon: DollarSign,
+    },
+    { href: "/nosotros/mision", label: "Misión y Visión", icon: Info },
+  ],
+};
 
 export const adminNavGroups: NavGroup[] = [
   {

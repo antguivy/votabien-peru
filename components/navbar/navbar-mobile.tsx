@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { Menu, X, LogOut, Settings } from "lucide-react";
+import { Menu, X, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,12 +16,12 @@ import { NavbarMenu } from "./navbar-menu";
 import { MobileThemeToggle } from "./navbar-theme-toggle";
 import {
   publicNavGroups,
+  aboutNavGroup,
   adminNavGroups,
   getAuthorizedNavGroups,
 } from "./navbar-config";
 import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions"; // Importar tipo
-import { LogoutButton } from "@/components/auth/logout-button";
+import { UserProfile } from "@/lib/auth-actions";
 import Link from "next/link";
 
 interface NavbarMobileProps {
@@ -64,11 +64,14 @@ export const NavbarMobile = ({ user, profile }: NavbarMobileProps) => {
 
   // FILTRADO DE RUTAS SEGÚN EL ROL DE LA BD
   const authorizedAdminGroups =
-    user && profile
-      ? getAuthorizedNavGroups(adminNavGroups, role) // Usamos el role del profile
-      : [];
+    user && profile ? getAuthorizedNavGroups(adminNavGroups, role) : [];
 
-  const allGroups = [...publicNavGroups, ...authorizedAdminGroups];
+  // Agregar aboutNavGroup entre las rutas públicas y admin
+  const allGroups = [
+    ...publicNavGroups,
+    aboutNavGroup, // <-- Menú "Nosotros" colapsable
+    ...authorizedAdminGroups,
+  ];
 
   return (
     <div className="flex lg:hidden">
@@ -134,28 +137,6 @@ export const NavbarMobile = ({ user, profile }: NavbarMobileProps) => {
 
               <MobileThemeToggle theme={theme} setTheme={setTheme} />
             </div>
-
-            {/* <div className="px-4 py-4 border-t border-border bg-card/50 backdrop-blur-sm">
-              {user ? (
-                <LogoutButton>
-                  <Button
-                    className="w-full shadow-lg"
-                    variant="outline"
-                    size="lg"
-                  >
-                    <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
-                    Cerrar Sesión
-                  </Button>
-                </LogoutButton>
-              ) : (
-                // Botón para login en móvil si no está logueado
-                <Button asChild className="w-full" size="lg">
-                  <Link href="/auth/login" onClick={() => setIsOpen(false)}>
-                    Iniciar Sesión
-                  </Link>
-                </Button>
-              )}
-            </div> */}
           </div>
         </SheetContent>
       </Sheet>

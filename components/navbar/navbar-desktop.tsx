@@ -4,17 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NavbarAdminMenu } from "./navbar-admin-menu";
+import { NavbarAboutMenu } from "./navbar-about-menu";
 import {
   publicNavGroups,
   getAuthorizedNavGroups,
   adminNavGroups,
 } from "./navbar-config";
 import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions"; // Importar tipo
+import { UserProfile } from "@/lib/auth-actions";
 
 interface NavbarDesktopProps {
   user?: User | null;
-  profile?: UserProfile | null; // <--- 1. Recibir Profile
+  profile?: UserProfile | null;
 }
 
 export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
@@ -26,11 +27,8 @@ export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
   };
 
   const publicLinks = publicNavGroups[0].links;
-
-  // <--- 2. USAR EL ROL DE LA BD (PROFILE), NO METADATA
   const role = profile?.role || "user";
 
-  // Debug: Esto te confirmará en la consola del navegador qué rol está llegando
   const authorizedAdminGroups = user
     ? getAuthorizedNavGroups(adminNavGroups, role)
     : [];
@@ -51,6 +49,9 @@ export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
           {link.label}
         </Link>
       ))}
+
+      {/* Menú desplegable "Nosotros" */}
+      <NavbarAboutMenu />
 
       {user && authorizedAdminGroups.length > 0 && (
         <div className="h-6 w-px bg-border mx-2" />
