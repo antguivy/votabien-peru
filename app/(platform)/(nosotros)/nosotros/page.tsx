@@ -11,7 +11,7 @@ import {
   UserX,
   AlertTriangle,
 } from "lucide-react";
-import TeamList from "@/app/(platform)/nosotros/[nosotrosId]/_components/team-list";
+import TeamList from "@/app/(platform)/(nosotros)/nosotros/[nosotrosId]/_components/team-list";
 import { getTeam, type TeamMember } from "@/queries/public/team";
 
 export default async function AboutPage() {
