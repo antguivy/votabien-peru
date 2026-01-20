@@ -36,13 +36,13 @@ export const aboutNavGroup: NavGroup = {
   label: "Nosotros",
   requiresAuth: false,
   links: [
-    { href: "/nosotros/equipo", label: "Equipo", icon: Users },
+    { href: "/equipo", label: "Equipo", icon: Users },
     {
-      href: "/nosotros/financiamiento",
+      href: "/financiamiento",
       label: "Financiamiento",
       icon: DollarSign,
     },
-    { href: "/nosotros/mision", label: "Misión y Visión", icon: Info },
+    { href: "/mision", label: "Misión y Visión", icon: Info },
   ],
 };
 
