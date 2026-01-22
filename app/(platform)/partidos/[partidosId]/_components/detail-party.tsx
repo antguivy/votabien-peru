@@ -219,37 +219,35 @@ export default function DetailParty({
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
       <div
-        className="border-b border-border bg-background backdrop-brightness-0 supports-[backdrop-filter]:bg-background sticky top-0 z-50"
+        className="border-b border-border bg-background backdrop-brightness-0 sticky top-0 z-50"
         style={{
           background: `linear-gradient(135deg, ${partidoColor} 0%, ${partidoColor}dd 100%)`,
         }}
       >
+        {hasOverlay && (
+          <div className="absolute inset-0 bg-gradient-to-br from-black/30 to-black/10" />
+        )}
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <nav className="flex items-center gap-1.5 text-xs text-foreground">
-            <Link
-              href="/"
-              className="hover:text-foreground transition-colors p-1"
-            >
+          <nav className={cn("flex items-center gap-1.5 text-xs ", textColor)}>
+            <Link href="/" className=" transition-colors p-1">
               <Home className="w-3.5 h-3.5" />
             </Link>
-            <ChevronRight className="w-3 h-3 text-foreground" />
+            <ChevronRight className="w-3 h-3" />
             <Link
               href="/partidos?active=true"
-              className="hover:text-foreground transition-colors"
+              className="font-medium transition-colors"
             >
               Partidos
             </Link>
-            <ChevronRight className="w-3 h-3 text-foreground" />
-            <span className="font-medium text-foreground max-w-[150px]">
-              {party.name}
-            </span>
+            <ChevronRight className="w-3 h-3" />
+            <span className="font-medium max-w-[150px]">{party.name}</span>
           </nav>
 
           {/* Badge de Estado en el Nav */}
           {party.active && (
             <Badge
               variant="outline"
-              className="hidden sm:flex border-success text-muted bg-success text-[10px] h-5 px-2 gap-1.5"
+              className="hidden sm:flex border-success text-muted bg-success text-xs h-5 px-2 gap-1.5"
             >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-muted opacity-75"></span>

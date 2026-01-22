@@ -58,7 +58,7 @@
 @layer base {
   :root {
     --radius: 0.5rem;
-    --brand: oklch(0.623 0.257 28.8);
+    --brand: oklch(0.4936 0.165 28.53);
 
     /* ----- Superficies y Fondos ----- */
     --background: oklch(0.99 0.002 240); /* Blanco cálido, casi neutro */
@@ -110,7 +110,7 @@
   }
 
   .dark {
-    --brand: oklch(0.623 0.257 28.8);
+    --brand: oklch(0.4936 0.165 28.53);
 
     /* ----- Superficies y Fondos ----- */
     --background: oklch(0.15 0.01 240); /* Azul muy oscuro, profesional */
@@ -217,6 +217,48 @@ CHARTS:
 - Usar para visualizaciones de datos legislativos
 - Mantener consistencia en gráficos similares
 */
+@media print {
+  /* Ocultar elementos de UI interactiva */
+  .no-print,
+  header,
+  nav,
+  button,
+  .tabs-list,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Mostrar la hoja de impresión que normalmente está oculta */
+  .print-only {
+    display: block !important;
+    position: static !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* Resetear colores y sombras para papel */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .prose {
+    max-width: 100% !important;
+  }
+
+  /* Evitar cortes feos en tablas */
+  table,
+  pre,
+  blockquote {
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}
 
 @keyframes pulse-slow {
   0%,
