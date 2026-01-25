@@ -1,7 +1,5 @@
-// --- ENTIDADES DE DATOS (Unificadas para Draft y Validado) ---
-
 export interface Antecedente {
-  tipo: string; // PENAL | ADMINISTRATIVO | ETICO
+  tipo: string; // PENAL | ADMINISTRATIVO | ETICO | CIVIL
   titulo: string;
   estado: string; // EN_INVESTIGACION | ARCHIVADO ...
   fecha?: string | null; // Puede venir null del backend

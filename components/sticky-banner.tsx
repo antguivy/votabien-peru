@@ -18,7 +18,7 @@ const FixedElectoralBanner = ({
   const firstTwo = processName.split(" ").slice(0, 2).join(" ");
   return (
     <div
-      className="fixed left-0 right-0 z-40 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md"
+      className="sticky left-0 right-0 z-40 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md"
       style={{ top: navbarHeight }}
     >
       <div className="container mx-auto px-4 py-2.5">

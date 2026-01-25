@@ -15,8 +15,6 @@ export default async function getDistritos(): Promise<ElectoralDistrictBase[]> {
       name,
       code,
       is_national,
-      num_senators,
-      num_deputies,
       active
     `,
     )

@@ -45,8 +45,8 @@ export function adaptCandidateFromSearch(
     [CandidacyType.SENADOR]: "Senador",
     [CandidacyType.DIPUTADO]: "Diputado",
     [CandidacyType.PRESIDENTE]: "Presidente",
-    [CandidacyType.VICEPRESIDENTE]: "Vicepresidente",
-    [CandidacyType.CONGRESISTA]: "Congresista",
+    [CandidacyType.VICEPRESIDENTE_1]: "1er Vicepresidente",
+    [CandidacyType.VICEPRESIDENTE_2]: "2do Vicepresidente",
   };
 
   const label = candidacyType ? candidacyLabel[candidacyType] : "Candidato";
@@ -107,8 +107,8 @@ export function adaptCandidateFromComparison(
     [CandidacyType.SENADOR]: "Senador",
     [CandidacyType.DIPUTADO]: "Diputado",
     [CandidacyType.PRESIDENTE]: "Presidente",
-    [CandidacyType.VICEPRESIDENTE]: "Vicepresidente",
-    [CandidacyType.CONGRESISTA]: "Congresista",
+    [CandidacyType.VICEPRESIDENTE_1]: "1er Vicepresidente",
+    [CandidacyType.VICEPRESIDENTE_2]: "2do Vicepresidente",
   };
 
   const label = candidacyType ? candidacyLabel[candidacyType] : "Candidato";

@@ -12,6 +12,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { ChamberType, LegislatorCondition } from "@/interfaces/politics";
+import { BadgeVariant } from "../utils-bill";
+import { BackgroundType } from "@/interfaces/background";
 
 // Chamber helpers
 export function getChamberIcon(chamber: ChamberType) {
@@ -78,4 +80,15 @@ export function getConditionColor(condition: LegislatorCondition): string {
 // Helper para formatear texto (reemplaza guión bajo con espacio)
 export function formatConditionText(condition: LegislatorCondition): string {
   return condition.replace(/_/g, " ").toLowerCase();
+}
+
+export function getBackgroundVariant(type: string): BadgeVariant {
+  const map: Record<string, BadgeVariant> = {
+    [BackgroundType.PENAL]: "destructive",
+    [BackgroundType.ETICA]: "warning",
+    [BackgroundType.CIVIL]: "default",
+    [BackgroundType.ADMINISTRATIVO]: "secondary",
+  };
+
+  return map[type] || "secondary";
 }

@@ -5,10 +5,8 @@ import { CandidacyType, ChamberType } from "./politics";
 /** Tipos permitidos para cualquier entidad buscable o comparable */
 export type EntityType = "legislator" | "candidate";
 
-export type CandidateConfigKeys = Exclude<
-  CandidacyType,
-  CandidacyType.CONGRESISTA
->;
+export type CandidateConfigKeys = CandidacyType;
+
 /** Información contextual opcional */
 export interface EntityMetadata {
   chamber?: ChamberType;

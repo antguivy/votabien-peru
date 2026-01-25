@@ -112,11 +112,11 @@ export const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
         </DropdownMenuLabel>
 
         {/* Solo mostramos config si es super_admin (o admin, según prefieras) */}
-        {role === "admin" && (
+        {role !== "user" && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/dashboard" className="cursor-pointer">
+              <Link href="/admin" className="cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" />
                 Administración
               </Link>

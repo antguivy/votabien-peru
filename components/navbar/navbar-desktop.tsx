@@ -3,13 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { NavbarAdminMenu } from "./navbar-admin-menu";
 import { NavbarAboutMenu } from "./navbar-about-menu";
-import {
-  publicNavGroups,
-  getAuthorizedNavGroups,
-  adminNavGroups,
-} from "./navbar-config";
+import { publicNavGroups } from "./navbar-config";
 import { User } from "@supabase/supabase-js";
 import { UserProfile } from "@/lib/auth-actions";
 
@@ -29,10 +24,6 @@ export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
   const publicLinks = publicNavGroups[0].links;
   const role = profile?.role || "user";
 
-  const authorizedAdminGroups = user
-    ? getAuthorizedNavGroups(adminNavGroups, role)
-    : [];
-
   return (
     <div className="hidden lg:flex items-center gap-1">
       {publicLinks.slice(1).map((link) => (
@@ -50,16 +41,7 @@ export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
         </Link>
       ))}
 
-      {/* Menú desplegable "Nosotros" */}
       <NavbarAboutMenu />
-
-      {user && authorizedAdminGroups.length > 0 && (
-        <div className="h-6 w-px bg-border mx-2" />
-      )}
-
-      {user && authorizedAdminGroups.length > 0 && (
-        <NavbarAdminMenu navGroups={authorizedAdminGroups} />
-      )}
     </div>
   );
 };

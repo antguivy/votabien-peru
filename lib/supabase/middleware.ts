@@ -27,41 +27,45 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Obtener usuario
-  // getUser() valida el token con Supabase Auth
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ============= PROTECCIÓN DE RUTAS =============
-  const path = request.nextUrl.pathname;
+  const url = request.nextUrl.clone();
+  const path = url.pathname;
 
-  // A. RUTAS PROTEGIDAS (Blocklist)
-  const protectedPaths = ["/perfil", "/configuracion", "/admin"];
+  const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"];
 
-  // B. RUTAS DE AUTENTICACIÓN
-  // Si el usuario ya está logueado, no debería ver estas rutas
-  const authPaths = ["/auth/login", "/auth/register"];
+  const publicRoutes = [
+    "/",
+    "/legisladores",
+    "/candidatos",
+    "/partidos",
+    "/comparador",
+    "/equipo",
+    "/financiamiento",
+    "/mision",
+  ];
 
-  const isProtectedRoute = protectedPaths.some((p) => path.startsWith(p));
-  const isAuthRoute = authPaths.some((p) => path.startsWith(p));
+  const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
+  const isPublicRoute = publicRoutes.some(
+    (route) => path === route || path.startsWith(route + "/"),
+  );
 
-  // CASO 1: Usuario NO logueado intenta entrar a ruta protegida
-  // Redirigir al login
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("callbackUrl", path);
-    return NextResponse.redirect(url);
+  if (!user) {
+    if (!isAuthRoute && !isPublicRoute) {
+      url.pathname = "/auth/login";
+      url.searchParams.set("callbackUrl", path);
+      return NextResponse.redirect(url);
+    }
   }
 
-  // CASO 2: Usuario SI logueado intenta entrar a login/register
-  // Redirigir a home
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  if (user) {
+    if (isAuthRoute) {
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
-
+  response.headers.set("x-current-path", path);
   return response;
 }

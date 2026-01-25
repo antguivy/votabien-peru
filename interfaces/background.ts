@@ -1,28 +1,27 @@
 export enum BackgroundType {
-  PENAL = "penal",
-  ETICA = "etica",
-  CIVIL = "civil",
-  ADMINISTRATIVO = "administrativo",
+  PENAL = "PENAL",
+  ETICA = "ETICA",
+  CIVIL = "CIVIL",
+  ADMINISTRATIVO = "ADMINISTRATIVO",
 }
 
 export enum BackgroundStatus {
-  EN_INVESTIGACION = "en_investigacion",
-  EN_PROCESO_JUDICIAL = "en_proceso_judicial",
-  SENTENCIADO = "sentenciado",
-  SANCIONADO = "sancionado",
-  ARCHIVADO = "archivado",
-  ABSUELTO = "absuelto",
-  NO_ESPECIFICADO = "no_especificado",
+  EN_INVESTIGACION = "EN_INVESTIGACION",
+  SENTENCIADO = "SENTENCIADO",
+  SANCIONADO = "SANCIONADO",
+  ARCHIVADO = "ARCHIVADO",
+  ABSUELTO = "ABSUELTO",
+  PRESCRITO = "PRESCRITO",
 }
 
 export interface BackgroundBase {
   id: string;
-  publication_date: string;
+  publication_date: string | null;
   type: BackgroundType;
   status: BackgroundStatus;
   title: string;
   summary: string;
   sanction: string | null;
-  source: string | null;
+  source: string;
   source_url: string | null;
 }

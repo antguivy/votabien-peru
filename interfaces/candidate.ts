@@ -10,7 +10,7 @@ import {
 } from "./politics";
 
 export interface AllianceBase {
-  id?: string | number; // Opcional, algunas alianzas pueden no tener ID
+  id?: string | number;
   name: string;
   acronym?: string | null;
   color_hex: string | null;
@@ -19,13 +19,12 @@ export interface AllianceBase {
 
 export interface CandidateBase {
   id: string;
+  active: boolean;
   electoral_process_id: string;
   political_party_id: string;
   type: CandidacyType;
   list_number: number | null;
   status: CandidacyStatus;
-  votes_obtained: number | null;
-  was_elected: boolean;
 }
 
 export interface CandidateToPerson extends CandidateBase {

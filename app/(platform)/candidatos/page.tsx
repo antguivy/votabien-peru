@@ -1,14 +1,12 @@
-import { publicApi } from "@/lib/public-api";
 import CandidatosList from "@/components/politics/candidatos-list";
-import { ElectoralDistrictBase, ElectoralProcess } from "@/interfaces/politics";
 import Link from "next/link";
 import StickyElectoralBanner from "@/components/sticky-banner";
-import { CandidateCard } from "@/interfaces/candidate";
 import {
   getCandidatesCards,
   getAllCandidates,
 } from "@/queries/public/candidacies";
 import getDistritos from "@/queries/public/electoral-districts";
+import { getElectoralProcess } from "@/queries/public/electoral-process";
 
 interface PageProps {
   searchParams: Promise<{
@@ -30,11 +28,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     limit,
   };
   try {
-    const procesosActivos = (await publicApi.getProcesosElectorales(
-      true,
-    )) as ElectoralProcess[];
-
-    console.log("Procesos activos:", procesosActivos);
+    const procesosActivos = await getElectoralProcess(true);
 
     if (!procesosActivos || procesosActivos.length === 0) {
       return (
@@ -92,8 +86,6 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       getDistritos(),
       getAllCandidates(),
     ]);
-
-    console.log("todos los candidatos obtenidos:", allCandidatos);
 
     const fechaElecciones = new Date(procesoActivo.election_date);
     const fechaFormateada = fechaElecciones.toLocaleDateString("es-PE", {

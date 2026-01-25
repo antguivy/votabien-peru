@@ -14,15 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ROLE_LABELS } from "@/interfaces/navbar";
 import { NavbarMenu } from "./navbar-menu";
 import { MobileThemeToggle } from "./navbar-theme-toggle";
-import {
-  publicNavGroups,
-  aboutNavGroup,
-  adminNavGroups,
-  getAuthorizedNavGroups,
-} from "./navbar-config";
+import { publicNavGroups, aboutNavGroup } from "./navbar-config";
 import { User } from "@supabase/supabase-js";
 import { UserProfile } from "@/lib/auth-actions";
-import Link from "next/link";
 
 interface NavbarMobileProps {
   user?: User | null;
@@ -62,15 +56,10 @@ export const NavbarMobile = ({ user, profile }: NavbarMobileProps) => {
     }
   };
 
-  // FILTRADO DE RUTAS SEGÚN EL ROL DE LA BD
-  const authorizedAdminGroups =
-    user && profile ? getAuthorizedNavGroups(adminNavGroups, role) : [];
-
   // Agregar aboutNavGroup entre las rutas públicas y admin
   const allGroups = [
     ...publicNavGroups,
     aboutNavGroup, // <-- Menú "Nosotros" colapsable
-    ...authorizedAdminGroups,
   ];
 
   return (

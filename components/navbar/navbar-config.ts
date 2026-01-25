@@ -12,6 +12,8 @@ import {
   BookHeadphones,
   Users,
   DollarSign,
+  LayoutDashboard,
+  UserCheck,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
 
@@ -19,10 +21,10 @@ export const publicNavGroups: NavGroup[] = [
   {
     links: [
       { href: "/", label: "Inicio", icon: Home },
+      { href: "/candidatos", label: "Candidatos 2026", icon: UserCheck },
       // { href: "/aprende", label: "Aprende", icon: Users },
-      { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
       { href: "/partidos?active=true", label: "Partidos", icon: Flag },
-      // { href: "/candidatos", label: "Candidatos 2026", icon: UserCheck },
+      { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
       {
         href: "/comparador?mode=legislator&chamber=CONGRESO",
         label: "Comparador",
@@ -48,24 +50,27 @@ export const aboutNavGroup: NavGroup = {
 
 export const adminNavGroups: NavGroup[] = [
   {
-    label: "Gestión de Contenido",
+    label: "Gestión",
     requiresAuth: true,
     requiresRole: ["admin", "editor"],
     links: [
       { href: "/admin/legisladores", label: "Legisladores", icon: FileEdit },
       { href: "/admin/partidos", label: "Partidos", icon: FileEdit },
-      { href: "/admin/candidatos", label: "Candidatos", icon: FileEdit },
+      { href: "/admin/personas", label: "Personas", icon: FileEdit },
     ],
   },
-  // {
-  //   label: "Administración",
-  //   requiresAuth: true,
-  //   requiresRole: ["super_admin", "admin"],
-  //   links: [
-  //     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  //     { href: "/admin/analytics", label: "Analíticas", icon: GitCompare },
-  //   ],
-  // },
+  {
+    label: "Herramientas",
+    requiresAuth: true,
+    requiresRole: ["editor", "admin"],
+    links: [
+      {
+        href: "/admin/investigacion",
+        label: "Investigación",
+        icon: LayoutDashboard,
+      },
+    ],
+  },
   // {
   //   label: "Sistema",
   //   requiresAuth: true,
@@ -76,22 +81,3 @@ export const adminNavGroups: NavGroup[] = [
   //   ],
   // },
 ];
-
-export const getAuthorizedNavGroups = (
-  groups: NavGroup[],
-  userRole?: string,
-): NavGroup[] => {
-  return groups
-    .filter((group) => {
-      if (!group.requiresAuth) return true;
-      if (!userRole) return false;
-      if (!group.requiresRole) return true;
-      return group.requiresRole.some((role) => role === userRole);
-    })
-    .map((group) => ({
-      ...group,
-      links: group.links.filter(() => {
-        return true;
-      }),
-    }));
-};

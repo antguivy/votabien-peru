@@ -61,8 +61,8 @@
     --brand: oklch(0.4936 0.165 28.53);
 
     /* ----- Superficies y Fondos ----- */
-    --background: oklch(0.99 0.002 240); /* Blanco cálido, casi neutro */
-    --foreground: oklch(0.2 0.01 240); /* Negro suave, legible */
+    --background: oklch(0.99 0.005 20); /* Blanco cálido, casi neutro */
+    --foreground: oklch(0.15 0.02 20); /* Negro suave, legible */
 
     --card: oklch(1 0 0); /* Blanco puro para tarjetas */
     --card-foreground: oklch(0.2 0.01 240);
@@ -73,12 +73,12 @@
     --muted: oklch(0.96 0.005 240); /* Fondo sutil */
     --muted-foreground: oklch(0.5 0.01 240); /* Texto secundario */
 
-    --accent: oklch(0.93 0.008 20); /* Cálido sutil para highlights */
-    --accent-foreground: oklch(0.2 0.01 240);
+    --accent: oklch(0.96 0.01 20); /* Cálido sutil para highlights */
+    --accent-foreground: oklch(0.25 0.05 250);
 
     /* ----- Colores Interactivos (INSTITUCIONALES) ----- */
-    --primary: oklch(0.4 0.12 250); /* Azul institucional - Confianza */
-    --primary-foreground: oklch(0.99 0.002 240); /* Texto claro */
+    --primary: oklch(0.25 0.05 250); /* Azul institucional - Confianza */
+    --primary-foreground: oklch(0.98 0.005 240); /* Texto claro */
 
     --secondary: oklch(0.92 0.008 240); /* Neutro para botones secundarios */
     --secondary-foreground: oklch(0.25 0.01 240);
@@ -89,7 +89,7 @@
     --ring: oklch(0.4 0.12 250 / 0.5); /* Anillo de foco basado en primary */
 
     /* ----- Colores de Estado (Para métricas y datos) ----- */
-    --destructive: oklch(0.55 0.22 25); /* Rojo para acciones destructivas */
+    --destructive: oklch(0.5 0.2 25); /* Rojo para acciones destructivas */
     --destructive-foreground: oklch(0.99 0.002 240);
 
     --success: oklch(0.55 0.15 145); /* Verde para asistencias/aprobaciones */
@@ -100,6 +100,15 @@
 
     --info: oklch(0.5 0.12 240); /* Azul para información neutral */
     --info-foreground: oklch(0.99 0.002 240);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* ----- Colores para Charts (Gráficos de datos legislativos) ----- */
     --chart-1: oklch(0.5 0.15 250); /* Azul principal */
@@ -113,7 +122,7 @@
     --brand: oklch(0.4936 0.165 28.53);
 
     /* ----- Superficies y Fondos ----- */
-    --background: oklch(0.15 0.01 240); /* Azul muy oscuro, profesional */
+    --background: oklch(0.12 0.02 20); /* Azul muy oscuro, profesional */
     --foreground: oklch(0.95 0.003 240); /* Blanco roto */
 
     --card: oklch(0.23 0.012 240); /* Tarjetas ligeramente elevadas */
@@ -129,8 +138,8 @@
     --accent-foreground: oklch(0.95 0.003 240);
 
     /* ----- Colores Interactivos ----- */
-    --primary: oklch(0.55 0.15 250); /* Azul más brillante para dark */
-    --primary-foreground: oklch(0.15 0.01 240);
+    --primary: oklch(0.85 0.05 240); /* Azul más brillante para dark */
+    --primary-foreground: oklch(0.2 0.05 240);
 
     --secondary: oklch(0.25 0.015 240);
     --secondary-foreground: oklch(0.95 0.003 240);
@@ -152,6 +161,15 @@
 
     --info: oklch(0.6 0.13 240);
     --info-foreground: oklch(0.15 0.01 240);
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* ----- Colores para Charts ----- */
     --chart-1: oklch(0.6 0.15 250);
@@ -392,7 +410,7 @@ CHARTS:
 
 html,
 body {
-  height: 100%;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   overscroll-behavior: none; /* Evita el rebote visual */
@@ -564,4 +582,26 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none; /* IE y Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }

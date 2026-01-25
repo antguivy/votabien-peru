@@ -73,13 +73,13 @@ export type Database = {
         };
         Insert: {
           attendance_status: Database["public"]["Enums"]["attendancestatus"];
-          created_at: string;
+          created_at?: string;
           date: string;
           id: string;
           legislator_id: string;
           notes?: string | null;
           session_type: Database["public"]["Enums"]["sessiontype"];
-          updated_at: string;
+          updated_at?: string;
         };
         Update: {
           attendance_status?: Database["public"]["Enums"]["attendancestatus"];
@@ -117,7 +117,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          created_at: string;
+          created_at?: string;
           id: string;
           person_id: string;
           publication_date?: string | null;
@@ -128,7 +128,7 @@ export type Database = {
           summary?: string | null;
           title: string;
           type: Database["public"]["Enums"]["backgroundtype"];
-          updated_at: string;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -237,52 +237,43 @@ export type Database = {
       };
       candidate: {
         Row: {
+          active: boolean;
           created_at: string;
           electoral_district_id: string | null;
           electoral_process_id: string;
-          government_plan__url: string | null;
           id: string;
           list_number: number | null;
           person_id: string;
           political_party_id: string;
-          proposals: string | null;
           status: Database["public"]["Enums"]["candidacystatus"];
           type: Database["public"]["Enums"]["candidacytype"];
           updated_at: string;
-          votes_obtained: number | null;
-          was_elected: boolean;
         };
         Insert: {
+          active: boolean;
           created_at: string;
           electoral_district_id?: string | null;
           electoral_process_id: string;
-          government_plan__url?: string | null;
           id: string;
           list_number?: number | null;
           person_id: string;
           political_party_id: string;
-          proposals?: string | null;
           status: Database["public"]["Enums"]["candidacystatus"];
           type: Database["public"]["Enums"]["candidacytype"];
           updated_at: string;
-          votes_obtained?: number | null;
-          was_elected: boolean;
         };
         Update: {
+          active?: boolean;
           created_at?: string;
           electoral_district_id?: string | null;
           electoral_process_id?: string;
-          government_plan__url?: string | null;
           id?: string;
           list_number?: number | null;
           person_id?: string;
           political_party_id?: string;
-          proposals?: string | null;
           status?: Database["public"]["Enums"]["candidacystatus"];
           type?: Database["public"]["Enums"]["candidacytype"];
           updated_at?: string;
-          votes_obtained?: number | null;
-          was_elected?: boolean;
         };
         Relationships: [
           {
@@ -382,8 +373,6 @@ export type Database = {
           id: string;
           is_national: boolean;
           name: string;
-          num_deputies: number;
-          num_senators: number;
           updated_at: string;
         };
         Insert: {
@@ -393,8 +382,6 @@ export type Database = {
           id: string;
           is_national: boolean;
           name: string;
-          num_deputies: number;
-          num_senators: number;
           updated_at: string;
         };
         Update: {
@@ -404,8 +391,6 @@ export type Database = {
           id?: string;
           is_national?: boolean;
           name?: string;
-          num_deputies?: number;
-          num_senators?: number;
           updated_at?: string;
         };
         Relationships: [];
@@ -832,71 +817,95 @@ export type Database = {
       };
       person: {
         Row: {
-          academic_degree: string | null;
+          assets: Json | null;
           birth_date: string | null;
           created_at: string;
           detailed_biography: Json | null;
+          dni: string | null;
           facebook_url: string | null;
           fullname: string;
+          gender: string | null;
           id: string;
+          image_candidate_url: string | null;
           image_url: string | null;
+          incomes: Json | null;
           instagram_url: string | null;
           lastname: string;
           name: string;
-          postgraduate_education: string | null;
+          no_university_education: Json | null;
+          party_number_rop: string | null;
+          place_of_birth: string | null;
+          political_role: Json | null;
+          popular_election: Json | null;
+          postgraduate_education: Json | null;
           profession: string | null;
-          professional_title: string | null;
-          resume_url: string | null;
-          technical_education: string | null;
+          secondary_school: boolean | null;
+          technical_education: Json | null;
           tiktok_url: string | null;
           twitter_url: string | null;
-          university_education: string | null;
+          university_education: Json | null;
           updated_at: string;
           work_experience: Json | null;
         };
         Insert: {
-          academic_degree?: string | null;
-          birth_date?: string | null;
-          created_at: string;
-          detailed_biography?: Json | null;
-          facebook_url?: string | null;
-          fullname: string;
-          id: string;
-          image_url?: string | null;
-          instagram_url?: string | null;
-          lastname: string;
-          name: string;
-          postgraduate_education?: string | null;
-          profession?: string | null;
-          professional_title?: string | null;
-          resume_url?: string | null;
-          technical_education?: string | null;
-          tiktok_url?: string | null;
-          twitter_url?: string | null;
-          university_education?: string | null;
-          updated_at: string;
-          work_experience?: Json | null;
-        };
-        Update: {
-          academic_degree?: string | null;
+          assets?: Json | null;
           birth_date?: string | null;
           created_at?: string;
           detailed_biography?: Json | null;
+          dni?: string | null;
+          facebook_url?: string | null;
+          fullname: string;
+          gender?: string | null;
+          id: string;
+          image_candidate_url?: string | null;
+          image_url?: string | null;
+          incomes?: Json | null;
+          instagram_url?: string | null;
+          lastname: string;
+          name: string;
+          no_university_education?: Json | null;
+          party_number_rop?: string | null;
+          place_of_birth?: string | null;
+          political_role?: Json | null;
+          popular_election?: Json | null;
+          postgraduate_education?: Json | null;
+          profession?: string | null;
+          secondary_school?: boolean | null;
+          technical_education?: Json | null;
+          tiktok_url?: string | null;
+          twitter_url?: string | null;
+          university_education?: Json | null;
+          updated_at?: string;
+          work_experience?: Json | null;
+        };
+        Update: {
+          assets?: Json | null;
+          birth_date?: string | null;
+          created_at?: string;
+          detailed_biography?: Json | null;
+          dni?: string | null;
           facebook_url?: string | null;
           fullname?: string;
+          gender?: string | null;
           id?: string;
+          image_candidate_url?: string | null;
           image_url?: string | null;
+          incomes?: Json | null;
           instagram_url?: string | null;
           lastname?: string;
           name?: string;
-          postgraduate_education?: string | null;
+          no_university_education?: Json | null;
+          party_number_rop?: string | null;
+          place_of_birth?: string | null;
+          political_role?: Json | null;
+          popular_election?: Json | null;
+          postgraduate_education?: Json | null;
           profession?: string | null;
-          professional_title?: string | null;
-          resume_url?: string | null;
-          technical_education?: string | null;
+          secondary_school?: boolean | null;
+          technical_education?: Json | null;
           tiktok_url?: string | null;
           twitter_url?: string | null;
-          university_education?: string | null;
+          university_education?: Json | null;
           updated_at?: string;
           work_experience?: Json | null;
         };
@@ -1086,37 +1095,37 @@ export type Database = {
       };
       team: {
         Row: {
+          email: string | null;
+          first_name: string | null;
           id: string;
-          first_name: string;
-          last_name: string;
+          image_url: string | null;
+          is_principal: boolean | null;
+          last_name: string | null;
           linkedin_url: string | null;
           portfolio_url: string | null;
-          is_principal: boolean;
-          email: string;
-          role: string;
-          image_url: string | null;
+          role: string | null;
         };
         Insert: {
+          email?: string | null;
+          first_name?: string | null;
           id: string;
-          first_name: string;
-          last_name: string;
+          image_url?: string | null;
+          is_principal?: boolean | null;
+          last_name?: string | null;
           linkedin_url?: string | null;
           portfolio_url?: string | null;
-          is_principal?: boolean;
-          email: string;
-          role: string;
-          image_url: string | null;
+          role?: string | null;
         };
         Update: {
+          email?: string | null;
+          first_name?: string | null;
           id?: string;
-          first_name?: string;
-          last_name?: string;
+          image_url?: string | null;
+          is_principal?: boolean | null;
+          last_name?: string | null;
           linkedin_url?: string | null;
           portfolio_url?: string | null;
-          is_principal?: boolean;
-          email?: string;
-          role?: string;
-          image_url?: string | null;
+          role?: string | null;
         };
         Relationships: [];
       };
@@ -1148,6 +1157,7 @@ export type Database = {
         Returns: Json;
       };
       get_partido_detail: { Args: { p_partido_id: string }; Returns: Json };
+      have_access: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       legislator_fullname: {
         Args: {
@@ -1170,7 +1180,7 @@ export type Database = {
         | "SANCIONADO"
         | "ARCHIVADO"
         | "ABSUELTO"
-        | "NO_ESPECIFICADO";
+        | "PRESCRITO";
       backgroundtype: "PENAL" | "ETICA" | "CIVIL" | "ADMINISTRATIVO";
       billapprovalstatus:
         | "PRESENTADO"
@@ -1189,13 +1199,20 @@ export type Database = {
         | "AL_ARCHIVO"
         | "DECRETO_ARCHIVO"
         | "RETIRADO_POR_AUTOR";
-      candidacystatus: "INSCRITO" | "HABILITADO" | "INHABILITADO" | "TACADO";
+      candidacystatus:
+        | "SOLICITUD_INSCRIPCION"
+        | "INSCRITO"
+        | "TACHADO"
+        | "EXCLUIDO"
+        | "IMPROCEDENTE"
+        | "RENUNCIA"
+        | "APELACION";
       candidacytype:
         | "PRESIDENTE"
-        | "VICEPRESIDENTE"
+        | "VICEPRESIDENTE_1"
         | "SENADOR"
         | "DIPUTADO"
-        | "CONGRESISTA";
+        | "VICEPRESIDENTE_2";
       chambertype: "CONGRESO" | "SENADO" | "DIPUTADOS";
       endoftermreason:
         | "RENUNCIA"
@@ -1243,7 +1260,6 @@ export type Database = {
         | "COMISION_PERMANENTE"
         | "COMISION_ORDINARIA"
         | "EXTRAORDINARIA";
-      userrole: "SUPERADMIN" | "ADMIN" | "EDITOR";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1388,7 +1404,7 @@ export const Constants = {
         "SANCIONADO",
         "ARCHIVADO",
         "ABSUELTO",
-        "NO_ESPECIFICADO",
+        "PRESCRITO",
       ],
       backgroundtype: ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"],
       billapprovalstatus: [
@@ -1409,13 +1425,21 @@ export const Constants = {
         "DECRETO_ARCHIVO",
         "RETIRADO_POR_AUTOR",
       ],
-      candidacystatus: ["INSCRITO", "HABILITADO", "INHABILITADO", "TACADO"],
+      candidacystatus: [
+        "SOLICITUD_INSCRIPCION",
+        "INSCRITO",
+        "TACHADO",
+        "EXCLUIDO",
+        "IMPROCEDENTE",
+        "RENUNCIA",
+        "APELACION",
+      ],
       candidacytype: [
         "PRESIDENTE",
-        "VICEPRESIDENTE",
+        "VICEPRESIDENTE_1",
         "SENADOR",
         "DIPUTADO",
-        "CONGRESISTA",
+        "VICEPRESIDENTE_2",
       ],
       chambertype: ["CONGRESO", "SENADO", "DIPUTADOS"],
       endoftermreason: [
@@ -1471,7 +1495,6 @@ export const Constants = {
         "COMISION_ORDINARIA",
         "EXTRAORDINARIA",
       ],
-      userrole: ["SUPERADMIN", "ADMIN", "EDITOR"],
     },
   },
 } as const;

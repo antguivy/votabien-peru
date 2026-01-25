@@ -109,6 +109,7 @@ export async function getLegisladoresCards({
         id: leg.person.id,
         fullname: leg.person.fullname,
         image_url: leg.person.image_url,
+        image_candidate_url: leg.person.image_url,
         profession: leg.person.profession,
       },
       elected_by_party: {
@@ -125,8 +126,6 @@ export async function getLegisladoresCards({
         name: leg.electoral_district.name,
         code: leg.electoral_district.code,
         is_national: leg.electoral_district.is_national,
-        num_senators: leg.electoral_district.num_senators,
-        num_deputies: leg.electoral_district.num_deputies,
         active: leg.electoral_district.active,
       },
       current_parliamentary_group: leg.current_parliamentary_group,

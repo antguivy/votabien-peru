@@ -11,7 +11,7 @@ export default async function Navbar() {
   const { user, profile } = await serverGetUser();
 
   return (
-    <header className="sticky top-0 z-20 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
+    <header className="fixed top-0 z-20 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--brand)] to-transparent opacity-60" />
 
       <div className="container mx-auto px-4">
@@ -21,7 +21,7 @@ export default async function Navbar() {
               <Image
                 src="/logo_completo.png"
                 alt="Vota Bien Perú"
-                width={140}
+                width={120}
                 height={40}
                 priority
                 className="drop-shadow-md"

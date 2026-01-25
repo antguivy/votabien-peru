@@ -1,8 +1,11 @@
 import { Badge } from "@/components/ui/badge";
 import { BillBasic } from "@/interfaces/bill";
 import { Calendar, ExternalLink } from "lucide-react";
-import { STATUS_LABELS } from "@/interfaces/enums";
-import { formatterDate, getStatusBadgeVariant } from "@/lib/utils/bill";
+import {
+  formatStatusLabel,
+  formatterDate,
+  getBadgeVariant,
+} from "@/lib/utils-bill";
 import Link from "next/link";
 import { FaFilePdf } from "react-icons/fa6";
 
@@ -34,24 +37,23 @@ export default function ProyectoItem({ proyecto, onClick }: ProyectoItemProps) {
             <div className="inline-flex gap-4">
               <h4
                 className="
-            font-medium 
-            text-foreground 
-            group-hover:text-primary 
-            transition-colors
-          "
+                  font-medium 
+                  text-foreground 
+                  group-hover:text-primary 
+                  transition-colors
+                "
               >
                 {proyecto.number}
               </h4>
 
               <Badge
-                variant={getStatusBadgeVariant(proyecto.approval_status)}
+                variant={getBadgeVariant(proyecto.approval_status)}
                 className="text-xs"
               >
-                {STATUS_LABELS[proyecto.approval_status]}
+                {formatStatusLabel(proyecto.approval_status)}
               </Badge>
             </div>
 
-            {/* ✔️ Enlace del documento - Versión mejorada */}
             {proyecto.document_url && (
               <Link
                 href={proyecto.document_url}
@@ -79,33 +81,16 @@ export default function ProyectoItem({ proyecto, onClick }: ProyectoItemProps) {
             )}
           </div>
 
-          {/* Título */}
           <p className="text-sm text-muted-foreground mb-2 text-justify">
             {proyecto.title_ai?.toUpperCase()}
           </p>
 
-          {/* Detalles inferiores */}
           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {formatterDate(proyecto.submission_date)}
             </span>
 
-            {/* {proyecto.role && (
-              <span
-                className="
-              px-2 py-0.5 
-              rounded-full 
-              font-medium 
-              bg-primary/15 
-              text-primary
-            "
-              >
-                {proyecto.role}
-              </span>
-            )} */}
-
-            {/* ✔️ Fecha de aprobación */}
             {proyecto.approval_date && (
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />

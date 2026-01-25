@@ -56,7 +56,7 @@ export type Filter<TData> = Prettify<
 // Acción para las filas
 export interface DataTableRowAction<TData> {
   row: Row<TData>;
-  type: "update" | "update-bancada";
+  type: "update" | "update-bancada" | "update-biography" | "update-background";
 }
 
 // Opciones de Query para Prisma

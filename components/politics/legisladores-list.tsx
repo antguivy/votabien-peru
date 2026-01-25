@@ -272,7 +272,7 @@ const LegisladoresList = ({
   return (
     <>
       {infiniteScroll && (
-        <div className="pb-4">
+        <div>
           <FilterPanel
             fields={filterFields}
             currentFilters={currentFilters}

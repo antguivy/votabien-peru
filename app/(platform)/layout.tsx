@@ -8,7 +8,7 @@ export default function PanelLayout({
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main className="pt-16">{children}</main>
     </>
   );
 }

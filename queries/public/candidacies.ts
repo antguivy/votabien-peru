@@ -36,14 +36,13 @@ export async function getCandidatesCards({
       type,
       list_number,
       status,
-      votes_obtained,
-      was_elected,
       person:person_id!inner (
         id,
         fullname,
         name,
         lastname,
         image_url,
+        image_candidate_url,
         profession
       ),
       political_party:political_party_id (
@@ -60,8 +59,6 @@ export async function getCandidatesCards({
         name,
         code,
         is_national,
-        num_senators,
-        num_deputies,
         active
       )
     `,
@@ -109,17 +106,17 @@ export async function getCandidatesCards({
   const results: CandidateCard[] = rawCandidates.map((candidate) => {
     return {
       id: candidate.id,
+      active: candidate.active,
       electoral_process_id: candidate.electoral_process_id,
       political_party_id: candidate.political_party_id,
       type: candidate.type,
       list_number: candidate.list_number,
       status: candidate.status,
-      votes_obtained: candidate.votes_obtained,
-      was_elected: candidate.was_elected,
       person: {
         id: candidate.person.id,
         fullname: candidate.person.fullname,
         image_url: candidate.person.image_url,
+        image_candidate_url: candidate.person.image_candidate_url,
         profession: candidate.person.profession,
       },
       political_party: {
@@ -137,8 +134,6 @@ export async function getCandidatesCards({
             name: candidate.electoral_district.name,
             code: candidate.electoral_district.code,
             is_national: candidate.electoral_district.is_national,
-            num_senators: candidate.electoral_district.num_senators,
-            num_deputies: candidate.electoral_district.num_deputies,
             active: candidate.electoral_district.active,
           }
         : null,

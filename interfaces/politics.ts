@@ -12,17 +12,20 @@ export enum ChamberType {
 
 export enum CandidacyType {
   PRESIDENTE = "PRESIDENTE",
-  VICEPRESIDENTE = "VICEPRESIDENTE",
+  VICEPRESIDENTE_1 = "VICEPRESIDENTE_1",
+  VICEPRESIDENTE_2 = "VICEPRESIDENTE_2",
   SENADOR = "SENADOR",
   DIPUTADO = "DIPUTADO",
-  CONGRESISTA = "CONGRESISTA",
 }
 
 export enum CandidacyStatus {
-  INSCRITO = "INSCRITO",
-  HABILITADO = "HABILITADO",
-  INHABILITADO = "INHABILITADO",
-  TACADO = "TACADO",
+  SOLICITUD_INSCRIPCION = "SOLICITUD_INSCRIPCION", // Paso 1: Presentan la lista
+  INSCRITO = "INSCRITO", // Paso 2: El JNE la acepta formalmente (Ya sale en la web oficial)
+  TACHADO = "TACHADO", // Alguien se quejó y lo sacaron
+  EXCLUIDO = "EXCLUIDO", // El JNE lo sacó por mentir en hoja de vida o dádivas
+  IMPROCEDENTE = "IMPROCEDENTE", // No cumplió requisitos de forma
+  RENUNCIA = "RENUNCIA", // El candidato se bajó
+  APELACION = "APELACION", // Está peleando su exclusión
 }
 export enum LegislatorCondition {
   EN_EJERCICIO = "EN_EJERCICIO",
@@ -64,25 +67,6 @@ export interface PartyLegalCase {
   source_url: string | null;
 }
 
-export interface BiographyDetail {
-  type: string;
-  date: string;
-  title: string;
-  description: string;
-  relevance: string | null;
-  source: string;
-  source_tipo: string;
-  source_url: string | null;
-}
-
-export interface WorkExperience {
-  position: string;
-  organization: string;
-  period: string;
-  source: string | null;
-  source_url: string | null;
-}
-
 export interface GovernmentPlanSummary {
   title: string;
   summary: string;
@@ -114,8 +98,6 @@ export interface ElectoralDistrictBasic {
   name: string;
   code?: string;
   is_national?: boolean;
-  num_senators?: number;
-  num_deputies?: number;
   active?: boolean;
 }
 
@@ -124,8 +106,6 @@ export interface ElectoralDistrictBase {
   name: string;
   code: string;
   is_national: boolean;
-  num_senators: number;
-  num_deputies: number;
   active: boolean;
 }
 
@@ -212,30 +192,6 @@ export interface ExecutiveBase {
 
 export interface Executive extends ExecutiveBase {
   person: PersonBasicInfo;
-}
-// ============= CANDIDATURAS =============
-
-// ============= PROYECTOS DE LEY =============
-
-export interface Bill {
-  id: string;
-  number: string;
-  title: string;
-  summary: string;
-  submission_date: Date;
-  status: string;
-  document_url: string | null;
-  created_at: Date;
-}
-
-// ============= ASISTENCIAS Y DENUNCIAS =============
-
-export interface Attendance {
-  id: string;
-  date: Date;
-  session_type: string;
-  attended: boolean;
-  created_at: Date;
 }
 
 // ============= ESCAÑOS =============

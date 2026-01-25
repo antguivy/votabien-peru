@@ -1,3 +1,4 @@
+import { Attendance } from "./attendance";
 import { BillBasic } from "./bill";
 import {
   ParliamentaryGroupBasic,
@@ -5,7 +6,6 @@ import {
 } from "./parliamentary-membership";
 import { PersonBasicInfo } from "./person";
 import {
-  Attendance,
   ChamberType,
   ElectoralDistrictBase,
   ElectoralDistrictBasic,

@@ -97,28 +97,35 @@ const CANDIDATE_CONFIG: Record<
   }
 > = {
   SENADOR: {
-    title: "Candidatos a Senador 2026",
+    title: "Candidatos a Senador",
     subtitle: "Evalúa propuestas, trayectoria y antecedentes.",
     icon: Users,
     emptyStateText: "Agregar Candidato",
     placeholder: "Ej. Antauro Humala, Rafael López Aliaga...",
   },
   DIPUTADO: {
-    title: "Candidatos a Diputado 2026",
+    title: "Candidatos a Diputado",
     subtitle: "Compara hojas de vida y planes de trabajo.",
     icon: Users,
     emptyStateText: "Agregar Candidato",
     placeholder: "Buscar por nombre, partido o distrito...",
   },
   PRESIDENTE: {
-    title: "Candidatos Presidenciales 2026",
+    title: "Candidatos Presidenciales",
     subtitle: "Analiza planes de gobierno y trayectoria.",
     icon: Trophy,
     emptyStateText: "Agregar Candidato",
     placeholder: "Ej. Julio Guzmán, Verónika Mendoza...",
   },
-  VICEPRESIDENTE: {
-    title: "Candidatos Vicepresidenciales 2026",
+  VICEPRESIDENTE_1: {
+    title: "Candidatos 1er Vicepresidente",
+    subtitle: "Revisa perfiles y experiencia política.",
+    icon: Users,
+    emptyStateText: "Agregar Candidato",
+    placeholder: "Buscar candidato a vicepresidente...",
+  },
+  VICEPRESIDENTE_2: {
+    title: "Candidatos 2do Vicepresidente",
     subtitle: "Revisa perfiles y experiencia política.",
     icon: Users,
     emptyStateText: "Agregar Candidato",

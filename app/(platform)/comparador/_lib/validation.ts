@@ -49,6 +49,7 @@ export function extractCandidacyType(
   if (mode === "senator-candidate") return CandidacyType.SENADOR;
   if (mode === "deputy-candidate") return CandidacyType.DIPUTADO;
   if (mode === "president-candidate") return CandidacyType.PRESIDENTE;
-  if (mode === "vicepresident-candidate") return CandidacyType.VICEPRESIDENTE;
+  if (mode === "vicepresident-candidate") return CandidacyType.VICEPRESIDENTE_1;
+  if (mode === "vicepresident-candidate") return CandidacyType.VICEPRESIDENTE_2;
   return null;
 }
