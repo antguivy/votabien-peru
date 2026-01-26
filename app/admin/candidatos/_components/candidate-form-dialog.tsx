@@ -489,7 +489,13 @@ export function CandidateFormDialog({
                           placeholder="Ej. 1"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value)}
+                          onChange={(e) => {
+                            const new_val = e.target.value;
+
+                            field.onChange(
+                              new_val === "" ? null : Number(new_val),
+                            );
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
