@@ -143,7 +143,7 @@ const SectionToolbar = <T,>({
       );
 
       // B. Crear cabecera (Header)
-      const headerRow = activeCols.map((col) => col.label).join("\t");
+      // const headerRow = activeCols.map((col) => col.label).join("\t");
 
       // C. Crear filas (Rows)
       const bodyRows = data.map((item) => {

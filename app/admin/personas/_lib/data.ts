@@ -3,7 +3,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import type { GetPersonSchema } from "./validation";
 import { createClient } from "@/lib/supabase/server";
-import { type Tables } from "@/interfaces/supabase";
 import { PaginatedPersonResponse, PersonResponse } from "./types";
 import { AdminPerson } from "@/interfaces/person";
 

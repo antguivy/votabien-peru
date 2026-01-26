@@ -136,6 +136,7 @@ const personSchema = z.object({
   image_url: z.string().nullable(),
   image_candidate_url: z.string().nullable(),
   birth_date: z.string().nullable(),
+  place_of_birth: z.string().nullable(),
   profession: z.string().nullable(),
 
   secondary_school: z.boolean(),
@@ -706,6 +707,7 @@ export function PersonFormDialog({
         image_url: initialData.image_url || null,
         image_candidate_url: initialData.image_candidate_url || null,
         birth_date: initialData.birth_date || null,
+        place_of_birth: initialData.place_of_birth || null,
         profession: initialData.profession || null,
         secondary_school: initialData.secondary_school || false,
         technical_education: initialData.technical_education || [],
@@ -735,6 +737,7 @@ export function PersonFormDialog({
       image_url: null,
       image_candidate_url: null,
       birth_date: null,
+      place_of_birth: null,
       profession: null,
       secondary_school: false,
       technical_education: [],
@@ -790,6 +793,7 @@ export function PersonFormDialog({
         image_url: values.image_url || null,
         image_candidate_url: values.image_candidate_url || null,
         birth_date: values.birth_date || null,
+        place_of_birth: values.place_of_birth || null,
         profession: values.profession || null,
         secondary_school: values.secondary_school,
         technical_education: values.technical_education || [],
@@ -893,6 +897,7 @@ export function PersonFormDialog({
           form.setValue("birth_date", data.birth_date);
         }
       }
+      form.setValue("place_of_birth", data.place_of_birth);
       // La foto
       if (data.image_candidate_url) {
         form.setValue("image_candidate_url", data.image_candidate_url);
@@ -1175,7 +1180,7 @@ export function PersonFormDialog({
                         control={form.control}
                         name="profession"
                         render={({ field }) => (
-                          <FormItem className="md:col-span-2">
+                          <FormItem>
                             <FormLabel>Profesión</FormLabel>
                             <FormControl>
                               <Input
@@ -1188,7 +1193,23 @@ export function PersonFormDialog({
                           </FormItem>
                         )}
                       />
-
+                      <FormField
+                        control={form.control}
+                        name="place_of_birth"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Lugar de Nacimiento</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ej: El Tambo, Huancayo, Junín"
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       <FormField
                         control={form.control}
                         name="image_url"

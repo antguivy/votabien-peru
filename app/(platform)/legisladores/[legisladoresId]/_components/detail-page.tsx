@@ -13,7 +13,6 @@ import {
   Copy,
   GraduationCap,
   AlertTriangle,
-  History,
   Briefcase,
   ChevronRight,
   Landmark,
@@ -45,10 +44,10 @@ export default function DetailLegislador({
   const [openBills, setOpenBills] = useState(false);
 
   const periodoActivo = persona.legislative_periods?.find((p) => p.active);
-  const periodosOrdenados = [...(persona.legislative_periods || [])].sort(
-    (a, b) =>
-      new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
-  );
+  // const periodosOrdenados = [...(persona.legislative_periods || [])].sort(
+  //   (a, b) =>
+  //     new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
+  // );
 
   const proyectos =
     persona.legislative_periods?.flatMap(

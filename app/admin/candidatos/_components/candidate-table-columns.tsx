@@ -3,7 +3,9 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { BookUser, Ellipsis, History, SquarePen } from "lucide-react";
+import { Ellipsis, SquarePen } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -13,18 +15,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { booleanToText } from "@/lib/utils";
+import {
+  getCandidateTypeColor,
+  getCandidateTypeIcon,
+} from "@/lib/utils/color-enums";
 import { Separator } from "@/components/ui/separator";
-import { AdminPerson } from "@/interfaces/person";
+import { AdminCandidate } from "@/interfaces/candidate";
 
 interface GetColumnsProps {
   setRowAction: React.Dispatch<
-    React.SetStateAction<DataTableRowAction<AdminPerson> | null>
+    React.SetStateAction<DataTableRowAction<AdminCandidate> | null>
   >;
 }
 
 export function getColumns({
   setRowAction,
-}: GetColumnsProps): ColumnDef<AdminPerson>[] {
+}: GetColumnsProps): ColumnDef<AdminCandidate>[] {
   return [
     {
       id: "select",
@@ -51,100 +58,120 @@ export function getColumns({
       enableHiding: false,
     },
     {
-      accessorKey: "fullname",
+      accessorKey: "person.fullname",
+      id: "fullname",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Nombres y Apellidos" />
+        <DataTableColumnHeader column={column} title="Apellidos y Nombres" />
       ),
       cell: ({ row }) => {
         return (
           <div className="flex space-x-2">
             <span className="min-w-[20rem] max-w-[31.25rem] break-words font-medium whitespace-normal">
-              {row.original.fullname}
+              {row.original.person?.fullname}
             </span>
           </div>
         );
       },
     },
     {
-      accessorKey: "dni",
+      accessorKey: "political_party",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="DNI" />
+        <DataTableColumnHeader column={column} title="Org. Política" />
       ),
       cell: ({ row }) => {
-        const acronym = row.original.dni;
+        const party = row.original.political_party;
+        const textColor =
+          party?.color_hex === "#ffffff" ? "text-black" : "text-white";
 
         return (
-          <div className="flex items-center">
-            <span className="capitalize">{acronym}</span>
+          <div className="w-auto">
+            <div
+              className={`px-2 py-0.5 rounded-md text-xs text-center whitespace-normal break-words ${textColor}`}
+              style={{ backgroundColor: party?.color_hex ?? "#888888" }}
+              title={party?.name}
+            >
+              {party?.name}
+            </div>
           </div>
         );
       },
       enableSorting: false,
     },
     {
-      accessorKey: "birth_date",
+      accessorKey: "type",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Fecha de Nac." />
+        <DataTableColumnHeader column={column} title="Tipo" />
       ),
       cell: ({ row }) => {
-        const brith_date = row.original.birth_date;
+        const type = row.original.type;
+        const Icon = getCandidateTypeIcon(type);
+        const colorClass = getCandidateTypeColor(type);
 
         return (
-          <div className="flex items-center">
-            <span className="capitalize">{brith_date}</span>
+          <div className="flex w-[6.25rem] items-center">
+            <Icon className={`mr-2 size-4 ${colorClass}`} aria-hidden="true" />
+            <span className="capitalize">{type.toLowerCase()}</span>
           </div>
         );
       },
       enableSorting: false,
     },
     {
-      accessorKey: "place_of_birth",
+      accessorKey: "list_number",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Lugar de Nac." />
+        <DataTableColumnHeader column={column} title="Número" />
       ),
       cell: ({ row }) => {
-        const place_of_birth = row.original.place_of_birth;
-
         return (
-          <div className="flex items-center">
-            <span className="capitalize">{place_of_birth}</span>
+          <div className="flex space-x-2">
+            <Badge variant="outline">{row.original.list_number}</Badge>
           </div>
         );
       },
       enableSorting: false,
     },
     {
-      accessorKey: "profession",
+      accessorKey: "status",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Profesión" />
+        <DataTableColumnHeader column={column} title="Estado" />
       ),
       cell: ({ row }) => {
-        const profession = row.original.profession;
+        const status = row.original.status;
 
         return (
-          <div className="flex items-center">
-            <span className="capitalize">{profession}</span>
-          </div>
+          <Badge
+            variant="outline"
+            className=" block whitespace-normal break-words text-xs"
+          >
+            {status}
+          </Badge>
         );
       },
       enableSorting: false,
     },
     {
-      accessorKey: "gender",
+      accessorKey: "active",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Género" />
+        <DataTableColumnHeader column={column} title="Activo" />
       ),
-      cell: ({ row }) => {
-        const gender = row.original.gender;
-
-        return (
-          <div className="flex items-center">
-            <span className="capitalize">{gender}</span>
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.active ? "success" : "destructive"}
+          className="min-w-[40px] justify-center"
+        >
+          {booleanToText(row.original.active)}
+        </Badge>
+      ),
       enableSorting: false,
     },
+    // {
+    //   accessorKey: "created_at",
+    //   header: ({ column }) => (
+    //     <DataTableColumnHeader column={column} title="F. Creación" />
+    //   ),
+    //   cell: ({ cell }) => formatterDateWithTime(cell.getValue() as Date),
+    // },
+    // enableSorting: false,
     {
       id: "actions",
       cell: function Cell({ row }) {
@@ -168,20 +195,12 @@ export function getColumns({
                 <SquarePen className="size-4" />
                 Actualizar
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => setRowAction({ type: "update-biography", row })}
+              {/* <DropdownMenuItem
+                onSelect={() => setRowAction({ type: "update-bancada", row })}
               >
-                <History className="size-4" />
-                Biografía
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() =>
-                  setRowAction({ type: "update-background", row })
-                }
-              >
-                <BookUser className="size-4" />
-                Antecedentes
-              </DropdownMenuItem>
+                <ArrowRightLeft className="size-4" />
+                Cambios de Bancada
+              </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
         );

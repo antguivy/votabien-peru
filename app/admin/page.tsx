@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { adminNavGroups } from "@/components/navbar/navbar-config";
 
 export default async function AdminDashboardPage() {

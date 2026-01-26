@@ -1,21 +1,20 @@
 import {
   Home,
-  // Users,
   Flag,
-  // UserCheck,
   GitCompare,
   Info,
-  // LayoutDashboard,
-  FileEdit,
-  // UserCog,
-  // Settings,
   BookHeadphones,
   Users,
   DollarSign,
   LayoutDashboard,
   UserCheck,
+  ScrollText,
+  FlagTriangleRight,
+  IdCard,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
+
+// href: "/comparador?mode=legislator&chamber=CONGRESO",
 
 export const publicNavGroups: NavGroup[] = [
   {
@@ -23,10 +22,10 @@ export const publicNavGroups: NavGroup[] = [
       { href: "/", label: "Inicio", icon: Home },
       { href: "/candidatos", label: "Candidatos 2026", icon: UserCheck },
       // { href: "/aprende", label: "Aprende", icon: Users },
-      { href: "/partidos?active=true", label: "Partidos", icon: Flag },
+      { href: "/partidos", label: "Partidos", icon: Flag },
       { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
       {
-        href: "/comparador?mode=legislator&chamber=CONGRESO",
+        href: "/comparador",
         label: "Comparador",
         icon: GitCompare,
       },
@@ -54,9 +53,10 @@ export const adminNavGroups: NavGroup[] = [
     requiresAuth: true,
     requiresRole: ["admin", "editor"],
     links: [
-      { href: "/admin/legisladores", label: "Legisladores", icon: FileEdit },
-      { href: "/admin/partidos", label: "Partidos", icon: FileEdit },
-      { href: "/admin/personas", label: "Personas", icon: FileEdit },
+      { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
+      { href: "/admin/candidatos", label: "Candidatos", icon: UserCheck },
+      { href: "/admin/partidos", label: "Partidos", icon: FlagTriangleRight },
+      { href: "/admin/personas", label: "Personas", icon: IdCard },
     ],
   },
   {

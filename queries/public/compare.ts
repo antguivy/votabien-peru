@@ -55,7 +55,7 @@ export async function getLegislatorsComparison(
       active,
       start_date,
       end_date,
-      person:person_id!inner ( id, fullname, image_url, image_candidate_url, profession ),
+      person:person_id!inner ( id, fullname, dni, image_url, image_candidate_url, profession ),
       electoral_district:electoral_district_id ( id, name, code ),
       current_parliamentary_group
     `,
@@ -71,6 +71,7 @@ export async function getLegislatorsComparison(
       person: {
         id: string;
         fullname: string;
+        dni: string | null;
         image_url: string | null;
         image_candidate_url: string | null;
         profession: string | null;
@@ -150,6 +151,7 @@ export async function getLegislatorsComparison(
             image_url: leg.person.image_url,
             image_candidate_url: leg.person.image_candidate_url,
             profession: leg.person.profession,
+            dni: leg.person.dni,
           },
           electoral_district: {
             id: leg.electoral_district.id,

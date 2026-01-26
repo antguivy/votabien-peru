@@ -256,7 +256,7 @@ export default function AsyncEntitySelector({
       .join(",");
 
     if (initialSelectedIds && initialSelectedIds !== currentIds) {
-      console.log("🔄 Syncing selection from server:", initialSelectedIds);
+      console.log("Syncing selection from server:", initialSelectedIds);
       setSelectedItems(initialSelected);
     }
   }, [initialSelectedIds, initialSelected, selectedItems]);

@@ -1,320 +1,157 @@
-import Link from "next/link";
-import { Target, Eye, Zap, Users, Heart, ArrowRight } from "lucide-react";
+import {
+  Target,
+  Eye,
+  Scale,
+  Database,
+  CheckCircle2,
+  TrendingUp,
+} from "lucide-react";
+import Footer from "@/components/landing/footer";
 
 export default function MissionPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-transparent to-red-500/5 pointer-events-none" />
-        <div className="container mx-auto px-4 py-12 md:py-16 max-w-6xl relative">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-1 w-12 bg-red-500 rounded-full" />
-              <span className="text-sm font-medium text-red-600 uppercase tracking-wide">
-                Propósito y compromiso
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Nuestra Misión en
-              <span className="block text-red-600">Las Elecciones 2026</span>
+    <div className="min-h-screen bg-background font-sans selection:bg-primary/10 selection:text-primary">
+      {/* <header className="relative border-b border-border bg-background overflow-hidden pt-20 pb-16 md:pt-24 md:pb-24">
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.1]" />
+
+        <div className="container mx-auto px-4 max-w-5xl relative">
+          <div className="flex flex-col items-center text-center space-y-6">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground text-balance">
+              Información que construye <br />
+              <span className="text-muted-foreground">ciudadanía.</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl">
-              Un equipo de jóvenes comprometidos con transformar la información
-              política en una herramienta de empoderamiento ciudadano para
-              elegir mejor en las elecciones generales del Perú.
+
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
+              Transformamos datos legislativos complejos en herramientas claras
+              para que tú decidas el futuro del Perú.
             </p>
           </div>
         </div>
-      </header>
+      </header> */}
 
-      {/* Quiénes Somos */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground mb-4">
-                Somos un Equipo de Jóvenes
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                Profundamente preocupados y comprometidos con el futuro de
-                nuestro país. Creemos que la información verificable es la base
-                de una democracia fuerte y que cada ciudadano merece acceder a
-                datos confiables para tomar decisiones informadas en las urnas.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                No queremos un Perú donde la desinformación y la propaganda
-                determinen el rumbo de nuestras elecciones. Queremos ciudadanos
-                empoderados que conozcan a quiénes votarán, qué hicieron, qué
-                proponen y en qué se diferencian entre sí.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-muted/30 border border-red-500/20 rounded-lg p-6">
-                <div className="flex items-start gap-4">
-                  <Heart className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Pasión por el cambio
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Creemos que nuestro trabajo puede marcar la diferencia en
-                      cómo millones de peruanos toman decisiones en 2026.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-muted/30 border border-red-500/20 rounded-lg p-6">
-                <div className="flex items-start gap-4">
-                  <Zap className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Energía y determinación
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Trabajamos incansablemente para asegurar que ningún dato
-                      importante se pierda o se distorsione.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <section className="py-20 md:py-28 bg-muted/20 border-b border-border">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h2 className="text-3xl md:text-4xl font-serif italic text-foreground/80 leading-snug mb-8">
+            “No queremos un país donde la desinformación decida el rumbo.
+            Queremos electores que conozcan a quién votan, qué hicieron y qué
+            proponen.”
+          </h2>
+          <p className="text-base text-muted-foreground uppercase tracking-widest font-semibold">
+            — El equipo de Vota Bien
+          </p>
         </div>
       </section>
 
-      {/* Misión y Visión */}
-      <section className="py-12 md:py-16 border-y border-border bg-muted/20">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
             {/* Misión */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Target className="w-6 h-6 text-red-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground">Misión</h2>
+            <div className="space-y-6 group">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Target className="w-6 h-6" />
               </div>
+              <h2 className="text-3xl font-bold text-foreground">
+                Nuestra Misión
+              </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Centralizar y democratizar el acceso a información verificable
-                sobre congresistas, partidos políticos y candidatos en el Perú,
-                permitiendo que cada ciudadano tome decisiones informadas en las
-                elecciones generales de 2026.
+                Centralizar, verificar y democratizar el acceso a la información
+                política. Existimos para eliminar la barrera técnica entre los
+                datos del Congreso y el ciudadano de a pie.
               </p>
-              <div className="pt-4 border-t border-red-500/20">
-                <p className="text-sm font-semibold text-foreground mb-3">
-                  Nos comprometemos a:
-                </p>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">→</span>
-                    <span>Verificar cada dato con fuentes primarias</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">→</span>
-                    <span>Mantener total neutralidad política</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">→</span>
-                    <span>Actualizar información continuamente</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">→</span>
-                    <span>Hacer la información accesible a todos</span>
-                  </li>
-                </ul>
-              </div>
+              <ul className="space-y-3 pt-2">
+                <CheckItem text="Verificación rigurosa con fuentes primarias" />
+                <CheckItem text="Neutralidad política absoluta" />
+                <CheckItem text="Tecnología de código abierto" />
+              </ul>
             </div>
 
             {/* Visión */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <Eye className="w-6 h-6 text-red-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-foreground">Visión</h2>
+            <div className="space-y-6 group">
+              <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Eye className="w-6 h-6" />
               </div>
+              <h2 className="text-3xl font-bold text-foreground">
+                Nuestra Visión
+              </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Ser la plataforma de referencia de información política para los
-                peruanos, donde la transparencia, la verificabilidad y la
-                calidad de datos creen una ciudadanía mejor informada y
-                participativa.
+                Ser el estándar de referencia para la transparencia electoral en
+                Latinoamérica. Visualizamos un 2026 donde el debate público se
+                base en métricas de desempeño y hechos, no en ruido mediático.
               </p>
-              <div className="pt-4 border-t border-red-500/20">
-                <p className="text-sm font-semibold text-foreground mb-3">
-                  Imaginamos un Perú donde:
-                </p>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">•</span>
-                    <span>La información política es accesible para todos</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">•</span>
-                    <span>
-                      Los ciudadanos eligen basados en hechos, no en mentiras
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">•</span>
-                    <span>La transparencia es la norma en política</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-600 font-bold">•</span>
-                    <span>Jóvenes y ciudadanos participan activamente</span>
-                  </li>
-                </ul>
-              </div>
+              <ul className="space-y-3 pt-2">
+                <CheckItem text="Ciudadanía digitalmente activa" />
+                <CheckItem text="Voto basado en evidencia" />
+                <CheckItem text="Reducción de la brecha informativa" />
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enfoque en 2026 */}
-      <section className="py-12 md:py-16">
+      <section className="py-16 md:py-24 bg-card border-y border-border">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-foreground mb-8">
-            Nuestro enfoque en las Elecciones 2026
-          </h2>
-
-          <div className="space-y-6">
-            <div className="flex gap-4 pb-6 border-b border-border">
-              <div className="flex-shrink-0">
-                <div className="p-3 bg-red-500/20 rounded-lg">
-                  <Users className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Información sobre Candidatos y Congresistas
-                </h3>
-                <p className="text-muted-foreground">
-                  Perfiles detallados de quiénes quieren tu voto, su
-                  trayectoria, logros, errores y propuestas. Queremos que
-                  conozcas a quién votarás antes de ingresar a la urna.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pb-6 border-b border-border">
-              <div className="flex-shrink-0">
-                <div className="p-3 bg-red-500/20 rounded-lg">
-                  <Target className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Análisis de Desempeño Legislativo
-                </h3>
-                <p className="text-muted-foreground">
-                  Para quienes buscan reelección: ¿qué proyectos presentaron?
-                  ¿cuál fue su asistencia? ¿cambiaron de partido? Los números
-                  hablan por sí solos.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pb-6 border-b border-border">
-              <div className="flex-shrink-0">
-                <div className="p-3 bg-red-500/20 rounded-lg">
-                  <Eye className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Transparencia sin Sesgo
-                </h3>
-                <p className="text-muted-foreground">
-                  No decimos por quién votar. Damos los datos verificables para
-                  que TÚ decidas. Sin propaganda, sin manipulación.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="p-3 bg-red-500/20 rounded-lg">
-                  <Zap className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Información Actualizada Constantemente
-                </h3>
-                <p className="text-muted-foreground">
-                  Cada semana actualizamos datos legislativos, antecedentes,
-                  alianzas y cambios que afecten las elecciones de 2026.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Por qué es importante */}
-      <section className="py-12 md:py-16 border-y border-border bg-muted/20">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-3xl font-bold text-foreground mb-8">
-            Importancia de 2026 para el Perú
-          </h2>
-
-          <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
-            <p>
-              El 2026 es crucial para el Perú. Las elecciones generales
-              determinarán el rumbo de nuestro país en los próximos años. Pero
-              esta decisión solo puede ser correcta si se basa en información
-              verificable.
-            </p>
-
-            <p>
-              Vivimos en una era donde la desinformación viaja más rápido que la
-              verdad. Donde mentiras bien empaquetadas pueden influir en
-              millones de votos. Donde candidatos con antecedentes cuestionables
-              intentan ocultarlos.
-            </p>
-
-            <p>
-              Por eso existimos. Para asegurar que en 2026, cada voto cuente con
-              la información más confiable disponible. Para que jóvenes como tú
-              puedan participar activamente en política armados de hechos. Para
-              que el Perú tenga mejores líderes porque los ciudadanos eligieron
-              con conocimiento de causa.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-12 md:py-16">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <div className="bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent border border-red-500/20 rounded-lg p-8">
+          <div className="mb-16">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Sé parte del cambio
+              Ejes de Acción 2026
             </h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Te invitamos a explorar la información, compartirla con tu
-              comunidad y participar activamente en las elecciones 2026 con
-              datos verificables.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Explora los Datos
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/equipo"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-red-600 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors"
-              >
-                Conoce el Equipo
-              </Link>
-            </div>
+            <div className="h-1 w-20 bg-primary rounded-full" />
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <FeatureCard
+              icon={<Database className="w-5 h-5" />}
+              title="Radiografía del Candidato"
+              description="Perfiles exhaustivos que cruzan antecedentes penales, formación académica y trayectoria partidaria. Sin filtros, solo datos."
+            />
+            <FeatureCard
+              icon={<TrendingUp className="w-5 h-5" />}
+              title="Métricas Legislativas"
+              description="Para quienes buscan reelección: analizamos asistencia, producción de leyes y sentido de votación en temas clave."
+            />
+            <FeatureCard
+              icon={<Scale className="w-5 h-5" />}
+              title="Imparcialidad Algorítmica"
+              description="Nuestros algoritmos no opinan. Presentan la información cruda y ordenada para evitar cualquier sesgo editorial."
+            />
+            <FeatureCard
+              icon={<CheckCircle2 className="w-5 h-5" />}
+              title="Verificación en Tiempo Real"
+              description="Un sistema vivo que se actualiza semanalmente conforme avanza la campaña y surgen nuevas alianzas o denuncias."
+            />
           </div>
         </div>
       </section>
+
+      <Footer />
+    </div>
+  );
+}
+
+function CheckItem({ text }: { text: string }) {
+  return (
+    <li className="flex items-start gap-3 text-muted-foreground">
+      <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+      <span className="text-sm md:text-base">{text}</span>
+    </li>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="group p-6 rounded-xl border border-border bg-background hover:border-primary/30 hover:shadow-md transition-all duration-300">
+      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+        {icon}
+      </div>
+      <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
     </div>
   );
 }

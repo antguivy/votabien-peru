@@ -65,15 +65,11 @@ export default function FundingTransparency() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                <span>APIs de inteligencia artificial</span>
+                <span>APIs de IA</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                <span>Automatización de investigación</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                <span>Procesamiento y análisis de datos</span>
+                <span>Análisis de datos</span>
               </li>
             </ul>
           </div>
@@ -145,7 +141,7 @@ export default function FundingTransparency() {
         </div>
 
         {/* Detalles adicionales del proyecto */}
-        <div className="bg-muted/30 border border-border rounded-xl p-6 mb-8">
+        {/* <div className="bg-muted/30 border border-border rounded-xl p-6 mb-8">
           <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
             <Database className="w-5 h-5 text-primary" />
             Más allá de la Plataforma Web
@@ -153,9 +149,7 @@ export default function FundingTransparency() {
           <p className="text-sm text-muted-foreground mb-4">
             VotaBienPerú es más que solo una página web. Mantenemos una
             infraestructura técnica compleja que incluye sistemas automatizados
-            de investigación con inteligencia artificial, que procesan y
-            analizan información política en tiempo récord, una tarea que
-            tomaría semanas hacerla manualmente.
+            de investigación con inteligencia artificial.
           </p>
           <p className="text-sm text-muted-foreground">
             Además, nuestro equipo de creadores de contenido y especialistas en
@@ -165,7 +159,7 @@ export default function FundingTransparency() {
             de análisis que permiten mantener la información actualizada y
             verificada.
           </p>
-        </div>
+        </div> */}
 
         {/* Nota final */}
         <div className="text-center mt-12">

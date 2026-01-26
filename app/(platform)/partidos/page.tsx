@@ -16,14 +16,14 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   const limit = parseInt(params.limit || "30");
   const offset = parseInt(params.offset || "0");
-
+  const activeValue =
+    params.active === "false"
+      ? false
+      : params.active === "all"
+        ? undefined
+        : true;
   const queryParams = {
-    active:
-      params.active === "false"
-        ? false
-        : params.active === "true"
-          ? true
-          : undefined,
+    active: activeValue,
     search: params.search || undefined,
     limit,
     offset,

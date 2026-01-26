@@ -46,7 +46,7 @@ export async function getLegisladoresCards({
       active,
       start_date,
       end_date,
-      person:person_id!inner ( id, fullname, image_url, profession ),
+      person:person_id!inner ( id, fullname, dni, image_url, image_candidate_url, profession ),
       electoral_district:electoral_district_id ( id, name, code ),
       elected_by_party:elected_by_party_id ( id, name, acronym ),
       current_parliamentary_group
@@ -108,6 +108,7 @@ export async function getLegisladoresCards({
       person: {
         id: leg.person.id,
         fullname: leg.person.fullname,
+        dni: leg.person.dni,
         image_url: leg.person.image_url,
         image_candidate_url: leg.person.image_url,
         profession: leg.person.profession,

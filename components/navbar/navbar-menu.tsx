@@ -18,9 +18,24 @@ export const NavbarMenu = ({
 }: NavbarMenuProps) => {
   const pathname = usePathname();
 
+  // Función corregida para detectar link activo
   const isActiveLink = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
+    // 1. Limpiamos query params (?) y hash (#) del link del menú
+    const linkPath = href.split("?")[0].split("#")[0];
+
+    // 2. Normalizamos paths (por seguridad, aunque usePathname suele venir limpio)
+    // Esto evita errores si uno termina en / y el otro no.
+    const currentPath = pathname === "/" ? "/" : pathname?.replace(/\/$/, "");
+    const targetPath = linkPath === "/" ? "/" : linkPath.replace(/\/$/, "");
+
+    // 3. Comparación exacta (Estás en /partidos y el link es /partidos)
+    if (currentPath === targetPath) return true;
+
+    // 4. Comparación de hijos (Estás en /partidos/detalle y el link es /partidos)
+    // Se añade "/" al targetPath para evitar que /partidos active /partidos-extra
+    if (currentPath?.startsWith(`${targetPath}/`)) return true;
+
+    return false;
   };
 
   const isMobile = variant === "mobile";

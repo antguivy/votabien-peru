@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { getPersonas } from "@/queries/public/person";
+import Image from "next/image";
 interface PersonSelectorProps {
   onSelect: (person: PersonBasicInfo | null) => void;
   selectedPerson: PersonBasicInfo | null;
@@ -54,8 +55,17 @@ export function PersonSelector({
         <Card className="p-3 sm:p-4 bg-muted/50">
           <div className="flex items-start sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <div className="h-10 w-10 rounded-xs bg-primary/10 flex items-center justify-center shrink-0">
+                {selectedPerson.image_candidate_url ? (
+                  <Image
+                    src={selectedPerson.image_candidate_url}
+                    alt={selectedPerson.fullname}
+                    width={40}
+                    height={40}
+                  />
+                ) : (
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm sm:text-base truncate">
@@ -65,7 +75,7 @@ export function PersonSelector({
             </div>
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => onSelect(null)}
               className="shrink-0 h-8 px-2 sm:px-3"

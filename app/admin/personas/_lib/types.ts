@@ -1,6 +1,3 @@
-import { BackgroundBase } from "@/interfaces/background";
-import { AdminPoliticalParty } from "@/interfaces/party";
-import { FinancingReport } from "@/interfaces/party-financing";
 import {
   AdminPerson,
   Assets,

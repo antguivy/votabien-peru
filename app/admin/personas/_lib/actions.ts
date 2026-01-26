@@ -53,6 +53,7 @@ export async function createPerson(data: CreatePersonRequest) {
       image_url: toNullIfEmpty(data.image_url),
       image_candidate_url: toNullIfEmpty(data.image_candidate_url),
       birth_date: toNullIfEmpty(data.birth_date),
+      place_of_birth: toNullIfEmpty(data.place_of_birth),
       profession: toNullIfEmpty(data.profession),
 
       // Campos JSON - Solo guardar si tienen datos
@@ -109,6 +110,7 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       image_url: toNullIfEmpty(data.image_url),
       image_candidate_url: toNullIfEmpty(data.image_candidate_url),
       birth_date: toNullIfEmpty(data.birth_date),
+      place_of_birth: toNullIfEmpty(data.place_of_birth),
       profession: toNullIfEmpty(data.profession),
 
       // Campos JSON
@@ -259,9 +261,9 @@ export async function updatePersonBackgrounds(
 
     if (upsertError) throw upsertError;
 
-    const existingIdsToKeep = backgrounds
-      .filter((b) => !b.id.startsWith("new_"))
-      .map((b) => b.id);
+    // const existingIdsToKeep = backgrounds
+    //   .filter((b) => !b.id.startsWith("new_"))
+    //   .map((b) => b.id);
 
     const allFinalIds = upsertData.map((d) => d.id);
 

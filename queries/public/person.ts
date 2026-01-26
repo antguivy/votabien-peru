@@ -5,7 +5,7 @@ import {
   BackgroundStatus,
   BackgroundType,
 } from "@/interfaces/background";
-import { BillBase, BillBasic } from "@/interfaces/bill";
+import { BillBasic } from "@/interfaces/bill";
 import { LegislatorDetail } from "@/interfaces/legislator";
 import {
   Assets,
@@ -153,7 +153,6 @@ export async function getPersonas({
 }: GetPersonasParams): Promise<PersonWithActivePeriod[]> {
   const supabase = await createClient();
 
-  // Limpiamos la búsqueda para evitar espacios vacíos
   const searchTerm = search.trim();
 
   if (!searchTerm) return [];
@@ -170,8 +169,5 @@ export async function getPersonas({
     return [];
   }
 
-  // Retornamos los datos.
-  // Nota: Hacemos el cast porque PersonWithActivePeriod suele tener campos extras
-  // que aquí no estamos calculando, pero para el "Selector" la info básica basta.
   return (data || []) as unknown as PersonWithActivePeriod[];
 }

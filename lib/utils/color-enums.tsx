@@ -10,12 +10,50 @@ import {
   Clock,
   XCircle,
   AlertCircle,
+  Crown,
+  Columns,
+  Vote,
+  ShieldCheck,
 } from "lucide-react";
-import { ChamberType, LegislatorCondition } from "@/interfaces/politics";
+import {
+  CandidacyType,
+  ChamberType,
+  LegislatorCondition,
+} from "@/interfaces/politics";
 import { BadgeVariant } from "../utils-bill";
 import { BackgroundType } from "@/interfaces/background";
 
 // Chamber helpers
+export function getCandidateTypeIcon(type: CandidacyType) {
+  switch (type) {
+    case CandidacyType.PRESIDENTE:
+      return Crown;
+    case CandidacyType.SENADOR:
+      return Columns;
+    case CandidacyType.DIPUTADO:
+      return Vote;
+    case CandidacyType.VICEPRESIDENTE_1 || CandidacyType.VICEPRESIDENTE_2:
+      return ShieldCheck;
+    default:
+      return AlertCircle;
+  }
+}
+
+export function getCandidateTypeColor(type: CandidacyType): string {
+  switch (type) {
+    case CandidacyType.PRESIDENTE:
+      return "text-[#DF6962]";
+    case CandidacyType.SENADOR:
+      return "text-[#3B6789]";
+    case CandidacyType.DIPUTADO:
+      return "text-[#72BDAF]";
+    case CandidacyType.VICEPRESIDENTE_1 || CandidacyType.VICEPRESIDENTE_2:
+      return "text-[#7F22FE";
+    default:
+      return "text-gray-500";
+  }
+}
+
 export function getChamberIcon(chamber: ChamberType) {
   switch (chamber) {
     case ChamberType.CONGRESO:

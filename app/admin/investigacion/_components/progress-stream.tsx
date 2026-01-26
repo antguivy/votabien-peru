@@ -21,12 +21,7 @@ import {
   Globe,
   Square,
 } from "lucide-react";
-import {
-  Antecedente,
-  EventoBiografico,
-  Stage1Draft,
-  StreamEvent,
-} from "@/interfaces/research";
+import { Stage1Draft, StreamEvent } from "@/interfaces/research";
 
 interface ProgressStreamProps {
   logs: StreamEvent[];

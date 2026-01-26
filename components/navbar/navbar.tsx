@@ -9,7 +9,6 @@ import { NavbarThemeToggle } from "./navbar-theme-toggle";
 export default async function Navbar() {
   // 1. Extraemos user Y profile
   const { user, profile } = await serverGetUser();
-
   return (
     <header className="fixed top-0 z-20 w-full bg-background/95 shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--brand)] to-transparent opacity-60" />
@@ -30,7 +29,7 @@ export default async function Navbar() {
           </Link>
 
           {/* Pasamos profile si NavbarDesktop lo necesita para filtrar menú */}
-          <NavbarDesktop user={user} profile={profile} />
+          <NavbarDesktop />
 
           <div className="hidden lg:flex items-center">
             <NavbarThemeToggle />

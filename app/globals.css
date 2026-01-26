@@ -410,11 +410,8 @@ CHARTS:
 
 html,
 body {
-  min-height: 100vh;
   margin: 0;
   padding: 0;
-  overscroll-behavior: none; /* Evita el rebote visual */
-  overflow-x: hidden; /* Evita desbordes horizontales */
 }
 
 /* ========================================

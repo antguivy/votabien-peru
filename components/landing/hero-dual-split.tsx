@@ -72,7 +72,6 @@ export default function HeroDualSplit({
   const { diasRestantes, fechaFormateada } = useCountdown(
     proceso_electoral.election_date,
   );
-
   return (
     <section className="relative w-full flex flex-col bg-background md:h-[calc(100vh-4rem)] md:max-h-[900px] overflow-hidden rounded-md border border-border/40">
       {/* ============= FONDOS ============= */}

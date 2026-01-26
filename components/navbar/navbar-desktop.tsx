@@ -5,15 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NavbarAboutMenu } from "./navbar-about-menu";
 import { publicNavGroups } from "./navbar-config";
-import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions";
 
-interface NavbarDesktopProps {
-  user?: User | null;
-  profile?: UserProfile | null;
-}
-
-export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
+export const NavbarDesktop = () => {
   const pathname = usePathname();
 
   const isActiveLink = (href: string) => {
@@ -22,7 +15,6 @@ export const NavbarDesktop = ({ user, profile }: NavbarDesktopProps) => {
   };
 
   const publicLinks = publicNavGroups[0].links;
-  const role = profile?.role || "user";
 
   return (
     <div className="hidden lg:flex items-center gap-1">

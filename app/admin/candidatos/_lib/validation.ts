@@ -1,0 +1,40 @@
+import {
+  createSearchParamsCache,
+  parseAsArrayOf,
+  parseAsInteger,
+  parseAsString,
+  parseAsStringEnum,
+} from "nuqs/server";
+
+import { getSortingStateParser } from "@/lib/parsers";
+import {
+  CandidacyStatus,
+  CandidacyType,
+  ChamberType,
+  LegislatorCondition,
+} from "@/interfaces/politics";
+import { AdminLegislator } from "@/interfaces/legislator";
+
+export const searchParamsCache = createSearchParamsCache({
+  flags: parseAsArrayOf(
+    parseAsStringEnum(["advancedTable", "floatingBar"]),
+  ).withDefault([]),
+  page: parseAsInteger.withDefault(1),
+  perPage: parseAsInteger.withDefault(10),
+  sort: getSortingStateParser<AdminLegislator>().withDefault([
+    { id: "created_at", desc: true },
+  ]),
+  fullname: parseAsString.withDefault(""),
+  type: parseAsArrayOf(
+    parseAsStringEnum(Object.values(CandidacyType)),
+  ).withDefault([]),
+  status: parseAsArrayOf(
+    parseAsStringEnum(Object.values(CandidacyStatus)),
+  ).withDefault([]),
+  party: parseAsArrayOf(parseAsString).withDefault([]),
+  // district: parseAsArrayOf(parseAsString).withDefault([]),
+});
+
+export type GetCandidateSchema = Awaited<
+  ReturnType<typeof searchParamsCache.parse>
+>;

@@ -78,6 +78,7 @@ export interface AdminPerson {
   image_url: string | null;
   image_candidate_url: string | null;
   birth_date: string | null;
+  place_of_birth: string | null;
   profession: string | null;
   detailed_biography?: BiographyDetail[];
   secondary_school: boolean;
@@ -106,6 +107,7 @@ export interface PersonBasicInfo {
   image_url: string | null;
   image_candidate_url: string | null;
   profession: string | null;
+  dni: string | null;
 }
 
 export interface PersonBase {
@@ -114,9 +116,11 @@ export interface PersonBase {
   name: string;
   lastname: string;
   fullname: string;
+  dni: string | null;
   image_url: string | null;
   image_candidate_url: string | null;
   birth_date: string | null;
+  place_of_birth: string | null;
   profession: string | null;
   detailed_biography: BiographyDetail[];
   secondary_school: boolean | null;

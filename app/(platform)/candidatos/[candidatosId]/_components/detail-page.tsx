@@ -17,12 +17,8 @@ import {
   User,
   Calendar,
   ExternalLink,
-  Facebook,
-  Twitter,
-  Instagram,
-  Music2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";

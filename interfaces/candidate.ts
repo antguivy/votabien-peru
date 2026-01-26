@@ -22,9 +22,30 @@ export interface CandidateBase {
   active: boolean;
   electoral_process_id: string;
   political_party_id: string;
+  electoral_district_id: string | null;
   type: CandidacyType;
   list_number: number | null;
   status: CandidacyStatus;
+}
+
+export interface AdminCandidate {
+  id: string;
+  person_id: string;
+  fullname: string;
+  electoral_process_id: string;
+  type: CandidacyType;
+  political_party_id: string;
+  electoral_district_id: string | null;
+  status: CandidacyStatus;
+  list_number: number | null;
+  active: boolean;
+  created_at: string;
+
+  // Relaciones populadas
+  person: PersonBasicInfo | null;
+  political_party: PoliticalPartyBase | null;
+  electoral_district: ElectoralDistrictBase | null;
+  electoral_process: ElectoralProcess | null;
 }
 
 export interface CandidateToPerson extends CandidateBase {
@@ -91,4 +112,13 @@ export interface CandidateComparison {
   total_available: number;
   comparison_date: string;
   items: CandidateCompareItem[];
+}
+
+export interface CreateCandidatePeriodRequest extends CandidateBase {
+  person_id: string;
+}
+
+export interface UpdateCandidatePeriodRequest extends Partial<CandidateBase> {
+  person_id: string;
+  id: string;
 }

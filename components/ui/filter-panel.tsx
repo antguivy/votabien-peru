@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useRef, KeyboardEvent, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { X, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { BulkUpdateLegislatorsRequest } from "./types";
-import { CreatePersonRequest, UpdatePersonRequest } from "@/interfaces/person";
 import {
   CreateLegislatorPeriodRequest,
   UpdateLegislatorPeriodRequest,

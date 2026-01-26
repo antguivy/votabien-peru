@@ -81,10 +81,10 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       skip: 0,
       limit: limit,
     };
-    const [candidaturas, distritos, allCandidatos] = await Promise.all([
+    const [candidaturas, distritos] = await Promise.all([
       getCandidatesCards(apiParams),
       getDistritos(),
-      getAllCandidates(),
+      // getAllCandidates(),
     ]);
 
     const fechaElecciones = new Date(procesoActivo.election_date);

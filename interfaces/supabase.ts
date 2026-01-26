@@ -251,7 +251,7 @@ export type Database = {
         };
         Insert: {
           active: boolean;
-          created_at: string;
+          created_at?: string;
           electoral_district_id?: string | null;
           electoral_process_id: string;
           id: string;
@@ -260,7 +260,7 @@ export type Database = {
           political_party_id: string;
           status: Database["public"]["Enums"]["candidacystatus"];
           type: Database["public"]["Enums"]["candidacytype"];
-          updated_at: string;
+          updated_at?: string;
         };
         Update: {
           active?: boolean;

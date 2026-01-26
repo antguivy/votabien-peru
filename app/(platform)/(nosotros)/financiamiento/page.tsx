@@ -4,6 +4,7 @@ import FundingHero from "./_components/funding-hero";
 import FundingTransparency from "./_components/funding-transparency";
 import FundingYape from "./_components/funding-yape";
 import FundingPaypal from "./_components/funding-paypal";
+import Footer from "@/components/landing/footer";
 
 export const metadata: Metadata = {
   title: "Financiamiento | Vota Bien Perú",
@@ -20,10 +21,6 @@ export default function FinanciamientoPage() {
       <section className="container mx-auto px-4 py-16 max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Formas de Contribuir</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Elige el método que mejor se adapte a tus necesidades. Todas las
-            contribuciones son voluntarias y nos ayudan a seguir adelante.
-          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 mb-16">
@@ -34,6 +31,7 @@ export default function FinanciamientoPage() {
       </section>
 
       <FundingTransparency />
+      <Footer />
     </div>
   );
 }

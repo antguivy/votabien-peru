@@ -29,7 +29,6 @@ import {
   CredenzaContent,
   CredenzaDescription,
   CredenzaFooter,
-  CredenzaHeader,
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { Badge } from "@/components/ui/badge";

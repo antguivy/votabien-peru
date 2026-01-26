@@ -4,7 +4,6 @@ import {
   parseAsInteger,
   parseAsString,
   parseAsStringEnum,
-  parseAsBoolean,
 } from "nuqs/server";
 
 import { getSortingStateParser } from "@/lib/parsers";
