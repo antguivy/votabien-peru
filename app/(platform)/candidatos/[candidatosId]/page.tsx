@@ -13,7 +13,7 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
     const candidato = await getPersonaAsCandidatoById(candidatosId);
 
     if (!candidato) notFound();
-
+    console.log("data", candidato);
     return <DetailCandidato persona={candidato} />;
   } catch (error) {
     console.error("Error al obtener datos de candidatos:", error);

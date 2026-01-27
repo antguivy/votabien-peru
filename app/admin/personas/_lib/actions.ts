@@ -15,14 +15,7 @@ import {
 } from "@/interfaces/person";
 import { BackgroundBase, BackgroundStatus } from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
-
-const handleError = (error: unknown, msg: string) => {
-  console.error(msg, error);
-  return {
-    success: false,
-    error: error instanceof Error ? error.message : msg,
-  };
-};
+import { extractErrorMessage } from "@/lib/error-handler";
 
 const prepareJsonField = <T>(data: T[] | undefined | null): Json => {
   if (!data || data.length === 0) return null;
@@ -87,7 +80,10 @@ export async function createPerson(data: CreatePersonRequest) {
     revalidatePath("/admin/personas");
     return { success: true, data: person };
   } catch (error) {
-    return handleError(error, "Error al crear persona");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -143,7 +139,10 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
     revalidatePath("/admin/personas");
     return { success: true, data: person };
   } catch (error) {
-    return handleError(error, "Error al actualizar persona");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -158,7 +157,10 @@ export async function deletePerson(personId: string) {
     revalidatePath("/admin/personas");
     return { success: true, message: "Persona eliminada exitosamente" };
   } catch (error) {
-    return handleError(error, "Error al eliminar persona");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -179,7 +181,10 @@ export async function bulkDeletePersons(personIds: string[]) {
       message: `${personIds.length} persona(s) eliminada(s) exitosamente`,
     };
   } catch (error) {
-    return handleError(error, "Error al eliminar personas");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -197,7 +202,10 @@ export async function searchPersonByDNI(dni: string) {
 
     return { success: true, data };
   } catch (error) {
-    return handleError(error, "Error al buscar persona por DNI");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -222,7 +230,10 @@ export async function updatePersonBiography(
     revalidatePath("/admin/personas");
     return { success: true, data };
   } catch (error) {
-    return handleError(error, "Error al actualizar biografía");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -240,9 +251,9 @@ export async function updatePersonBackgrounds(
   try {
     const upsertData = backgrounds.map((item) => {
       const isNew = item.id.startsWith("new_");
-
+      const realId = isNew ? crypto.randomUUID() : item.id;
       return {
-        id: isNew ? createId() : item.id,
+        id: realId,
         person_id: personId,
         type: item.type,
         status: item.status as BackgroundStatus,
@@ -254,46 +265,40 @@ export async function updatePersonBackgrounds(
         publication_date: cleanForDb(item.publication_date),
       };
     });
-
     const { error: upsertError } = await supabase
       .from("background")
       .upsert(upsertData, { onConflict: "id" });
 
-    if (upsertError) throw upsertError;
+    if (upsertError) {
+      console.error("❌ Error en UPSERT:", upsertError);
+      throw new Error(`Error al guardar: ${upsertError.message}`);
+    }
 
-    // const existingIdsToKeep = backgrounds
-    //   .filter((b) => !b.id.startsWith("new_"))
-    //   .map((b) => b.id);
+    const currentIds = upsertData.map((d) => d.id);
 
-    const allFinalIds = upsertData.map((d) => d.id);
+    let deleteQuery = supabase
+      .from("background")
+      .delete()
+      .eq("person_id", personId);
 
-    if (allFinalIds.length === 0) {
-      const { error: deleteError } = await supabase
-        .from("background")
-        .delete()
-        .eq("person_id", personId);
+    if (currentIds.length > 0) {
+      const formattedIds = `(${currentIds.map((id) => `"${id}"`).join(",")})`;
+      deleteQuery = deleteQuery.filter("id", "not.in", formattedIds);
+    }
 
-      if (deleteError) throw deleteError;
-    } else {
-      const { error: deleteError } = await supabase
-        .from("background")
-        .delete()
-        .eq("person_id", personId)
-        .not("id", "in", `(${allFinalIds.map((id) => `"${id}"`).join(",")})`);
+    const { error: deleteError } = await deleteQuery;
 
-      if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error("❌ Error en DELETE:", deleteError);
+      throw new Error(`Error al limpiar antiguos: ${deleteError.message}`);
     }
 
     revalidatePath("/admin/personas");
     return { success: true };
   } catch (error) {
-    console.error("Error updating backgrounds:", error);
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Error al sincronizar antecedentes",
+      error: extractErrorMessage(error),
     };
   }
 }
@@ -347,7 +352,9 @@ export async function fetchCandidateFromJNE(
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
-    console.error("Error conectando con Python:", error);
-    return { success: false, error: "Error de conexión interna" };
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }

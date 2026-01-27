@@ -16,7 +16,7 @@ export async function getPersonList(
     let query = supabase.from("person").select(
       `
         *,
-        background: background(*)
+        backgrounds: background(*)
       `,
       { count: "exact" },
     );

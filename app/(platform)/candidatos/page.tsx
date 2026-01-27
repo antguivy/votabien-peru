@@ -1,10 +1,7 @@
 import CandidatosList from "@/components/politics/candidatos-list";
 import Link from "next/link";
 import StickyElectoralBanner from "@/components/sticky-banner";
-import {
-  getCandidatesCards,
-  getAllCandidates,
-} from "@/queries/public/candidacies";
+import { getCandidatesCards } from "@/queries/public/candidacies";
 import getDistritos from "@/queries/public/electoral-districts";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 
@@ -84,7 +81,6 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     const [candidaturas, distritos] = await Promise.all([
       getCandidatesCards(apiParams),
       getDistritos(),
-      // getAllCandidates(),
     ]);
 
     const fechaElecciones = new Date(procesoActivo.election_date);
@@ -94,7 +90,6 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       day: "numeric",
     });
 
-    // Días restantes
     const hoy = new Date();
     const diasRestantes = Math.ceil(
       (fechaElecciones.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),

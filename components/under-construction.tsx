@@ -1,11 +1,14 @@
 "use client";
 import { Construction, Hammer, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { Button } from "./ui/button";
 
 interface UnderConstructionProps {
   title?: string;
   description?: string;
   estimatedDate?: string;
   showBackButton?: boolean;
+  isTeam?: boolean;
   backHref?: string;
   icon?: "construction" | "hammer";
 }
@@ -15,6 +18,7 @@ export default function UnderConstruction({
   description = "Estamos trabajando en esta sección para ofrecerte la mejor experiencia posible.",
   estimatedDate,
   showBackButton = true,
+  isTeam = false,
   backHref = "/",
   icon = "construction",
 }: UnderConstructionProps) {
@@ -51,7 +55,17 @@ export default function UnderConstruction({
             <div className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full animate-progress" />
           </div>
         </div>
-
+        {isTeam && (
+          <div className="flex flex-col items-center gap-5">
+            ¿Eres parte del equipo VotaBien Perú?
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center gap-2 px-6 py-3"
+            >
+              <Button>Inicia Sessión</Button>
+            </Link>
+          </div>
+        )}
         {showBackButton && (
           <a
             href={backHref}

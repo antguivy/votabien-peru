@@ -11,25 +11,60 @@ import {
   MapPin,
   Flag,
   X,
+  LucideIcon,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const MODE_LABELS: Record<string, { label: string; icon: LucideIcon }> = {
-  "legislator-Congreso": { label: "Congreso", icon: Users },
-  "legislator-Senado": { label: "Senado", icon: Building2 },
-  "legislator-Diputados": { label: "Diputados", icon: Scale },
-  "president-candidate": { label: "Presidente", icon: Trophy },
-  "vicepresident-candidate": { label: "Vicepresidente", icon: UserCheck },
-  "senator-candidate": { label: "Senador", icon: Building2 },
-  "deputy-candidate": { label: "Diputado", icon: Scale },
-};
 
 interface FilterBadgeSummaryProps {
   filters: FilterState;
   onRemoveFilter?: (key: keyof FilterState) => void;
   className?: string;
 }
+
+const getModeConfig = (
+  mode: string | null,
+  chamber: string | null,
+  type: string | null,
+): { label: string; icon: LucideIcon } | null => {
+  if (!mode) return null;
+
+  if (mode === "legislator") {
+    return {
+      label: `Legislador - ${chamber || "General"}`,
+      icon: Users,
+    };
+  }
+
+  if (mode === "candidate") {
+    let icon = Users;
+    let label = "Candidato";
+
+    switch (type) {
+      case "PRESIDENTE":
+        icon = Trophy;
+        label = "Presidente";
+        break;
+      case "VICEPRESIDENTE":
+        icon = UserCheck;
+        label = "Vicepresidente";
+        break;
+      case "SENADOR":
+        icon = Building2;
+        label = "Senador";
+        break;
+      case "DIPUTADO":
+        icon = Scale;
+        label = "Diputado";
+        break;
+      default:
+        label = "Candidato";
+    }
+
+    return { label, icon };
+  }
+
+  return null;
+};
 
 export default function FilterBadgeSummary({
   filters,
@@ -38,38 +73,34 @@ export default function FilterBadgeSummary({
 }: FilterBadgeSummaryProps) {
   const badges = [];
 
-  // Badge principal (modo)
-  if (filters.mode) {
-    const key = filters.chamber
-      ? `legislator-${filters.chamber}`
-      : filters.mode;
-    const config = MODE_LABELS[key];
+  const modeConfig = getModeConfig(filters.mode, filters.chamber, filters.type);
 
-    if (config) {
-      const Icon = config.icon;
-      badges.push(
-        <Badge key="mode" variant="default" className="gap-1.5 pr-1">
-          <Icon className="h-3 w-3" />
-          {config.label}
-          {onRemoveFilter && (
-            <button
-              onClick={() => onRemoveFilter("mode")}
-              className="ml-1 hover:bg-primary-foreground/20 rounded-sm p-0.5"
-            >
-              <X className="h-2.5 w-2.5" />
-            </button>
-          )}
-        </Badge>,
-      );
-    }
+  if (modeConfig) {
+    const Icon = modeConfig.icon;
+    badges.push(
+      <Badge key="mode" variant="default" className="gap-1.5 pr-1 capitalize">
+        <Icon className="h-3 w-3" />
+        {modeConfig.label.toLowerCase()}
+        {onRemoveFilter && (
+          <button
+            onClick={() => onRemoveFilter("mode")}
+            className="ml-1 hover:bg-primary-foreground/20 rounded-sm p-0.5"
+            aria-label="Remover filtro de modo"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+        )}
+      </Badge>,
+    );
   }
 
-  // Badge de distrito
-  if (filters.districts) {
+  if (filters.districts && filters.districts.length > 0) {
     badges.push(
-      <Badge key="district" variant="secondary" className="gap-1.5 pr-1">
+      <Badge key="districts" variant="secondary" className="gap-1.5 pr-1">
         <MapPin className="h-3 w-3" />
-        {filters.districts}
+        {filters.districts.length > 1
+          ? `${filters.districts.length} Distritos`
+          : filters.districts[0]}
         {onRemoveFilter && (
           <button
             onClick={() => onRemoveFilter("districts")}
@@ -82,12 +113,13 @@ export default function FilterBadgeSummary({
     );
   }
 
-  // Badge de partido
-  if (filters.parties) {
+  if (filters.parties && filters.parties.length > 0) {
     badges.push(
       <Badge key="parties" variant="secondary" className="gap-1.5 pr-1">
         <Flag className="h-3 w-3" />
-        {filters.parties}
+        {filters.parties.length > 1
+          ? `${filters.parties.length} Partidos`
+          : filters.parties[0]}
         {onRemoveFilter && (
           <button
             onClick={() => onRemoveFilter("parties")}

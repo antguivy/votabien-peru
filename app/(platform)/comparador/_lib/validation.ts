@@ -1,4 +1,3 @@
-// comparador/_lib/validation.ts
 import {
   createSearchParamsCache,
   parseAsArrayOf,
@@ -12,29 +11,29 @@ const parseAsEntityType = parseAsString.withDefault("legislator");
 
 export const searchParamsCache = createSearchParamsCache({
   mode: parseAsEntityType,
-  ids: parseAsArrayOf(parseAsString).withDefault([]),
+  dnis: parseAsArrayOf(parseAsString).withDefault([]),
   q: parseAsString.withDefault(""),
   chamber: parseAsString.withDefault(""),
   districts: parseAsArrayOf(parseAsString).withDefault([]),
   parliamentary_group: parseAsString.withDefault(""),
-  // active_only: parseAsBoolean.withDefault(true),
-  // process_id: parseAsString.withDefault(""),
-  candidacy_type: parseAsString.withDefault(""),
+
+  type: parseAsString.withDefault(""),
+
   parties: parseAsArrayOf(parseAsString).withDefault([]),
   has_metrics_only: parseAsBoolean.withDefault(true),
+
+  candidacy_type: parseAsString.withDefault(""),
 });
 
-// 🔥 SIMPLIFICADO: Tipo básico sin Promise
 export type ComparatorParamsSchema = {
   mode: EntityType;
-  ids: string[];
+  dnis: string[];
   q: string;
   chamber: ChamberType;
   districts: string[];
   parties: string[];
   parliamentary_group: string;
-  // active_only: boolean;
-  // process_id: string;
+  type: string;
   candidacy_type: string;
   has_metrics_only: boolean;
 };
@@ -49,7 +48,6 @@ export function extractCandidacyType(
   if (mode === "senator-candidate") return CandidacyType.SENADOR;
   if (mode === "deputy-candidate") return CandidacyType.DIPUTADO;
   if (mode === "president-candidate") return CandidacyType.PRESIDENTE;
-  if (mode === "vicepresident-candidate") return CandidacyType.VICEPRESIDENTE_1;
-  if (mode === "vicepresident-candidate") return CandidacyType.VICEPRESIDENTE_2;
+  if (mode.includes("vicepresident")) return CandidacyType.VICEPRESIDENTE_1;
   return null;
 }

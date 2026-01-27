@@ -6,8 +6,8 @@ import { ChevronDown, LucideIcon } from "lucide-react";
 import {
   Users,
   Trophy,
-  // Building2,
-  // Scale,
+  Building2,
+  Scale,
   Filter,
   X,
   ChevronRight,
@@ -60,10 +60,11 @@ export interface FilterState {
   type: string | null;
   districts: string[] | null;
   parties: string[] | null;
-  // process_id: string | null;
-  // active_only: boolean | null;
 }
 
+// ============================================
+// 1. CATEGORÍAS (DESCOMENTADO)
+// ============================================
 const ENTITY_CATEGORIES: EntityCategory[] = [
   {
     id: "legislator",
@@ -72,15 +73,18 @@ const ENTITY_CATEGORIES: EntityCategory[] = [
     icon: Users,
     color: "bg-blue-500",
   },
-  // {
-  //   id: "candidate",
-  //   label: "Candidatos",
-  //   description: "Elecciones 2026",
-  //   icon: Trophy,
-  //   color: "bg-purple-500",
-  // },
+  {
+    id: "candidate",
+    label: "Candidatos",
+    description: "Elecciones 2026",
+    icon: Trophy,
+    color: "bg-purple-500",
+  },
 ];
 
+// ============================================
+// 2. SUBTIPOS LEGISLADORES
+// ============================================
 const LEGISLATOR_SUBTYPES: Subtype[] = [
   {
     mode: "legislator",
@@ -89,50 +93,39 @@ const LEGISLATOR_SUBTYPES: Subtype[] = [
     chamber: "CONGRESO",
     needsRefinement: false,
   },
-  // {
-  //   mode: "legislator",
-  //   label: "Senado",
-  //   icon: Building2,
-  //   chamber: "Senado",
-  //   needsRefinement: false,
-  // },
-  // {
-  //   mode: "legislator",
-  //   label: "Diputados",
-  //   icon: Scale,
-  //   chamber: "Diputados",
-  //   needsRefinement: false,
-  // },
 ];
 
+// ============================================
+// 3. SUBTIPOS CANDIDATOS (CONFIGURADO)
+// ============================================
 const CANDIDATE_SUBTYPES: Subtype[] = [
-  {
-    mode: "candidate",
-    label: "Senador",
-    icon: Users,
-    type: "SENADOR",
-    needsRefinement: false,
-  },
-  {
-    mode: "candidate",
-    label: "Diputado",
-    icon: Users,
-    type: "DIPUTADO",
-    needsRefinement: false,
-  },
   {
     mode: "candidate",
     label: "Presidente",
     icon: Trophy,
     type: "PRESIDENTE",
-    needsRefinement: false,
+    needsRefinement: true,
   },
   {
     mode: "candidate",
     label: "Vicepresidente",
     icon: Users,
     type: "VICEPRESIDENTE",
-    needsRefinement: false,
+    needsRefinement: true,
+  },
+  {
+    mode: "candidate",
+    label: "Senador",
+    icon: Building2,
+    type: "SENADOR",
+    needsRefinement: true,
+  },
+  {
+    mode: "candidate",
+    label: "Diputado",
+    icon: Scale,
+    type: "DIPUTADO",
+    needsRefinement: true,
   },
 ];
 
@@ -163,14 +156,6 @@ const filterParsers = {
     parse: (v: readonly string[]): string[] => Array.from(v) || [],
     serialize: (v: string[]): string[] => v,
   },
-  // process_id: {
-  //   parse: (v: string | null): string => v || "elecciones-2026",
-  //   serialize: (v: string): string => v,
-  // },
-  // active_only: {
-  //   parse: (v: string | null): boolean => v === "true",
-  //   serialize: (v: boolean): string => String(v),
-  // },
 };
 
 // ============================================
@@ -187,7 +172,7 @@ export default function FilterSystem() {
 
   const category: CategoryId | null = useMemo(() => {
     if (!filters.mode) return null;
-    return filters.mode.includes("candidate") ? "candidate" : "legislator";
+    return filters.mode === "candidate" ? "candidate" : "legislator";
   }, [filters.mode]);
 
   const currentSubtype = useMemo(() => {
@@ -198,19 +183,14 @@ export default function FilterSystem() {
 
     return (
       allSubtypes.find((s) => {
-        // Primero verificar que el mode coincida
         if (s.mode !== filters.mode) return false;
 
-        // Para legisladores: verificar chamber
         if (category === "legislator") {
           return s.chamber === filters.chamber;
         }
-
-        // Para candidatos: verificar type
         if (category === "candidate") {
           return s.type === filters.type;
         }
-
         return false;
       }) || null
     );
@@ -219,10 +199,9 @@ export default function FilterSystem() {
   const activeFiltersCount = useMemo(() => {
     return [
       filters.chamber && filters.chamber !== "",
-      filters.districts && filters.districts && filters.districts.length > 0,
-      filters.parties && filters.parties && filters.parties.length > 0,
       filters.type && filters.type !== "",
-      // filters.active_only !== null && !filters.active_only,
+      filters.districts && filters.districts.length > 0,
+      filters.parties && filters.parties.length > 0,
     ].filter(Boolean).length;
   }, [filters]);
 
@@ -234,13 +213,11 @@ export default function FilterSystem() {
 
   const handleCategoryChange = (newCategory: CategoryId) => {
     setFilters({
-      mode: newCategory === "legislator" ? "legislator" : "candidate",
+      mode: newCategory,
       chamber: null,
+      type: null,
       districts: null,
       parties: null,
-      type: null,
-      // process_id: newCategory === "candidate" ? "elecciones-2026" : null,
-      // active_only: true,
     });
   };
 
@@ -262,12 +239,10 @@ export default function FilterSystem() {
   const resetFilters = () => {
     setFilters({
       mode: "legislator",
-      chamber: "Congreso",
+      chamber: "CONGRESO",
       districts: [],
       parties: [],
       type: null,
-      // process_id: null,
-      // active_only: true,
     });
   };
 
@@ -289,12 +264,9 @@ export default function FilterSystem() {
 
   return (
     <>
-      {/* Desktop Version */}
       <div className="hidden lg:block">
         <DesktopFilterPanel {...panelProps} />
       </div>
-
-      {/* Mobile Version */}
       <div className="lg:hidden">
         <MobileFilterDrawer
           {...panelProps}
@@ -309,7 +281,6 @@ export default function FilterSystem() {
 // ============================================
 // DESKTOP PANEL
 // ============================================
-
 interface PanelProps {
   category: CategoryId | null;
   currentSubtype: Subtype | null;
@@ -358,9 +329,7 @@ function DesktopFilterPanel({
             </Button>
           )}
         </div>
-        {/* <CardDescription>Configura tu comparación</CardDescription> */}
       </CardHeader>
-
       <CardContent className="space-y-4">
         <FilterContent
           category={category}
@@ -369,7 +338,6 @@ function DesktopFilterPanel({
           setFilters={setFilters}
           onCategoryChange={onCategoryChange}
           onSubtypeChange={onSubtypeChange}
-          activeFiltersCount={activeFiltersCount}
           isComplete={isComplete}
         />
       </CardContent>
@@ -380,7 +348,6 @@ function DesktopFilterPanel({
 // ============================================
 // CONTENIDO COMPARTIDO DE FILTROS
 // ============================================
-
 interface FilterContentProps {
   category: CategoryId | null;
   currentSubtype: Subtype | null;
@@ -388,7 +355,6 @@ interface FilterContentProps {
   setFilters: (updates: Partial<FilterState>) => void;
   onCategoryChange: (category: CategoryId) => void;
   onSubtypeChange: (subtype: Subtype) => void;
-  activeFiltersCount: number;
   isComplete: boolean;
 }
 
@@ -403,16 +369,16 @@ function FilterContent({
 }: FilterContentProps) {
   const { districts, parties } = useContext(ComparatorContext);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
-  const showRefinement = currentSubtype?.needsRefinement ?? false;
 
+  const showRefinement = currentSubtype?.needsRefinement ?? false;
   const isCandidate = category === "candidate";
+
   const handleMultiSelectChange = (
     fieldKey: "districts" | "parties",
     value: string,
     checked: boolean,
   ) => {
     const currentValues = filters[fieldKey] || [];
-
     const newValues = checked
       ? [...currentValues, value]
       : currentValues.filter((v) => v !== value);
@@ -421,9 +387,10 @@ function FilterContent({
       [fieldKey]: newValues.length > 0 ? newValues : null,
     });
   };
+
   return (
     <div className="space-y-4">
-      {/* Paso 1: Categoría */}
+      {/* Paso 1: Tipo de Entidad */}
       <div className="space-y-2">
         <Label className="text-xs font-semibold text-muted-foreground uppercase">
           Paso 1: Tipo
@@ -431,6 +398,7 @@ function FilterContent({
         <div className="grid grid-cols-1 gap-2">
           {ENTITY_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
+            const isSelected = category === cat.id;
             return (
               <button
                 key={cat.id}
@@ -438,9 +406,7 @@ function FilterContent({
                 className={cn(
                   "p-3 rounded-lg border-2 transition-all text-left",
                   "hover:border-primary/50 hover:bg-primary/5",
-                  category === cat.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border",
+                  isSelected ? "border-primary bg-primary/10" : "border-border",
                 )}
               >
                 <div className="flex items-start gap-2">
@@ -465,8 +431,7 @@ function FilterContent({
       {category && (
         <>
           <Separator />
-
-          {/* Paso 2: Subtipo */}
+          {/* Paso 2: Cargo / Subtipo */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-muted-foreground uppercase">
               Paso 2: Cargo
@@ -479,12 +444,9 @@ function FilterContent({
                 const Icon = subtype.icon;
                 const isSelected =
                   filters.mode === subtype.mode &&
-                  (category === "legislator" && subtype.chamber
+                  (category === "legislator"
                     ? filters.chamber === subtype.chamber
-                    : true) &&
-                  (category === "candidate" && subtype.type
-                    ? filters.type === subtype.type
-                    : true);
+                    : filters.type === subtype.type);
 
                 return (
                   <button
@@ -509,8 +471,8 @@ function FilterContent({
             </div>
           </div>
 
-          {/* Paso 3: Refinamiento (Condicional) */}
-          {showRefinement && filters.mode && (
+          {/* Paso 3: Filtros de Refinamiento */}
+          {showRefinement && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -518,8 +480,11 @@ function FilterContent({
                   Paso 3: Ajustar Filtros
                 </Label>
 
-                {/* Distrito Electoral */}
+                {/* Filtro de Distrito */}
                 <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1">
+                    Distrito Electoral
+                  </Label>
                   <Popover
                     open={openPopover === "districts"}
                     onOpenChange={(open) =>
@@ -531,19 +496,21 @@ function FilterContent({
                         variant="outline"
                         role="combobox"
                         className={cn(
-                          "w-full justify-between font-normal bg-background",
+                          "w-full justify-between font-normal bg-background text-sm h-9",
                           (!filters.districts ||
                             filters.districts.length === 0) &&
                             "text-muted-foreground",
                         )}
                       >
-                        {filters.districts && filters.districts.length > 0
-                          ? `Distritos (${filters.districts.length})`
-                          : "Seleccionar distritos"}
+                        <span className="truncate">
+                          {filters.districts && filters.districts.length > 0
+                            ? `Distritos (${filters.districts.length})`
+                            : "Seleccionar distritos"}
+                        </span>
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-2" align="start">
+                    <PopoverContent className="w-[220px] p-2" align="start">
                       <div className="max-h-[300px] overflow-y-auto p-1">
                         {districts.map((district) => (
                           <div
@@ -595,7 +562,6 @@ function FilterContent({
                   </Popover>
                 </div>
 
-                {/* Partido Político (solo candidatos) */}
                 {isCandidate && (
                   <div className="space-y-1.5">
                     <Label className="text-xs flex items-center gap-1">
@@ -613,19 +579,21 @@ function FilterContent({
                           variant="outline"
                           role="combobox"
                           className={cn(
-                            "w-full justify-between font-normal bg-background h-9",
-                            filters.parties?.length === 0 &&
+                            "w-full justify-between font-normal bg-background text-sm h-9",
+                            (!filters.parties ||
+                              filters.parties.length === 0) &&
                               "text-muted-foreground",
                           )}
                         >
-                          {filters.parties?.length &&
-                          filters.parties?.length > 0
-                            ? `Partidos (${filters.parties.length})`
-                            : "Todos los partidos"}
+                          <span className="truncate">
+                            {filters.parties && filters.parties.length > 0
+                              ? `Partidos (${filters.parties.length})`
+                              : "Todos los partidos"}
+                          </span>
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-2" align="start">
+                      <PopoverContent className="w-[220px] p-2" align="start">
                         <div className="max-h-[300px] overflow-y-auto p-1">
                           {parties.map((party) => (
                             <div
@@ -640,7 +608,9 @@ function FilterContent({
                               }
                             >
                               <Checkbox
-                                checked={filters.parties?.includes(party.name)}
+                                checked={
+                                  filters.parties?.includes(party.name) || false
+                                }
                                 onCheckedChange={(checked) =>
                                   handleMultiSelectChange(
                                     "parties",
@@ -655,22 +625,21 @@ function FilterContent({
                             </div>
                           ))}
                         </div>
-                        {filters.parties?.length &&
-                          filters.parties.length > 0 && (
-                            <div className="mt-2 pt-2 border-t">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full text-xs"
-                                onClick={() => {
-                                  setFilters({ parties: [] });
-                                  setOpenPopover(null);
-                                }}
-                              >
-                                Limpiar selección
-                              </Button>
-                            </div>
-                          )}
+                        {filters.parties && filters.parties.length > 0 && (
+                          <div className="mt-2 pt-2 border-t">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                setFilters({ parties: [] });
+                                setOpenPopover(null);
+                              }}
+                            >
+                              Limpiar selección
+                            </Button>
+                          </div>
+                        )}
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -688,9 +657,7 @@ function FilterContent({
               ✓ Filtros configurados
             </p>
             <p className="text-xs text-green-600 dark:text-green-500 mt-1">
-              {showRefinement
-                ? "Puedes mejorar tu búsqueda con distrito y partido"
-                : "Ahora busca y selecciona hasta 4 legisladores/candidatos"}
+              Ahora puedes buscar y seleccionar candidatos.
             </p>
           </div>
         </div>
@@ -702,7 +669,6 @@ function FilterContent({
 // ============================================
 // MOBILE PANEL
 // ============================================
-
 interface MobilePanelProps extends PanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -773,7 +739,6 @@ function MobileFilterDrawer({
             setFilters={setFilters}
             onCategoryChange={onCategoryChange}
             onSubtypeChange={onSubtypeChange}
-            activeFiltersCount={activeFiltersCount}
             isComplete={isComplete}
           />
         </div>

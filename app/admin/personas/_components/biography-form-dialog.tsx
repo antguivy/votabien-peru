@@ -63,7 +63,6 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
   { key: "source_url", label: "URL" },
 ];
 
-// Interfaz laxa para entrada de datos JSON desconocidos
 interface RawInputData {
   [key: string]: string | number | null | undefined;
 }
@@ -84,9 +83,6 @@ const cleanDateString = (dateStr: string | null | undefined): string => {
   return validParts.join("-");
 };
 
-/**
- * Parsea TSV (Excel) respetando comillas y saltos de línea.
- */
 const parseExcelClipboard = (text: string): string[][] => {
   const rows: string[][] = [];
   let currentRow: string[] = [];
@@ -124,11 +120,8 @@ const parseExcelClipboard = (text: string): string[][] => {
   return rows;
 };
 
-/**
- * Normaliza objetos JSON entrantes a la estructura BiographyDetail.
- */
 const smartMapJsonItem = (item: unknown): BiographyDetail => {
-  const raw = item as RawInputData; // Type assertion seguro para acceso a propiedades
+  const raw = item as RawInputData;
 
   const getString = (...keys: string[]): string => {
     for (const key of keys) {
@@ -197,7 +190,6 @@ export function BiographyFormDialog({
         onOpenChange(false);
         router.refresh();
       } else {
-        // Asumiendo que result tiene estructura { success: false, error: string }
         const errorMsg =
           "error" in result ? (result as { error: string }).error : "Error";
         toast.error(errorMsg);
@@ -217,7 +209,8 @@ export function BiographyFormDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-5xl h-[90vh] sm:h-[85vh] flex flex-col p-0 gap-0 bg-background overflow-hidden">
+      {/* CORRECCIÓN 1: Aseguramos que el content tenga overflow-hidden */}
+      <CredenzaContent className="sm:max-w-5xl h-[90vh] flex flex-col p-0 gap-0 bg-background overflow-hidden">
         <div className="px-6 py-4 border-b flex items-center justify-between bg-muted/10 shrink-0">
           <div>
             <CredenzaTitle className="text-xl">
@@ -247,7 +240,8 @@ export function BiographyFormDialog({
           </div>
         </div>
 
-        <CredenzaBody className="flex-1 overflow-hidden relative flex flex-col min-h-0">
+        {/* CORRECCIÓN 2: Agregado 'min-h-0' y 'overflow-hidden'. Esto es CRÍTICO para que el scroll funcione dentro */}
+        <CredenzaBody className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
           {viewMode === "list" ? (
             <ItemsManager
               items={items}
@@ -319,7 +313,6 @@ function ItemsManager({
       setItems((prev) => {
         const newItems = [...prev];
         let finalValue = value;
-        // Limpieza agresiva inmediata para fechas largas pegadas por error
         if (field === "date" && value.length > 10) {
           finalValue = cleanDateString(value);
         }
@@ -395,7 +388,7 @@ function ItemsManager({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ScrollArea className="h-full w-full" ref={scrollRef}>
           <div className="p-4 pb-10">
             {items.length === 0 && (
@@ -584,7 +577,6 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
     }
 
     try {
-      // 1. Intento JSON
       if (
         inputText.trim().startsWith("[") ||
         inputText.trim().startsWith("{")
@@ -595,7 +587,6 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
           smartMapJsonItem(item),
         );
 
-        // Convertir de vuelta a estructura de tabla para la UI
         const table = mappedItems.map((obj) => [
           obj.type,
           obj.date,
@@ -616,12 +607,10 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
       }
     } catch {}
 
-    // 2. Intento Excel / CSV
     const rows = parseExcelClipboard(inputText);
     if (rows.length > 0) {
       setParsedData(rows);
 
-      // Heurística simple: Si la primera celda parece fecha, reordenar
       const firstCell = rows[0][0] || "";
       const datePattern = /^\d{4}[-./]\d{1,2}/;
 
@@ -640,7 +629,6 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
     }
   }, [inputText]);
 
-  // Generar vista previa basada en columnas seleccionadas
   const previewItems = useMemo<BiographyDetail[]>(() => {
     return parsedData
       .map((row) => {
@@ -656,7 +644,6 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
           if (fieldKey !== "ignore" && row[colIndex]) {
             let val = row[colIndex];
             if (fieldKey === "date") val = cleanDateString(val);
-            // Asignación tipada
             (item[fieldKey] as string | null) = val;
           }
         });
@@ -674,9 +661,10 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
   };
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6 min-h-0">
+    // CORRECCIÓN 3: Agregado 'overflow-hidden' al contenedor principal de la vista
+    <div className="h-full flex flex-col p-6 gap-6 min-h-0 overflow-hidden">
       <div
-        className={`transition-all duration-300 ${parsedData.length > 0 ? "flex-shrink-0 h-[120px]" : "h-full flex-1"}`}
+        className={`transition-all duration-300 shrink-0 ${parsedData.length > 0 ? "h-[100px]" : "flex-1"}`}
       >
         <div className="flex justify-between mb-2">
           <label className="text-sm font-medium flex items-center gap-2">
@@ -719,92 +707,93 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 bg-card z-10 shadow-sm">
-                <tr>
-                  <th className="w-10 p-2 text-center bg-muted/50 border-b font-mono text-xs">
-                    #
-                  </th>
-                  {Array.from({
-                    length: Math.max(...parsedData.map((r) => r.length), 5),
-                  }).map((_, colIndex) => (
-                    <th
-                      key={colIndex}
-                      className="p-2 border-b min-w-[150px] text-left bg-muted/50"
-                    >
-                      <Select
-                        value={columnMapping[colIndex] || "ignore"}
-                        onValueChange={(val) =>
-                          changeMapping(colIndex, val as ImportColumnKey)
-                        }
-                      >
-                        <SelectTrigger className="h-7 text-xs border-dashed bg-transparent hover:bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ignore">
-                            Ignorar Columna
-                          </SelectItem>
-                          <Separator className="my-1" />
-                          {COLUMNS_CONFIG.map((col) => (
-                            <SelectItem key={col.key} value={col.key}>
-                              {col.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 bg-card z-10 shadow-sm">
+                  <tr>
+                    <th className="w-10 p-2 text-center bg-muted/50 border-b font-mono text-xs">
+                      #
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewItems.map((item, i) => (
-                  <tr
-                    key={i}
-                    className="hover:bg-muted/5 border-b last:border-0"
-                  >
-                    <td className="p-2 text-center text-xs text-muted-foreground font-mono">
-                      {i + 1}
-                    </td>
-                    {columnMapping.map((key, cIndex) => {
-                      const val =
-                        key === "ignore"
-                          ? parsedData[i][cIndex]
-                          : item[key as keyof BiographyDetail];
-
-                      return (
-                        <td
-                          key={cIndex}
-                          className={`p-2 align-top text-xs truncate max-w-[200px] ${key === "ignore" ? "opacity-30 line-through" : ""}`}
+                    {Array.from({
+                      length: Math.max(...parsedData.map((r) => r.length), 5),
+                    }).map((_, colIndex) => (
+                      <th
+                        key={colIndex}
+                        className="p-2 border-b min-w-[150px] text-left bg-muted/50"
+                      >
+                        <Select
+                          value={columnMapping[colIndex] || "ignore"}
+                          onValueChange={(val) =>
+                            changeMapping(colIndex, val as ImportColumnKey)
+                          }
                         >
-                          {key === "date" ? (
-                            <span className="font-mono text-emerald-600 font-medium">
-                              {val}
-                            </span>
-                          ) : (
-                            val || (
-                              <span className="text-muted-foreground/20">
-                                -
-                              </span>
-                            )
-                          )}
-                        </td>
-                      );
-                    })}
+                          <SelectTrigger className="h-7 text-xs border-dashed bg-transparent hover:bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore">
+                              Ignorar Columna
+                            </SelectItem>
+                            <Separator className="my-1" />
+                            {COLUMNS_CONFIG.map((col) => (
+                              <SelectItem key={col.key} value={col.key}>
+                                {col.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </ScrollArea>
+                </thead>
+                <tbody>
+                  {previewItems.map((item, i) => (
+                    <tr
+                      key={i}
+                      className="hover:bg-muted/5 border-b last:border-0"
+                    >
+                      <td className="p-2 text-center text-xs text-muted-foreground font-mono">
+                        {i + 1}
+                      </td>
+                      {columnMapping.map((key, cIndex) => {
+                        const val =
+                          key === "ignore"
+                            ? parsedData[i][cIndex]
+                            : item[key as keyof BiographyDetail];
 
+                        return (
+                          <td
+                            key={cIndex}
+                            className={`p-2 align-top text-xs truncate max-w-[200px] ${key === "ignore" ? "opacity-30 line-through" : ""}`}
+                          >
+                            {key === "date" ? (
+                              <span className="font-mono text-emerald-600 font-medium">
+                                {val}
+                              </span>
+                            ) : (
+                              val || (
+                                <span className="text-muted-foreground/20">
+                                  -
+                                </span>
+                              )
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollArea>
+          </div>
           <div className="p-4 border-t bg-muted/10 flex justify-end gap-3 shrink-0">
             <Button variant="outline" onClick={onCancel}>
               Cancelar
             </Button>
             <Button onClick={() => onImport(previewItems)} className="gap-2">
               <Check className="w-4 h-4" />
-              Confirmar Importación
+              Confirmar
             </Button>
           </div>
         </div>

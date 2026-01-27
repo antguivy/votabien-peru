@@ -50,6 +50,7 @@ export function UserNav({ user, profile }: NavbarUserMenuProps) {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
+                    className="bg-white "
                     src="/images/avatar.png?height=128&width=128"
                     alt={name}
                   />
@@ -65,7 +66,7 @@ export function UserNav({ user, profile }: NavbarUserMenuProps) {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuItem className="flex flex-col text-xs items-start md:hidden">
           <span className="font-semibold capitalize text-sm">{name}</span>
-          <span className="text-gray-500">{role}</span>
+          <span className="text-muted-foreground">{role}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {/* <DropdownMenuGroup> */}

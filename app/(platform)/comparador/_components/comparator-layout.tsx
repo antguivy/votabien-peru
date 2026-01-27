@@ -19,11 +19,9 @@ import {
   CandidateWithMetrics,
 } from "@/interfaces/comparator";
 
-// Components
 import ComparisonView from "./comparison-table";
 import FilterSystem from "./filter-system";
 
-// UI
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BarChart3, AlertCircle } from "lucide-react";
@@ -48,14 +46,6 @@ const filterParsers = {
   type: { parse: (v: string) => v || "", serialize: (v: string) => v },
   districts: { parse: (v: string) => v || "", serialize: (v: string) => v },
   parties: { parse: (v: string) => v || "", serialize: (v: string) => v },
-  // process_id: {
-  //   parse: (v: string) => v || "elecciones-2026",
-  //   serialize: (v: string) => v,
-  // },
-  // active_only: {
-  //   parse: (v: string) => v === "true",
-  //   serialize: (v: boolean) => String(v),
-  // },
 };
 
 // ============================================
@@ -94,7 +84,6 @@ export default function ComparatorLayout({
 }: ComparatorLayoutProps) {
   const { entities } = useContext(ComparatorContext);
 
-  // ✅ ÚNICA FUENTE DE VERDAD: URL vía nuqs
   const [filters] = useQueryStates(filterParsers, {
     history: "replace",
     shallow: false,
@@ -108,12 +97,10 @@ export default function ComparatorLayout({
 
   const filtersComplete = Boolean(category && filters.mode);
 
-  // ✅ Calcular disponibilidad
   const showComparison =
     data !== null &&
     data.items.filter((item) => item.status === "available").length >= 2;
 
-  // ✅ Enhanced search con validación
   const enhancedSearchAction = async (
     query: string,
   ): Promise<SearchableEntity[]> => {
@@ -132,7 +119,6 @@ export default function ComparatorLayout({
     }
   };
 
-  // ✅ Preparar datos para ComparisonView según el tipo
   const comparisonData: {
     legislators?: LegislatorWithMetrics[];
     candidates?: CandidateWithMetrics[];
@@ -270,19 +256,6 @@ export default function ComparatorLayout({
                         con datos disponibles para generar la matriz de
                         comparación.
                       </p>
-
-                      {/* <Alert
-                        variant="default"
-                        className="bg-blue-50/50 border-blue-100 text-blue-800 dark:bg-blue-950/20 dark:border-blue-900/50 dark:text-blue-300 text-left"
-                      >
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>¿Sabías que?</AlertTitle>
-                        <AlertDescription className="text-xs mt-1">
-                          {filters.mode === "legislator"
-                            ? "Puedes comparar legisladores de diferentes bancadas para ver quién tiene mayor tasa de éxito en sus proyectos."
-                            : "Podrás comparar el patrimonio declarado vs. los años de experiencia laboral."}
-                        </AlertDescription>
-                      </Alert> */}
                     </motion.div>
                   )}
                 </AnimatePresence>

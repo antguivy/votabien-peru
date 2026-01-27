@@ -38,41 +38,40 @@ export interface LegislatorComparison {
 // TIPOS PARA CANDIDATOS
 // ============================================
 
-// 🔥 Métricas de candidatos (ajusta según tu backend)
-export interface CandidateMetrics {
-  candidate_id: string;
-  total_proposals?: number;
-  media_appearances?: number;
-  social_media_followers?: number;
-  // ... agrega lo que tenga tu API
+export interface CandidateComputedMetrics {
+  education_level: string; // Ej: "Maestría", "Secundaria"
+  education_score: number; // 1-5 para barritas de nivel
+  total_income: number; // Suma declarada
+  total_assets: number; // Suma bienes
+  red_flags_count: number; // Cantidad de sentencias/antecedentes
+  experience_years: number; // Años aproximados de trabajo
   last_updated: string;
 }
-
-// 🔥 Para comparación (con métricas completas)
 export interface CandidateWithMetrics {
   candidate: {
-    id: string;
+    id: string; // ID de la candidatura
     person: {
+      id: string; // ID de la persona
       fullname: string;
       image_url: string | null;
+      image_candidate_url: string | null;
+      profession: string | null;
+      dni: string | null;
     };
-    political_party?: {
-      id: string | number;
+    political_party: {
+      id: string;
       name: string;
-      color_hex: string | null;
+      acronym: string | null; // Para rutas
       logo_url?: string | null;
     } | null;
-    alliance?: {
-      name: string;
-      color_hex: string | null;
-      logo_url?: string | null;
-    } | null;
-    electoral_district?: {
+    electoral_district: {
+      id: string;
       name: string;
     } | null;
-    electoral_process_id: string | number;
+    list_number: number | null;
+    status: string; // INSCRITO, TACHADO, etc.
   };
-  metrics: CandidateMetrics | null; // 🔥 Tipado específico
+  metrics: CandidateComputedMetrics;
 }
 
 export interface CandidateCompareItem {
@@ -99,7 +98,7 @@ export interface LegislatorComparisonPayload {
 }
 
 export interface CandidateComparisonPayload {
-  ids: string[];
+  dnis: string[];
   candidacy_type?: string;
   process_id?: string;
 }

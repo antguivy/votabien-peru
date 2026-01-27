@@ -53,6 +53,7 @@ import {
 import { ChamberType } from "@/interfaces/politics";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+// ... (Mantenemos tus configs de LEGISLATOR_CONFIG y CANDIDATE_CONFIG igual) ...
 const LEGISLATOR_CONFIG: Record<
   ChamberType,
   {
@@ -108,7 +109,7 @@ const CANDIDATE_CONFIG: Record<
     subtitle: "Compara hojas de vida y planes de trabajo.",
     icon: Users,
     emptyStateText: "Agregar Candidato",
-    placeholder: "Buscar por nombre, partido o distrito...",
+    placeholder: "Buscar por nombre...",
   },
   PRESIDENTE: {
     title: "Candidatos Presidenciales",
@@ -117,19 +118,12 @@ const CANDIDATE_CONFIG: Record<
     emptyStateText: "Agregar Candidato",
     placeholder: "Ej. Julio Guzmán, Verónika Mendoza...",
   },
-  VICEPRESIDENTE_1: {
-    title: "Candidatos 1er Vicepresidente",
-    subtitle: "Revisa perfiles y experiencia política.",
+  VICEPRESIDENTE: {
+    title: "Candidatos a Vicepresidencia",
+    subtitle: "Compara candidatos a 1ra y 2da vicepresidencia.",
     icon: Users,
-    emptyStateText: "Agregar Candidato",
-    placeholder: "Buscar candidato a vicepresidente...",
-  },
-  VICEPRESIDENTE_2: {
-    title: "Candidatos 2do Vicepresidente",
-    subtitle: "Revisa perfiles y experiencia política.",
-    icon: Users,
-    emptyStateText: "Agregar Candidato",
-    placeholder: "Buscar candidato a vicepresidente...",
+    emptyStateText: "Agregar Vicepresidente",
+    placeholder: "Buscar por nombre o partido...",
   },
 };
 
@@ -138,31 +132,33 @@ const getEntityConfig = (
   chamber?: ChamberType,
   type?: CandidateConfigKeys,
 ) => {
-  if (mode === "legislator" && chamber) {
-    return LEGISLATOR_CONFIG[chamber];
-  }
-
-  if (mode === "candidate" && type) {
-    return CANDIDATE_CONFIG[type];
-  }
-
-  // Fallback por defecto
+  if (mode === "legislator" && chamber) return LEGISLATOR_CONFIG[chamber];
+  if (mode === "candidate" && type) return CANDIDATE_CONFIG[type];
   return LEGISLATOR_CONFIG.CONGRESO;
 };
+
+export interface SearchContext {
+  chamber?: ChamberType;
+  type?: CandidateConfigKeys;
+  district?: string;
+  party?: string;
+}
 
 interface AsyncSelectorProps {
   mode: EntityType;
   initialSelected?: SearchableEntity[];
-  onSearch: (query: string) => Promise<SearchableEntity[]>;
+  // 2. FIRMA ACTUALIZADA: Recibe query + context
+  onSearch: (
+    query: string,
+    context: SearchContext,
+  ) => Promise<SearchableEntity[]>;
   maxSlots?: number;
   showMetricsWarning?: boolean;
   chamber?: ChamberType;
   type?: CandidateConfigKeys;
   district?: string;
   party?: string;
-  // activeOnly?: boolean;
 }
-
 export default function AsyncEntitySelector({
   mode,
   initialSelected = [],
@@ -173,7 +169,6 @@ export default function AsyncEntitySelector({
   type,
   district,
   party,
-  // activeOnly,
 }: AsyncSelectorProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -181,65 +176,53 @@ export default function AsyncEntitySelector({
 
   const config = getEntityConfig(mode, chamber, type);
   const IconComponent = config.icon;
+
   const isDisabled = useMemo(() => {
-    if (mode === "legislator") {
-      return !chamber;
-    }
-    if (mode === "candidate") {
-      return !type;
-    }
+    if (mode === "legislator") return !chamber;
+    if (mode === "candidate") return !type;
     return false;
   }, [mode, chamber, type]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItems, setSelectedItems] =
     useState<SearchableEntity[]>(initialSelected);
-
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchableEntity[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Active filters visualization
   const activeFilters = useMemo(() => {
-    const filters: Array<{
-      label: string;
-      value: string;
-      icon: React.ReactNode;
-    }> = [];
-
-    if (chamber) {
+    const filters = [];
+    if (chamber)
       filters.push({
         label: "Cámara",
         value: chamber,
         icon: <Users className="h-3 w-3" />,
       });
-    }
-    if (type) {
+    if (type)
       filters.push({
         label: "Tipo",
         value: type,
         icon: <Users className="h-3 w-3" />,
       });
-    }
-    if (district) {
+    if (district)
       filters.push({
         label: "Distrito",
         value: district,
         icon: <MapPin className="h-3 w-3" />,
       });
-    }
-    if (party) {
+    if (party)
       filters.push({
         label: "Partido",
         value: party,
         icon: <Flag className="h-3 w-3" />,
       });
-    }
-
     return filters;
   }, [chamber, type, district, party]);
 
-  // SINCRONIZACIÓN CON SERVER STATE
+  // Sync with Server State
   const initialSelectedIds = useMemo(
     () =>
       initialSelected
@@ -254,13 +237,12 @@ export default function AsyncEntitySelector({
       .map((i) => i.id)
       .sort()
       .join(",");
-
     if (initialSelectedIds && initialSelectedIds !== currentIds) {
-      console.log("Syncing selection from server:", initialSelectedIds);
       setSelectedItems(initialSelected);
     }
-  }, [initialSelectedIds, initialSelected, selectedItems]);
+  }, [initialSelectedIds, initialSelected]); // Removed selectedItems to avoid loop
 
+  // Reset when context changes
   useEffect(() => {
     setSelectedItems([]);
     setResults([]);
@@ -270,7 +252,6 @@ export default function AsyncEntitySelector({
   const stats = useMemo(() => {
     const withMetrics = selectedItems.filter((i) => i.has_metrics);
     const withoutMetrics = selectedItems.filter((i) => !i.has_metrics);
-
     return {
       total: selectedItems.length,
       withMetrics: withMetrics.length,
@@ -283,22 +264,20 @@ export default function AsyncEntitySelector({
     };
   }, [selectedItems, maxSlots]);
 
-  // --- Búsqueda con Debounce ---
+  // --- 🔍 Búsqueda ---
   const performSearch = useDebouncedCallback(async (searchTerm: string) => {
     try {
-      const data = await onSearch(searchTerm);
+      const context: SearchContext = { chamber, type, district, party };
 
-      // Asegurar que data sea un array
+      const data = await onSearch(searchTerm, context);
+
       if (!data || !Array.isArray(data)) {
-        console.warn("⚠️ Search returned invalid data:", data);
         setResults([]);
         return;
       }
-
       setResults(data);
     } catch (error) {
-      console.error("💥 Search error:", error);
-      toast.error("Error al buscar. Intenta nuevamente.");
+      console.error(error);
       setResults([]);
     } finally {
       setIsSearching(false);
@@ -308,56 +287,64 @@ export default function AsyncEntitySelector({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setQuery(newValue);
-
     if (newValue.trim().length < 2) {
       setResults([]);
       setIsSearching(false);
       setHasSearched(false);
       return;
     }
-
     setIsSearching(true);
     setHasSearched(true);
     performSearch(newValue);
   };
 
-  // --- Handlers de Selección ---
+  const updateUrl = (items: SearchableEntity[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Limpieza total
+    params.delete("ids");
+    params.delete("dnis");
+
+    const validItems = items.filter((i) => i.has_metrics);
+
+    if (validItems.length > 0) {
+      // Siempre usamos DNI, tanto para legislador como candidato
+      const dnis = validItems.map((i) => i.dni).filter(Boolean);
+      if (dnis.length > 0) {
+        params.set("dnis", dnis.join(","));
+      }
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const handleSelect = (item: SearchableEntity) => {
     if (isDisabled) {
       toast.warning("Por favor selecciona un cargo primero");
       return;
     }
-    // Validación 1: Ya está seleccionado
     if (selectedItems.some((i) => i.id === item.id)) {
       toast.info(`${item.fullname} ya está seleccionado`);
       return;
     }
-
-    // Validación 2: Máximo de slots alcanzado
     if (selectedItems.length >= maxSlots) {
       toast.warning(`Máximo ${maxSlots} elementos permitidos`);
       return;
     }
-
-    //  Validación 3: Sin métricas (warning pero permite)
     if (!item.has_metrics && showMetricsWarning) {
       toast.warning(
-        `${item.fullname} no tiene métricas calculadas. No podrá ser comparado.`,
+        `${item.fullname} no tiene métricas. No podrá ser comparado.`,
         { duration: 4000 },
       );
     }
 
     const newSelection = [...selectedItems, item];
-    // Actualizar estado local
     setSelectedItems(newSelection);
-
-    // Limpiar búsqueda y cerrar modal
     setQuery("");
     setResults([]);
     setHasSearched(false);
     setIsOpen(false);
 
-    // Actualizar URL (asíncrono para evitar race conditions)
+    // Actualizamos la URL con la nueva lógica
     setTimeout(() => {
       updateUrl(newSelection);
     }, 0);
@@ -372,22 +359,6 @@ export default function AsyncEntitySelector({
     toast.info(`${name} eliminado`);
   };
 
-  const updateUrl = (items: SearchableEntity[]) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    // CRÍTICO: Solo incluir IDs con métricas en la URL
-    const validIds = items.filter((i) => i.has_metrics).map((i) => i.id);
-
-    if (validIds.length > 0) {
-      params.set("ids", validIds.join(","));
-    } else {
-      params.delete("ids");
-    }
-
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
-
   const handleCompare = () => {
     if (!stats.canCompare) {
       toast.error(
@@ -396,29 +367,22 @@ export default function AsyncEntitySelector({
       return;
     }
 
-    // Warning si hay items sin métricas
-    if (stats.withoutMetrics > 0) {
-      toast.warning(
-        `${stats.withoutMetrics} elemento(s) sin métricas serán excluidos de la comparación`,
-      );
-    }
-
     setIsAnalyzing(true);
 
-    // Construir URL preservando filtros actuales
     const params = new URLSearchParams(searchParams.toString());
-    const validIds = selectedItems
-      .filter((i) => i.has_metrics)
-      .map((i) => i.id);
 
-    params.set("ids", validIds.join(","));
+    const validItems = selectedItems.filter((i) => i.has_metrics);
+
+    const dnis = validItems.map((i) => i.dni).filter(Boolean);
+
+    if (dnis.length > 0) {
+      params.set("dnis", dnis.join(","));
+    }
 
     const compareUrl = `${pathname}?${params.toString()}`;
-
     router.push(compareUrl);
   };
 
-  // --- Render ---
   return (
     <div className="w-full space-y-6">
       {/* Header & Actions */}
@@ -512,12 +476,13 @@ export default function AsyncEntitySelector({
           </AlertDescription>
         </Alert>
       )}
+
       {/* Grid de Slots */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <AnimatePresence mode="popLayout">
           {selectedItems.map((item) => (
             <SelectedSlot
-              key={item.id}
+              key={item.id} // Internamente usamos ID para renderizado, es seguro
               item={item}
               onRemove={() => handleRemove(item.id, item.fullname)}
               disabled={isDisabled}
@@ -649,7 +614,6 @@ function SelectedSlot({
           disabled && "opacity-50 cursor-not-allowed",
         )}
       >
-        {/* Remove Button */}
         <button
           onClick={onRemove}
           disabled={disabled}
@@ -664,7 +628,6 @@ function SelectedSlot({
           <X className="h-3.5 w-3.5" />
         </button>
 
-        {/* Status Badge */}
         <div className="absolute top-2 left-2 z-20">
           <TooltipProvider>
             <Tooltip>
@@ -688,7 +651,6 @@ function SelectedSlot({
           </TooltipProvider>
         </div>
 
-        {/* Avatar con indicador de grupo */}
         <div className="relative mb-3">
           <div
             className="absolute -top-2 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full opacity-80"
@@ -701,14 +663,16 @@ function SelectedSlot({
               disabled && "grayscale opacity-50",
             )}
           >
-            <AvatarImage src={item.image_url || ""} alt={item.fullname} />
+            <AvatarImage
+              src={item.image_candidate_url || item.image_url || ""}
+              alt={item.fullname}
+            />
             <AvatarFallback className="text-lg font-semibold">
               {item.fullname.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </div>
 
-        {/* Info */}
         <div className="w-full">
           <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5em]">
             {item.fullname}
@@ -754,7 +718,6 @@ function SearchResultItem({
         isDisabled && "opacity-50 cursor-not-allowed bg-muted/20",
       )}
     >
-      {/* Avatar */}
       <Avatar className="h-10 w-10 border">
         <AvatarImage src={item.image_url || ""} alt={item.fullname} />
         <AvatarFallback>
@@ -762,7 +725,6 @@ function SearchResultItem({
         </AvatarFallback>
       </Avatar>
 
-      {/* Contenido central ADAPTABLE */}
       <div className="min-w-0">
         <div className="flex items-start gap-2">
           <span className="font-semibold text-sm break-words leading-tight">
@@ -790,7 +752,6 @@ function SearchResultItem({
         </div>
       </div>
 
-      {/* Icono siempre visible */}
       <div className="w-6 h-6 flex items-center justify-center">
         {isSelected ? (
           <CheckCircle2 className="h-5 w-5 text-primary" />

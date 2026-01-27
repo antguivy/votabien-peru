@@ -100,7 +100,6 @@ const parseExcelClipboard = (text: string): string[][] => {
   const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
   // DETECCIÓN INTELIGENTE:
-  // Si no hay tabs (\t), asumimos que es una tabla visual separada por múltiples espacios
   if (!normalizedText.includes("\t")) {
     return normalizedText
       .split("\n")
@@ -240,20 +239,44 @@ export function BackgroundsFormDialog({
 
   const handleSave = async () => {
     setIsSubmitting(true);
+
+    // Limpiamos cualquier toast anterior para no confundir
+    toast.dismiss();
+
     try {
       const result = await updatePersonBackgrounds(personId, items);
 
-      if (result.success) {
-        toast.success("Antecedentes sincronizados correctamente");
-        onOpenChange(false);
-        router.refresh();
-      } else {
-        const errorMsg =
-          "error" in result ? (result as { error: string }).error : "Error";
-        toast.error(errorMsg);
+      // CASO ERROR: Si success es false o undefined
+      if (!result?.success) {
+        // Extraemos el mensaje específico que el servidor nos envió
+        const serverError =
+          result?.error || "Error desconocido al procesar la solicitud.";
+
+        console.error("Error del servidor:", serverError);
+
+        toast.error("Error al guardar", {
+          description: serverError, // Muestra el detalle técnico (ej: "Error en UPSERT...")
+          duration: 5000, // Duración un poco más larga para que puedan leer
+        });
+
+        // IMPORTANTE: Retornamos aquí para NO cerrar el modal
+        return;
       }
+
+      // CASO ÉXITO: Solo llegamos aquí si result.success es true
+      toast.success("Antecedentes sincronizados correctamente", {
+        description: "La base de datos ha sido actualizada.",
+      });
+
+      onOpenChange(false); // Solo cerramos si todo salió bien
+      router.refresh();
     } catch (error) {
-      toast.error("Error de conexión");
+      // CASO ERROR CRÍTICO (Red, fallo de cliente, etc.)
+      console.error("Error crítico en cliente:", error);
+      toast.error("Error de conexión", {
+        description:
+          "No se pudo contactar con el servidor. Verifique su internet.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -298,6 +321,7 @@ export function BackgroundsFormDialog({
           </div>
         </div>
 
+        {/* CORRECCIÓN: Aseguramos min-h-0 y overflow-hidden aquí */}
         <CredenzaBody className="flex-1 overflow-hidden relative flex flex-col min-h-0">
           {viewMode === "list" ? (
             <ItemsManager
@@ -756,7 +780,6 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
     }
 
     try {
-      // 1. Intento JSON
       if (
         inputText.trim().startsWith("[") ||
         inputText.trim().startsWith("{")
@@ -795,11 +818,9 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
       // Fallback a Excel
     }
 
-    // 2. Intento Excel / CSV
     const rows = parseExcelClipboard(inputText);
     if (rows.length > 0) {
       setParsedData(rows);
-      // Heurística simple: si la primera col es fecha, ajustamos el mapeo por defecto
       const firstCell = rows[0][0] || "";
       if (/^\d{4}[-./]\d{1,2}/.test(firstCell)) {
         setColumnMapping([
@@ -857,7 +878,8 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
   };
 
   return (
-    <div className="h-full flex flex-col p-6 gap-6 min-h-0">
+    // CORRECCIÓN 1: 'overflow-hidden' agregado al contenedor padre
+    <div className="h-full flex flex-col p-6 gap-6 min-h-0 overflow-hidden">
       <div
         className={`transition-all duration-300 ${parsedData.length > 0 ? "flex-shrink-0 h-[120px]" : "h-full flex-1"}`}
       >
@@ -898,73 +920,80 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
               <span>Verifica las columnas</span>
             </div>
           </div>
-          <ScrollArea className="flex-1">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 bg-card z-10 shadow-sm">
-                <tr>
-                  <th className="w-10 p-2 text-center bg-muted/50 border-b font-mono text-xs">
-                    #
-                  </th>
-                  {Array.from({
-                    length: Math.max(...parsedData.map((r) => r.length), 5),
-                  }).map((_, colIndex) => (
-                    <th
-                      key={colIndex}
-                      className="p-2 border-b min-w-[140px] text-left bg-muted/50"
-                    >
-                      <Select
-                        value={columnMapping[colIndex] || "ignore"}
-                        onValueChange={(val) =>
-                          changeMapping(colIndex, val as ImportColumnKey)
-                        }
-                      >
-                        <SelectTrigger className="h-7 text-xs border-dashed bg-transparent hover:bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ignore">Ignorar</SelectItem>
-                          <Separator className="my-1" />
-                          {COLUMNS_CONFIG.map((col) => (
-                            <SelectItem key={col.key} value={col.key}>
-                              {col.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+          {/* CORRECCIÓN 2: Estructura corregida para el ScrollArea */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 bg-card z-10 shadow-sm">
+                  <tr>
+                    <th className="w-10 p-2 text-center bg-muted/50 border-b font-mono text-xs">
+                      #
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewItems.map((item, i) => (
-                  <tr
-                    key={i}
-                    className="hover:bg-muted/5 border-b last:border-0"
-                  >
-                    <td className="p-2 text-center text-xs text-muted-foreground font-mono">
-                      {i + 1}
-                    </td>
-                    {columnMapping.map((key, cIndex) => {
-                      const val =
-                        key === "ignore"
-                          ? parsedData[i][cIndex]
-                          : item[key as keyof BackgroundBase];
-                      return (
-                        <td
-                          key={cIndex}
-                          className={`p-2 align-top text-xs truncate max-w-[200px] ${key === "ignore" ? "opacity-30 line-through" : ""}`}
+                    {Array.from({
+                      length: Math.max(...parsedData.map((r) => r.length), 5),
+                    }).map((_, colIndex) => (
+                      <th
+                        key={colIndex}
+                        className="p-2 border-b min-w-[140px] text-left bg-muted/50"
+                      >
+                        <Select
+                          value={columnMapping[colIndex] || "ignore"}
+                          onValueChange={(val) =>
+                            changeMapping(colIndex, val as ImportColumnKey)
+                          }
                         >
-                          {val || (
-                            <span className="text-muted-foreground/20">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
+                          <SelectTrigger className="h-7 text-xs border-dashed bg-transparent hover:bg-background">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ignore">Ignorar</SelectItem>
+                            <Separator className="my-1" />
+                            {COLUMNS_CONFIG.map((col) => (
+                              <SelectItem key={col.key} value={col.key}>
+                                {col.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </ScrollArea>
+                </thead>
+                <tbody>
+                  {previewItems.map((item, i) => (
+                    <tr
+                      key={i}
+                      className="hover:bg-muted/5 border-b last:border-0"
+                    >
+                      <td className="p-2 text-center text-xs text-muted-foreground font-mono">
+                        {i + 1}
+                      </td>
+                      {columnMapping.map((key, cIndex) => {
+                        const val =
+                          key === "ignore"
+                            ? parsedData[i][cIndex]
+                            : item[key as keyof BackgroundBase];
+                        return (
+                          <td
+                            key={cIndex}
+                            className={`p-2 align-top text-xs truncate max-w-[200px] ${key === "ignore" ? "opacity-30 line-through" : ""}`}
+                          >
+                            {val || (
+                              <span className="text-muted-foreground/20">
+                                -
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollArea>
+          </div>
+
           <div className="p-4 border-t bg-muted/10 flex justify-end gap-3 shrink-0">
             <Button variant="outline" onClick={onCancel}>
               Cancelar

@@ -69,50 +69,50 @@ export interface CandidateCard extends CandidateBase {
   has_metrics: boolean;
 }
 
-export interface CandidateMetrics {
-  [key: string]: number | boolean | string | null | undefined;
-  candidate_id: string;
+// export interface CandidateMetrics {
+//   [key: string]: number | boolean | string | null | undefined;
+//   candidate_id: string;
 
-  // Formación académica
-  max_academic_level_score: number;
-  has_postgraduate: boolean;
+//   // Formación académica
+//   max_academic_level_score: number;
+//   has_postgraduate: boolean;
 
-  // Experiencia política
-  political_experience_years: number;
-  times_elected: number;
-  total_parties_belonged: number;
+//   // Experiencia política
+//   political_experience_years: number;
+//   times_elected: number;
+//   total_parties_belonged: number;
 
-  // Transparencia patrimonial
-  declared_income_annual: number;
-  declared_assets_value: number;
+//   // Transparencia patrimonial
+//   declared_income_annual: number;
+//   declared_assets_value: number;
 
-  // Antecedentes legales
-  has_penal_sentences: boolean;
-  has_alimentary_debts: boolean;
-  total_legal_records: number;
+//   // Antecedentes legales
+//   has_penal_sentences: boolean;
+//   has_alimentary_debts: boolean;
+//   total_legal_records: number;
 
-  last_updated: string;
-}
+//   last_updated: string;
+// }
 
-export interface CandidateWithMetrics {
-  candidate: CandidateBasicInfo;
-  metrics: CandidateMetrics;
-}
+// export interface CandidateWithMetrics {
+//   candidate: CandidateBasicInfo;
+//   metrics: CandidateMetrics;
+// }
 
-export interface CandidateCompareItem {
-  candidate_id: string;
-  candidate_name: string | null;
-  status: ComparisonDataStatus;
-  data: CandidateWithMetrics | null;
-  message: string | null;
-}
+// export interface CandidateCompareItem {
+//   candidate_id: string;
+//   candidate_name: string | null;
+//   status: ComparisonDataStatus;
+//   data: CandidateWithMetrics | null;
+//   message: string | null;
+// }
 
-export interface CandidateComparison {
-  total_requested: number;
-  total_available: number;
-  comparison_date: string;
-  items: CandidateCompareItem[];
-}
+// export interface CandidateComparison {
+//   total_requested: number;
+//   total_available: number;
+//   comparison_date: string;
+//   items: CandidateCompareItem[];
+// }
 
 export interface CreateCandidatePeriodRequest extends CandidateBase {
   person_id: string;

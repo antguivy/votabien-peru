@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import {
   LegislatorWithMetrics,
   CandidateWithMetrics,
-  CandidateMetrics,
+  CandidateComputedMetrics,
 } from "@/interfaces/comparator";
 import { LucideIcon } from "lucide-react";
 import { LegislatorMetricsWithComputed } from "@/interfaces/legislator-metrics";
@@ -45,7 +45,6 @@ interface ComparisonViewProps {
   mode: EntityType;
 }
 
-// 🔥 Tipo normalizado interno
 interface NormalizedEntity {
   id: string;
   person: {
@@ -57,10 +56,9 @@ interface NormalizedEntity {
     color_hex: string | null;
     logo_url?: string | null;
   } | null;
-  metrics: LegislatorMetricsWithComputed | CandidateMetrics;
+  metrics: LegislatorMetricsWithComputed | CandidateComputedMetrics;
 }
 
-// 🔥 Configuración de métricas
 interface MetricConfig {
   label: string;
   key: string;
@@ -78,7 +76,6 @@ interface MetricCategory {
   metrics: MetricConfig[];
 }
 
-// Configuración de métricas por tipo
 const METRIC_CONFIGS: Record<"legislator" | "candidate", MetricCategory[]> = {
   legislator: [
     {
@@ -128,59 +125,50 @@ const METRIC_CONFIGS: Record<"legislator" | "candidate", MetricCategory[]> = {
       metrics: [
         {
           label: "Nivel Académico",
-          key: "max_academic_level_score",
+          key: "education_score",
           maxValue: 5,
         },
-        { label: "Tiene Posgrado", key: "has_postgraduate", boolean: true },
+        {
+          label: "Grado Obtenido",
+          key: "education_level",
+          boolean: false,
+        },
       ],
     },
     {
-      category: "Experiencia Política",
+      category: "Experiencia",
       icon: Briefcase,
       color: "text-green-600",
       metrics: [
-        { label: "Años Experiencia", key: "political_experience_years" },
-        { label: "Veces Electo", key: "times_elected" },
-        {
-          label: "Partidos en los que estuvo",
-          key: "total_parties_belonged",
-          inverse: true,
-        },
+        { label: "Años Laborales", key: "experience_years" },
+        { label: "Años en Política", key: "political_years" },
       ],
     },
     {
-      category: "Transparencia Patrimonial",
+      category: "Patrimonio Declarado",
       icon: DollarSign,
       color: "text-amber-600",
       metrics: [
         {
           label: "Ingresos Anuales",
-          key: "declared_income_annual",
+          key: "total_income",
           prefix: "S/ ",
         },
-        { label: "Valor Bienes", key: "declared_assets_value", prefix: "S/ " },
+        {
+          label: "Bienes y Rentas",
+          key: "total_assets",
+          prefix: "S/ ",
+        },
       ],
     },
     {
-      category: "Antecedentes Legales",
+      category: "Antecedentes (Red Flags)",
       icon: Scale,
       color: "text-red-600",
       metrics: [
         {
-          label: "Sentencias Penales",
-          key: "has_penal_sentences",
-          boolean: true,
-          inverse: true,
-        },
-        {
-          label: "Deudas Alimentarias",
-          key: "has_alimentary_debts",
-          boolean: true,
-          inverse: true,
-        },
-        {
-          label: "Total Antecedentes",
-          key: "total_legal_records",
+          label: "Sentencias/Demandas",
+          key: "red_flags_count",
           inverse: true,
         },
       ],
@@ -197,7 +185,6 @@ export default function ComparisonView({
   candidates,
   mode,
 }: ComparisonViewProps) {
-  // 🔥 Normalizar datos internamente
   const entities: NormalizedEntity[] =
     legislators?.map((item) => ({
       id: item.legislator.id,
@@ -216,16 +203,10 @@ export default function ComparisonView({
       group: item.candidate.political_party
         ? {
             name: item.candidate.political_party.name,
-            color_hex: item.candidate.political_party.color_hex,
+            color_hex: null,
             logo_url: item.candidate.political_party.logo_url,
           }
-        : item.candidate.alliance
-          ? {
-              name: item.candidate.alliance.name,
-              color_hex: item.candidate.alliance.color_hex,
-              logo_url: item.candidate.alliance.logo_url,
-            }
-          : null,
+        : null,
       metrics: item.metrics!,
     })) ??
     [];
@@ -626,7 +607,6 @@ function MobileCategoryCard({ category, data }: MobileCategoryCardProps) {
                                       ...data.map(
                                         (d) =>
                                           Number(
-                                            // ✅ Cambia esto:
                                             (
                                               d.metrics as Record<
                                                 string,
@@ -664,28 +644,24 @@ interface RiskStatusCardProps {
   data: NormalizedEntity[];
   mode: EntityType;
 }
-
 function RiskStatusCard({ data, mode }: RiskStatusCardProps) {
   return (
     <Card className="border-l-4 border-l-orange-500 shadow-sm">
-      <CardHeader className="py-3 px-4 bg-muted/20 border-b">
-        <div className="flex items-center gap-2 font-bold text-sm text-orange-600 uppercase tracking-wide">
-          <AlertTriangle className="h-4 w-4" />
-          Estado de Riesgo
-        </div>
-      </CardHeader>
       <CardContent
         className="p-4 grid gap-4"
         style={{ gridTemplateColumns: `repeat(${data.length}, 1fr)` }}
       >
         {data.map((item) => {
           const metrics = item.metrics as Record<string, unknown>;
-          const hasIssues =
-            mode === "legislator"
-              ? Boolean(metrics.is_defector) ||
-                Number(metrics.total_legal_records || 0) > 0
-              : Boolean(metrics.has_penal_sentences) ||
-                Number(metrics.total_legal_records || 0) > 0;
+
+          let hasIssues = false;
+
+          if (mode === "legislator") {
+            // Lógica para legisladores (ajusta según tus métricas reales)
+            hasIssues = Number(metrics.sessions_absent || 0) > 10;
+          } else {
+            hasIssues = Number(metrics.red_flags_count || 0) > 0;
+          }
 
           return (
             <div
@@ -705,9 +681,7 @@ function RiskStatusCard({ data, mode }: RiskStatusCardProps) {
                 <div className="text-green-500 flex flex-col items-center">
                   <CheckCircle2 className="h-6 w-6 mb-1" />
                   <span className="text-[10px] font-bold leading-tight">
-                    Sin
-                    <br />
-                    Registros
+                    Limpio
                   </span>
                 </div>
               )}

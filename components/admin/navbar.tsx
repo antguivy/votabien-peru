@@ -20,7 +20,7 @@ export async function Navbar({ title }: NavbarProps) {
             <span className="font-semibold capitalize text-sm">
               {profile?.full_name}
             </span>
-            <span className="text-gray-500">{profile?.role}</span>
+            <span className="text-muted-foreground">{profile?.role}</span>
           </div>
           {user && <UserNav user={user} profile={profile} />}
         </div>

@@ -1,6 +1,5 @@
-import { ChamberType, CandidacyType } from "@/interfaces/politics"; // 🔥 Importa los tipos base
+import { ChamberType, CandidacyType } from "@/interfaces/politics";
 import { EntityType, SearchableEntity } from "@/interfaces/ui-types";
-import { extractCandidacyType } from "./validation";
 import {
   CandidateCompareItem,
   CandidateWithMetrics,
@@ -11,22 +10,20 @@ import {
 import { LegislatorCard } from "@/interfaces/legislator";
 import { CandidateCard } from "@/interfaces/candidate";
 
-// ============================================
-// ADAPTERS PARA BÚSQUEDA (objetos simples)
-// ============================================
-
 export function adaptLegislatorFromSearch(
   leg: LegislatorCard,
 ): SearchableEntity {
   return {
     id: leg.id,
+    dni: leg.person.dni,
     fullname: leg.person.fullname,
     image_url: leg.person.image_url,
+    image_candidate_url: leg.person.image_candidate_url,
     group_name: leg.current_parliamentary_group?.name || "Sin Bancada",
     group_color: leg.current_parliamentary_group?.color_hex || null,
     description: `${leg.chamber} • ${leg.electoral_district?.name || "Sin distrito"}`,
     type: "legislator",
-    has_metrics: leg.has_metrics ?? false, // 🔥 Viene directo del endpoint
+    has_metrics: leg.has_metrics ?? false,
     metadata: {
       chamber: leg.chamber,
       district: leg.electoral_district?.name,
@@ -37,11 +34,9 @@ export function adaptLegislatorFromSearch(
 
 export function adaptCandidateFromSearch(
   cand: CandidateCard,
-  type: EntityType,
+  mode: EntityType,
 ): SearchableEntity {
-  const candidacyType = extractCandidacyType(type);
-
-  const candidacyLabel: Record<CandidacyType, string> = {
+  const candidacyLabel: Record<string, string> = {
     [CandidacyType.SENADOR]: "Senador",
     [CandidacyType.DIPUTADO]: "Diputado",
     [CandidacyType.PRESIDENTE]: "Presidente",
@@ -49,30 +44,28 @@ export function adaptCandidateFromSearch(
     [CandidacyType.VICEPRESIDENTE_2]: "2do Vicepresidente",
   };
 
-  const label = candidacyType ? candidacyLabel[candidacyType] : "Candidato";
+  const label = candidacyLabel[cand.type] || "Candidato";
 
   return {
     id: cand.id,
+    dni: cand.person.dni,
     fullname: cand.person.fullname,
     image_url: cand.person.image_url,
+    image_candidate_url: cand.person.image_candidate_url,
     group_name: cand.political_party?.name || "Independiente",
     group_color: cand.political_party?.color_hex || null,
     group_image: cand.political_party?.logo_url,
     description: `Candidato a ${label} • ${cand.electoral_district?.name || "Nacional"}`,
-    type: type,
-    has_metrics: cand.has_metrics ?? false, // 🔥 Viene directo del endpoint
+    type: "candidate",
+    has_metrics: cand.has_metrics ?? false,
     metadata: {
       process_id: cand.electoral_process_id,
-      candidacy_type: candidacyType || undefined,
+      candidacy_type: cand.type,
       district: cand.electoral_district?.name,
       party_id: cand.political_party_id ?? undefined,
     },
   };
 }
-
-// ============================================
-// ADAPTERS PARA COMPARACIÓN (objetos con métricas)
-// ============================================
 
 export function adaptLegislatorFromComparison(
   item: LegislatorWithMetrics,
@@ -81,13 +74,15 @@ export function adaptLegislatorFromComparison(
 
   return {
     id: leg.id,
+    dni: leg.person.dni,
     fullname: leg.person.fullname,
     image_url: leg.person.image_url,
+    image_candidate_url: leg.person.image_candidate_url,
     group_name: leg.current_parliamentary_group?.name || "Sin Bancada",
     group_color: leg.current_parliamentary_group?.color_hex || null,
     description: `${leg.chamber} • ${leg.electoral_district?.name || "Sin distrito"}`,
     type: "legislator",
-    has_metrics: true, // 🔥 Si está en comparación, siempre tiene métricas
+    has_metrics: true,
     metadata: {
       chamber: leg.chamber as ChamberType,
       district: leg.electoral_district?.name,
@@ -98,47 +93,29 @@ export function adaptLegislatorFromComparison(
 
 export function adaptCandidateFromComparison(
   item: CandidateWithMetrics,
-  type: EntityType,
 ): SearchableEntity {
   const cand = item.candidate;
-  const candidacyType = extractCandidacyType(type);
 
-  const candidacyLabel: Record<CandidacyType, string> = {
-    [CandidacyType.SENADOR]: "Senador",
-    [CandidacyType.DIPUTADO]: "Diputado",
-    [CandidacyType.PRESIDENTE]: "Presidente",
-    [CandidacyType.VICEPRESIDENTE_1]: "1er Vicepresidente",
-    [CandidacyType.VICEPRESIDENTE_2]: "2do Vicepresidente",
-  };
-
-  const label = candidacyType ? candidacyLabel[candidacyType] : "Candidato";
+  const label = "Candidato";
 
   return {
     id: cand.id,
+    dni: cand.person.dni, // 🔥 CRÍTICO
     fullname: cand.person.fullname,
     image_url: cand.person.image_url,
-    group_name:
-      cand.political_party?.name || cand.alliance?.name || "Independiente",
-    group_color:
-      cand.political_party?.color_hex || cand.alliance?.color_hex || null,
-    group_image: cand.political_party?.logo_url || cand.alliance?.logo_url,
-    description: `Candidato a ${label} • ${cand.electoral_district?.name || "Nacional"}`,
-    type: type,
-    has_metrics: true, // 🔥 Si está en comparación, siempre tiene métricas
+    image_candidate_url: cand.person.image_candidate_url,
+    group_name: cand.political_party?.name || "Independiente",
+    group_color: cand.political_party?.id ? null : null,
+    group_image: cand.political_party?.logo_url,
+    description: `${label} • ${cand.electoral_district?.name || "Nacional"}`,
+    type: "candidate",
+    has_metrics: true,
     metadata: {
-      process_id: String(cand.electoral_process_id),
-      candidacy_type: candidacyType || undefined,
       district: cand.electoral_district?.name,
-      party_id: cand.political_party?.id
-        ? String(cand.political_party.id)
-        : undefined,
+      party_id: cand.political_party?.id,
     },
   };
 }
-
-// ============================================
-// EXTRACTOR ACTUALIZADO (usa adapters correctos)
-// ============================================
 
 export function extractEntitiesFromComparison(
   data: ComparisonResponse,
@@ -148,7 +125,6 @@ export function extractEntitiesFromComparison(
     return [];
   }
 
-  // Procesar legisladores
   if (mode === "legislator") {
     return data.items
       .filter(
@@ -159,10 +135,9 @@ export function extractEntitiesFromComparison(
           data: LegislatorWithMetrics;
         } => item.status === "available" && item.data !== null,
       )
-      .map((item) => adaptLegislatorFromComparison(item.data)); // 🔥 Adapter específico
+      .map((item) => adaptLegislatorFromComparison(item.data));
   }
 
-  // Procesar candidatos
   if (mode.includes("candidate")) {
     return data.items
       .filter(
@@ -173,7 +148,7 @@ export function extractEntitiesFromComparison(
           data: CandidateWithMetrics;
         } => item.status === "available" && item.data !== null,
       )
-      .map((item) => adaptCandidateFromComparison(item.data, mode)); // 🔥 Adapter específico
+      .map((item) => adaptCandidateFromComparison(item.data));
   }
 
   return [];

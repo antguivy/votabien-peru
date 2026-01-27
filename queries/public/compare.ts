@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  CandidateCompareItem,
   ComparisonResponse,
   LegislatorCompareItem,
 } from "@/interfaces/comparator";
@@ -9,6 +10,10 @@ import {
   LegislatorMetricsWithComputed,
 } from "@/interfaces/legislator-metrics";
 import { PostgrestError } from "@supabase/supabase-js";
+import {
+  computeCandidateMetrics,
+  RawPersonData,
+} from "./utils/candidate-metrics";
 
 // Función para agregar campos computados a las métricas
 function computeMetrics(
@@ -168,6 +173,111 @@ export async function getLegislatorsComparison(
 
   return {
     total_requested: uniqueIds.length,
+    total_available: totalAvailable,
+    comparison_date: new Date().toISOString(),
+    items: items,
+  };
+}
+
+export async function getCandidatesComparison(
+  dnis: string[],
+): Promise<ComparisonResponse | null> {
+  const supabase = await createClient();
+
+  if (!dnis || dnis.length < 2) return null;
+  const uniqueDnis = Array.from(new Set(dnis));
+
+  const { data: candidatesData, error } = await supabase
+    .from("candidate")
+    .select(
+      `
+      id,
+      list_number,
+      status,
+      active,
+      politicalparty ( id, name, acronym, logo_url ),
+      electoraldistrict ( id, name ),
+      person:person_id!inner (
+        id, 
+        dni, 
+        fullname, 
+        image_url, 
+        image_candidate_url, 
+        profession,
+        
+        incomes, 
+        assets,
+        university_education,
+        postgraduate_education,
+        technical_education,
+        work_experience,
+        popular_election,
+        political_role,
+        secondary_school,
+
+        backgrounds:background ( type, summary, status )
+      )
+    `,
+    )
+    .in("person.dni", uniqueDnis)
+    .eq("active", true);
+
+  if (error || !candidatesData) {
+    console.error("Error fetching candidates by DNI:", error);
+    return null;
+  }
+
+  const items: CandidateCompareItem[] = uniqueDnis.map((dni) => {
+    // 1. Encontramos al candidato
+    const cand = candidatesData.find((c) => c.person?.dni === dni);
+
+    if (!cand) {
+      return {
+        candidate_id: dni,
+        candidate_name: null,
+        status: "not_found",
+        message: `No se encontró candidato activo con DNI ${dni}`,
+        data: null,
+      };
+    }
+
+    // 2. CORRECCIÓN AQUI: Casteo forzado (Type Assertion)
+    // Le decimos a TS: "Trata a cand.person como si fuera RawPersonData"
+    const metrics = computeCandidateMetrics(
+      cand.person as unknown as RawPersonData,
+    );
+
+    return {
+      candidate_id: cand.id,
+      candidate_name: cand.person.fullname,
+      status: "available",
+      message: null,
+      data: {
+        candidate: {
+          id: cand.id,
+          list_number: cand.list_number,
+          status: cand.status,
+          person: {
+            id: cand.person.id,
+            dni: cand.person.dni,
+            fullname: cand.person.fullname,
+            image_url: cand.person.image_url,
+            image_candidate_url: cand.person.image_candidate_url,
+            profession: cand.person.profession,
+          },
+          // Asegúrate de que tu interfaz CandidateWithMetrics espere estos tipos
+          political_party: cand.politicalparty,
+          electoral_district: cand.electoraldistrict,
+        },
+        metrics: metrics,
+      },
+    };
+  });
+
+  const totalAvailable = items.filter((i) => i.status === "available").length;
+
+  return {
+    total_requested: uniqueDnis.length,
     total_available: totalAvailable,
     comparison_date: new Date().toISOString(),
     items: items,
