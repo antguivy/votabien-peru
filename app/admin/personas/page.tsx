@@ -7,6 +7,7 @@ import { PersonTable } from "./_components/person-table";
 import { searchParamsCache } from "./_lib/validation";
 import { CreatePerson } from "./_components/buttons";
 import { getPersonList } from "./_lib/data";
+import { ContentLayout } from "@/components/admin/content-layout";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;
@@ -23,7 +24,7 @@ export default async function AdminPersonPage(props: IndexPageProps) {
   // ]);
 
   return (
-    <Shell className="gap-2 mx-auto">
+    <ContentLayout title="Personas">
       {/* <AdminPartyProvider 
       person={person.items}
       > */}
@@ -54,6 +55,6 @@ export default async function AdminPersonPage(props: IndexPageProps) {
       </Suspense>
       {/* </FeatureFlagsProvider> */}
       {/* </AdminPartyProvider> */}
-    </Shell>
+    </ContentLayout>
   );
 }

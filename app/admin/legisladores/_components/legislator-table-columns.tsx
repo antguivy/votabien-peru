@@ -240,7 +240,7 @@ export function getColumns({
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Open menu"
-                variant="ghost"
+                variant="outline"
                 className="flex text-primary font-bold size-8 p-0 data-[state=open]:bg-muted"
               >
                 <Ellipsis className="size-4" aria-hidden="true" />

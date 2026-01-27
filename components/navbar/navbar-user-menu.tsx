@@ -34,7 +34,7 @@ export const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
   const name = profile?.full_name || user.email?.split("@")[0] || "Usuario";
   const email = user.email || "";
   const role = profile?.role || "user";
-  const image = profile?.avatar_url || ""; // Avatar de BD, o vacío
+  const image = profile?.avatar_url || "";
 
   const getInitials = (nameStr: string) => {
     if (!nameStr) return "U";

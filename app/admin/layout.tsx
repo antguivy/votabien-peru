@@ -8,8 +8,8 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/admin/app-sidebar";
 import { Separator } from "@/components/ui/separator";
+import AdminPanelLayout from "@/components/admin/app-sidebar";
 
 export default async function AdminLayout({
   children,
@@ -44,30 +44,7 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      {/* El componente Sidebar que creamos */}
-      <AppSidebar />
-
-      {/* SidebarInset es el contenedor principal del contenido a la derecha */}
-      <SidebarInset>
-        {/* Header simple integrado con el Trigger */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background sticky top-0 z-10">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-
-          {/* Breadcrumbs o Título de la página podrían ir aquí */}
-          <div className="flex-1 text-sm font-medium">
-            Panel de Administración
-          </div>
-        </header>
-
-        {/* El contenido de tus páginas admin */}
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Un espaciador opcional o contenedor */}
-          <div className="min-h-[100vh] flex-1 rounded-xl md:min-h-min pt-4">
-            {children}
-          </div>
-        </div>
-      </SidebarInset>
+      <AdminPanelLayout>{children}</AdminPanelLayout>
     </SidebarProvider>
   );
 }

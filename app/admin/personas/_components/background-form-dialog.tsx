@@ -94,14 +94,30 @@ const cleanDateString = (dateStr: string | null | undefined): string => {
 };
 
 const parseExcelClipboard = (text: string): string[][] => {
+  if (!text) return [];
+
+  // Normalizar saltos de línea
+  const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  // DETECCIÓN INTELIGENTE:
+  // Si no hay tabs (\t), asumimos que es una tabla visual separada por múltiples espacios
+  if (!normalizedText.includes("\t")) {
+    return normalizedText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => line.split(/\s{2,}/));
+  }
+
+  // PARSER ROBUSTO PARA EXCEL (TSV):
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentCell = "";
   let insideQuotes = false;
 
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
+  for (let i = 0; i < normalizedText.length; i++) {
+    const char = normalizedText[i];
+    const nextChar = normalizedText[i + 1];
 
     if (char === '"') {
       if (insideQuotes && nextChar === '"') {
@@ -113,20 +129,25 @@ const parseExcelClipboard = (text: string): string[][] => {
     } else if (char === "\t" && !insideQuotes) {
       currentRow.push(currentCell.trim());
       currentCell = "";
-    } else if ((char === "\n" || char === "\r") && !insideQuotes) {
-      if (char === "\r" && nextChar === "\n") i++;
+    } else if (char === "\n" && !insideQuotes) {
       currentRow.push(currentCell.trim());
-      if (currentRow.some((c) => c)) rows.push(currentRow);
+      if (currentRow.some((c) => c !== "")) {
+        rows.push(currentRow);
+      }
       currentRow = [];
       currentCell = "";
     } else {
       currentCell += char;
     }
   }
+
   if (currentCell || currentRow.length > 0) {
     currentRow.push(currentCell.trim());
-    rows.push(currentRow);
+    if (currentRow.some((c) => c !== "")) {
+      rows.push(currentRow);
+    }
   }
+
   return rows;
 };
 
@@ -168,9 +189,15 @@ const smartMapJsonItem = (item: unknown): BackgroundBase => {
       getString("publication_date", "fecha", "date"),
     ),
     title: getString("title", "titulo", "delito") || "Sin título",
-    summary: getString("summary", "resumen", "descripcion", "description"),
+    summary: getString(
+      "summary",
+      "resumen",
+      "descripcion",
+      "description",
+      "redaccion_final",
+    ),
     sanction: getString("sanction", "sancion", "penalidad") || null,
-    source: getString("source", "fuente", "medio"),
+    source: getString("source", "fuente", "medio", "fuente_normalizada"),
     source_url: getString("source_url", "url", "link", "fuente_url") || null,
   };
 };
@@ -776,14 +803,14 @@ function SmartImportView({ onImport, onCancel }: SmartImportViewProps) {
       const firstCell = rows[0][0] || "";
       if (/^\d{4}[-./]\d{1,2}/.test(firstCell)) {
         setColumnMapping([
-          "publication_date",
           "type",
           "status",
+          "publication_date",
           "title",
           "summary",
           "sanction",
           "source",
-          "ignore",
+          "source_url",
         ]);
         toast.info("Orden detectado: Fecha primero");
       }

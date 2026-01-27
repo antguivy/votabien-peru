@@ -121,48 +121,52 @@ const SectionToolbar = <T,>({
   isJsonMode,
   onToggleJson,
 }: SectionToolbarProps<T>) => {
-  // Estado: Qué columnas están seleccionadas (por defecto todas)
   const [selectedColIds, setSelectedColIds] = useState<string[]>(
     columns.map((c) => c.id),
   );
   const [copied, setCopied] = useState(false);
 
-  // Función para manejar el copiado inteligente
   const handleSmartCopy = () => {
     let textToCopy = "";
 
     if (isJsonMode) {
-      // 1. MODO JSON: Copia todo el objeto crudo
+      // MODO JSON: Copia tal cual
       textToCopy = JSON.stringify(data, null, 2);
     } else {
-      // 2. MODO TABLA: Copia formato TSV (Excel friendly)
-
-      // A. Filtrar definiciones basadas en selección
+      // MODO TABLA (EXCEL COMPATIBLE)
       const activeCols = columns.filter((col) =>
         selectedColIds.includes(col.id),
       );
 
-      // B. Crear cabecera (Header)
-      // const headerRow = activeCols.map((col) => col.label).join("\t");
+      // 1. Opcional: ¿Quieres incluir cabeceras?
+      // Si quieres que se pegue con títulos, descomenta la siguiente línea:
+      // const headers = activeCols.map(c => c.label).join("\t");
 
-      // C. Crear filas (Rows)
+      // 2. Generar filas
       const bodyRows = data.map((item) => {
         return activeCols
           .map((col) => {
             const val = col.accessor(item);
-            // Limpiamos saltos de línea y tabulaciones para no romper el pegado en Excel
-            const cleanVal = String(val || "").replace(/[\n\r\t]/g, " ");
+            // LIMPIEZA CRÍTICA PARA EXCEL:
+            // 1. Convertir null/undefined a string vacía
+            // 2. Reemplazar saltos de línea y tabs internos por espacios (para no romper la fila)
+            // 3. Trim para quitar espacios basura al inicio/final
+            const cleanVal = String(val ?? "")
+              .replace(/[\n\r]+/g, " ") // Convierte enters en espacios
+              .replace(/\t/g, " ") // Convierte tabs en espacios
+              .trim();
+
             return cleanVal;
           })
-          .join("\t");
+          .join("\t"); // Separador de columnas: TABULADOR
       });
 
-      textToCopy = [...bodyRows].join("\n");
+      // Unir todo con saltos de línea
+      // textToCopy = [headers, ...bodyRows].join("\n"); // Si usas headers
+      textToCopy = bodyRows.join("\n");
     }
 
     navigator.clipboard.writeText(textToCopy);
-
-    // Feedback visual
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -183,7 +187,6 @@ const SectionToolbar = <T,>({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Selector de Columnas (Solo visible en modo Tabla) */}
         {!isJsonMode && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -210,7 +213,6 @@ const SectionToolbar = <T,>({
 
         <div className="h-4 w-[1px] bg-border mx-1" />
 
-        {/* Toggle Vista */}
         <div className="flex items-center bg-background rounded-full border border-border p-0.5 h-7">
           <button
             onClick={() => onToggleJson(false)}
@@ -234,24 +236,24 @@ const SectionToolbar = <T,>({
           </button>
         </div>
 
-        {/* Botón Copiar */}
         <Button
-          variant="ghost"
+          variant="secondary" // Usamos secondary para destacar la acción de copiar
           size="sm"
           onClick={handleSmartCopy}
-          className="h-7 text-xs gap-1.5 border border-dashed border-border min-w-[80px]"
+          className="h-7 text-xs gap-1.5 border border-transparent hover:border-border min-w-[100px] font-semibold"
         >
           {copied ? (
-            <CheckCircle2 className="h-3 w-3 text-green-500" />
+            <CheckCircle2 className="h-3 w-3 text-green-600" />
           ) : (
             <Copy className="h-3 w-3" />
           )}
-          {copied ? "Copiado" : "Copiar"}
+          {copied ? "¡Copiado!" : "Copiar Excel"}
         </Button>
       </div>
     </div>
   );
 };
+
 // --- COMPONENTE PRINCIPAL ---
 
 interface ResultadoTablasProps {
@@ -405,6 +407,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
 
   // 1. Configuración para Antecedentes
   const colsAntecedentes: ColumnConfig<Antecedente>[] = [
+    { id: "tipo", label: "Tipo", accessor: (d) => d.tipo },
     { id: "estado", label: "Estado", accessor: (d) => d.estado },
     { id: "fecha", label: "Fecha", accessor: (d) => d.fecha },
     { id: "titulo", label: "Título", accessor: (d) => d.titulo },
@@ -413,6 +416,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
       label: "Descripción",
       accessor: (d) => d.redaccion_final || d.descripcion,
     },
+    { id: "sancion", label: "Sanción", accessor: (d) => d.sancion },
     {
       id: "fuente",
       label: "Fuente",
@@ -423,22 +427,22 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
 
   // 2. Configuración para Biografía
   const colsBio: ColumnConfig<EventoBiografico>[] = [
-    { id: "fecha", label: "Fecha", accessor: (d) => d.fecha },
     { id: "tipo", label: "Tipo Evento", accessor: (d) => d.tipo },
+    { id: "fecha", label: "Fecha", accessor: (d) => d.fecha },
     {
       id: "evento",
       label: "Evento",
       accessor: (d) => d.redaccion_final || d.descripcion,
     },
     {
-      id: "nuevo",
-      label: "Es Nuevo",
-      accessor: (d) => (d.es_nuevo ? "SÍ" : "NO"),
-    },
-    {
       id: "fuente",
       label: "Fuente",
       accessor: (d) => d.fuente_normalizada || d.fuente,
+    },
+    {
+      id: "fuente_url",
+      label: "Url",
+      accessor: (d) => d.fuente_url,
     },
   ];
 
@@ -655,8 +659,8 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
         >
           <SectionToolbar
             title="Línea de Tiempo Validada"
-            data={biografia} // <--- Pasamos la DATA
-            columns={colsBio} // <--- Pasamos la CONFIGURACIÓN
+            data={biografia}
+            columns={colsBio}
             isJsonMode={modeBio === "json"}
             onToggleJson={(val) => setModeBio(val ? "json" : "table")}
           />
@@ -667,14 +671,9 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
               <Table className="table-fixed w-full">
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
-                    {/* Columnas estrechas y fijas para datos cortos */}
-                    <TableHead className="w-[100px]">Fecha</TableHead>
                     <TableHead className="w-[120px]">Tipo</TableHead>
-
-                    {/* Columna flexible que ocupará todo el espacio sobrante */}
+                    <TableHead className="w-[100px]">Fecha</TableHead>
                     <TableHead className="w-auto">Evento</TableHead>
-
-                    {/* Columna fija para la fuente */}
                     <TableHead className="w-[140px] text-right">
                       Fuente
                     </TableHead>

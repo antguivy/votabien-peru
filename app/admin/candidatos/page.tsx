@@ -17,6 +17,7 @@ import { AdminCandidateProvider } from "@/components/context/admin-candidate";
 import { CreateCandidate } from "./_components/buttons";
 import { CandidatesTable } from "./_components/candidate-table";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
+import { ContentLayout } from "@/components/admin/content-layout";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;
@@ -39,39 +40,48 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
     getElectoralProcess(true),
   ]);
   return (
-    <Shell className="gap-2 mx-auto">
-      <AdminCandidateProvider
-        districts={districts}
-        parties={parties.items}
-        active_process={active_process}
-      >
-        {/* <FeatureFlagsProvider> */}
-        <Suspense fallback={<Skeleton className="h-7 w-52" />}>
-          <div className="flex flex-row justify-between px-1">
-            {/* <DateRangePicker
+    <ContentLayout title="Candidatos">
+      <Shell className="gap-2 mx-auto">
+        <AdminCandidateProvider
+          districts={districts}
+          parties={parties.items}
+          active_process={active_process}
+        >
+          {/* <FeatureFlagsProvider> */}
+          <Suspense fallback={<Skeleton className="h-7 w-52" />}>
+            <div className="flex flex-row justify-between px-1">
+              {/* <DateRangePicker
           triggerSize="sm"
           triggerClassName="ml-auto w-56 sm:w-60"
           align="end"
           shallow={false}
         /> */}
-            <CreateCandidate />
-          </div>
-        </Suspense>
-        <Suspense
-          fallback={
-            <Data2TableSkeleton
-              columnCount={6}
-              searchableColumnCount={1}
-              filterableColumnCount={2}
-              cellWidths={["10rem", "40rem", "12rem", "12rem", "8rem", "8rem"]}
-              shrinkZero
-            />
-          }
-        >
-          <CandidatesTable promises={promises} />
-        </Suspense>
-        {/* </FeatureFlagsProvider> */}
-      </AdminCandidateProvider>
-    </Shell>
+              <CreateCandidate />
+            </div>
+          </Suspense>
+          <Suspense
+            fallback={
+              <Data2TableSkeleton
+                columnCount={6}
+                searchableColumnCount={1}
+                filterableColumnCount={2}
+                cellWidths={[
+                  "10rem",
+                  "40rem",
+                  "12rem",
+                  "12rem",
+                  "8rem",
+                  "8rem",
+                ]}
+                shrinkZero
+              />
+            }
+          >
+            <CandidatesTable promises={promises} />
+          </Suspense>
+          {/* </FeatureFlagsProvider> */}
+        </AdminCandidateProvider>
+      </Shell>
+    </ContentLayout>
   );
 }
