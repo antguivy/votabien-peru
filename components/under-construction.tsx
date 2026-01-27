@@ -62,7 +62,7 @@ export default function UnderConstruction({
               href="/auth/login"
               className="inline-flex items-center gap-2 px-6 py-3"
             >
-              <Button>Inicia Sessión</Button>
+              <Button>Inicia Sesión</Button>
             </Link>
           </div>
         )}
