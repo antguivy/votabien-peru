@@ -12,18 +12,15 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { usePathname } from "next/navigation";
-import { useCallback, useContext, useState } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions"; // Asegúrate de importar esto
+import { UserProfile } from "@/lib/auth-actions";
 
 interface NavbarUserMenuProps {
   user: User;
@@ -34,9 +31,7 @@ export function UserNav({ user, profile }: NavbarUserMenuProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const name = profile?.full_name || user.email?.split("@")[0] || "Usuario";
-  const email = user.email || "";
   const role = profile?.role || "user";
-  const image = profile?.avatar_url || "";
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -68,15 +63,13 @@ export function UserNav({ user, profile }: NavbarUserMenuProps) {
           <span className="font-semibold capitalize text-sm">{name}</span>
           <span className="text-muted-foreground">{role}</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {/* <DropdownMenuGroup> */}
+        <DropdownMenuSeparator className="md:hidden" />
         <Link href={"/"} className="hover:cursor-pointer">
           <DropdownMenuItem className="hover:cursor-pointer">
             <LayoutGrid className="w-4 h-4 mr-3 text-muted-foreground" />
             Modo Web
           </DropdownMenuItem>
         </Link>
-        {/* </DropdownMenuGroup> */}
         <LogoutButton>
           <DropdownMenuItem className="hover:cursor-pointer">
             <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />

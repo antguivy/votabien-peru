@@ -20,18 +20,17 @@ export async function POST(request: Request) {
       );
     }
     const accessToken = session.access_token;
-    const body = await request.json();
+    const formData = await request.formData();
 
     const pythonResponse = await fetch(
       `${API_BASE_URL}/api/v1/research/full-pipeline`,
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Accept: "application/x-ndjson",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(body),
+        body: formData,
       },
     );
 

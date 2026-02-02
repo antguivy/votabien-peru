@@ -93,10 +93,6 @@ export async function updateCandidatePeriod(
 ) {
   const supabase = await createClient();
   try {
-    if (data.person_id) {
-      await checkLegislatorOverlap(supabase, data.person_id, data.type);
-    }
-
     const { id, ...updateBody } = data;
 
     const payload: TablesUpdate<"candidate"> = updateBody;

@@ -27,7 +27,6 @@ export const NavbarMobile = ({ user, profile }: NavbarMobileProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  // DATOS REALES DEL PERFIL
   const name = profile?.full_name || user?.email?.split("@")[0] || "Usuario";
   const email = user?.email || "";
   const role = profile?.role || "user";
@@ -56,11 +55,7 @@ export const NavbarMobile = ({ user, profile }: NavbarMobileProps) => {
     }
   };
 
-  // Agregar aboutNavGroup entre las rutas públicas y admin
-  const allGroups = [
-    ...publicNavGroups,
-    aboutNavGroup, // <-- Menú "Nosotros" colapsable
-  ];
+  const allGroups = [...publicNavGroups, aboutNavGroup];
 
   return (
     <div className="flex lg:hidden">

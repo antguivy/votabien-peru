@@ -53,6 +53,10 @@
 
   /* ----- Color de Marca (Logo) ----- */
   --color-brand: var(--brand);
+  /*  */
+  --color-role-president: var(--chart-4); /* Rojo mate */
+  --color-role-senator: var(--chart-1); /* Azul principal */
+  --color-role-deputy: var(--chart-2); /* Verde */
 }
 
 @layer base {

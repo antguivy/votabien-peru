@@ -3,13 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -138,7 +132,7 @@ export function ProgressStream({
             </div>
             {!isStreaming && (
               <Badge variant="destructive" className="text-xs">
-                STOPPED
+                DETENIDO
               </Badge>
             )}
           </div>
@@ -200,11 +194,8 @@ export function ProgressStream({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Datos Estructurados (Live)
+              Datos Estructurados (Borrador)
             </CardTitle>
-            <CardDescription>
-              Actualización en tiempo real de la extracción
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[500px] rounded-lg border border-dashed bg-muted/30 p-6">
@@ -252,17 +243,17 @@ export function ProgressStream({
                   <div>
                     <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
                       <Globe className="h-4 w-4" />
-                      Timeline ({draftData.biografia?.length || 0})
+                      Timeline ({draftData.posturas?.length || 0})
                     </h3>
                     <div className="space-y-4 border-l-2 border-border pl-6">
-                      {draftData.biografia?.slice(0, 6).map((bio, i) => (
+                      {draftData.posturas?.slice(0, 6).map((fact, i) => (
                         <div key={i} className="relative">
                           <div className="absolute -left-[29px] top-2 h-3 w-3 rounded-full bg-primary/20 ring-4 ring-background" />
                           <span className="text-xs font-mono font-bold text-primary block mb-1">
-                            {bio.fecha}
+                            {fact.fecha}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {bio.descripcion}
+                            {fact.hecho}
                           </span>
                         </div>
                       ))}

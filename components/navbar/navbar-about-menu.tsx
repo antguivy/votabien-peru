@@ -38,7 +38,6 @@ export const NavbarAboutMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-40">
         {aboutNavGroup.links.map((link) => {
-          //   const Icon = link.icon;
           return (
             <DropdownMenuItem key={link.href} asChild>
               <Link
@@ -48,7 +47,6 @@ export const NavbarAboutMenu = () => {
                   isActiveLink(link.href) && "bg-accent",
                 )}
               >
-                {/* {Icon && <Icon className="h-4 w-4" />} */}
                 <span>{link.label}</span>
               </Link>
             </DropdownMenuItem>

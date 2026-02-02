@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-// Asegúrate de importar Stage1Draft
 import {
   StreamEvent,
   ResultadoInvestigacion,
@@ -12,7 +11,6 @@ export function useInvestigacionStream() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [logs, setLogs] = useState<StreamEvent[]>([]);
 
-  // CORRECCIÓN: Tipado estricto para los datos parciales
   const [draftData, setDraftData] = useState<Stage1Draft | null>(null);
 
   const [resultadoFinal, setResultadoFinal] =
@@ -23,7 +21,6 @@ export function useInvestigacionStream() {
     total: 0,
   });
 
-  // Referencia para poder cancelar la petición fetch
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const resetEstado = useCallback(() => {
@@ -37,7 +34,7 @@ export function useInvestigacionStream() {
 
   const detenerInvestigacion = useCallback(() => {
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort(); // Cancela el fetch
+      abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
     setIsStreaming(false);
@@ -57,23 +54,20 @@ export function useInvestigacionStream() {
       resetEstado();
       setIsStreaming(true);
 
-      // Crear nuevo controlador de aborto
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
       try {
-        const contenidoMarkdown = await archivo.text();
+        const formData = new FormData();
+        formData.append("file", archivo);
+        formData.append("nombre_investigado", nombreInvestigado);
+        formData.append("gemini_api_key", apiKey);
+        formData.append("model_name", modelName);
 
         const response = await fetch("/api/research", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contenido_markdown: contenidoMarkdown,
-            nombre_investigado: nombreInvestigado,
-            gemini_api_key: apiKey,
-            model_name: modelName,
-          }),
-          signal: abortController.signal, // Vinculamos la señal de aborto
+          body: formData,
+          signal: abortController.signal,
         });
 
         if (!response.ok || !response.body) {
@@ -97,17 +91,15 @@ export function useInvestigacionStream() {
           for (const line of lines) {
             if (!line.trim()) continue;
             try {
-              // Asumimos que el backend envía eventos que cumplen la interfaz StreamEvent
               const event = JSON.parse(line) as StreamEvent;
 
-              // Lógica de actualización de estado...
               switch (event.type) {
                 case "log":
                   setLogs((prev) => [...prev, event]);
                   break;
                 case "error":
                   setLogs((prev) => [...prev, event]);
-                  setIsStreaming(false); // Detenemos loading en UI
+                  setIsStreaming(false);
                   break;
                 case "progress":
                   setProgresoScraping({
@@ -117,7 +109,6 @@ export function useInvestigacionStream() {
                   setLogs((prev) => [...prev, event]);
                   break;
                 case "data_update":
-                  // TypeScript ahora sabe que event es StreamDataUpdate y event.data es Stage1Draft
                   if (event.stage === "draft") {
                     setDraftData(event.data);
                   }
@@ -133,7 +124,6 @@ export function useInvestigacionStream() {
           }
         }
       } catch (error: unknown) {
-        // CORRECCIÓN: Manejo de errores tipado con 'unknown'
         if (error instanceof Error) {
           if (error.name === "AbortError") {
             console.log("Fetch abortado");
@@ -145,7 +135,6 @@ export function useInvestigacionStream() {
             ]);
           }
         } else {
-          // Fallback para errores que no son instancias de Error (raro, pero posible)
           setLogs((prev) => [
             ...prev,
             {
@@ -159,7 +148,6 @@ export function useInvestigacionStream() {
     },
     [resetEstado],
   );
-
   return {
     iniciarInvestigacion,
     detenerInvestigacion,

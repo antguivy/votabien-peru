@@ -49,6 +49,7 @@ export function InvestigacionForm({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const MODEL_LIST = ["gemini-2.5-flash", "gemini-3-flash-preview"];
   useEffect(() => {
     const savedKey = localStorage.getItem("gemini_api_key_v1");
     if (savedKey) setApiKey(savedKey);
@@ -57,10 +58,16 @@ export function InvestigacionForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!archivo || !nombreInvestigado) return;
-    if (!archivo.name.endsWith(".md")) {
-      alert("Solo se permiten archivos Markdown (.md)");
+    const validExtensions = [".md", ".pdf"];
+    const fileExtension = archivo.name
+      .substring(archivo.name.lastIndexOf("."))
+      .toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+      alert("Solo se permiten archivos Markdown (.md) o PDF (.pdf)");
       return;
     }
+
     if (apiKey.trim()) localStorage.setItem("gemini_api_key_v1", apiKey.trim());
     onSubmit(archivo, nombreInvestigado, apiKey, modelName);
   };
@@ -69,8 +76,13 @@ export function InvestigacionForm({
     e.preventDefault();
     setIsDragging(false);
     const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].name.endsWith(".md")) {
-      setArchivo(files[0]);
+    if (files.length > 0) {
+      const name = files[0].name.toLowerCase();
+      if (name.endsWith(".md") || name.endsWith(".pdf")) {
+        setArchivo(files[0]);
+      } else {
+        alert("Formato no soportado. Usa .md o .pdf");
+      }
     }
   };
 
@@ -119,7 +131,7 @@ export function InvestigacionForm({
 
             <div className="space-y-2 flex flex-col flex-1">
               <Label className="text-xs uppercase text-muted-foreground font-bold tracking-wider">
-                Evidencia (Markdown)
+                Evidencia (PDF o Markdown)
               </Label>
               <div
                 onDrop={handleDrop}
@@ -140,7 +152,7 @@ export function InvestigacionForm({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".md"
+                  accept=".md,.pdf"
                   className="hidden"
                   onChange={(e) => setArchivo(e.target.files?.[0] || null)}
                 />
@@ -173,7 +185,7 @@ export function InvestigacionForm({
                         Arrastra tu archivo aquí
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Soporta solo archivos .md
+                        Soporta solo archivos .pdf y .md
                       </p>
                     </div>
                   </>
@@ -216,12 +228,11 @@ export function InvestigacionForm({
                   <SelectValue placeholder="Selecciona un modelo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="gemini-2.5-flash">
-                    Gemini 2.5 Flash
-                  </SelectItem>
-                  <SelectItem value="gemini-3-flash-preview">
-                    Gemini 3 Preview
-                  </SelectItem>
+                  {MODEL_LIST.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

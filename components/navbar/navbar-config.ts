@@ -11,10 +11,18 @@ import {
   ScrollText,
   FlagTriangleRight,
   IdCard,
+  Search,
+  Menu,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
 
-// href: "/comparador?mode=legislator&chamber=CONGRESO",
+export const BOTTOM_NAV_ITEMS = [
+  { href: "/", label: "Inicio", icon: Home },
+  { href: "/candidatos", label: "Candidatos", icon: UserCheck },
+  { href: "ACTION:SEARCH", label: "Filtrar", icon: Search, isAction: true }, // El botón mágico
+  { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
+  { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true }, // Abre el resto
+];
 
 export const publicNavGroups: NavGroup[] = [
   {

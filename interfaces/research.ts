@@ -12,53 +12,49 @@ export interface Antecedente {
   redaccion_final?: string; // La IA reescribe esto en Stage 2
   fuente_normalizada?: string; // "El Comercio", "Andina", etc.
   sancion?: string | null;
-  source_id?: number; // ID para mapear URL
-
-  // Comunes
-  fuente_url?: string | null;
-}
-
-export interface EventoBiografico {
-  tipo: string; // POLITICO | CARGO | LEGISLATIVO ...
-  fecha?: string | null;
-
-  // Campos del Draft
-  descripcion?: string;
-  fuente?: string;
-
-  // Campos del Validado
-  redaccion_final?: string;
-  fuente_normalizada?: string;
-  es_nuevo?: boolean; // true si fue encontrado en el scraping
   source_id?: number;
 
   // Comunes
   fuente_url?: string | null;
 }
 
+export interface EventoPostura {
+  // SEGURIDAD | ECONOMIA | SOCIAL | INSTITUCIONAL |
+  // TRANSFUGUISMO | CORRUPCION | GESTION
+  tema: string;
+  fecha?: string | null;
+  titulo?: string | null;
+  // Campos del Draft
+  hecho?: string;
+  fuente?: string;
+
+  // Campos del Validado
+  redaccion_final?: string;
+  fuente_normalizada?: string;
+  es_nuevo?: boolean;
+  source_id?: number;
+
+  fuente_url?: string | null;
+}
+
 export interface Alerta {
-  tipo: string;
-  // Compatibilidad: El Draft usa unos nombres, el Validado otros.
-  // Los definimos opcionales para soportar ambos casos sin romper la UI.
-  item_relacionado?: string; // Draft
-  item?: string; // Validado
-  detalle?: string; // Draft
-  motivo?: string; // Validado
+  severidad: string; // ALTA | MEDIA
+  titulo?: string;
+  descripcion?: string;
+  accion_sugerida?: string;
 }
 
 // --- ESTRUCTURAS DE RESPUESTA ---
 
-// Estructura del Stage 1 (Draft Inicial)
 export interface Stage1Draft {
   metadata?: {
     investigado?: string;
     fecha_proceso?: string;
-    total_antecedentes?: number;
-    total_eventos_biograficos?: number;
-    id_reporte?: string;
+    items_validados?: number;
+    nuevos_hallazgos?: number;
   };
   antecedentes?: Antecedente[];
-  biografia?: EventoBiografico[];
+  posturas?: EventoPostura[];
   alertas?: Alerta[];
 }
 
@@ -68,8 +64,8 @@ export interface Stage2ValidatedData {
     fuentes_consultadas_aprox?: number | string;
   };
   antecedentes_validos: Antecedente[];
-  biografia_valida: EventoBiografico[];
-  alertas: Alerta[];
+  posturas_validas: EventoPostura[];
+  alertas_revision_manual: Alerta[];
 }
 
 export interface ScrapingResult {

@@ -11,21 +11,10 @@ import {
   Briefcase,
   UserX,
   Skull,
+  MapPin,
+  ArrowUpRight,
+  Star,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FilterField, FilterPanel } from "@/components/ui/filter-panel";
 import {
   ChamberType,
@@ -36,6 +25,180 @@ import {
 import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
 import { LegislatorCard } from "@/interfaces/legislator";
 import { getLegisladoresCards } from "@/queries/public/legislators";
+import { cn } from "@/lib/utils";
+
+// --- CONFIGURACIÓN DE ESTILOS ---
+
+// Configuración por Estado (Condition)
+const CONDITION_CONFIG = {
+  [LegislatorCondition.EN_EJERCICIO]: {
+    label: "Activo",
+    icon: Briefcase,
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-600",
+    badge:
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800",
+  },
+  [LegislatorCondition.LICENCIA]: {
+    label: "Licencia",
+    icon: AlertCircle,
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-600",
+    badge:
+      "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 border-amber-200 dark:border-amber-800",
+  },
+  [LegislatorCondition.SUSPENDIDO]: {
+    label: "Suspendido",
+    icon: Ban,
+    color: "text-rose-600 dark:text-rose-400",
+    bg: "bg-rose-600",
+    badge:
+      "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200 border-rose-200 dark:border-rose-800",
+  },
+  [LegislatorCondition.DESTITUIDO]: {
+    label: "Destituido",
+    icon: UserX,
+    color: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-600",
+    badge:
+      "bg-slate-100 text-slate-800 dark:bg-slate-900/50 dark:text-slate-200 border-slate-200 dark:border-slate-800",
+  },
+  [LegislatorCondition.FALLECIDO]: {
+    label: "Fallecido",
+    icon: Skull,
+    color: "text-zinc-600 dark:text-zinc-400",
+    bg: "bg-zinc-600",
+    badge:
+      "bg-zinc-100 text-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-200 border-zinc-200 dark:border-zinc-800",
+  },
+};
+
+// Configuración por Cámara (Usa tus variables de chart/roles)
+// Asumimos que "chamber" viene en el objeto o lo inferimos
+const CHAMBER_CONFIG = {
+  SENADO: {
+    label: "Senador",
+    color: "text-role-senator", // Usando variables CSS definidas
+    bg: "bg-role-senator",
+    border: "border-role-senator/20",
+    ring: "ring-role-senator/20",
+    light: "bg-role-senator/10",
+  },
+  DIPUTADOS: {
+    label: "Diputado",
+    color: "text-role-deputy",
+    bg: "bg-role-deputy",
+    border: "border-role-deputy/20",
+    ring: "ring-role-deputy/20",
+    light: "bg-role-deputy/10",
+  },
+  // Default para congreso unicameral
+  CONGRESO: {
+    label: "Congresista",
+    color: "text-primary",
+    bg: "bg-primary",
+    border: "border-primary/20",
+    ring: "ring-primary/20",
+    light: "bg-primary/10",
+  },
+};
+
+const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
+  const condition =
+    CONDITION_CONFIG[legislador.condition] ||
+    CONDITION_CONFIG[LegislatorCondition.EN_EJERCICIO];
+
+  // Usamos el color de condición para el borde o indicadores
+  const ConditionIcon = condition.icon;
+
+  const chamberKey = "CONGRESO";
+  const chamber = CHAMBER_CONFIG[chamberKey as keyof typeof CHAMBER_CONFIG];
+
+  return (
+    <Link
+      href={`/legisladores/${legislador.person.id}`}
+      className="group relative flex w-full h-32 bg-card hover:bg-accent/5 rounded-xl border border-border/60 hover:border-border transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
+    >
+      {/* --- COLUMNA IZQUIERDA: IMAGEN --- */}
+      <div className="relative w-28 h-full flex-shrink-0">
+        {legislador.person.image_url ? (
+          <Image
+            src={legislador.person.image_url}
+            alt={legislador.person.fullname}
+            fill
+            className={cn(
+              "object-cover object-top transition-transform duration-500 group-hover:scale-105",
+              (legislador.condition === LegislatorCondition.FALLECIDO ||
+                legislador.condition === LegislatorCondition.DESTITUIDO) &&
+                "grayscale",
+            )}
+            sizes="120px"
+          />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <Users className="w-8 h-8 text-muted-foreground/30" />
+          </div>
+        )}
+      </div>
+
+      {/* --- COLUMNA DERECHA: INFO --- */}
+      <div className="flex-1 flex flex-col justify-between p-3 min-w-0">
+        {/* Parte Superior: Estado y Bancada */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            {/* Bancada */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor:
+                    legislador.current_parliamentary_group?.color_hex ||
+                    "#94a3b8",
+                }}
+              />
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                {legislador.current_parliamentary_group?.name || "Sin Bancada"}
+              </p>
+            </div>
+
+            {/* Estado (Icono o Badge pequeño) */}
+            <div
+              className={cn(
+                "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border",
+                condition.badge,
+              )}
+            >
+              <ConditionIcon className="w-2.5 h-2.5" />
+              <span className="hidden sm:inline">{condition.label}</span>
+            </div>
+          </div>
+
+          {/* Nombre: Line-clamp-2 asegura que no rompa la altura fija */}
+          <h3
+            className="font-bebas text-lg sm:text-xl leading-[0.95] text-card-foreground group-hover:text-primary transition-colors line-clamp-2"
+            title={legislador.person.fullname.toUpperCase()}
+          >
+            {legislador.person.fullname.toUpperCase()}
+          </h3>
+        </div>
+
+        {/* Parte Inferior: Distrito y Botón */}
+        <div className="flex items-end justify-between border-t border-border/40 pt-2 mt-1">
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            <span className="truncate max-w-[100px]">
+              {legislador.electoral_district.name}
+            </span>
+          </div>
+
+          <ArrowUpRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// --- COMPONENTE LISTA PRINCIPAL ---
 
 interface LegisladoresListProps {
   legisladores: LegislatorCard[];
@@ -46,63 +209,8 @@ interface LegisladoresListProps {
 }
 
 const LegisladorSkeleton = () => (
-  <Card className="pt-0 overflow-hidden border flex flex-col h-full">
-    <Skeleton className="aspect-[3/4] w-full" />
-    <CardHeader>
-      <Skeleton className="h-4 w-full mb-2" />
-      <Skeleton className="h-4 w-3/4" />
-    </CardHeader>
-    <CardContent className="space-y-2 flex-grow">
-      <Skeleton className="h-3 w-full" />
-      <Skeleton className="h-3 w-2/3" />
-    </CardContent>
-    <CardFooter className="border-t">
-      <Skeleton className="h-3 w-16 ml-auto" />
-    </CardFooter>
-  </Card>
+  <div className="aspect-[3/4] w-full rounded-[1.25rem] bg-muted animate-pulse" />
 );
-
-const getConditionConfig = (condition: LegislatorCondition) => {
-  const configs = {
-    [LegislatorCondition.EN_EJERCICIO]: {
-      label: "En ejercicio",
-      icon: Briefcase,
-      className:
-        "bg-success/90 text-success-foreground border-success/30 hover:bg-success",
-      tooltip: "Legislador actualmente en funciones",
-    },
-    [LegislatorCondition.LICENCIA]: {
-      label: "Licencia",
-      icon: AlertCircle,
-      className:
-        "bg-warning/90 text-warning-foreground border-warning/30 hover:bg-warning",
-      tooltip: "Legislador con licencia temporal",
-    },
-    [LegislatorCondition.SUSPENDIDO]: {
-      label: "Suspendido",
-      icon: Ban,
-      className:
-        "bg-destructive/90 text-destructive-foreground border-destructive/30 hover:bg-destructive",
-      tooltip: "Legislador suspendido temporalmente",
-    },
-    [LegislatorCondition.DESTITUIDO]: {
-      label: "Destituido",
-      icon: UserX,
-      className:
-        "bg-muted/90 text-muted-foreground border-muted hover:bg-muted",
-      tooltip: "Legislador destituido del cargo",
-    },
-    [LegislatorCondition.FALLECIDO]: {
-      label: "Fallecido",
-      icon: Skull,
-      className:
-        "bg-secondary/90 text-secondary-foreground border-secondary/30 hover:bg-secondary",
-      tooltip: "En memoria",
-    },
-  };
-
-  return configs[condition] || configs[LegislatorCondition.EN_EJERCICIO];
-};
 
 const PAGE_SIZE = 30;
 
@@ -121,14 +229,13 @@ const LegisladoresList = ({
 
   const loadMore = useCallback(async () => {
     if (!infiniteScroll || loading || !hasMore) return;
-
     setLoading(true);
 
     try {
-      // Calculamos la siguiente página basada en cuantos items ya tenemos
       const currentPage = Math.ceil(legisladores.length / PAGE_SIZE);
       const nextPage = currentPage + 1;
 
+      // Transformación de filtros para la query
       const groupsFilter =
         currentFilters.groups && currentFilters.groups !== "all"
           ? typeof currentFilters.groups === "string"
@@ -162,34 +269,26 @@ const LegisladoresList = ({
         setHasMore(false);
       } else {
         setLegisladores((prev) => {
-          // Creamos un Set con los IDs existentes para filtrar duplicados
           const existingIds = new Set(prev.map((l) => l.id));
           const uniqueNewLegislators = newLegisladores.filter(
             (l) => !existingIds.has(l.id),
           );
-
-          // Si después de filtrar no queda nada nuevo
-          if (uniqueNewLegislators.length === 0) {
-            setHasMore(false);
-          }
-
+          if (uniqueNewLegislators.length === 0) setHasMore(false);
           return [...prev, ...uniqueNewLegislators];
         });
 
-        if (newLegisladores.length < PAGE_SIZE) {
-          setHasMore(false);
-        }
+        if (newLegisladores.length < PAGE_SIZE) setHasMore(false);
       }
     } catch (error) {
       console.error("Error cargando más legisladores:", error);
+      setHasMore(false);
     } finally {
       setLoading(false);
     }
-  }, [infiniteScroll, loading, hasMore, legisladores.length, currentFilters]); // Dependencias actualizadas
+  }, [infiniteScroll, loading, hasMore, legisladores.length, currentFilters]);
 
   useEffect(() => {
     if (!infiniteScroll) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
@@ -198,16 +297,10 @@ const LegisladoresList = ({
       },
       { threshold: 0.1, rootMargin: "100px" },
     );
-
     const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
+    if (currentTarget) observer.observe(currentTarget);
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
+      if (currentTarget) observer.unobserve(currentTarget);
     };
   }, [infiniteScroll, hasMore, loading, loadMore]);
 
@@ -230,24 +323,20 @@ const LegisladoresList = ({
       label: "Grupo Parlamentario",
       type: "multi-select",
       placeholder: "Bancadas",
-      options: [
-        ...bancadas.map((p) => ({
-          value: p.name,
-          label: p.name,
-        })),
-      ],
+      options: bancadas.map((p) => ({
+        value: p.name,
+        label: p.name,
+      })),
     },
     {
       id: "districts",
       label: "Distrito Electoral",
       type: "multi-select",
       placeholder: "Distrito",
-      options: [
-        ...distritos.map((d) => ({
-          value: d.name,
-          label: d.name,
-        })),
-      ],
+      options: distritos.map((d) => ({
+        value: d.name,
+        label: d.name,
+      })),
     },
     {
       id: "chamber",
@@ -270,122 +359,41 @@ const LegisladoresList = ({
   };
 
   return (
-    <>
+    <div className="w-full">
       {infiniteScroll && (
-        <div>
-          <FilterPanel
-            fields={filterFields}
-            currentFilters={currentFilters}
-            onApplyFilters={() => {}}
-            baseUrl="/legisladores"
-            defaultFilters={defaultFilters}
-          />
-        </div>
+        <FilterPanel
+          fields={filterFields}
+          currentFilters={currentFilters}
+          onApplyFilters={() => {}}
+          baseUrl="/legisladores"
+          defaultFilters={defaultFilters}
+        />
       )}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4">
+
+      {/* Grid consistente con CandidatosList */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 font-manrope">
         {legisladores.length === 0 ? (
-          <div className="col-span-full text-center py-12 md:py-16 px-4">
-            <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-muted mb-4">
-              <Users className="w-7 h-7 md:w-8 md:h-8 text-muted-foreground" />
+          <div className="col-span-full flex flex-col items-center justify-center py-32 text-center opacity-0 animate-in fade-in zoom-in duration-500">
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce">
+              <Users className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">
-              No hay legisladores para mostrar
+            <h3 className="text-3xl font-bebas text-foreground mb-2">
+              No se encontraron legisladores
             </h3>
-            <p className="text-sm md:text-base text-muted-foreground">
-              No se encontraron legisladores con los filtros seleccionados
+            <p className="text-muted-foreground max-w-md">
+              Ajusta los filtros para ver resultados
             </p>
           </div>
         ) : (
-          legisladores.map((leg) => {
-            const conditionConfig = getConditionConfig(leg.condition);
-            const ConditionIcon = conditionConfig.icon;
-
-            return (
-              <Link key={leg.id} href={`/legisladores/${leg.person.id}`}>
-                <Card className="pt-0 group cursor-pointer overflow-hidden border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex flex-col h-full">
-                  <div className="relative aspect-[3/4] bg-gradient-to-br from-primary/80 to-primary overflow-hidden">
-                    {leg.person.image_url ? (
-                      <Image
-                        src={leg.person.image_url}
-                        alt={leg.person.fullname}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                        priority={false}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Users className="w-12 h-12 md:w-16 md:h-16 text-primary-foreground/70" />
-                      </div>
-                    )}
-
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
-
-                    {/* Condition Badge - Top Right */}
-                    <TooltipProvider delayDuration={150}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="absolute top-2 right-2">
-                            <Badge
-                              className={`text-[10px] md:text-xs font-medium border backdrop-blur-sm transition-all ${conditionConfig.className}`}
-                            >
-                              <ConditionIcon className="size-3 mr-1" />
-                              {conditionConfig.label}
-                            </Badge>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="text-xs">
-                          {conditionConfig.tooltip}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
-                    {/* Parliamentary Group - Bottom Left */}
-                    {leg.current_parliamentary_group && (
-                      <div className="absolute bottom-2 left-2">
-                        <Badge className="text-[10px] md:text-xs font-medium border backdrop-blur-md bg-background/80 text-foreground border-border/50 hover:bg-background/90 transition-all whitespace-normal break-words">
-                          {leg.current_parliamentary_group.name}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contenido optimizado */}
-                  <div className="flex flex-col flex-grow px-3">
-                    {/* Nombre */}
-                    <h3 className="text-sm md:text-base font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-tight mb-2">
-                      {leg.person.fullname}
-                    </h3>
-
-                    <div className="mt-auto pt-2">
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] md:text-xs w-fit"
-                      >
-                        {leg.electoral_district.name}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <CardFooter className="border-t mt-auto">
-                    <div className="flex items-center w-full gap-2">
-                      {leg.person.profession && (
-                        <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-2 leading-snug flex-1 min-w-0">
-                          {leg.person.profession}
-                        </p>
-                      )}
-
-                      <span className="inline-flex items-center text-primary group-hover:text-primary/80 font-medium text-[10px] md:text-xs transition-colors whitespace-nowrap ml-auto">
-                        Ver perfil
-                        <ChevronRight className="size-3.5 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </div>
-                  </CardFooter>
-                </Card>
-              </Link>
-            );
-          })
+          legisladores.map((leg, index) => (
+            <div
+              key={`${leg.id}-${index}`}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-backwards"
+              style={{ animationDelay: `${index * 30}ms` }}
+            >
+              <LegislatorCardItem legislador={leg} />
+            </div>
+          ))
         )}
 
         {loading && (
@@ -396,18 +404,20 @@ const LegisladoresList = ({
           </>
         )}
       </div>
+
       {infiniteScroll && (
         <>
-          <div ref={observerTarget} className="h-10 mt-4" />
-
+          <div ref={observerTarget} className="h-4 mt-8" />
           {!hasMore && legisladores.length > 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              No hay más legisladores para mostrar
+            <div className="py-12 flex justify-center opacity-50 hover:opacity-100 transition-opacity">
+              <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                — Fin de la lista —
+              </span>
             </div>
           )}
         </>
       )}
-    </>
+    </div>
   );
 };
 

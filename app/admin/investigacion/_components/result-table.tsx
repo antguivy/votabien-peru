@@ -34,11 +34,12 @@ import {
   FileJson,
   CheckCircle2,
   Settings2,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Alerta,
   Antecedente,
-  EventoBiografico,
+  EventoPostura,
   ResultadoInvestigacion,
   ScrapingResult,
 } from "@/interfaces/research";
@@ -50,6 +51,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useInvestigacionStream } from "@/hooks/use-research-stream";
 
 // --- UTILIDAD: PRETTY JSON CON COLORES Y WRAP ---
 const PrettyJson = ({ data }: { data: unknown }) => {
@@ -237,7 +239,7 @@ const SectionToolbar = <T,>({
         </div>
 
         <Button
-          variant="secondary" // Usamos secondary para destacar la acción de copiar
+          variant="secondary"
           size="sm"
           onClick={handleSmartCopy}
           className="h-7 text-xs gap-1.5 border border-transparent hover:border-border min-w-[100px] font-semibold"
@@ -247,7 +249,7 @@ const SectionToolbar = <T,>({
           ) : (
             <Copy className="h-3 w-3" />
           )}
-          {copied ? "¡Copiado!" : "Copiar Excel"}
+          {copied ? "¡Copiado!" : "Copiar"}
         </Button>
       </div>
     </div>
@@ -258,14 +260,14 @@ const SectionToolbar = <T,>({
 
 interface ResultadoTablasProps {
   resultado: ResultadoInvestigacion;
+  onReset: () => void;
 }
 
-export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
-  // Estados de vista
+export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
   const [modeAntecedentes, setModeAntecedentes] = useState<"table" | "json">(
     "table",
   );
-  const [modeBio, setModeBio] = useState<"table" | "json">("table");
+  const [modeFact, setModeFact] = useState<"table" | "json">("table");
   const [modeAlertas, setModeAlertas] = useState<"table" | "json">("table");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -275,13 +277,13 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
   // Accedemos a stage2_tablas que viene del backend validado
   const datosValidados = resultado.stage2_tablas || {
     antecedentes_validos: [],
-    biografia_valida: [],
-    alertas: [],
+    posturas_validas: [],
+    alertas_revision_manual: [],
   };
 
   const antecedentes: Antecedente[] = datosValidados.antecedentes_validos || [];
-  const biografia: EventoBiografico[] = datosValidados.biografia_valida || [];
-  const alertas: Alerta[] = datosValidados.alertas || [];
+  const biografia: EventoPostura[] = datosValidados.posturas_validas || [];
+  const alertas: Alerta[] = datosValidados.alertas_revision_manual || [];
 
   const scrapingResults: ScrapingResult[] =
     resultado.scraping_summary?.results || [];
@@ -425,14 +427,14 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
     { id: "url", label: "URL Fuente", accessor: (d) => d.fuente_url },
   ];
 
-  // 2. Configuración para Biografía
-  const colsBio: ColumnConfig<EventoBiografico>[] = [
-    { id: "tipo", label: "Tipo Evento", accessor: (d) => d.tipo },
+  // 2. Configuración para Posturas
+  const colsFact: ColumnConfig<EventoPostura>[] = [
+    { id: "tipo", label: "Tema", accessor: (d) => d.tema },
     { id: "fecha", label: "Fecha", accessor: (d) => d.fecha },
     {
       id: "evento",
       label: "Evento",
-      accessor: (d) => d.redaccion_final || d.descripcion,
+      accessor: (d) => d.redaccion_final,
     },
     {
       id: "fuente",
@@ -448,16 +450,21 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
 
   // 3. Configuración para Alertas
   const colsAlertas: ColumnConfig<Alerta>[] = [
-    { id: "tipo", label: "Tipo Alerta", accessor: (d) => d.tipo },
+    { id: "severidad", label: "Severidad", accessor: (d) => d.severidad },
     {
-      id: "dato",
-      label: "Dato Observado",
-      accessor: (d) => d.item_relacionado || d.item,
+      id: "titulo",
+      label: "Título",
+      accessor: (d) => d.titulo,
     },
     {
-      id: "motivo",
-      label: "Motivo Técnico",
-      accessor: (d) => d.detalle || d.motivo,
+      id: "descripcion",
+      label: "Descripción",
+      accessor: (d) => d.descripcion,
+    },
+    {
+      id: "descripcion",
+      label: "Descripción",
+      accessor: (d) => d.descripcion,
     },
   ];
 
@@ -481,31 +488,36 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
             <span>{scrapingResults.length} fuentes analizadas</span>
           </div>
         </div>
+        {/* 3. Resultados Finales */}
 
-        {/* --- BOTÓN MODAL: VER DRAFT (STAGE 1) --- */}
-        <Credenza>
-          <CredenzaTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <FileJson className="h-4 w-4 text-orange-500" />
-              Ver Borrador
-            </Button>
-          </CredenzaTrigger>
-          <CredenzaContent className="max-w-4xl max-h-[85vh] flex flex-col">
-            <CredenzaHeader>
-              <CredenzaTitle className="flex items-center gap-2">
-                <FileJson className="h-5 w-5 text-orange-500" />
-                Borrador (Deep Research)
-              </CredenzaTitle>
-              <CredenzaDescription>
-                Este es el análisis del documento de investigación generado por
-                Deep Research.
-              </CredenzaDescription>
-            </CredenzaHeader>
-            <CredenzaBody className="flex-1 overflow-hidden mt-4">
-              <PrettyJson data={datosDraft} />
-            </CredenzaBody>
-          </CredenzaContent>
-        </Credenza>
+        <div className="flex flex-col gap-4 justify-center">
+          <Credenza>
+            <CredenzaTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <FileJson className="h-4 w-4 text-orange-500" />
+                Ver Borrador
+              </Button>
+            </CredenzaTrigger>
+            <CredenzaContent className="max-w-4xl max-h-[85vh] flex flex-col">
+              <CredenzaHeader>
+                <CredenzaTitle className="flex items-center gap-2">
+                  <FileJson className="h-5 w-5 text-orange-500" />
+                  Borrador (Deep Research)
+                </CredenzaTitle>
+                <CredenzaDescription>
+                  Este es el análisis del documento de investigación generado
+                  por Deep Research.
+                </CredenzaDescription>
+              </CredenzaHeader>
+              <CredenzaBody className="flex-1 overflow-hidden mt-4">
+                <PrettyJson data={datosDraft} />
+              </CredenzaBody>
+            </CredenzaContent>
+          </Credenza>
+          <Button onClick={onReset} variant="outline" size="lg">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Nueva búsqueda
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="antecedentes" className="w-full">
@@ -520,7 +532,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
             value="biografia"
             className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <User className="h-4 w-4" /> Biografía
+            <User className="h-4 w-4" /> Posturas
           </TabsTrigger>
           <TabsTrigger
             value="alertas"
@@ -540,7 +552,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
             value="evidencia"
             className="gap-2 px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
-            <Database className="h-4 w-4" /> Contenido Crudo
+            <Database className="h-4 w-4" /> Contenido Revisado
           </TabsTrigger>
         </TabsList>
 
@@ -552,9 +564,9 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
           className="space-y-4 focus-visible:outline-none"
         >
           <SectionToolbar
-            title="Antecedentes Legales & Éticos Validado"
-            data={antecedentes} // <--- Pasamos la DATA
-            columns={colsAntecedentes} // <--- Pasamos la CONFIGURACIÓN
+            title="Legales & Éticos Validado"
+            data={antecedentes}
+            columns={colsAntecedentes}
             isJsonMode={modeAntecedentes === "json"}
             onToggleJson={(val) => setModeAntecedentes(val ? "json" : "table")}
           />
@@ -660,18 +672,18 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
           <SectionToolbar
             title="Línea de Tiempo Validada"
             data={biografia}
-            columns={colsBio}
-            isJsonMode={modeBio === "json"}
-            onToggleJson={(val) => setModeBio(val ? "json" : "table")}
+            columns={colsFact}
+            isJsonMode={modeFact === "json"}
+            onToggleJson={(val) => setModeFact(val ? "json" : "table")}
           />
-          {modeBio === "json" ? (
+          {modeFact === "json" ? (
             <PrettyJson data={biografia} />
           ) : (
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
               <Table className="table-fixed w-full">
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[120px]">Tipo</TableHead>
+                    <TableHead className="w-[120px]">Tema</TableHead>
                     <TableHead className="w-[100px]">Fecha</TableHead>
                     <TableHead className="w-auto">Evento</TableHead>
                     <TableHead className="w-[140px] text-right">
@@ -687,23 +699,22 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
                         bio.es_nuevo ? "bg-blue-50/50 dark:bg-blue-950/10" : ""
                       }`}
                     >
-                      <TableCell className="font-mono text-xs font-medium text-muted-foreground align-middle">
-                        {bio.fecha}
-                      </TableCell>
-
                       <TableCell className="align-middle">
                         <Badge
                           variant={bio.es_nuevo ? "default" : "secondary"}
                           className="text-[10px] whitespace-nowrap"
                         >
-                          {bio.tipo}
+                          {bio.tema}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-medium text-muted-foreground align-middle">
+                        {bio.fecha}
                       </TableCell>
 
                       {/* AJUSTE PRINCIPAL AQUÍ */}
                       <TableCell className="align-middle">
                         <div className="text-sm leading-relaxed whitespace-normal break-words">
-                          {bio.redaccion_final || bio.descripcion}
+                          {bio.redaccion_final || bio.hecho}
                         </div>
                       </TableCell>
 
@@ -760,6 +771,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
 
                     {/* El motivo técnico se lleva todo el espacio restante */}
                     <TableHead className="w-auto">Motivo Técnico</TableHead>
+                    <TableHead className="w-auto">Acción Sugerida</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -783,20 +795,26 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
                             variant="destructive"
                             className="font-mono whitespace-nowrap"
                           >
-                            {al.tipo}
+                            {al.severidad}
                           </Badge>
                         </TableCell>
 
                         <TableCell className="align-middle">
                           {/* break-words es vital aquí por si el dato es un ID largo o un hash */}
                           <div className="text-sm font-medium break-words whitespace-normal">
-                            {al.item_relacionado || al.item}
+                            {al.titulo}
                           </div>
                         </TableCell>
 
                         <TableCell className="align-middle">
                           <div className="text-sm text-muted-foreground whitespace-normal break-words leading-relaxed">
-                            {al.detalle || al.motivo}
+                            {al.descripcion}
+                          </div>
+                        </TableCell>
+                        <TableCell className="align-middle">
+                          {/* break-words es vital aquí por si el dato es un ID largo o un hash */}
+                          <div className="text-sm font-medium break-words whitespace-normal">
+                            {al.accion_sugerida}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -812,16 +830,11 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
         <TabsContent value="evidencia" className="mt-6 animate-in fade-in">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col sm:flex-row justify-between items-center bg-slate-900 text-slate-50 p-6 rounded-xl shadow-lg gap-4">
-              <div className="flex items-center gap-4">
-                <div className="bg-white/10 p-3 rounded-lg">
-                  <Database className="h-8 w-8" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">Contenido Scrapeada</h3>
-                  <p className="text-sm text-slate-400">
-                    Extraído de {scrapingResults.length} fuentes.
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-lg font-bold">Contenido Scrapeado</h3>
+                <p className="text-sm text-slate-400">
+                  Extraído de {scrapingResults.length} fuentes.
+                </p>
               </div>
               <div className="flex gap-3">
                 <Button
@@ -848,7 +861,7 @@ export function ResultadoTablas({ resultado }: ResultadoTablasProps) {
 
             <div className="border border-border rounded-xl bg-card p-0 overflow-hidden shadow-sm flex flex-col h-[600px]">
               <div className="bg-muted/50 p-3 border-b border-border text-xs font-mono text-muted-foreground">
-                PREVIEW_MODE: READ_ONLY
+                VISTA PREVIA: SOLO LECTURA
               </div>
               <ScrollArea className="flex-1 p-6">
                 <div className="space-y-8">
