@@ -30,7 +30,7 @@ interface LegislatorQueryResult extends Tables<"legislator"> {
   person: PersonRow | null;
   political_party: PartyRow | null;
   electoral_district: DistrictRow | null;
-  current_parliamentary_group: GroupRow | null; // Columna computada
+  current_parliamentary_group: GroupRow | null;
   parliamentarymembership: MembershipWithGroupRow[];
 }
 

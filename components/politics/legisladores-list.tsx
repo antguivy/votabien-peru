@@ -361,13 +361,15 @@ const LegisladoresList = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <FilterPanel
-          fields={filterFields}
-          currentFilters={currentFilters}
-          onApplyFilters={() => {}}
-          baseUrl="/legisladores"
-          defaultFilters={defaultFilters}
-        />
+        <div className="mb-6 sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+          <FilterPanel
+            fields={filterFields}
+            currentFilters={currentFilters}
+            onApplyFilters={() => {}}
+            baseUrl="/legisladores"
+            defaultFilters={defaultFilters}
+          />
+        </div>
       )}
 
       {/* Grid consistente con CandidatosList */}

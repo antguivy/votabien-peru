@@ -31,8 +31,7 @@ import {
   updateLegislatorPeriod,
 } from "../_lib/actions";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { PersonSelector } from "./person-selector";
+import { Loader2, Search, Trash2, User } from "lucide-react";
 import { AdminLegislatorContext } from "@/components/context/admin-legislator";
 import {
   Credenza,
@@ -46,6 +45,9 @@ import {
 import { CalendarDatePicker } from "@/components/date-picker";
 import { AdminLegislator } from "@/interfaces/legislator";
 import { PersonBasicInfo } from "@/interfaces/person";
+import { PersonSelector } from "@/components/person-selector";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const legislatorPeriodSchema = z
   .object({
@@ -102,6 +104,8 @@ export function LegislatorFormDialog({
     null,
   );
   const router = useRouter();
+  const [globalSearch, setGlobalSearch] = useState("");
+
   const form = useForm<z.output<typeof legislatorPeriodSchema>>({
     resolver: zodResolver(legislatorPeriodSchema),
     defaultValues: {
@@ -140,7 +144,10 @@ export function LegislatorFormDialog({
       form.setValue("person_id", "");
     }
   };
-
+  const handleRemovePerson = () => {
+    setSelectedPerson(null);
+    form.setValue("person_id", "");
+  };
   const onSubmit = async (values: LegislatorPeriodFormValues) => {
     const isEditing = mode === "edit";
     const action = isEditing ? updateLegislatorPeriod : createLegislatorPeriod;
@@ -174,9 +181,16 @@ export function LegislatorFormDialog({
               ? "Nuevo Periodo Legislativo"
               : "Editar Periodo Legislativo"}
           </CredenzaTitle>
-          <CredenzaDescription>
-            Asigna un periodo legislativo a una persona existente
-          </CredenzaDescription>
+          <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={"Buscar persona..."}
+              className="pl-9 bg-muted/30"
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
         </CredenzaHeader>
 
         <Form {...form}>
@@ -188,12 +202,46 @@ export function LegislatorFormDialog({
                 name="person_id"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Persona *</FormLabel>
                     <FormControl>
-                      <PersonSelector
-                        onSelect={handlePersonSelect}
-                        selectedPerson={selectedPerson}
-                      />
+                      {selectedPerson ? (
+                        <Card className="flex flex-row items-center justify-between p-2 border-primary/50 bg-primary/5">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border bg-white">
+                              <AvatarImage
+                                src={selectedPerson.image_candidate_url || ""}
+                              />
+                              <AvatarFallback>
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {selectedPerson.fullname}
+                              </p>
+                              {selectedPerson.profession && (
+                                <p className="text-xs text-muted-foreground">
+                                  {selectedPerson.profession}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRemovePerson}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Card>
+                      ) : (
+                        <PersonSelector
+                          onSelect={handlePersonSelect}
+                          enableSearch={false}
+                          externalSearchTerm={globalSearch}
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

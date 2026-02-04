@@ -4,7 +4,7 @@ import { NavbarDesktop } from "./navbar-desktop";
 import { serverGetUser } from "@/lib/auth-actions";
 import { NavbarUserMenu } from "./navbar-user-menu";
 import { NavbarThemeToggle } from "./navbar-theme-toggle";
-import { MobileBottomNav } from "./mobile-bottom-nav"; // Importamos el nuevo componente
+import { MobileBottomNav } from "./mobile-bottom-nav";
 
 export default async function Navbar() {
   const { user, profile } = await serverGetUser();
@@ -14,7 +14,7 @@ export default async function Navbar() {
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[var(--brand)] to-transparent opacity-60" />
 
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14">
             {/* LOGO */}
             <Link href="/" className="flex items-center space-x-2 group">
               <div className="flex items-center justify-center group-hover:scale-105 transition-transform duration-200">

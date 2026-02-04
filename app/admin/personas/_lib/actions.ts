@@ -22,7 +22,6 @@ const prepareJsonField = <T>(data: T[] | undefined | null): Json => {
   return data as Json;
 };
 
-// Helper para convertir valores vacíos a null
 const toNullIfEmpty = (value: string | null | undefined): string | null => {
   if (!value || value.trim() === "") return null;
   return value;
@@ -68,7 +67,6 @@ export async function createPerson(data: CreatePersonRequest) {
       tiktok_url: toNullIfEmpty(data.tiktok_url),
     };
 
-    // Insertar persona
     const { data: person, error: personError } = await supabase
       .from("person")
       .insert(personData)
@@ -95,7 +93,6 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       throw new Error("ID de la persona es requerido para actualizar");
     }
 
-    // Preparar datos optimizados para actualización
     const personData: TablesUpdate<"person"> = {
       party_number_rop: toNullIfEmpty(data.party_number_rop),
       dni: data.dni,

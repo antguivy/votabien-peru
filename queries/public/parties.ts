@@ -56,6 +56,7 @@ interface GetPartidosParams {
   limit?: number;
   offset?: number;
 }
+
 export async function getPartidosList(
   params: GetPartidosParams = {},
 ): Promise<PoliticalPartyListPaginated> {
@@ -299,3 +300,67 @@ const mapLegislator = (
   district_name: leg.electoraldistrict?.name || null,
   condition: leg.condition,
 });
+
+interface GetPartidosParams {
+  active?: boolean;
+}
+
+export async function getPartidosSelectorList(
+  params: GetPartidosParams = {},
+): Promise<PoliticalPartyBase> {
+  const supabase = await createClient();
+  const { active } = params;
+
+  try {
+    const { data: activeProcess } = await supabase
+      .from("electoralprocess")
+      .select("id")
+      .eq("active", true)
+      .single();
+
+    let hiddenPartyIds: string[] = [];
+
+    if (activeProcess) {
+      const { data: allianceMembers } = await supabase
+        .from("alliancecomposition")
+        .select("child_org_id")
+        .eq("process_id", activeProcess.id);
+
+      if (allianceMembers && allianceMembers.length > 0) {
+        hiddenPartyIds = allianceMembers
+          .map((m) => m.child_org_id)
+          .filter((id): id is string => id !== null);
+      }
+    }
+
+    let query = supabase
+      .from("politicalparty")
+      .select(
+        "id, name, acronym, logo_url, color_hex, active, foundation_date",
+        { count: "exact" },
+      )
+      .order("name", { ascending: true });
+
+    // Filtro original
+    if (active !== undefined) {
+      query = query.eq("active", active);
+    }
+
+    if (hiddenPartyIds.length > 0) {
+      const idsString = `(${hiddenPartyIds.join(",")})`;
+      query = query.filter("id", "not.in", idsString);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Supabase error:", error);
+      throw new Error(`Error al obtener partidos: ${error.message}`);
+    }
+
+    return data as unknown as PoliticalPartyBase;
+  } catch (error) {
+    console.error("Error en getPartidosList:", error);
+    throw error;
+  }
+}

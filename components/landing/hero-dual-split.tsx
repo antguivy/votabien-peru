@@ -73,7 +73,7 @@ export default function HeroDualSplit({
     proceso_electoral.election_date,
   );
   return (
-    <section className="relative w-full flex flex-col bg-background md:h-[calc(100vh-4rem)] md:max-h-[900px] overflow-hidden rounded-md border border-border/40">
+    <section className="relative pt-16 w-full flex flex-col bg-background md:h-[calc(100vh-4rem)] md:max-h-[900px] overflow-hidden rounded-md border border-border/40">
       {/* ============= FONDOS ============= */}
       <AnimatePresence mode="wait">
         <motion.div

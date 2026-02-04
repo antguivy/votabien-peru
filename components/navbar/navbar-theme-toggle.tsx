@@ -100,10 +100,7 @@ export const MobileThemeToggle = ({
   };
 
   return (
-    <div className="pt-4 border-t border-border">
-      <p className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-        Apariencia
-      </p>
+    <div className="pt-4 border-t border-border overflow-hidden">
       <div className="grid grid-cols-3 gap-2">
         <Button
           // Usamos la función segura isActive

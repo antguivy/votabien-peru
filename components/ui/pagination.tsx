@@ -38,14 +38,12 @@ export function SimplePagination({
   const buildUrl = (newOffset: number, newLimit?: number) => {
     const params = new URLSearchParams();
 
-    // Mantener filtros actuales
     Object.entries(currentFilters).forEach(([key, value]) => {
       if (key !== "offset" && key !== "limit" && value) {
         params.set(key, String(value));
       }
     });
 
-    // Agregar nuevos valores de paginación
     params.set("offset", String(newOffset));
     params.set("limit", String(newLimit ?? itemsPerPage));
 
@@ -65,26 +63,28 @@ export function SimplePagination({
   const canPreviousPage = currentPage > 1;
   const canNextPage = currentPage < totalPages;
 
-  // Calcular el rango de items mostrados
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const startItem = Math.min((currentPage - 1) * itemsPerPage + 1, totalItems);
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex w-full flex-col-reverse items-center justify-between gap-4 overflow-auto p-1 sm:flex-row sm:gap-8">
-      <div className="flex-1 whitespace-nowrap text-sm text-muted-foreground">
-        Mostrando {startItem} a {endItem} de {totalItems} resultado(s)
+    <div className="flex w-full flex-row gap-3 p-1 items-center justify-between sm:gap-8">
+      <div className="text-center text-xs text-muted-foreground sm:text-left sm:text-sm sm:flex-1">
+        Mostrando{" "}
+        <span className="font-medium text-foreground">{startItem}</span> -{" "}
+        <span className="font-medium text-foreground">{endItem}</span> de{" "}
+        <span className="font-medium text-foreground">{totalItems}</span>
       </div>
 
-      <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
-        <div className="flex items-center space-x-2">
-          <p className="whitespace-nowrap text-sm font-medium">
-            Filas por pág.
+      <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:gap-6 lg:gap-8">
+        <div className="hidden items-center space-x-2 sm:flex">
+          <p className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+            Filas
           </p>
           <Select
             value={`${itemsPerPage}`}
             onValueChange={handlePageSizeChange}
           >
-            <SelectTrigger className="h-8 w-[4.5rem]">
+            <SelectTrigger className="h-8 w-[4.5rem] bg-background">
               <SelectValue placeholder={itemsPerPage} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -97,52 +97,52 @@ export function SimplePagination({
           </Select>
         </div>
 
-        <div className="flex items-center justify-center text-sm font-medium">
-          Pág. {currentPage} de {totalPages}
-        </div>
-
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
-            aria-label="Ir a la primera página"
             variant="outline"
-            className="hidden size-8 p-0 lg:flex cursor-pointer"
+            className="hidden h-8 w-8 p-0 lg:flex"
             onClick={() => goToPage(1)}
             disabled={!canPreviousPage}
           >
-            <ChevronsLeft className="size-4" aria-hidden="true" />
+            <span className="sr-only">Primera página</span>
+            <ChevronsLeft className="h-4 w-4" />
           </Button>
 
           <Button
-            aria-label="Ir a la página anterior"
             variant="outline"
             size="icon"
-            className="size-8 cursor-pointer"
+            className="h-8 w-8"
             onClick={() => goToPage(currentPage - 1)}
             disabled={!canPreviousPage}
           >
-            <ChevronLeft className="size-4" aria-hidden="true" />
+            <span className="sr-only">Anterior</span>
+            <ChevronLeft className="h-4 w-4" />
           </Button>
 
+          <div className="flex min-w-[5rem] items-center justify-center text-sm font-medium">
+            Pág. {currentPage} / {totalPages}
+          </div>
+
           <Button
-            aria-label="Ir a la página siguiente"
             variant="outline"
             size="icon"
-            className="size-8 cursor-pointer"
+            className="h-8 w-8"
             onClick={() => goToPage(currentPage + 1)}
             disabled={!canNextPage}
           >
-            <ChevronRight className="size-4" aria-hidden="true" />
+            <span className="sr-only">Siguiente</span>
+            <ChevronRight className="h-4 w-4" />
           </Button>
 
           <Button
-            aria-label="Ir a la última página"
             variant="outline"
             size="icon"
-            className="hidden size-8 lg:flex cursor-pointer"
+            className="hidden h-8 w-8 lg:flex"
             onClick={() => goToPage(totalPages)}
             disabled={!canNextPage}
           >
-            <ChevronsRight className="size-4" aria-hidden="true" />
+            <span className="sr-only">Última página</span>
+            <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

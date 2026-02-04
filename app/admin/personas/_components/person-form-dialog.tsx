@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -938,19 +937,6 @@ export function PersonFormDialog({
     }
   };
 
-  // const onError = (errors: any) => {
-  //   console.log("Form errors:", errors);
-  //   // Agrega esto para ver el error en pantalla
-  //   toast.error(
-  //     "Hay errores en el formulario. Revisa los campos en rojo o vacíos.",
-  //   );
-
-  //   // Opcional: Mostrar el primer error específico encontrado
-  //   const firstError = Object.values(errors)[0] as any;
-  //   if (firstError?.message) {
-  //     toast.warning(`Error: ${firstError.message}`);
-  //   }
-  // };
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent className="sm:max-w-5xl min-h-[90vh] flex flex-col overflow-hidden">

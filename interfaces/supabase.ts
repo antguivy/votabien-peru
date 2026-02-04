@@ -822,14 +822,17 @@ export type Database = {
           created_at: string;
           detailed_biography: Json | null;
           dni: string | null;
+          education_level: number;
           facebook_url: string | null;
           fullname: string;
           gender: string | null;
+          has_criminal_record: boolean | null;
           id: string;
           image_candidate_url: string | null;
           image_url: string | null;
           incomes: Json | null;
           instagram_url: string | null;
+          is_incumbent: boolean | null;
           lastname: string;
           name: string;
           no_university_education: Json | null;
@@ -853,14 +856,17 @@ export type Database = {
           created_at?: string;
           detailed_biography?: Json | null;
           dni?: string | null;
+          education_level?: number;
           facebook_url?: string | null;
           fullname: string;
           gender?: string | null;
+          has_criminal_record?: boolean | null;
           id: string;
           image_candidate_url?: string | null;
           image_url?: string | null;
           incomes?: Json | null;
           instagram_url?: string | null;
+          is_incumbent?: boolean | null;
           lastname: string;
           name: string;
           no_university_education?: Json | null;
@@ -884,14 +890,17 @@ export type Database = {
           created_at?: string;
           detailed_biography?: Json | null;
           dni?: string | null;
+          education_level?: number;
           facebook_url?: string | null;
           fullname?: string;
           gender?: string | null;
+          has_criminal_record?: boolean | null;
           id?: string;
           image_candidate_url?: string | null;
           image_url?: string | null;
           incomes?: Json | null;
           instagram_url?: string | null;
+          is_incumbent?: boolean | null;
           lastname?: string;
           name?: string;
           no_university_education?: Json | null;
@@ -910,6 +919,44 @@ export type Database = {
           work_experience?: Json | null;
         };
         Relationships: [];
+      };
+      person_embeddings: {
+        Row: {
+          chunk_type: string;
+          content: string;
+          created_at: string | null;
+          embedding: string | null;
+          id: number;
+          metadata: Json | null;
+          person_id: string;
+        };
+        Insert: {
+          chunk_type: string;
+          content: string;
+          created_at?: string | null;
+          embedding?: string | null;
+          id?: never;
+          metadata?: Json | null;
+          person_id: string;
+        };
+        Update: {
+          chunk_type?: string;
+          content?: string;
+          created_at?: string | null;
+          embedding?: string | null;
+          id?: never;
+          metadata?: Json | null;
+          person_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "person_embeddings_person_id_fkey";
+            columns: ["person_id"];
+            isOneToOne: false;
+            referencedRelation: "person";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       politicalparty: {
         Row: {
@@ -1129,6 +1176,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      triviagame: {
+        Row: {
+          category: string | null;
+          created_at: string;
+          difficulty: string | null;
+          id: number;
+          options: Json | null;
+          person_id: string | null;
+          political_party_id: string | null;
+          quote: string | null;
+        };
+        Insert: {
+          category?: string | null;
+          created_at?: string;
+          difficulty?: string | null;
+          id?: number;
+          options?: Json | null;
+          person_id?: string | null;
+          political_party_id?: string | null;
+          quote?: string | null;
+        };
+        Update: {
+          category?: string | null;
+          created_at?: string;
+          difficulty?: string | null;
+          id?: number;
+          options?: Json | null;
+          person_id?: string | null;
+          political_party_id?: string | null;
+          quote?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "triviagame_person_id_fkey";
+            columns: ["person_id"];
+            isOneToOne: false;
+            referencedRelation: "person";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "triviagame_political_party_id_fkey";
+            columns: ["political_party_id"];
+            isOneToOne: false;
+            referencedRelation: "politicalparty";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       party_seats_by_district: {
@@ -1164,6 +1259,22 @@ export type Database = {
           legislator_row: Database["public"]["Tables"]["legislator"]["Row"];
         };
         Returns: string;
+      };
+      match_person_embeddings: {
+        Args: {
+          filter_chunk_type?: string;
+          filter_person_ids?: string[];
+          match_count: number;
+          match_threshold: number;
+          query_embedding: string;
+        };
+        Returns: {
+          chunk_type: string;
+          content: string;
+          id: number;
+          person_id: string;
+          similarity: number;
+        }[];
       };
     };
     Enums: {

@@ -28,8 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CandidacyType, CandidacyStatus } from "@/interfaces/politics";
 import { createCandidatePeriod, updateCandidatePeriod } from "../_lib/actions";
 import { toast } from "sonner";
-import { Loader2, Info } from "lucide-react";
-import { PersonSelector } from "./person-selector";
+import { Loader2, Info, X, User, Search, Trash2 } from "lucide-react";
 import {
   Credenza,
   CredenzaBody,
@@ -43,6 +42,10 @@ import { AdminCandidate } from "@/interfaces/candidate";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { AdminCandidateContext } from "@/components/context/admin-candidate";
 import { Badge } from "@/components/ui/badge";
+import { PersonSelector } from "@/components/person-selector";
+import { Card } from "@/components/ui/card";
+import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar } from "@radix-ui/react-avatar";
 
 const candidateSchema = z.object({
   id: z.string().optional(),
@@ -83,6 +86,7 @@ export function CandidateFormDialog({
   const [senatorDistricType, setSenatorDistricType] = useState<
     "UNICO" | "MULTIPLE" | null
   >(null);
+  const [globalSearch, setGlobalSearch] = useState("");
 
   const defaultValues = useMemo<CandidateFormValues>(() => {
     if (mode === "edit" && initialData) {
@@ -156,25 +160,19 @@ export function CandidateFormDialog({
       ) {
         form.setValue("electoral_district_id", "");
       }
-    }
-
-    // 3. Lógica para DIPUTADO
-    else if (typeStr === "DIPUTADO") {
+    } else if (typeStr === "DIPUTADO") {
       setSenatorDistricType(null);
-      // Si por alguna razón tiene nacional seleccionado, limpiarlo
       if (currentDistrit === nationalDistrictId) {
         form.setValue("electoral_district_id", "");
       }
     }
   }, [watchedType, senatorDistricType, nationalDistrictId, form, mode]);
 
-  // Filtrado de la lista de distritos para el Select
   const filteredDistricts = useMemo(() => {
     if (!districts) return [];
 
     const typeStr = watchedType?.toString() || "";
 
-    // Si es Diputado o Senador Múltiple -> Excluir Nacional
     if (
       typeStr === "DIPUTADO" ||
       (typeStr === "SENADOR" && senatorDistricType === "MULTIPLE")
@@ -182,8 +180,6 @@ export function CandidateFormDialog({
       return districts.filter((d) => d.id !== nationalDistrictId);
     }
 
-    // En los demás casos (Presidente/Senador Único) el select suele estar deshabilitado o fijo,
-    // pero retornamos todo por seguridad.
     return districts;
   }, [districts, watchedType, senatorDistricType, nationalDistrictId]);
 
@@ -197,6 +193,12 @@ export function CandidateFormDialog({
       setSelectedPerson(initialData.person);
     }
   }, [initialData]);
+
+  const handleRemovePerson = () => {
+    setSelectedPerson(null);
+    form.setValue("person_id", "");
+  };
+
   const onSubmit = async (values: CandidateFormValues) => {
     const payload = {
       ...values,
@@ -227,11 +229,16 @@ export function CandidateFormDialog({
           <CredenzaTitle>
             {mode === "create" ? "Nueva Candidatura" : "Editar Candidatura"}
           </CredenzaTitle>
-          <CredenzaDescription>
-            {mode === "create"
-              ? "Registra un candidato para un proceso electoral."
-              : "Modifica los datos de la candidatura existente."}
-          </CredenzaDescription>
+          <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={"Buscar persona..."}
+              className="pl-9 bg-muted/30"
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
         </CredenzaHeader>
 
         <Form {...form}>
@@ -239,19 +246,52 @@ export function CandidateFormDialog({
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex flex-col h-full overflow-hidden"
           >
-            <CredenzaBody className="space-y-4 overflow-y-auto px-4 py-2">
-              {/* --- PERSONA --- */}
+            <CredenzaBody className="space-y-4 overflow-y-auto px-4 py-2 flex-1">
               <FormField
                 control={form.control}
                 name="person_id"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Candidato (Persona) *</FormLabel>
                     <FormControl>
-                      <PersonSelector
-                        onSelect={handlePersonSelect}
-                        selectedPerson={selectedPerson}
-                      />
+                      {selectedPerson ? (
+                        <Card className="flex flex-row items-center justify-between p-2 border-primary/50 bg-primary/5">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border bg-white">
+                              <AvatarImage
+                                src={selectedPerson.image_candidate_url || ""}
+                              />
+                              <AvatarFallback>
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">
+                                {selectedPerson.fullname}
+                              </p>
+                              {selectedPerson.profession && (
+                                <p className="text-xs text-muted-foreground">
+                                  {selectedPerson.profession}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRemovePerson}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Card>
+                      ) : (
+                        <PersonSelector
+                          onSelect={handlePersonSelect}
+                          enableSearch={false}
+                          externalSearchTerm={globalSearch}
+                        />
+                      )}
                     </FormControl>
                     <FormMessage />
                   </FormItem>

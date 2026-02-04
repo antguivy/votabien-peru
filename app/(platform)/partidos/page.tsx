@@ -40,7 +40,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
     const partidos = await getPartidosList(queryParams);
 
     return (
-      <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-4">
         <PartidosListPaginated
           partidos={partidos}
           currentFilters={currentFilters}

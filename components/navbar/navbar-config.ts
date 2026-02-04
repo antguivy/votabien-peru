@@ -13,8 +13,23 @@ import {
   IdCard,
   Search,
   Menu,
+  MessageCircleQuestionMark,
+  LucideIcon,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
+
+export type NavItem = {
+  type: "link" | "dropdown";
+  label: string;
+  href?: string; // Solo requerido si type es 'link'
+  icon?: LucideIcon;
+  // Solo requerido si type es 'dropdown'
+  children?: {
+    label: string;
+    href: string;
+    icon?: LucideIcon;
+  }[];
+};
 
 export const BOTTOM_NAV_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
@@ -24,36 +39,44 @@ export const BOTTOM_NAV_ITEMS = [
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true }, // Abre el resto
 ];
 
-export const publicNavGroups: NavGroup[] = [
+export const MAIN_NAV_ITEMS: NavItem[] = [
+  // --- Enlaces Directos ---
+  { type: "link", href: "/", label: "Inicio", icon: Home },
   {
-    links: [
-      { href: "/", label: "Inicio", icon: Home },
-      { href: "/candidatos", label: "Candidatos 2026", icon: UserCheck },
-      // { href: "/aprende", label: "Aprende", icon: Users },
-      { href: "/partidos", label: "Partidos", icon: Flag },
-      { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
-      {
-        href: "/comparador",
-        label: "Comparador",
-        icon: GitCompare,
-      },
+    type: "link",
+    href: "/candidatos",
+    label: "Candidatos 2026",
+    icon: UserCheck,
+  },
+  { type: "link", href: "/partidos", label: "Partidos", icon: Flag },
+  {
+    type: "link",
+    href: "/legisladores",
+    label: "Congresistas",
+    icon: BookHeadphones,
+  },
+
+  // --- Dropdown: Utilidades ---
+  {
+    type: "dropdown",
+    label: "Utilidades",
+    children: [
+      { href: "/trivia", label: "Trivia", icon: ScrollText },
+      { href: "/comparador", label: "Comparador", icon: GitCompare },
+    ],
+  },
+
+  // --- Dropdown: Nosotros ---
+  {
+    type: "dropdown",
+    label: "Nosotros",
+    children: [
+      { href: "/equipo", label: "Equipo", icon: Users },
+      { href: "/financiamiento", label: "Financiamiento", icon: DollarSign },
+      { href: "/mision", label: "Misión y Visión", icon: Info },
     ],
   },
 ];
-
-export const aboutNavGroup: NavGroup = {
-  label: "Nosotros",
-  requiresAuth: false,
-  links: [
-    { href: "/equipo", label: "Equipo", icon: Users },
-    {
-      href: "/financiamiento",
-      label: "Financiamiento",
-      icon: DollarSign,
-    },
-    { href: "/mision", label: "Misión y Visión", icon: Info },
-  ],
-};
 
 export const adminNavGroups: NavGroup[] = [
   {
@@ -76,6 +99,18 @@ export const adminNavGroups: NavGroup[] = [
         href: "/admin/investigacion",
         label: "Investigación",
         icon: LayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: "Juegos",
+    requiresAuth: true,
+    requiresRole: ["editor", "admin"],
+    links: [
+      {
+        href: "/admin/trivia",
+        label: "Trivia",
+        icon: MessageCircleQuestionMark,
       },
     ],
   },

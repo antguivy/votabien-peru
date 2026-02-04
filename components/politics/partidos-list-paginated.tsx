@@ -17,11 +17,13 @@ interface PartidosListPaginatedProps {
     limit: number;
     offset: number;
   };
+  infiniteScroll?: boolean;
 }
 
 const PartidosListPaginated = ({
   partidos,
   currentFilters,
+  infiniteScroll = true,
 }: PartidosListPaginatedProps) => {
   const filterFields: FilterField[] = [
     {
@@ -56,25 +58,18 @@ const PartidosListPaginated = ({
   const currentPage = Math.floor(partidos.offset / partidos.limit) + 1;
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-          Partidos Políticos
-        </h1>
-        <p className="text-muted-foreground">Conoce la información completa</p>
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-6">
-        <FilterPanel
-          fields={filterFields}
-          currentFilters={currentFilters}
-          onApplyFilters={() => {}} // Se maneja por URL
-          baseUrl="/partidos"
-          defaultFilters={defaultFilters}
-        />
-      </div>
+    <div className="w-full">
+      {infiniteScroll && (
+        <div className="mb-6 sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+          <FilterPanel
+            fields={filterFields}
+            currentFilters={currentFilters}
+            onApplyFilters={() => {}}
+            baseUrl="/legisladores"
+            defaultFilters={defaultFilters}
+          />
+        </div>
+      )}
 
       {/* Lista de partidos */}
       {!partidos.items || partidos.items.length === 0 ? (

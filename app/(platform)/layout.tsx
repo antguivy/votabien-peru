@@ -22,7 +22,7 @@ export default async function PanelLayout({
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main className="pb-20 lg:p-0 lg:pt-14">{children}</main>
     </>
   );
 }

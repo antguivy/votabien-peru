@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
-import { X, Search, ChevronDown, Filter } from "lucide-react";
+import { X, Search, ChevronDown, Check, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,6 +11,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter,
+  DrawerDescription,
+  DrawerClose,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +21,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+
+// --- HOOKS Y TIPOS (Sin cambios) ---
 
 export function useDebouncedCallback<Args extends unknown[]>(
   func: (...args: Args) => void,
@@ -65,6 +71,8 @@ interface FilterPanelProps<T extends Record<string, unknown>> {
   emptyValue?: string;
 }
 
+// --- COMPONENTE PRINCIPAL ---
+
 export function FilterPanel<T extends Record<string, unknown>>({
   fields,
   currentFilters,
@@ -75,11 +83,18 @@ export function FilterPanel<T extends Record<string, unknown>>({
 }: FilterPanelProps<T>) {
   const router = useRouter();
   const [filters, setFilters] = useState<T>(currentFilters);
-  const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
+
+  // Estado para el Drawer Principal (Móvil)
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+
+  // Estado para los Drawers Anidados (Sub-opciones)
+  const [activeSubDrawer, setActiveSubDrawer] = useState<string | null>(null);
+
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
+
+  // --- LÓGICA DE EVENTOS Y URL (Sin cambios) ---
+
   useEffect(() => {
     const handleToggle = () => setIsMobilePanelOpen((prev) => !prev);
     window.addEventListener("toggle-filter-panel", handleToggle);
@@ -87,10 +102,6 @@ export function FilterPanel<T extends Record<string, unknown>>({
       window.removeEventListener("toggle-filter-panel", handleToggle);
   }, []);
 
-  const closeMobilePanel = () => {
-    setIsMobilePanelOpen(false);
-    window.dispatchEvent(new Event("close-mobile-filter"));
-  };
   const debouncedUrlUpdate = useDebouncedCallback((newFilters: T) => {
     applyFiltersToUrl(newFilters);
   }, 500);
@@ -151,40 +162,30 @@ export function FilterPanel<T extends Record<string, unknown>>({
     onApplyFilters(filtersToApply);
   };
 
-  const applyFilters = () => {
+  const applyMobileFilters = () => {
     applyFiltersToUrl(filters);
-    setActiveDrawer(null);
-    closeMobilePanel();
+    setIsMobilePanelOpen(false);
+    window.dispatchEvent(new Event("close-mobile-filter"));
   };
 
   const clearFilters = () => {
     const clearedFilters = defaultFilters || ({} as T);
     setFilters(clearedFilters);
     applyFiltersToUrl(clearedFilters);
-    setActiveDrawer(null);
   };
 
-  // 🔧 FIX 1 & 2: Mejorado para limpiar correctamente y evitar estados vacíos
   const removeFilter = (key: keyof T, specificValue?: string) => {
     const field = fields.find((f) => f.id === String(key));
 
     if (specificValue && Array.isArray(filters[key])) {
-      // Multi-select: remover solo un valor específico
       const newValues = (filters[key] as string[]).filter(
         (v) => v !== specificValue,
       );
       const newFilters = { ...filters, [key]: newValues };
       setFilters(newFilters);
       applyFiltersToUrl(newFilters);
-
-      // Cerrar el popover si existe y la lista queda vacía
-      if (newValues.length === 0 && openPopover === String(key)) {
-        setOpenPopover(null);
-      }
     } else {
-      // Para cualquier tipo de campo, limpiar al valor por defecto
       let defaultValue: unknown;
-
       if (field?.type === "multi-select") {
         defaultValue = [];
       } else if (field?.type === "search") {
@@ -192,15 +193,9 @@ export function FilterPanel<T extends Record<string, unknown>>({
       } else {
         defaultValue = defaultFilters?.[key] || "";
       }
-
       const newFilters = { ...filters, [key]: defaultValue };
       setFilters(newFilters);
       applyFiltersToUrl(newFilters);
-
-      // Cerrar el popover si existe
-      if (openPopover === String(key)) {
-        setOpenPopover(null);
-      }
     }
   };
 
@@ -230,7 +225,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
         active.push({
           key: key as keyof T,
           label: field.label,
-          valueLabel: String(value),
+          valueLabel: `"${value}"`,
         });
       } else if (
         value &&
@@ -249,275 +244,281 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
     return active;
   }, [filters, fields, defaultFilters, emptyValue]);
-  const hasActiveFilters = activeFilters.length > 0;
 
-  // Renderizar campo según tipo para DESKTOP
+  const hasActiveFilters = activeFilters.length > 0;
+  const searchFields = fields.filter((f) => f.type === "search");
+  const selectFields = fields.filter((f) => f.type !== "search");
+
+  // --- RENDERIZADO DESKTOP ---
   const renderDesktopField = (field: FilterField) => {
     const fieldKey = field.id as keyof T;
+
     if (field.type === "search") {
       return (
-        <div
-          key={field.id}
-          className="flex flex-col gap-2 min-w-[200px] max-w-[280px]"
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              id={field.id}
-              type="text"
-              placeholder={
-                field.searchPlaceholder || field.placeholder || `Buscar...`
-              }
-              value={String(filters[fieldKey] || "")}
-              onChange={(e) => handleSearchChange(fieldKey, e.target.value)}
-              className="pl-9 bg-background"
-            />
-            {filters[fieldKey] && (
-              <button
-                onClick={() => {
-                  const newFilters = { ...filters, [fieldKey]: "" };
-                  setFilters(newFilters);
-                  applyFiltersToUrl(newFilters);
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+        <div key={field.id} className="relative min-w-[200px] max-w-[280px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder={field.searchPlaceholder || field.placeholder}
+            value={String(filters[fieldKey] || "")}
+            onChange={(e) => handleSearchChange(fieldKey, e.target.value)}
+            className="pl-9 bg-background h-9 text-sm"
+          />
         </div>
       );
     }
 
-    if (field.type === "multi-select" && field.options) {
-      // ... Logic for MultiSelect Desktop
-      const selectedValues = (
-        Array.isArray(filters[fieldKey]) ? filters[fieldKey] : []
-      ) as string[];
-      const selectedCount = selectedValues.length;
+    if (
+      (field.type === "multi-select" || field.type === "select") &&
+      field.options
+    ) {
+      const isMulti = field.type === "multi-select";
+      const selectedValues = isMulti
+        ? ((Array.isArray(filters[fieldKey])
+            ? filters[fieldKey]
+            : []) as string[])
+        : String(filters[fieldKey] || "");
+
+      const count = isMulti ? selectedValues.length : selectedValues ? 1 : 0;
+
       return (
-        <div key={field.id} className="flex flex-col gap-2 min-w-[200px]">
-          <Popover
-            open={openPopover === field.id}
-            onOpenChange={(open) => setOpenPopover(open ? field.id : null)}
-          >
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                className={cn(
-                  "justify-between font-normal bg-background",
-                  selectedCount === 0 && "text-muted-foreground",
-                )}
-              >
-                {selectedCount > 0
-                  ? `${field.placeholder || field.label} (${selectedCount})`
-                  : field.placeholder ||
-                    `Seleccionar ${field.label.toLowerCase()}`}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-2" align="start">
-              {/* Contenido del popover */}
-              <div className="max-h-[300px] overflow-y-auto p-1">
-                {field.options.map((option) => (
+        <Popover
+          key={field.id}
+          open={openPopover === field.id}
+          onOpenChange={(open) => setOpenPopover(open ? field.id : null)}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-9 border-dashed font-normal group hover:border-primary/50 transition-colors",
+                count > 0 &&
+                  "border-solid bg-accent/50 text-accent-foreground font-medium border-accent",
+              )}
+            >
+              <span className="mr-2">{field.label}</span>
+              {count > 0 && (
+                <>
+                  <Separator orientation="vertical" className="mx-2 h-4" />
+                  <Badge
+                    variant="secondary"
+                    className="rounded-sm px-1 font-normal lg:hidden xl:inline-flex bg-background text-foreground"
+                  >
+                    {isMulti
+                      ? `${count}`
+                      : field.options.find((o) => o.value === selectedValues)
+                          ?.label}
+                  </Badge>
+                </>
+              )}
+              <ChevronDown className="ml-2 h-4 w-4 opacity-50 group-hover:opacity-100" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[240px] p-0" align="start">
+            <div className="p-1 max-h-[300px] overflow-y-auto">
+              {field.options.map((option) => {
+                const isSelected = isMulti
+                  ? (selectedValues as string[]).includes(option.value)
+                  : selectedValues === option.value;
+
+                return (
                   <div
                     key={option.value}
-                    className="flex items-center gap-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
-                    onClick={() =>
-                      handleMultiSelectChange(
-                        fieldKey,
-                        option.value,
-                        !selectedValues.includes(option.value),
-                      )
-                    }
-                  >
-                    <Checkbox
-                      checked={selectedValues.includes(option.value)}
-                      onCheckedChange={(checked) =>
+                    className={cn(
+                      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
+                      isSelected && "bg-accent/50",
+                    )}
+                    onClick={() => {
+                      if (isMulti) {
                         handleMultiSelectChange(
                           fieldKey,
                           option.value,
-                          checked as boolean,
-                        )
+                          !isSelected,
+                        );
+                      } else {
+                        handleFilterChange(fieldKey, option.value);
+                        setOpenPopover(null);
                       }
-                    />
-                    <label className="text-sm flex-1 cursor-pointer">
-                      {option.label}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      );
-    }
-    if (field.type === "select" && field.options) {
-      // ... Logic for Select Desktop
-      const currentValue = String(filters[fieldKey] || "");
-      const currentOption = field.options.find(
-        (opt) => opt.value === currentValue,
-      );
-      return (
-        <div key={field.id} className="flex flex-col gap-2 min-w-[180px]">
-          <Popover
-            open={openPopover === field.id}
-            onOpenChange={(open) => setOpenPopover(open ? field.id : null)}
-          >
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                className={cn(
-                  "justify-between font-normal bg-background",
-                  !currentValue && "text-muted-foreground",
-                )}
-              >
-                {currentValue && currentOption
-                  ? currentOption.label
-                  : field.placeholder || field.label}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <div className="max-h-[300px] overflow-y-auto p-1">
-                {field.options.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      handleFilterChange(fieldKey, option.value);
-                      setOpenPopover(null);
                     }}
-                    className={cn(
-                      "w-full text-left p-2 text-sm rounded-sm hover:bg-accent",
-                      currentValue === option.value && "bg-accent font-medium",
-                    )}
                   >
-                    {option.label}
-                  </button>
-                ))}
+                    {isMulti ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <Checkbox
+                          checked={isSelected}
+                          className="h-4 w-4"
+                          // Pasamos el evento al div padre
+                          onCheckedChange={() => {}}
+                        />
+                        <span>{option.label}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className={cn(
+                            "mr-2 flex h-4 w-4 items-center justify-center opacity-0",
+                            isSelected && "opacity-100",
+                          )}
+                        >
+                          <Check className="h-4 w-4" />
+                        </div>
+                        <span>{option.label}</span>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {count > 0 && (
+              <div className="border-t p-1 bg-muted/20">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full h-8 font-normal text-xs"
+                  onClick={() => removeFilter(fieldKey)}
+                >
+                  Limpiar selección
+                </Button>
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+            )}
+          </PopoverContent>
+        </Popover>
       );
     }
-
     return null;
   };
 
-  // Renderizar contenido del drawer para MOBILE
-  const renderMobileDrawerContent = (field: FilterField) => {
+  // --- RENDERIZADO MOBILE (DRAWER CONTENT) ---
+  const renderMobileSubDrawer = (field: FilterField) => {
     const fieldKey = field.id as keyof T;
+    const isMulti = field.type === "multi-select";
+    const currentVals = isMulti
+      ? ((Array.isArray(filters[fieldKey])
+          ? filters[fieldKey]
+          : []) as string[])
+      : String(filters[fieldKey] || "");
 
-    // MULTI-SELECT - Mobile Drawer
-    if (field.type === "multi-select" && field.options) {
-      // ... Logic
-      const selectedValues = (
-        Array.isArray(filters[fieldKey]) ? filters[fieldKey] : []
-      ) as string[];
-      return (
-        <div className="space-y-3">
-          {/* Búsqueda interna omitida por brevedad, agrega si la tenías */}
-          <div className="space-y-2">
-            {field.options.map((option) => (
-              <div
-                key={option.value}
-                className="flex items-center gap-3 p-3 hover:bg-accent rounded-lg cursor-pointer"
-                onClick={() =>
-                  handleMultiSelectChange(
-                    fieldKey,
-                    option.value,
-                    !selectedValues.includes(option.value),
-                  )
-                }
-              >
-                <Checkbox
-                  checked={selectedValues.includes(option.value)}
-                  onCheckedChange={(checked) =>
-                    handleMultiSelectChange(
-                      fieldKey,
-                      option.value,
-                      checked as boolean,
-                    )
-                  }
-                />
-                <label className="text-sm flex-1 cursor-pointer">
-                  {option.label}
-                </label>
-              </div>
-            ))}
-          </div>
+    return (
+      <div className="flex flex-col h-full">
+        <div className="px-4 py-2 bg-background sticky top-0 z-10">
+          <Input
+            placeholder={`Buscar ${field.label.toLowerCase()}...`}
+            className="h-12 bg-secondary/30 border-transparent rounded-xl"
+            onChange={(e) => {
+              const term = e.target.value.toLowerCase();
+              setSearchTerms((prev) => ({ ...prev, [field.id]: term }));
+            }}
+          />
         </div>
-      );
-    }
 
-    if (field.type === "select" && field.options) {
-      const currentValue = String(filters[fieldKey] || "");
-      return (
-        <div className="space-y-2">
-          {field.options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                handleFilterChange(fieldKey, option.value);
-                setActiveDrawer(null);
-              }}
-              className={cn(
-                "w-full text-left p-3 rounded-lg hover:bg-accent transition-colors",
-                currentValue === option.value && "bg-accent font-medium",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="px-4 pb-8 space-y-1">
+          {field.options
+            ?.filter(
+              (opt) =>
+                !searchTerms[field.id] ||
+                opt.label.toLowerCase().includes(searchTerms[field.id]),
+            )
+            .map((option) => {
+              const isSelected = isMulti
+                ? (currentVals as string[]).includes(option.value)
+                : currentVals === option.value;
+
+              return (
+                <div
+                  key={option.value}
+                  onClick={() => {
+                    if (isMulti) {
+                      handleMultiSelectChange(
+                        fieldKey,
+                        option.value,
+                        !isSelected,
+                      );
+                    } else {
+                      handleFilterChange(fieldKey, option.value);
+                      setActiveSubDrawer(null);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center justify-between p-4 rounded-xl transition-all active:scale-[0.99] border",
+                    isSelected
+                      ? "bg-primary/5 border-primary/30 text-primary shadow-sm"
+                      : "bg-card border-transparent hover:bg-secondary/40 text-foreground",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    {isMulti && (
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-muted-foreground/30 bg-background",
+                        )}
+                      >
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                      </div>
+                    )}
+                    <span
+                      className={cn(
+                        "text-base font-medium",
+                        isSelected ? "font-semibold" : "",
+                      )}
+                    >
+                      {option.label}
+                    </span>
+                  </div>
+                  {!isMulti && isSelected && (
+                    <Check className="w-5 h-5 text-primary" />
+                  )}
+                </div>
+              );
+            })}
         </div>
-      );
-    }
-    return null;
+      </div>
+    );
   };
 
-  const searchFields = fields.filter((f) => f.type === "search");
-  const otherFields = fields.filter((f) => f.type !== "search");
   return (
     <>
-      <div className="pt-4 lg:hidden" />
-      <div className="hidden lg:block w-full space-y-4 mt-16 pb-4">
-        <div className="bg-secondary w-full border rounded-lg p-4">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex-1 flex items-center gap-3 flex-wrap">
-              {fields.map((field) => renderDesktopField(field))}
+      {/* DESKTOP TOOLBAR */}
+      <div className="hidden lg:block w-full p-1">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 mr-2">
+              <SlidersHorizontal className="w-4 h-4 text-foreground" />
+              <span className="text-sm font-medium text-foreground">
+                Filtros:
+              </span>
             </div>
+            {fields.map(renderDesktopField)}
+
             {hasActiveFilters && (
               <Button
-                onClick={clearFilters}
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                onClick={clearFilters}
+                className="h-8 px-2 lg:px-3 ml-2 text-muted-foreground hover:text-destructive"
               >
-                <X className="h-4 w-4" /> Limpiar
+                Limpiar todo
+                <X className="ml-2 h-3 w-3" />
               </Button>
             )}
           </div>
         </div>
-
         {/* Badges Desktop */}
         {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            {activeFilters.map((filter, index) => (
+          <div className="flex flex-wrap gap-2 mt-3 pl-8">
+            {activeFilters.map((filter, idx) => (
               <Badge
-                key={`${String(filter.key)}-${filter.specificValue || index}`}
+                key={`${String(filter.key)}-${idx}`}
                 variant="secondary"
-                className="gap-1.5 font-normal pl-3 pr-2 py-1"
+                className="rounded-md font-normal pl-2 pr-1 py-1"
               >
-                <span className="text-xs">
-                  <strong>{filter.valueLabel}</strong>
-                </span>
+                <span className="opacity-70 mr-1">{filter.label}:</span>
+                <span className="font-semibold">{filter.valueLabel}</span>
                 <button
                   onClick={() => removeFilter(filter.key, filter.specificValue)}
-                  className="rounded-full opacity-70 hover:opacity-100 transition-opacity ml-1"
+                  className="ml-2 p-0.5 rounded-full hover:bg-muted-foreground/20 transition-colors"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -527,176 +528,179 @@ export function FilterPanel<T extends Record<string, unknown>>({
         )}
       </div>
 
-      {/* MOBILE - Visible solo en < lg */}
-      <div
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-[60] p-6 bg-background rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.25)] border-t border-border transition-transform duration-300 ease-in-out md:hidden h-[85vh] flex flex-col",
-          isMobilePanelOpen ? "translate-y-0" : "translate-y-full",
-        )}
+      {/* MOBILE DRAWER PRINCIPAL */}
+      <Drawer
+        open={isMobilePanelOpen}
+        onOpenChange={(open) => {
+          setIsMobilePanelOpen(open);
+          if (!open) window.dispatchEvent(new Event("close-mobile-filter"));
+        }}
       >
-        {/* Header del Panel Móvil */}
-        <div className="flex justify-between items-center mb-6 px-2">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-primary" />
-            <h3 className="font-bebas text-2xl tracking-wide">Filtros</h3>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={closeMobilePanel}
-            className="rounded-full bg-muted hover:bg-muted/80 h-8 w-8"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Contenido Scrollable */}
-        <div className="flex-1 overflow-y-auto px-2 pb-24 space-y-5">
-          {/* 1. Campos de búsqueda primero */}
-          {searchFields.map((field) => {
-            const fieldKey = field.id as keyof T;
-            return (
-              <div key={field.id} className="relative">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
-                  {field.label}
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id={field.id}
-                    type="search"
-                    placeholder={field.searchPlaceholder || "Buscar..."}
-                    value={String(filters[fieldKey] || "")}
-                    onChange={(e) =>
-                      handleSearchChange(fieldKey, e.target.value)
-                    }
-                    className="pl-9 h-12 rounded-xl bg-secondary/50 border-transparent focus:bg-background focus:border-primary"
-                  />
-                  {filters[fieldKey] && (
-                    <button
-                      onClick={() => {
-                        const newFilters = { ...filters, [fieldKey]: "" };
-                        setFilters(newFilters);
-                        applyFiltersToUrl(newFilters);
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
-                    >
-                      <X className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  )}
-                </div>
+        <DrawerContent className="h-[92vh] rounded-t-[1.5rem] outline-none">
+          {/* Se eliminó max-w-md para aprovechar todo el ancho */}
+          <div className="w-full flex flex-col h-full">
+            <DrawerHeader className="border-b px-4 pt-5 pb-4">
+              <div className="flex items-center justify-between">
+                <DrawerTitle className="font-bebas text-3xl tracking-wide">
+                  FILTROS
+                </DrawerTitle>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8 text-xs text-muted-foreground px-2"
+                  >
+                    Limpiar Todo
+                  </Button>
+                )}
               </div>
-            );
-          })}
+              <DrawerDescription className="sr-only">
+                Filtros de búsqueda
+              </DrawerDescription>
+            </DrawerHeader>
 
-          {/* 2. Botones grandes para selectores */}
-          {otherFields.length > 0 && (
-            <div className="grid grid-cols-1 gap-3">
-              {otherFields.map((field) => {
+            <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
+              {/* Buscadores de Texto */}
+              {searchFields.map((field) => {
                 const fieldKey = field.id as keyof T;
-                let selectedLabel = field.placeholder || field.label;
-                let isSelected = false;
-
-                if (field.type === "multi-select") {
-                  const selectedValues = (
-                    Array.isArray(filters[fieldKey]) ? filters[fieldKey] : []
-                  ) as string[];
-                  if (selectedValues.length > 0) {
-                    selectedLabel = `${field.label}: ${selectedValues.length} seleccionados`;
-                    isSelected = true;
-                  }
-                } else if (field.type === "select") {
-                  const value = filters[fieldKey];
-                  if (value && value !== emptyValue && value !== "") {
-                    const option = field.options?.find(
-                      (opt) => opt.value === value,
-                    );
-                    selectedLabel = option?.label || selectedLabel;
-                    isSelected = true;
-                  }
-                }
-
                 return (
-                  <div key={field.id}>
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
+                  <div key={field.id} className="mb-6">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block ml-1">
                       {field.label}
                     </label>
-                    <Button
-                      variant={isSelected ? "default" : "outline"}
-                      className={cn(
-                        "w-full justify-between h-12 rounded-xl text-base font-normal",
-                        !isSelected &&
-                          "bg-secondary/30 border-transparent hover:bg-secondary/50",
-                      )}
-                      onClick={() => setActiveDrawer(field.id)}
-                    >
-                      <span className="truncate">
-                        {isSelected
-                          ? selectedLabel
-                          : `Seleccionar ${field.label}`}
-                      </span>
-                      <ChevronDown className="h-5 w-5 shrink-0 ml-2 opacity-50" />
-                    </Button>
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        value={String(filters[fieldKey] || "")}
+                        onChange={(e) =>
+                          handleSearchChange(fieldKey, e.target.value)
+                        }
+                        placeholder={field.searchPlaceholder}
+                        className="h-14 pl-12 rounded-xl bg-secondary/30 border-transparent text-base focus-visible:ring-primary"
+                      />
+                    </div>
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
 
-        {/* Footer Fijo con Botones de Acción */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent pt-10">
-          <div className="flex gap-3">
-            <Button
-              onClick={clearFilters}
-              variant="outline"
-              className="flex-1 h-12 rounded-xl border-2"
-              disabled={!hasActiveFilters}
-            >
-              Limpiar
-            </Button>
-            <Button
-              onClick={applyFilters}
-              className="flex-[2] h-12 rounded-xl font-bold shadow-lg shadow-primary/20 text-md"
-            >
-              Ver Resultados
-            </Button>
-          </div>
-        </div>
+              <Separator className="my-6 bg-border/40" />
 
-        {/* Drawers para sub-selecciones (Móvil) */}
-        {otherFields.map((field) => (
-          <Drawer
-            key={field.id}
-            open={activeDrawer === field.id}
-            onOpenChange={(open) => {
-              if (!open) {
-                setActiveDrawer(null);
-                setSearchTerms((prev) => ({ ...prev, [field.id]: "" }));
-              }
-            }}
-          >
-            <DrawerContent className="max-h-[90vh]">
-              <DrawerHeader className="border-b pb-4">
-                <DrawerTitle className="text-center font-bebas text-xl tracking-wide">
-                  {field.label}
-                </DrawerTitle>
-              </DrawerHeader>
-              <div className="px-4 py-4 overflow-y-auto">
-                {renderMobileDrawerContent(field)}
+              {/* Selectores */}
+              <div className="space-y-3">
+                {selectFields.map((field) => {
+                  const fieldKey = field.id as keyof T;
+                  const isMulti = field.type === "multi-select";
+                  const value = filters[fieldKey];
+                  let count = 0;
+                  let label = `Seleccionar ${field.label}`;
+
+                  if (isMulti && Array.isArray(value)) {
+                    count = value.length;
+                    if (count > 0) label = `${count} seleccionados`;
+                  } else if (value && value !== "") {
+                    count = 1;
+                    const opt = field.options?.find((o) => o.value === value);
+                    if (opt) label = opt.label;
+                  }
+
+                  return (
+                    <Button
+                      key={field.id}
+                      variant={count > 0 ? "secondary" : "outline"}
+                      className={cn(
+                        "w-full h-16 justify-between px-4 rounded-xl text-base font-normal border-2",
+                        count > 0
+                          ? "bg-secondary/40 border-transparent text-foreground"
+                          : "bg-background border-border/60 text-muted-foreground hover:bg-secondary/20",
+                      )}
+                      onClick={() => setActiveSubDrawer(field.id)}
+                    >
+                      <div className="flex flex-col items-start text-left gap-0.5">
+                        <span
+                          className={cn(
+                            "text-[10px] uppercase font-bold tracking-wider",
+                            count > 0
+                              ? "text-primary"
+                              : "text-muted-foreground/70",
+                          )}
+                        >
+                          {field.label}
+                        </span>
+                        <span
+                          className={cn(
+                            "truncate max-w-[240px] leading-tight text-base",
+                            count > 0 && "font-semibold",
+                          )}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      <ChevronDown className="h-5 w-5 opacity-40" />
+                    </Button>
+                  );
+                })}
               </div>
-              <DrawerFooter className="pt-2">
+            </div>
+
+            {/* Footer Fijo */}
+            <div className="p-4 border-t bg-background pb-8">
+              <Button
+                onClick={applyMobileFilters}
+                className="w-full h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20"
+              >
+                Ver {hasActiveFilters ? "Resultados" : "Todo"}
+              </Button>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* DRAWERS ANIDADOS (SUB-OPCIONES) */}
+      {selectFields.map((field) => (
+        <Drawer
+          key={field.id}
+          open={activeSubDrawer === field.id}
+          onOpenChange={(open) => {
+            if (!open) setActiveSubDrawer(null);
+          }}
+        >
+          <DrawerContent className="h-[92vh] rounded-t-[1.5rem] outline-none">
+            {/* Ancho completo aquí también */}
+            <div className="w-full flex flex-col h-full">
+              <DrawerHeader className="border-b px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <DrawerTitle className="text-xl font-bold truncate pr-4">
+                    {field.label}
+                  </DrawerTitle>
+                  <DrawerClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </DrawerClose>
+                </div>
+              </DrawerHeader>
+
+              <ScrollArea className="flex-1 -mx-px">
+                {renderMobileSubDrawer(field)}
+              </ScrollArea>
+
+              <DrawerFooter className="px-4 py-4 border-t pb-8">
                 <Button
-                  onClick={() => setActiveDrawer(null)}
-                  className="w-full rounded-xl"
+                  onClick={() => setActiveSubDrawer(null)}
+                  className="w-full h-14 rounded-xl text-lg"
                 >
                   Listo
                 </Button>
               </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        ))}
-      </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ))}
     </>
   );
 }
