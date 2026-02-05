@@ -37,6 +37,7 @@ export interface LegislatorDetail extends LegislatorBase {
   electoral_district: ElectoralDistrictBase;
   bill_authorships: BillBasic[];
   attendances: Attendance[];
+  parliamentary_memberships: ParliamentaryMembershipWithGroup[];
 }
 
 export interface LegislatorInSeat {

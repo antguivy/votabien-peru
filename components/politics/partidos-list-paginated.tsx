@@ -60,7 +60,7 @@ const PartidosListPaginated = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="mb-6 sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div className="sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
           <FilterPanel
             fields={filterFields}
             currentFilters={currentFilters}
@@ -73,7 +73,7 @@ const PartidosListPaginated = ({
 
       {/* Lista de partidos */}
       {!partidos.items || partidos.items.length === 0 ? (
-        <div className="text-center py-16 md:py-20">
+        <div className="lg:pt-4 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-md bg-muted mb-4 md:mb-6">
             <Building2 className="w-8 h-8 md:w-10 md:h-10 text-muted-foreground" />
           </div>
@@ -86,7 +86,7 @@ const PartidosListPaginated = ({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <div className="grid lg:pt-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {partidos.items.map((partido) => {
               const partidoColor = partido.color_hex || "oklch(0.45 0.15 260)";
               const textColor = getTextColor(partidoColor);

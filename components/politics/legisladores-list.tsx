@@ -361,7 +361,7 @@ const LegisladoresList = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="mb-6 sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div className="sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
           <FilterPanel
             fields={filterFields}
             currentFilters={currentFilters}
@@ -373,7 +373,7 @@ const LegisladoresList = ({
       )}
 
       {/* Grid consistente con CandidatosList */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 font-manrope">
+      <div className="lg:pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 font-manrope">
         {legisladores.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-32 text-center opacity-0 animate-in fade-in zoom-in duration-500">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce">

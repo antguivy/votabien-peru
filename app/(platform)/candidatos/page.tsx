@@ -4,6 +4,7 @@ import StickyElectoralBanner from "@/components/sticky-banner";
 import { getCandidatesCards } from "@/queries/public/candidacies";
 import getDistritos from "@/queries/public/electoral-districts";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 interface PageProps {
   searchParams: Promise<{
@@ -29,40 +30,38 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
 
     if (!procesosActivos || procesosActivos.length === 0) {
       return (
-        <div className="min-h-screen bg-background">
-          <div className="container mx-auto px-4 py-16">
-            <div className="text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-6">
-                <svg
-                  className="w-10 h-10 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-foreground mb-4">
-                No hay proceso electoral activo
-              </h1>
-              <p className="text-muted-foreground mb-8">
-                Actualmente no hay ningún proceso electoral en curso. Los
-                candidatos se mostrarán cuando se inicie un nuevo proceso.
-              </p>
-              <Link
-                href="/"
-                className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all"
+        <ContentPlatformLayout>
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-6">
+              <svg
+                className="w-10 h-10 text-muted-foreground"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Volver al inicio
-              </Link>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
             </div>
+            <h1 className="text-3xl font-bold text-foreground mb-4">
+              No hay proceso electoral activo
+            </h1>
+            <p className="text-muted-foreground mb-8">
+              Actualmente no hay ningún proceso electoral en curso. Los
+              candidatos se mostrarán cuando se inicie un nuevo proceso.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-all"
+            >
+              Volver al inicio
+            </Link>
           </div>
-        </div>
+        </ContentPlatformLayout>
       );
     }
 
@@ -95,14 +94,13 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       (fechaElecciones.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),
     );
     return (
-      <div className="min-h-screen bg-background">
+      <ContentPlatformLayout>
         <StickyElectoralBanner
           processName={procesoActivo.name}
           electionDate={fechaFormateada}
           daysRemaining={diasRestantes}
         />
-
-        <section className="container mx-auto p-4">
+        <section className="pt-4 container mx-auto pb-10 lg:pb-0">
           <CandidatosList
             candidaturas={candidaturas}
             distritos={distritos}
@@ -110,12 +108,12 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
             currentFilters={currentParams}
           />
         </section>
-      </div>
+      </ContentPlatformLayout>
     );
   } catch (error) {
     console.error("Error cargando candidatos:", error);
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <ContentPlatformLayout>
         <div className="text-center max-w-md mx-auto px-4">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-destructive/10 mb-6">
             <svg
@@ -146,7 +144,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
             Volver al inicio
           </Link>
         </div>
-      </div>
+      </ContentPlatformLayout>
     );
   }
 };

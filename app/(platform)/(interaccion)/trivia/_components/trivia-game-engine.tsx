@@ -403,7 +403,7 @@ export function TriviaGameEngine({
 
       {/* VISTA: INTRO */}
       {gameState === "intro" && (
-        <div className="flex flex-col items-center justify-center space-y-8 max-w-md w-full px-6 text-center animate-in zoom-in-95 duration-500 h-[100dvh]">
+        <div className="flex flex-col items-center justify-center space-y-8 max-w-md mx-auto px-6 text-center animate-in zoom-in-95 duration-500">
           <div className="space-y-2">
             <h1 className="text-5xl font-black tracking-tighter italic">
               POLITI<span className="text-primary">QUIZ</span>
@@ -454,7 +454,7 @@ export function TriviaGameEngine({
 
       {/* VISTA: PLAYING */}
       {gameState === "playing" && activeQuestions[currentQIndex] && (
-        <div className="w-full max-w-md h-[100dvh] flex flex-col justify-between py-6 px-4 md:h-auto md:min-h-[700px] md:justify-center md:gap-6">
+        <div className="mx-auto max-w-md h-[100dvh] flex flex-col justify-between py-6 px-4 md:h-auto md:min-h-[700px] md:justify-center md:gap-6">
           <div className="space-y-4">
             <div className="flex justify-between items-end">
               <div className="flex flex-col">
@@ -580,7 +580,7 @@ export function TriviaGameEngine({
 
       {/* VISTA: FINISHED */}
       {gameState === "finished" && (
-        <div className="flex flex-col items-center justify-center space-y-6 max-w-md w-full px-6 text-center animate-in slide-in-from-bottom-10 duration-500 pb-10 h-[100dvh]">
+        <div className="flex flex-col items-center justify-center space-y-6 max-w-md mx-auto px-6 text-center animate-in slide-in-from-bottom-10 duration-500 h-[100dvh]">
           <div className="space-y-1">
             <h2 className="text-4xl font-black uppercase italic">
               ¡Resultado!

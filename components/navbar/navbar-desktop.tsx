@@ -53,7 +53,7 @@ export const NavbarDesktop = () => {
             <DropdownMenu key={item.label}>
               <DropdownMenuTrigger
                 className={cn(
-                  "px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm flex items-center gap-1 outline-none group data-[state=open]:bg-accent",
+                  "px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm flex items-center gap-1 outline-none group",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-foreground hover:bg-accent hover:text-accent-foreground",

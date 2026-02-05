@@ -1,4 +1,4 @@
-import Navbar from "@/components/navbar/navbar";
+import PlatformLayout from "@/components/navbar/app-navbar";
 import UnderConstruction from "@/components/under-construction";
 import { serverGetUser } from "@/lib/auth-actions";
 
@@ -19,10 +19,5 @@ export default async function PanelLayout({
       />
     );
   }
-  return (
-    <>
-      <Navbar />
-      <main className="pb-20 lg:p-0 lg:pt-14">{children}</main>
-    </>
-  );
+  return <PlatformLayout>{children}</PlatformLayout>;
 }

@@ -46,64 +46,52 @@ export async function getPersonaAsLegisladorById(
         elected_by_party:politicalparty(*),
         electoral_district:electoraldistrict(*),
         bill_authorships:bill(*),
-        attendances:attendance(*)
+        attendances:attendance(*),
+        parliamentary_memberships:parliamentarymembership(
+          *,
+          parliamentary_group:parliamentarygroup(*)
+        )
       )
     `,
     )
     .eq("id", personaId)
+    .eq("legislative_periods.active", true)
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.error("Error fetching legislador:", error);
+    return null;
+  }
 
-  // Transformación ligera
-  const transformedData: PersonDetailLegislator = {
+  // 1. Casteamos 'data.legislative_periods' a nuestro tipo intermedio 'Raw'
+  // para que TS sepa que tiene 'bill_authorships' y podamos hacer map() seguro.
+  const rawPeriods =
+    data.legislative_periods as unknown as RawLegislatorPeriod[];
+
+  // 2. Realizamos solo las transformaciones necesarias (lógica de negocio)
+  const periodsWithLogic = rawPeriods.map((period) => ({
+    ...period,
+    // Calculamos el status_group (colores del dashboard)
+    bill_authorships: period.bill_authorships?.map((bill) => ({
+      ...bill,
+      status_group: getBillStatusGroup(bill.approval_status),
+    })),
+    // Ordenamos bancadas por fecha descendente
+    parliamentary_memberships: period.parliamentary_memberships?.sort(
+      (a, b) =>
+        new Date(b.start_date).getTime() - new Date(a.start_date).getTime(),
+    ),
+  }));
+
+  // 3. Construimos el resultado final usando spread operator (...)
+  // Esto evita tener que escribir work_experience: data.work_experience, etc.
+  const result = {
     ...data,
-    // 1. Corregimos el problema de los campos JSON que TypeScript marca como incompatibles
-    detailed_biography:
-      (data.detailed_biography as unknown as BiographyDetail[]) ?? [],
-    work_experience:
-      (data.work_experience as unknown as WorkExperience[]) ?? [],
-    assets: (data.assets as unknown as Assets[]) ?? [],
-    incomes: (data.incomes as unknown as Incomes[]) ?? [],
-    technical_education:
-      (data.technical_education as unknown as TechnicalEducation[]) ?? [],
-    no_university_education:
-      (data.no_university_education as unknown as NoUniversityEducation[]) ??
-      [],
-    university_education:
-      (data.university_education as unknown as UniversityEducation[]) ?? [],
-    postgraduate_education:
-      (data.postgraduate_education as unknown as PostgraduateEducation[]) ?? [],
-    political_role: (data.political_role as unknown as PoliticalRole[]) ?? [],
-    popular_election:
-      (data.popular_election as unknown as PopularElection[]) ?? [],
-
-    // 2. Mantenemos tu lógica de backgrounds
-    backgrounds: (data.backgrounds || []).map(
-      (bg): BackgroundBase => ({
-        ...bg,
-        type: bg.type as BackgroundType,
-        status: bg.status as BackgroundStatus,
-        summary: bg.summary ?? "",
-      }),
-    ),
-
-    // 3. Mantenemos tu lógica de periodos legislativos
-    legislative_periods: (
-      (data.legislative_periods as RawLegislatorPeriod[]) || []
-    ).map(
-      (period: RawLegislatorPeriod): LegislatorDetail => ({
-        ...period,
-        bill_authorships: (period.bill_authorships || []).map(
-          (bill: RawBill): BillBasic => ({
-            ...bill,
-            status_group: getBillStatusGroup(bill.approval_status),
-          }),
-        ),
-      }),
-    ),
+    legislative_periods: periodsWithLogic,
   };
-  return transformedData;
+
+  // 4. Doble cast seguro: "Esto es desconocido, pero confío en que coincide con la interfaz"
+  return result as unknown as PersonDetailLegislator;
 }
 
 // CONSULTA PARA CANDIDATOS
@@ -119,7 +107,7 @@ export async function getPersonaAsCandidatoById(
       `
       *,
       backgrounds:background(*),
-      candidacies:candidate(
+      active_candidacy:candidate!inner(
         *,
         electoral_process:electoralprocess(*),
         political_party:politicalparty(*),
@@ -128,6 +116,7 @@ export async function getPersonaAsCandidatoById(
     `,
     )
     .eq("id", personaId)
+    .eq("active_candidacy.active", true)
     .single();
 
   if (error) {
@@ -136,8 +125,13 @@ export async function getPersonaAsCandidatoById(
   }
 
   if (!data) return null;
-
-  return data as unknown as PersonDetailCandidate;
+  const result = {
+    ...data,
+    active_candidacy: Array.isArray(data.active_candidacy)
+      ? data.active_candidacy[0]
+      : data.active_candidacy,
+  };
+  return result as unknown as PersonDetailCandidate;
 }
 
 interface GetPersonasParams {

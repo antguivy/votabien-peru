@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { MAIN_NAV_ITEMS, NavItem } from "./navbar-config";
-import { MobileThemeToggle } from "./navbar-theme-toggle"; // Asegúrate de que este componente acepte className
+import { MobileThemeToggle } from "./navbar-theme-toggle";
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
-  DrawerTitle, // Necesario por accesibilidad aunque lo ocultemos visualmente
+  DrawerTitle,
 } from "@/components/ui/drawer";
 import {
   X,
@@ -23,7 +23,6 @@ import {
   ScrollText,
   Flag,
 } from "lucide-react";
-// import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // Opcional, para accesibilidad correcta del titulo
 
 export const MobileBottomNav = () => {
   const pathname = usePathname();
@@ -38,7 +37,6 @@ export const MobileBottomNav = () => {
       window.removeEventListener("close-mobile-filter", handleFilterClose);
   }, []);
 
-  // --- LÓGICA DE BARRA FLOTANTE (Igual que antes) ---
   const currentNavItems = useMemo(() => {
     if (
       pathname === "/candidatos" ||
@@ -84,8 +82,6 @@ export const MobileBottomNav = () => {
     return pathname.startsWith(href);
   };
 
-  // --- PREPARAR ITEMS PARA EL GRID DEL DRAWER ---
-  // Aplanamos la estructura: sacamos los hijos de los dropdowns para mostrarlos todos juntos
   const gridItems = MAIN_NAV_ITEMS.flatMap((item: NavItem) => {
     if (item.type === "link") return [item];
     if (item.type === "dropdown" && item.children) {
@@ -99,8 +95,6 @@ export const MobileBottomNav = () => {
 
   return (
     <>
-      <div className="h-8 lg:hidden" />
-
       {/* --- BARRA FLOTANTE --- */}
       <div className="fixed bottom-5 left-4 right-4 z-40 lg:hidden animate-in slide-in-from-bottom-10 duration-500">
         <nav className="flex items-center justify-between px-2 py-1 rounded-[2.5rem] bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
@@ -184,7 +178,7 @@ export const MobileBottomNav = () => {
           </DrawerHeader>
 
           {/* GRID DE ICONOS */}
-          <div className="grid grid-cols-4 md:grid-cols-5 gap-4 py-4 overflow-hidden">
+          <div className="grid grid-cols-4 md:grid-cols-5 gap-2 py-4 overflow-hidden">
             {gridItems.map((item, index) => {
               const Icon = item.icon;
               const active = isActiveLink(item.href || "");
@@ -203,7 +197,7 @@ export const MobileBottomNav = () => {
                 >
                   <div
                     className={cn(
-                      "p-4 rounded-full transition-colors",
+                      "p-2.5 rounded-full transition-colors",
                       active
                         ? "bg-primary text-primary-foreground"
                         : "bg-background shadow-sm",
@@ -220,7 +214,6 @@ export const MobileBottomNav = () => {
             })}
           </div>
 
-          {/* SEPARADOR & CONFIG */}
           <MobileThemeToggle theme={theme} setTheme={setTheme} />
         </DrawerContent>
       </Drawer>

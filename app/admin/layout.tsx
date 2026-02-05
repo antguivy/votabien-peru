@@ -1,14 +1,8 @@
-// app/admin/layout.tsx
 import { serverGetUser } from "@/lib/auth-actions";
 import { redirect } from "next/navigation";
-import { checkPathPermissions } from "@/lib/rbac"; // La función que creamos arriba
+import { checkPathPermissions } from "@/lib/rbac";
 import { cookies, headers } from "next/headers";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import AdminPanelLayout from "@/components/admin/app-sidebar";
 
 export default async function AdminLayout({

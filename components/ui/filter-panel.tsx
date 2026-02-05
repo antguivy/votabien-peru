@@ -25,8 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-// --- HOOKS Y TIPOS (Sin cambios) ---
-
 export function useDebouncedCallback<Args extends unknown[]>(
   func: (...args: Args) => void,
   wait: number,
@@ -93,7 +91,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
 
-  // --- LÓGICA DE EVENTOS Y URL (Sin cambios) ---
+  // --- LÓGICA DE EVENTOS Y URL ---
 
   useEffect(() => {
     const handleToggle = () => setIsMobilePanelOpen((prev) => !prev);
@@ -536,122 +534,119 @@ export function FilterPanel<T extends Record<string, unknown>>({
           if (!open) window.dispatchEvent(new Event("close-mobile-filter"));
         }}
       >
-        <DrawerContent className="h-[92vh] rounded-t-[1.5rem] outline-none">
-          {/* Se eliminó max-w-md para aprovechar todo el ancho */}
-          <div className="w-full flex flex-col h-full">
-            <DrawerHeader className="border-b px-4 pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <DrawerTitle className="font-bebas text-3xl tracking-wide">
-                  FILTROS
-                </DrawerTitle>
-                {hasActiveFilters && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="h-8 text-xs text-muted-foreground px-2"
-                  >
-                    Limpiar Todo
-                  </Button>
-                )}
-              </div>
-              <DrawerDescription className="sr-only">
-                Filtros de búsqueda
-              </DrawerDescription>
-            </DrawerHeader>
+        <DrawerContent>
+          <DrawerHeader className="border-b px-4 pt-5 pb-4">
+            <div className="flex items-center justify-between">
+              <DrawerTitle className="font-bebas text-3xl tracking-wide">
+                FILTROS
+              </DrawerTitle>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-8 text-xs text-muted-foreground px-2"
+                >
+                  Limpiar Todo
+                </Button>
+              )}
+            </div>
+            <DrawerDescription className="sr-only">
+              Filtros de búsqueda
+            </DrawerDescription>
+          </DrawerHeader>
 
-            <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
-              {/* Buscadores de Texto */}
-              {searchFields.map((field) => {
-                const fieldKey = field.id as keyof T;
-                return (
-                  <div key={field.id} className="mb-6">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block ml-1">
-                      {field.label}
-                    </label>
-                    <div className="relative">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        value={String(filters[fieldKey] || "")}
-                        onChange={(e) =>
-                          handleSearchChange(fieldKey, e.target.value)
-                        }
-                        placeholder={field.searchPlaceholder}
-                        className="h-14 pl-12 rounded-xl bg-secondary/30 border-transparent text-base focus-visible:ring-primary"
-                      />
-                    </div>
+          <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
+            {/* Buscadores de Texto */}
+            {searchFields.map((field) => {
+              const fieldKey = field.id as keyof T;
+              return (
+                <div key={field.id} className="mb-6">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block ml-1">
+                    {field.label}
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      value={String(filters[fieldKey] || "")}
+                      onChange={(e) =>
+                        handleSearchChange(fieldKey, e.target.value)
+                      }
+                      placeholder={field.searchPlaceholder}
+                      className="h-14 pl-12 rounded-xl bg-secondary/30 border-transparent text-base focus-visible:ring-primary"
+                    />
                   </div>
+                </div>
+              );
+            })}
+
+            <Separator className="my-6 bg-border/40" />
+
+            {/* Selectores */}
+            <div className="space-y-3">
+              {selectFields.map((field) => {
+                const fieldKey = field.id as keyof T;
+                const isMulti = field.type === "multi-select";
+                const value = filters[fieldKey];
+                let count = 0;
+                let label = `Seleccionar ${field.label}`;
+
+                if (isMulti && Array.isArray(value)) {
+                  count = value.length;
+                  if (count > 0) label = `${count} seleccionados`;
+                } else if (value && value !== "") {
+                  count = 1;
+                  const opt = field.options?.find((o) => o.value === value);
+                  if (opt) label = opt.label;
+                }
+
+                return (
+                  <Button
+                    key={field.id}
+                    variant={count > 0 ? "secondary" : "outline"}
+                    className={cn(
+                      "w-full h-16 justify-between px-4 rounded-xl text-base font-normal border-2",
+                      count > 0
+                        ? "bg-secondary/40 border-transparent text-foreground"
+                        : "bg-background border-border/60 text-muted-foreground hover:bg-secondary/20",
+                    )}
+                    onClick={() => setActiveSubDrawer(field.id)}
+                  >
+                    <div className="flex flex-col items-start text-left gap-0.5">
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase font-bold tracking-wider",
+                          count > 0
+                            ? "text-primary"
+                            : "text-muted-foreground/70",
+                        )}
+                      >
+                        {field.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "truncate max-w-[240px] leading-tight text-base",
+                          count > 0 && "font-semibold",
+                        )}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                    <ChevronDown className="h-5 w-5 opacity-40" />
+                  </Button>
                 );
               })}
-
-              <Separator className="my-6 bg-border/40" />
-
-              {/* Selectores */}
-              <div className="space-y-3">
-                {selectFields.map((field) => {
-                  const fieldKey = field.id as keyof T;
-                  const isMulti = field.type === "multi-select";
-                  const value = filters[fieldKey];
-                  let count = 0;
-                  let label = `Seleccionar ${field.label}`;
-
-                  if (isMulti && Array.isArray(value)) {
-                    count = value.length;
-                    if (count > 0) label = `${count} seleccionados`;
-                  } else if (value && value !== "") {
-                    count = 1;
-                    const opt = field.options?.find((o) => o.value === value);
-                    if (opt) label = opt.label;
-                  }
-
-                  return (
-                    <Button
-                      key={field.id}
-                      variant={count > 0 ? "secondary" : "outline"}
-                      className={cn(
-                        "w-full h-16 justify-between px-4 rounded-xl text-base font-normal border-2",
-                        count > 0
-                          ? "bg-secondary/40 border-transparent text-foreground"
-                          : "bg-background border-border/60 text-muted-foreground hover:bg-secondary/20",
-                      )}
-                      onClick={() => setActiveSubDrawer(field.id)}
-                    >
-                      <div className="flex flex-col items-start text-left gap-0.5">
-                        <span
-                          className={cn(
-                            "text-[10px] uppercase font-bold tracking-wider",
-                            count > 0
-                              ? "text-primary"
-                              : "text-muted-foreground/70",
-                          )}
-                        >
-                          {field.label}
-                        </span>
-                        <span
-                          className={cn(
-                            "truncate max-w-[240px] leading-tight text-base",
-                            count > 0 && "font-semibold",
-                          )}
-                        >
-                          {label}
-                        </span>
-                      </div>
-                      <ChevronDown className="h-5 w-5 opacity-40" />
-                    </Button>
-                  );
-                })}
-              </div>
             </div>
+          </div>
 
-            {/* Footer Fijo */}
-            <div className="p-4 border-t bg-background pb-8">
-              <Button
-                onClick={applyMobileFilters}
-                className="w-full h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20"
-              >
-                Ver {hasActiveFilters ? "Resultados" : "Todo"}
-              </Button>
-            </div>
+          {/* Footer Fijo */}
+          <div className="p-4 border-t bg-background pb-8">
+            <Button
+              onClick={applyMobileFilters}
+              className="w-full h-14 rounded-xl text-lg font-bold shadow-lg shadow-primary/20"
+            >
+              Ver {hasActiveFilters ? "Resultados" : "Todo"}
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
@@ -665,39 +660,37 @@ export function FilterPanel<T extends Record<string, unknown>>({
             if (!open) setActiveSubDrawer(null);
           }}
         >
-          <DrawerContent className="h-[92vh] rounded-t-[1.5rem] outline-none">
+          <DrawerContent>
             {/* Ancho completo aquí también */}
-            <div className="w-full flex flex-col h-full">
-              <DrawerHeader className="border-b px-4 py-4">
-                <div className="flex items-center justify-between">
-                  <DrawerTitle className="text-xl font-bold truncate pr-4">
-                    {field.label}
-                  </DrawerTitle>
-                  <DrawerClose asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground"
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </DrawerClose>
-                </div>
-              </DrawerHeader>
+            <DrawerHeader className="border-b px-4 py-4">
+              <div className="flex items-center justify-between">
+                <DrawerTitle className="text-xl font-bold truncate pr-4">
+                  {field.label}
+                </DrawerTitle>
+                <DrawerClose asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
 
-              <ScrollArea className="flex-1 -mx-px">
-                {renderMobileSubDrawer(field)}
-              </ScrollArea>
+            <ScrollArea className="flex-1 -mx-px">
+              {renderMobileSubDrawer(field)}
+            </ScrollArea>
 
-              <DrawerFooter className="px-4 py-4 border-t pb-8">
-                <Button
-                  onClick={() => setActiveSubDrawer(null)}
-                  className="w-full h-14 rounded-xl text-lg"
-                >
-                  Listo
-                </Button>
-              </DrawerFooter>
-            </div>
+            <DrawerFooter className="px-4 py-4 border-t pb-8">
+              <Button
+                onClick={() => setActiveSubDrawer(null)}
+                className="w-full h-14 rounded-xl text-lg"
+              >
+                Listo
+              </Button>
+            </DrawerFooter>
           </DrawerContent>
         </Drawer>
       ))}

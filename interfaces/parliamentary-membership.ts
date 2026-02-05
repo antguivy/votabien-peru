@@ -21,16 +21,16 @@ export interface ParliamentaryMembershipBasic
   id: string;
 }
 
+export interface ParliamentaryMembershipWithGroup
+  extends ParliamentaryMembershipBasic {
+  parliamentary_group?: ParliamentaryGroupBasic;
+}
+
 export type CreateParliamentaryMembership = ParliamentaryMembershipBase;
 
 export interface UpdateParliamentaryMembership
   extends ParliamentaryMembershipBase {
   id: string;
-}
-
-export interface ParliamentaryMembershipWithGroup
-  extends ParliamentaryMembershipBasic {
-  parliamentary_group?: ParliamentaryGroupBasic;
 }
 
 export interface CreateParliamentaryMembershipResult {

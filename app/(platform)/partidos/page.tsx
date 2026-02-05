@@ -1,6 +1,8 @@
 import Link from "next/link";
 import PartidosListPaginated from "@/components/politics/partidos-list-paginated";
 import { getPartidosList } from "@/queries/public/parties";
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
   searchParams: Promise<{
@@ -40,18 +42,20 @@ export default async function PartidosPage({ searchParams }: PageProps) {
     const partidos = await getPartidosList(queryParams);
 
     return (
-      <div className="container mx-auto p-4">
-        <PartidosListPaginated
-          partidos={partidos}
-          currentFilters={currentFilters}
-        />
-      </div>
+      <ContentPlatformLayout>
+        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+          <PartidosListPaginated
+            partidos={partidos}
+            currentFilters={currentFilters}
+          />
+        </section>
+      </ContentPlatformLayout>
     );
   } catch (error) {
     console.error("Error cargando partidos:", error);
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <ContentPlatformLayout>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Error al cargar datos
@@ -66,7 +70,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
             Reintentar
           </Link>
         </div>
-      </div>
+      </ContentPlatformLayout>
     );
   }
 }

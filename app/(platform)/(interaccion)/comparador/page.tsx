@@ -15,6 +15,7 @@ import getDistritos from "@/queries/public/electoral-districts";
 import { getPartidosListSimple } from "@/queries/public/parties";
 import { ChamberType } from "@/interfaces/politics";
 import { SearchContext } from "./_components/selector";
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 interface PageProps {
   searchParams: Promise<SearchParams>;
@@ -100,7 +101,14 @@ export default async function ComparatorPage(props: PageProps) {
       mode={currentMode}
       selectedIds={search.dnis}
     >
-      <ComparatorLayout data={comparisonData} searchAction={performSearch} />
+      <ContentPlatformLayout>
+        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+          <ComparatorLayout
+            data={comparisonData}
+            searchAction={performSearch}
+          />
+        </section>
+      </ContentPlatformLayout>
     </ComparatorProvider>
   );
 }

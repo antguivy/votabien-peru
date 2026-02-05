@@ -9,6 +9,7 @@ import Footer from "@/components/landing/footer";
 import PartidosListBasic from "@/components/landing/partidos-list-basic";
 import { getPartidosList } from "@/queries/public/parties";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 // import { getSeatParliamentary } from "@/queries/public/seats";
 // import { ChamberType } from "@/interfaces/politics";
 
@@ -91,7 +92,7 @@ export default async function VotaBienPage() {
     //   return a.number_seat - b.number_seat;
     // });
     return (
-      <div className="min-h-screen ">
+      <ContentPlatformLayout>
         {/* Hero Dual Split */}
         {/* <HeroDualSplit
           proceso_electoral={proceso_electoral[0]}
@@ -106,7 +107,7 @@ export default async function VotaBienPage() {
 
         <PartidosListBasic partidos={partidos.items} />
         <Footer />
-      </div>
+      </ContentPlatformLayout>
     );
   } catch (error) {
     console.error("Error cargando datos de landing:", error);

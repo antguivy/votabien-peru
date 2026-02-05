@@ -4,6 +4,7 @@ import { getLegisladoresCards } from "@/queries/public/legislators";
 import getDistritos from "@/queries/public/electoral-districts";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
 import { ChamberType } from "@/interfaces/politics";
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 interface PageProps {
   searchParams: Promise<{
@@ -52,15 +53,16 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
         getParliamentaryGroups(true),
       ]);
     return (
-      <div className="container mx-auto p-4">
-        {/* Resultados */}
-        <LegisladoresList
-          legisladores={initialLegisladores}
-          bancadas={parliamentaryGroups}
-          distritos={distritos}
-          currentFilters={currentParams}
-        />
-      </div>
+      <ContentPlatformLayout>
+        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+          <LegisladoresList
+            legisladores={initialLegisladores}
+            bancadas={parliamentaryGroups}
+            distritos={distritos}
+            currentFilters={currentParams}
+          />
+        </section>
+      </ContentPlatformLayout>
     );
   } catch (error) {
     console.error("Error cargando legisladores:", error);

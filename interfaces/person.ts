@@ -152,7 +152,7 @@ export interface PersonDetailLegislator extends PersonBase {
 // PERSON DETAIL PARA CANDIDATOS
 export interface PersonDetailCandidate extends PersonBase {
   backgrounds: BackgroundBase[];
-  candidacies: CandidateToPerson[];
+  active_candidacy: CandidateToPerson;
   facebook_url: string | null;
   twitter_url: string | null;
   instagram_url: string | null;

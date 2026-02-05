@@ -301,7 +301,7 @@ const CandidatosList = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="mb-6 sticky top-1 z-30 lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div className="sticky top-1 z-30 lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
           {/* El FilterPanel ahora se encarga de todo:
              - En Desktop: Muestra la barra normal
              - En Mobile: Está invisible hasta que recibe el evento 'toggle-filter-panel' 
@@ -316,7 +316,7 @@ const CandidatosList = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 font-manrope">
+      <div className="grid grid-cols-2 lg:pt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 font-manrope">
         {candidatos.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-32 text-center opacity-0 animate-in fade-in zoom-in duration-500">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce">

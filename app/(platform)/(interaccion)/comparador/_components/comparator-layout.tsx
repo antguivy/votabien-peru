@@ -159,7 +159,7 @@ export default function ComparatorLayout({
   }, [data, filters.mode]);
 
   return (
-    <div className="container mx-auto w-full py-6 px-4 md:px-6 space-y-6">
+    <div className="w-full px-4 md:px-6 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
         {/* ============================================
             SIDEBAR: FilterSystem
