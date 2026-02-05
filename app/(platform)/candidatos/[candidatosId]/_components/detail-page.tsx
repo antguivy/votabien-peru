@@ -12,14 +12,31 @@ import {
   MapPin,
   ExternalLink,
   User,
-  AlertCircle,
   CheckCircle2,
+  Landmark,
+  Vote,
+  Car,
+  ScrollText,
+  Building2,
+  Gavel,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PersonDetailCandidate } from "@/interfaces/person";
+import { NoDataMessage } from "@/components/no-data-message"; // Asegúrate que la ruta sea correcta
+
+// Helper para formatear moneda
+const formatCurrency = (amount: string | number) => {
+  if (!amount) return "S/ 0.00";
+  const num =
+    typeof amount === "string" ? parseFloat(amount.replace(/,/g, "")) : amount;
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+  }).format(num);
+};
 
 export default function DetailCandidato({
   persona,
@@ -27,7 +44,7 @@ export default function DetailCandidato({
   persona: PersonDetailCandidate;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
-  const candidate = persona.active_candidacy; // Usamos la propiedad directa
+  const candidate = persona.active_candidacy;
 
   // Lógica para sticky nav
   useEffect(() => {
@@ -36,9 +53,24 @@ export default function DetailCandidato({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Calcular totales para la card de ingresos
+  const incomeData = persona.incomes?.[0];
+
+  // Helper para verificar si tiene alguna educación
+  const hasEducation =
+    (persona.postgraduate_education?.length || 0) > 0 ||
+    (persona.university_education?.length || 0) > 0 ||
+    (persona.technical_education?.length || 0) > 0 ||
+    (persona.no_university_education?.length || 0) > 0;
+
+  // Helper para verificar si tiene trayectoria política
+  const hasPolitics =
+    (persona.popular_election?.length || 0) > 0 ||
+    (persona.political_role?.length || 0) > 0;
+
   return (
-    <div>
-      {/* --- STICKY NAV (Optimizado) --- */}
+    <div className="bg-background min-h-screen pb-10">
+      {/* --- STICKY NAV --- */}
       <div
         className={cn(
           "fixed top-0 inset-x-0 z-50 border-b bg-background/80 backdrop-blur-xl transition-all duration-300",
@@ -47,22 +79,25 @@ export default function DetailCandidato({
             : "-translate-y-full opacity-0",
         )}
       >
-        <div className="container max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="container max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden border">
+            <div className="relative w-8 h-8 rounded-full overflow-hidden border bg-muted">
               <Image
                 src={persona.image_candidate_url || "/placeholder.png"}
                 alt="Avatar"
                 fill
-                className="object-cover"
+                className="object-cover object-top"
               />
             </div>
-            <span className="font-semibold text-sm max-w-[150px] sm:max-w-xs">
+            <span className="font-semibold text-sm max-w-[150px] sm:max-w-xs truncate">
               {persona.name} {persona.lastname}
             </span>
           </div>
           {candidate?.list_number && (
-            <Badge variant="default" className="bg-brand text-white font-bold">
+            <Badge
+              variant="default"
+              className="bg-primary text-primary-foreground font-bold"
+            >
               Marca el {candidate.list_number}
             </Badge>
           )}
@@ -70,10 +105,10 @@ export default function DetailCandidato({
       </div>
 
       {/* --- HERO SECTION --- */}
-      <div className="relative pb-8 md:pb-12">
-        <div className="container max-w-4xl mx-auto px-4">
+      <div className="relative pb-8 md:pb-12 pt-6">
+        <div className="container max-w-5xl mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-            {/* Foto con borde de estado */}
+            {/* Foto */}
             <div className="relative shrink-0">
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background shadow-xl overflow-hidden relative z-10">
                 <Image
@@ -112,39 +147,40 @@ export default function DetailCandidato({
               </div>
             </div>
 
-            {/* Info Principal */}
-            <div className="flex-1 text-center md:text-left space-y-2 w-full">
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-                <div>
-                  <Badge
-                    variant="outline"
-                    className="mb-2 text-muted-foreground border-brand/20 bg-brand/5"
-                  >
-                    {candidate.type.replace(/_/g, " ")}
-                  </Badge>
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-none text-foreground uppercase">
-                    {persona.name} <br />
-                    <span className="text-brand">{persona.lastname}</span>
-                  </h1>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {candidate.electoral_district?.name}
-                    </div>
-                    {persona.profession && (
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="w-4 h-4" />
-                        {persona.profession}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <User className="w-4 h-4" />
-                      {new Date().getFullYear() -
-                        new Date(persona.birth_date!).getFullYear()}{" "}
-                      años
-                    </div>
-                  </div>
+            {/* Info Texto */}
+            <div className="flex-1 text-center md:text-left space-y-3 w-full">
+              <div>
+                <Badge
+                  variant="outline"
+                  className="mb-2 text-muted-foreground border-primary/20 bg-primary/5 uppercase tracking-wide text-[10px]"
+                >
+                  {candidate.type.replace(/_/g, " ")}
+                </Badge>
+                <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-foreground uppercase">
+                  {persona.name} <br />
+                  <span className="text-primary">{persona.lastname}</span>
+                </h1>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-medium">
+                    {candidate.electoral_district?.name}
+                  </span>
                 </div>
+                {persona.profession && (
+                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
+                    <Briefcase className="w-4 h-4" />
+                    <span className="font-medium">{persona.profession}</span>
+                  </div>
+                )}
+                {persona.place_of_birth && (
+                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
+                    <User className="w-4 h-4" />
+                    <span>Nacimiento: {persona.place_of_birth}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -152,155 +188,396 @@ export default function DetailCandidato({
       </div>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <div className="container mx-auto">
-        {/* SECCIÓN DE ALERTAS (Solo si existen) */}
-        {persona.backgrounds.length > 0 && (
-          <Card className="p-0 border-l-4 mb-6 border-l-destructive shadow-md bg-destructive/5 border-t-0 border-r-0 border-b-0">
-            <CardContent className="p-4 flex items-start gap-4">
-              <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-1" />
-              <div>
-                <h3 className="font-bold text-destructive">
-                  Atención: Antecedentes Registrados
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Este candidato tiene {persona.backgrounds.length} registro(s)
-                  reportados en su hoja de vida. Revisa la pestaña “Legal” para
-                  más detalles.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="container max-w-5xl mx-auto px-4">
+        {/* ALERTA DE ANTECEDENTES */}
+        {persona.backgrounds && persona.backgrounds.length > 0 && (
+          <div className="mb-8 p-4 border-l-4 border-destructive bg-destructive/5 rounded-r-lg flex items-start gap-4 shadow-sm">
+            <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-destructive text-lg">
+                Atención: Antecedentes Registrados
+              </h3>
+              <p className="text-sm text-foreground/80 mt-1">
+                El candidato ha declarado{" "}
+                <strong>{persona.backgrounds.length} antecedentes</strong>{" "}
+                (penales, civiles o laborales) en su hoja de vida ante el JNE.
+                Revisa la pestaña “Legal” para más detalles.
+              </p>
+            </div>
+          </div>
         )}
 
         {/* TABS DE INFORMACIÓN */}
-        <Tabs defaultValue="hoja-vida" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl mb-6">
+        <Tabs defaultValue="hoja-vida" className="w-full space-y-8">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl">
             <TabsTrigger
               value="hoja-vida"
-              className="py-2.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium"
             >
               Hoja de Vida
             </TabsTrigger>
             <TabsTrigger
               value="legal"
-              className="py-2.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-destructive font-medium"
+              className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium text-destructive data-[state=active]:text-destructive"
             >
               Legal
             </TabsTrigger>
             <TabsTrigger
               value="bienes"
-              className="py-2.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium"
             >
               Bienes
             </TabsTrigger>
             <TabsTrigger
               value="timeline"
-              className="py-2.5 text-xs sm:text-sm rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium"
             >
-              Timeline
+              Biografía
             </TabsTrigger>
           </TabsList>
 
-          {/* 1. HOJA DE VIDA (Educación y Trabajo) */}
-          <TabsContent value="hoja-vida" className="space-y-6">
-            {/* Educación */}
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600">
-                    <GraduationCap size={20} />
-                  </div>
-                  <CardTitle className="text-lg">Formación Académica</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 grid gap-4">
-                {/* Aquí renderizas tus listas de universidad/técnico con el diseño que ya tenías pero más limpio */}
-                {persona.university_education?.map((edu, i) => (
-                  <div key={i} className="flex gap-3 items-start">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-sm text-foreground">
-                        {edu.degree}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {edu.university} • {edu.year_of_completion}
-                      </p>
+          {/* 1. HOJA DE VIDA */}
+          <TabsContent
+            value="hoja-vida"
+            className="space-y-8 animate-in fade-in-50"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* COLUMNA IZQUIERDA: EXPERIENCIA Y POLÍTICA */}
+              <div className="space-y-8">
+                {/* Trayectoria Política */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3 border-b">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg text-orange-600">
+                        <Vote size={20} />
+                      </div>
+                      <CardTitle className="text-lg">
+                        Trayectoria Política
+                      </CardTitle>
                     </div>
-                  </div>
-                ))}
-                {/* ... resto de lógica de educación ... */}
-              </CardContent>
-            </Card>
-
-            {/* Trabajo */}
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600">
-                    <Briefcase size={20} />
-                  </div>
-                  <CardTitle className="text-lg">Experiencia Laboral</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                {persona.work_experience?.map((exp, i) => (
-                  <div
-                    key={i}
-                    className="relative pl-4 border-l-2 border-muted pb-4 last:pb-0"
-                  >
-                    <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-purple-500" />
-                    <h4 className="font-bold text-sm">{exp.position}</h4>
-                    <p className="text-sm text-foreground/80">
-                      {exp.organization}
-                    </p>
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded mt-1 inline-block">
-                      {exp.period}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* 2. LEGAL / SENTENCIAS */}
-          <TabsContent value="legal">
-            <div className="grid gap-4">
-              {persona.backgrounds.map((bg, i) => (
-                <Card
-                  key={i}
-                  className="pt-0 border-l-4 border-l-destructive overflow-hidden"
-                >
-                  <div className="bg-destructive/10 p-2 text-xs font-bold text-destructive uppercase tracking-wider px-4">
-                    {bg.type}
-                  </div>
-                  <CardContent className="pt-4">
-                    <h4 className="font-bold text-lg mb-2">{bg.title}</h4>
-                    <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border">
-                      {bg.summary}
-                    </p>
-                    <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                      {bg.sanction && (
-                        <span className="text-destructive font-semibold flex items-center gap-1">
-                          <AlertCircle size={14} /> Sanción: {bg.sanction}
-                        </span>
-                      )}
-                      {bg.status && (
-                        <Badge variant="outline">
-                          {bg.status.replace(/_/g, " ")}
-                        </Badge>
-                      )}
-                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-6">
+                    {!hasPolitics ? (
+                      <NoDataMessage text="No registra trayectoria política previa." />
+                    ) : (
+                      <>
+                        {/* Cargos de Elección Popular */}
+                        {persona.popular_election?.length > 0 && (
+                          <div>
+                            <h4 className="text-xs font-bold text-muted-foreground uppercase mb-3 flex items-center gap-1">
+                              <Landmark className="w-3 h-3" /> Cargos de
+                              Elección Popular
+                            </h4>
+                            <div className="space-y-4">
+                              {persona.popular_election.map((elec, i) => (
+                                <div
+                                  key={i}
+                                  className="pl-3 border-l-2 border-orange-200"
+                                >
+                                  <p className="font-bold text-sm">
+                                    {elec.position}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {elec.political_organization}
+                                  </p>
+                                  <Badge
+                                    variant="secondary"
+                                    className="mt-1 text-[10px] h-5"
+                                  >
+                                    {elec.period}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Cargos Partidarios */}
+                        {persona.political_role?.length > 0 && (
+                          <div>
+                            {persona.popular_election?.length > 0 && (
+                              <div className="h-px bg-border w-full my-4" />
+                            )}
+                            <h4 className="text-xs font-bold text-muted-foreground uppercase mb-3 flex items-center gap-1">
+                              <User className="w-3 h-3" /> Cargos Partidarios
+                            </h4>
+                            <div className="space-y-4">
+                              {persona.political_role.map((role, i) => (
+                                <div
+                                  key={i}
+                                  className="pl-3 border-l-2 border-orange-200"
+                                >
+                                  <p className="font-bold text-sm">
+                                    {role.position}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {role.political_organization}
+                                  </p>
+                                  <Badge
+                                    variant="outline"
+                                    className="mt-1 text-[10px] h-5"
+                                  >
+                                    {role.period}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
-              {persona.backgrounds.length === 0 && (
-                <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed">
-                  <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3 opacity-50" />
-                  <h3 className="text-lg font-medium text-foreground">
+
+                {/* Experiencia Laboral */}
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3 border-b">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg text-purple-600">
+                        <Briefcase size={20} />
+                      </div>
+                      <CardTitle className="text-lg">
+                        Experiencia Laboral
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-5">
+                    {persona.work_experience?.length > 0 ? (
+                      persona.work_experience.map((exp, i) => (
+                        <div key={i} className="relative pl-6 pb-1">
+                          <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-purple-400" />
+                          <div className="absolute left-[3px] top-3.5 bottom-[-20px] w-0.5 bg-border last:hidden" />
+
+                          <h4 className="font-bold text-sm text-foreground">
+                            {exp.position}
+                          </h4>
+                          <p className="text-sm text-muted-foreground font-medium">
+                            {exp.organization}
+                          </p>
+                          <span className="inline-block mt-1 text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                            {exp.period}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <NoDataMessage text="No registra información laboral." />
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* COLUMNA DERECHA: EDUCACIÓN */}
+              <div className="space-y-8">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3 border-b">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600">
+                        <GraduationCap size={20} />
+                      </div>
+                      <CardTitle className="text-lg">
+                        Formación Académica
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-6">
+                    {!hasEducation ? (
+                      <NoDataMessage text="No registra información académica." />
+                    ) : (
+                      <>
+                        {/* Posgrado */}
+                        {persona.postgraduate_education?.length > 0 && (
+                          <div>
+                            <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
+                              Posgrado
+                            </h5>
+                            <div className="space-y-3">
+                              {persona.postgraduate_education.map((edu, i) => (
+                                <div
+                                  key={i}
+                                  className="bg-muted/30 p-3 rounded-lg border"
+                                >
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                      <p className="font-bold text-sm text-blue-700 dark:text-blue-400">
+                                        {edu.specialization}
+                                      </p>
+                                      <p className="text-xs text-foreground/80">
+                                        {edu.graduate_school}
+                                      </p>
+                                    </div>
+                                    {edu.concluded === "SI" ? (
+                                      <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                                    ) : (
+                                      <span className="text-[10px] bg-muted px-1 rounded">
+                                        En curso
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 mt-2">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] h-5"
+                                    >
+                                      {edu.degree}
+                                    </Badge>
+                                    {edu.year_of_completion && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[10px] h-5"
+                                      >
+                                        {edu.year_of_completion}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Universitaria */}
+                        {persona.university_education?.length > 0 && (
+                          <div>
+                            {persona.postgraduate_education?.length > 0 && (
+                              <div className="h-px bg-border my-4" />
+                            )}
+                            <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
+                              Universitaria
+                            </h5>
+                            <div className="space-y-3">
+                              {persona.university_education.map((edu, i) => (
+                                <div key={i} className="flex gap-3 items-start">
+                                  <div className="mt-1">
+                                    {edu.concluded === "SI" ? (
+                                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                    ) : (
+                                      <div className="w-2 h-2 rounded-full border border-blue-500" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm leading-tight">
+                                      {edu.degree}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {edu.university}
+                                    </p>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {edu.year_of_completion}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Técnica */}
+                        {persona.technical_education?.length > 0 && (
+                          <div>
+                            {(persona.university_education?.length > 0 ||
+                              persona.postgraduate_education?.length > 0) && (
+                              <div className="h-px bg-border my-4" />
+                            )}
+                            <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
+                              Técnica
+                            </h5>
+                            <div className="space-y-3">
+                              {persona.technical_education.map((edu, i) => (
+                                <div key={i} className="flex gap-3 items-start">
+                                  <div className="mt-1 w-2 h-2 rounded-full bg-slate-400" />
+                                  <div>
+                                    <p className="font-bold text-sm leading-tight">
+                                      {edu.career}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {edu.graduate_school}
+                                    </p>
+                                    {edu.concluded === "NO" && (
+                                      <span className="text-[10px] text-orange-600 bg-orange-50 px-1 rounded">
+                                        Inconcluso
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* No Universitaria / Otros */}
+                        {persona.no_university_education?.length > 0 && (
+                          <div>
+                            <div className="h-px bg-border my-4" />
+                            <h5 className="text-xs font-bold text-muted-foreground uppercase mb-2">
+                              Otros Estudios
+                            </h5>
+                            <div className="space-y-3">
+                              {persona.no_university_education.map((edu, i) => (
+                                <div key={i} className="text-sm">
+                                  <p className="font-medium">{edu.career}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {edu.graduate_school}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* 2. LEGAL / ANTECEDENTES */}
+          <TabsContent value="legal" className="animate-in fade-in-50">
+            <div className="grid gap-4 max-w-3xl mx-auto">
+              {persona.backgrounds.length > 0 ? (
+                persona.backgrounds.map((bg, i) => (
+                  <Card
+                    key={i}
+                    className="pt-0 border-l-4 border-l-destructive overflow-hidden"
+                  >
+                    <div className="bg-destructive/10 py-2 px-4 flex justify-between items-center">
+                      <span className="text-xs font-bold text-destructive uppercase tracking-wider">
+                        {bg.type}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground bg-background/50 px-2 py-0.5 rounded">
+                        Expediente declarado
+                      </span>
+                    </div>
+                    <CardContent className="pt-4">
+                      <h4 className="font-bold text-lg mb-2 text-foreground">
+                        {bg.title}
+                      </h4>
+                      <div className="bg-muted/30 p-4 rounded-lg border text-sm text-foreground/80 leading-relaxed">
+                        {bg.summary}
+                      </div>
+                      <div className="flex flex-wrap gap-4 mt-4 text-sm">
+                        {bg.sanction && (
+                          <span className="text-destructive font-semibold flex items-center gap-1.5 bg-destructive/5 px-2 py-1 rounded">
+                            <Gavel className="w-4 h-4" /> Sanción: {bg.sanction}
+                          </span>
+                        )}
+                        {bg.status && (
+                          <Badge variant="outline" className="h-7 px-3">
+                            Estado: {bg.status.replace(/_/g, " ")}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed">
+                  <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-xl font-medium text-foreground">
                     Hoja de vida limpia
                   </h3>
-                  <p className="text-muted-foreground">
-                    No se registran sentencias o antecedentes declarados.
+                  <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                    No se registran sentencias penales, civiles o laborales
+                    declaradas en la hoja de vida presentada al JNE.
                   </p>
                 </div>
               )}
@@ -308,77 +585,156 @@ export default function DetailCandidato({
           </TabsContent>
 
           {/* 3. BIENES Y RENTAS */}
-          <TabsContent value="bienes" className="space-y-6">
+          <TabsContent
+            value="bienes"
+            className="space-y-6 animate-in fade-in-50"
+          >
             {/* Resumen de Ingresos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-emerald-50/50 dark:bg-emerald-950/10 border-emerald-100">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <div className="p-3 bg-emerald-100 text-emerald-600 rounded-full">
-                    <DollarSign size={24} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground font-medium">
-                      Ingresos Totales (Anual)
+            {incomeData ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-emerald-200 dark:bg-emerald-900 rounded-full text-emerald-800 dark:text-emerald-300">
+                        <DollarSign className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300 uppercase">
+                        Total Anual
+                      </span>
+                    </div>
+                    <p className="text-3xl font-black text-emerald-900 dark:text-emerald-100">
+                      {formatCurrency(incomeData.total_income)}
                     </p>
-                    <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                      {/* Aquí lógica para sumar ingresos o mostrar el último */}
-                      {persona.incomes?.[0]?.total_income || "S/ 0.00"}
+                    <p className="text-xs text-emerald-700 mt-1">
+                      Declarado en hoja de vida
                     </p>
-                  </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-xs text-muted-foreground uppercase font-bold mb-1">
+                      Sector Público
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(incomeData.public_income)}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-6">
+                    <p className="text-xs text-muted-foreground uppercase font-bold mb-1">
+                      Sector Privado
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(incomeData.private_income)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <NoDataMessage
+                text="No se registra información de ingresos declarada."
+                icon={DollarSign}
+              />
+            )}
+
+            {/* Lista detallada de bienes */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Home className="w-5 h-5 text-muted-foreground" /> Inmuebles
+                    y Muebles
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  {persona.assets?.length > 0 ? (
+                    persona.assets.map((asset, i) => (
+                      <div
+                        key={i}
+                        className="flex justify-between items-start p-3 bg-muted/20 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border"
+                      >
+                        <div className="flex gap-3">
+                          <div className="mt-1">
+                            {asset.type.includes("CAMIONETA") ||
+                            asset.type.includes("VEHICULO") ||
+                            asset.type.includes("AUTO") ? (
+                              <Car className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <Building2 className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">
+                              {asset.type}
+                            </p>
+                            {asset.description && (
+                              <p className="text-xs text-muted-foreground">
+                                {asset.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-mono text-sm font-medium whitespace-nowrap">
+                          {formatCurrency(asset.value)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <NoDataMessage text="No registra bienes muebles o inmuebles." />
+                  )}
                 </CardContent>
               </Card>
-              {/* Lista detallada debajo... */}
+
+              {/* Nota informativa */}
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900 h-fit">
+                <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                  <ScrollText className="w-4 h-4" /> Sobre esta información
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-400 leading-relaxed">
+                  La información patrimonial mostrada corresponde a lo declarado
+                  por el candidato ante el Jurado Nacional de Elecciones (JNE)
+                  en su Hoja de Vida para el presente proceso electoral. Los
+                  montos corresponden al ejercicio fiscal anterior al registro.
+                </p>
+              </div>
             </div>
-            {/* Lista de inmuebles/muebles */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Patrimonio Declarado
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-2">
-                {persona.assets?.map((asset, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg transition-colors border border-transparent hover:border-border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Home className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{asset.type}</span>
-                    </div>
-                    <span className="font-mono text-sm">{asset.value}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
           </TabsContent>
 
-          {/* 4. TIMELINE / BIO */}
-          <TabsContent value="timeline">
+          {/* 4. TIMELINE / BIOGRAFÍA */}
+          <TabsContent value="timeline" className="animate-in fade-in-50">
             <Card>
-              <CardContent className="pt-6">
-                <div className="border-l-2 border-muted ml-3 space-y-8">
-                  {persona.detailed_biography?.map((bio, i) => (
-                    <div key={i} className="relative pl-8">
-                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full border-4 border-background bg-brand" />
-                      <span className="text-xs font-bold text-brand block mb-1">
-                        {bio.date}
-                      </span>
-                      <p className="text-sm text-foreground">
-                        {bio.description}
-                      </p>
-                      {bio.source_url && (
-                        <Link
-                          href={bio.source_url}
-                          target="_blank"
-                          className="text-xs text-muted-foreground flex items-center gap-1 mt-2 hover:text-brand"
-                        >
-                          <ExternalLink size={12} /> Fuente
-                        </Link>
-                      )}
-                    </div>
-                  ))}
-                </div>
+              <CardContent className="pt-8">
+                {persona.detailed_biography?.length > 0 ? (
+                  <div className="max-w-3xl mx-auto border-l-2 border-primary/20 ml-4 space-y-10">
+                    {persona.detailed_biography.map((bio, i) => (
+                      <div key={i} className="relative pl-8">
+                        {/* Punto de tiempo */}
+                        <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-background bg-primary shadow-sm" />
+
+                        <span className="inline-block px-2 py-0.5 rounded text-xs font-bold bg-primary/10 text-primary mb-2">
+                          {bio.date}
+                        </span>
+
+                        <p className="text-base text-foreground leading-relaxed">
+                          {bio.description}
+                        </p>
+
+                        {bio.source_url && (
+                          <Link
+                            href={bio.source_url}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 mt-3 text-xs text-muted-foreground hover:text-primary transition-colors border-b border-dashed border-muted-foreground/50 hover:border-primary"
+                          >
+                            <ExternalLink size={12} /> Fuente verificada
+                          </Link>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <NoDataMessage text="No hay biografía detallada disponible." />
+                )}
               </CardContent>
             </Card>
           </TabsContent>

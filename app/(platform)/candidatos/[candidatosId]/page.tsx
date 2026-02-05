@@ -14,7 +14,6 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
     const candidato = await getPersonaAsCandidatoById(candidatosId);
 
     if (!candidato) notFound();
-    console.log("data", candidato);
     return (
       <ContentPlatformLayout>
         <section className="pt-4 container mx-auto pb-20 lg:pb-0">
