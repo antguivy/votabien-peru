@@ -9,6 +9,10 @@ export const optionItemSchema = z.object({
 export const triviaSchema = z.object({
   id: z.string().optional(),
   quote: z.string().min(5, "La frase o pregunta es requerida"),
+  global_index: z.coerce.number().min(1, "El índice debe ser mayor a 0"),
+  explanation: z.string().optional().nullable(),
+  source_url: z.string().url("URL inválida").optional().or(z.literal("")),
+
   category: z.string().min(1, "Selecciona una categoría"),
   difficulty: z.enum(["FACIL", "MEDIO", "DIFICIL"]),
 

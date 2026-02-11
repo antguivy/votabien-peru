@@ -5,12 +5,13 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Search, Trash2 } from "lucide-react";
+import { GripVertical, LinkIcon, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -42,15 +43,141 @@ import { createTrivia, updateTrivia } from "../_lib/actions";
 import { PersonSelector } from "@/components/person-selector";
 import { PartySelector } from "@/components/party-selector";
 import { Input } from "@/components/ui/input";
-import { TriviaBasic } from "@/interfaces/trivia";
+import { TriviaBasic, TriviaOption } from "@/interfaces/trivia";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { PoliticalPartyBase } from "@/interfaces/politics";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+interface SortableOptionProps {
+  id: string;
+  index: number;
+  option: TriviaOption;
+  isSelected: boolean;
+  onSelect: (value: string) => void;
+  onRemove: () => void;
+}
+
+const OPTION_LABELS = ["A", "B", "C", "D"];
+
+function SortableOptionItem({
+  id,
+  index,
+  option,
+  isSelected,
+  onSelect,
+  onRemove,
+}: SortableOptionProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : "auto",
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="mb-2 touch-none">
+      <Card
+        className={`relative flex flex-row items-center p-2 transition-all ${
+          isSelected
+            ? "border-green-500 bg-green-50/50 dark:bg-green-900/20"
+            : "bg-muted/20 border-transparent hover:bg-muted/30"
+        }`}
+      >
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab p-2 hover:bg-muted rounded mr-1 text-muted-foreground"
+        >
+          <GripVertical size={18} />
+        </div>
+
+        {/* Letter Badge (A, B, C, D) */}
+        <div className="mr-3 flex-shrink-0">
+          <Badge
+            variant="outline"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-base font-bold bg-background"
+          >
+            {OPTION_LABELS[index]}
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-3 w-full">
+          <FormControl>
+            <RadioGroupItem
+              value={option.option_id}
+              id={`rb-${option.option_id}`}
+              className="data-[state=checked]:bg-green-600 border-muted-foreground/30"
+              onClick={() => onSelect(option.option_id)}
+            />
+          </FormControl>
+
+          <div
+            className="flex-1 cursor-pointer flex items-center gap-3"
+            onClick={() => onSelect(option.option_id)}
+          >
+            <Avatar className="h-8 w-8 border bg-white">
+              <AvatarImage
+                src={option.image_url || ""}
+                className="object-contain"
+              />
+              <AvatarFallback>?</AvatarFallback>
+            </Avatar>
+
+            <Label
+              htmlFor={`rb-${option.option_id}`}
+              className="font-medium cursor-pointer text-sm line-clamp-1"
+            >
+              {option.name}
+            </Label>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={onRemove}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 interface TriviaFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: "create" | "edit";
   initialData?: TriviaBasic;
+  nextOrderIndex?: number;
 }
 
 const defaultFormValues: TriviaFormValues = {
@@ -60,6 +187,9 @@ const defaultFormValues: TriviaFormValues = {
   target_type: "PERSON",
   correct_answer_id: "",
   options: [],
+  global_index: 0,
+  explanation: "",
+  source_url: "",
 };
 
 export function TriviaFormDialog({
@@ -67,23 +197,31 @@ export function TriviaFormDialog({
   onOpenChange,
   mode = "create",
   initialData,
+  nextOrderIndex,
 }: TriviaFormDialogProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
   const [globalSearch, setGlobalSearch] = useState("");
-  const form = useForm<TriviaFormValues>({
+  const form = useForm({
     resolver: zodResolver(triviaSchema),
     defaultValues: defaultFormValues,
     mode: "onChange",
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove, replace, move } = useFieldArray({
     control: form.control,
     name: "options",
   });
 
   const targetType = form.watch("target_type");
   const correctAnswerId = form.watch("correct_answer_id");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   useEffect(() => {
     if (open) {
@@ -97,9 +235,7 @@ export function TriviaFormDialog({
         const optionsWithFormId = (initialData.options || []).map((opt) => ({
           option_id: opt.option_id,
           name: opt.name,
-          image_url:
-            opt.image_candidate_url || opt.image_url || opt.logo_url || null,
-          image_candidate_url: opt.image_candidate_url || opt.image_url || null, // Para mantener compatibilidad con el form
+          image_candidate_url: opt.image_url || null,
         }));
 
         form.reset({
@@ -109,12 +245,18 @@ export function TriviaFormDialog({
           target_type: type,
           correct_answer_id: correctId ?? "",
           options: optionsWithFormId,
+          global_index: initialData.global_index,
+          explanation: initialData.explanation || "",
+          source_url: initialData.source_url || "",
         });
       } else {
-        form.reset(defaultFormValues);
+        form.reset({
+          ...defaultFormValues,
+          global_index: nextOrderIndex || 1,
+        });
       }
     }
-  }, [open, mode, initialData, form]);
+  }, [open, mode, initialData, form, nextOrderIndex]);
 
   const onSubmit = async (values: TriviaFormValues) => {
     const isEditing = mode === "edit";
@@ -133,7 +275,15 @@ export function TriviaFormDialog({
       error: (err) => err.message,
     });
   };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((f) => f.id === active.id);
+      const newIndex = fields.findIndex((f) => f.id === over.id);
+      move(oldIndex, newIndex); // React Hook Form 'move'
+    }
+  };
   const handleAddPersonOption = (person: PersonBasicInfo) => {
     if (!person) return;
     const currentOptions = form.getValues("options");
@@ -176,7 +326,7 @@ export function TriviaFormDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-2xl flex flex-col">
+      <CredenzaContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
         <CredenzaHeader className="pb-2 border-b space-y-3">
           <div className="flex items-center justify-between pr-8 sm:pr-0">
             <CredenzaTitle>
@@ -205,7 +355,7 @@ export function TriviaFormDialog({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col"
+            className="flex flex-col flex-1 overflow-hidden"
           >
             <div className="px-4 pt-2">
               <Tabs
@@ -228,9 +378,10 @@ export function TriviaFormDialog({
               </Tabs>
             </div>
 
-            <CredenzaBody className="flex-1 overflow-y-auto px-4 pb-4">
+            <CredenzaBody className="flex-1 overflow-y-auto px-4 pb-4 overflow-x-hidden">
               {activeTab === "general" && (
                 <div className="space-y-4 py-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                  {/* --- FILA SUPERIOR: Quote --- */}
                   <FormField
                     control={form.control}
                     name="quote"
@@ -240,7 +391,7 @@ export function TriviaFormDialog({
                         <FormControl>
                           <Textarea
                             placeholder="Ej: Plata como cancha"
-                            className="resize-none h-32"
+                            className="resize-none h-24"
                             {...field}
                           />
                         </FormControl>
@@ -249,7 +400,8 @@ export function TriviaFormDialog({
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* --- FILA DE 3 COLUMNAS: Global Index, Category, Difficulty --- */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="category"
@@ -303,32 +455,105 @@ export function TriviaFormDialog({
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="target_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Entidad</FormLabel>
+                          <Select
+                            onValueChange={(val) => {
+                              field.onChange(val);
+                              replace([]);
+                              form.setValue("correct_answer_id", "");
+                            }}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="PERSON">Personajes</SelectItem>
+                              <SelectItem value="PARTY">Partidos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="global_index"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel># Orden Global</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={1}
+                              placeholder="Calculando..."
+                              {...field}
+                              value={Number(field.value) ?? ""}
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Automático: Es el siguiente número disponible.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
+                  {/* --- FILA NUEVA: Explicación --- */}
                   <FormField
                     control={form.control}
-                    name="target_type"
+                    name="explanation"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tipo de Respuesta</FormLabel>
-                        <Select
-                          onValueChange={(val) => {
-                            field.onChange(val);
-                            replace([]);
-                            form.setValue("correct_answer_id", "");
-                          }}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="PERSON">Personajes</SelectItem>
-                            <SelectItem value="PARTY">Partidos</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="flex items-center gap-2">
+                          Explicación{" "}
+                          <span className="text-muted-foreground text-xs font-normal">
+                            (Opcional)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Contexto adicional sobre la respuesta correcta..."
+                            className="resize-none h-20"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* --- FILA NUEVA: Source URL --- */}
+                  <FormField
+                    control={form.control}
+                    name="source_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <LinkIcon size={14} /> Fuente{" "}
+                          <span className="text-muted-foreground text-xs font-normal">
+                            (URL)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://..."
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -338,6 +563,72 @@ export function TriviaFormDialog({
               {activeTab === "options" && (
                 <div className="space-y-5 py-2 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
+                    {fields.length > 0 && (
+                      <div className="space-y-3 pt-4 border-t">
+                        <Label className="flex justify-between">
+                          <span>Orden de Respuestas ({fields.length}/4)</span>
+                          <span className="text-xs text-muted-foreground font-normal">
+                            Arrastra para reordenar
+                          </span>
+                        </Label>
+
+                        <FormField
+                          control={form.control}
+                          name="correct_answer_id"
+                          render={({ field }) => (
+                            <FormItem className="space-y-0">
+                              <RadioGroup
+                                key={field.value}
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                className="flex flex-col gap-2"
+                              >
+                                <DndContext
+                                  sensors={sensors}
+                                  collisionDetection={closestCenter}
+                                  onDragEnd={handleDragEnd}
+                                >
+                                  <SortableContext
+                                    items={fields}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {fields.map((option, index) => (
+                                      <SortableOptionItem
+                                        key={option.id}
+                                        id={option.id}
+                                        index={index}
+                                        option={option}
+                                        isSelected={
+                                          field.value === option.option_id
+                                        }
+                                        onSelect={(val) =>
+                                          form.setValue(
+                                            "correct_answer_id",
+                                            val,
+                                          )
+                                        }
+                                        onRemove={() => {
+                                          remove(index);
+                                          if (
+                                            field.value === option.option_id
+                                          ) {
+                                            form.setValue(
+                                              "correct_answer_id",
+                                              "",
+                                            );
+                                          }
+                                        }}
+                                      />
+                                    ))}
+                                  </SortableContext>
+                                </DndContext>
+                              </RadioGroup>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">
                       Resultados de búsqueda
                     </Label>
@@ -356,133 +647,45 @@ export function TriviaFormDialog({
                       />
                     )}
                   </div>
-
-                  {fields.length > 0 && (
-                    <div className="space-y-3 pt-4 border-t">
-                      <Label>Opciones Seleccionadas ({fields.length}/4)</Label>
-                      <FormField
-                        control={form.control}
-                        name="correct_answer_id"
-                        render={({ field }) => (
-                          <FormItem className="space-y-0">
-                            <RadioGroup
-                              key={field.value}
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              className="flex flex-col gap-2"
-                            >
-                              {fields.map((option, index) => {
-                                const isSelected =
-                                  field.value === option.option_id;
-
-                                return (
-                                  <Card
-                                    key={option.id}
-                                    className={`relative flex items-center p-3 transition-all ${
-                                      isSelected
-                                        ? "border-green-500 bg-green-50/50 dark:bg-green-900/20"
-                                        : "bg-muted/20 border-transparent hover:bg-muted/30"
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-3 w-full">
-                                      <FormControl>
-                                        <RadioGroupItem
-                                          value={option.option_id}
-                                          id={`rb-${option.id}`}
-                                          className="data-[state=checked]:bg-green-600 border-muted-foreground/30"
-                                        />
-                                      </FormControl>
-
-                                      <div
-                                        className="flex-1 cursor-pointer flex items-center gap-3"
-                                        onClick={() =>
-                                          form.setValue(
-                                            "correct_answer_id",
-                                            option.option_id,
-                                          )
-                                        }
-                                      >
-                                        <Avatar className="h-8 w-8 border bg-white">
-                                          <AvatarImage
-                                            src={
-                                              option.image_candidate_url || ""
-                                            }
-                                            className="object-contain"
-                                          />
-                                          <AvatarFallback>?</AvatarFallback>
-                                        </Avatar>
-
-                                        <Label
-                                          htmlFor={`rb-${option.id}`}
-                                          className="font-medium cursor-pointer text-sm"
-                                        >
-                                          {option.name}
-                                        </Label>
-                                      </div>
-
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => {
-                                          remove(index);
-                                          if (isSelected)
-                                            form.setValue(
-                                              "correct_answer_id",
-                                              "",
-                                            );
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </div>
-                                  </Card>
-                                );
-                              })}
-                            </RadioGroup>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
                 </div>
               )}
             </CredenzaBody>
+
+            <CredenzaFooter className="flex justify-between pt-4 mt-auto border-t bg-background px-4 pb-4">
+              {activeTab === "options" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setActiveTab("general")}
+                  >
+                    Atrás
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={fields.length < 2 || !correctAnswerId}
+                  >
+                    {mode === "edit" ? "Guardar" : "Crear"}
+                  </Button>
+                </>
+              )}
+              {activeTab === "general" && (
+                <div className="flex w-full justify-end">
+                  <Button type="button" onClick={() => setActiveTab("options")}>
+                    Continuar
+                  </Button>
+                </div>
+              )}
+            </CredenzaFooter>
           </form>
         </Form>
-        <CredenzaFooter className="flex justify-between pt-4 mt-4">
-          {activeTab === "options" && (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setActiveTab("general")}
-              >
-                Atrás
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={fields.length < 2 || !correctAnswerId}
-              >
-                {mode === "edit" ? "Guardar" : "Crear"}
-              </Button>
-            </>
-          )}
-          {activeTab === "general" && (
-            <Button type="button" onClick={() => setActiveTab("options")}>
-              Continuar
-            </Button>
-          )}
-        </CredenzaFooter>
       </CredenzaContent>
     </Credenza>
   );

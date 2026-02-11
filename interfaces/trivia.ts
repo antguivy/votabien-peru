@@ -2,8 +2,6 @@ export interface TriviaOption {
   option_id: string;
   name: string;
   image_url?: string | null;
-  image_candidate_url?: string | null;
-  logo_url?: string | null;
 }
 
 export interface TriviaBasic {
@@ -12,6 +10,10 @@ export interface TriviaBasic {
   quote: string;
   category: "POLEMICO" | "HISTORIA" | "PROPUESTA" | "CORRUPCION";
   difficulty: "FACIL" | "MEDIO" | "DIFICIL";
+  global_index: number;
+  explanation: string | null;
+  source_url: string | null;
+
   person_id: string | null;
   political_party_id: string | null;
   options: TriviaOption[];

@@ -5,6 +5,11 @@ import { getTrivias } from "./_lib/data";
 
 export default async function TriviaPage() {
   const [trivias] = await Promise.all([getTrivias()]);
+  const maxIndex =
+    trivias.length > 0 ? Math.max(...trivias.map((t) => t.global_index)) : 0;
+
+  const nextAvailableIndex = maxIndex + 1;
+  console.log("nextAvailableIndex", nextAvailableIndex);
 
   return (
     <ContentLayout title="Trivia">
@@ -13,10 +18,10 @@ export default async function TriviaPage() {
           <h2 className="text-2xl font-bold tracking-tight">
             Banco de Preguntas
           </h2>
-          <CreateTriviaButton />
+          <CreateTriviaButton nextOrderIndex={nextAvailableIndex} />
         </div>
 
-        <TriviaList trivias={trivias} />
+        <TriviaList trivias={trivias} nextOrderIndex={nextAvailableIndex} />
       </div>
     </ContentLayout>
   );

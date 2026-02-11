@@ -8,6 +8,7 @@ import { extractErrorMessage } from "@/lib/error-handler";
 
 export async function createTrivia(data: TriviaFormValues) {
   const supabase = await createClient();
+
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -18,7 +19,14 @@ export async function createTrivia(data: TriviaFormValues) {
       quote: data.quote,
       category: data.category,
       difficulty: data.difficulty,
+
+      // Nuevos campos
+      global_index: data.global_index,
+      explanation: data.explanation || null,
+      source_url: data.source_url || null,
+
       options: data.options,
+
       person_id: data.target_type === "PERSON" ? data.correct_answer_id : null,
       political_party_id:
         data.target_type === "PARTY" ? data.correct_answer_id : null,
@@ -38,12 +46,24 @@ export async function createTrivia(data: TriviaFormValues) {
 export async function updateTrivia(id: number, data: TriviaFormValues) {
   const supabase = await createClient();
 
+  const validation = triviaSchema.safeParse(data);
+  if (!validation.success) {
+    return { success: false, error: validation.error.message };
+  }
+
   try {
     const payload: TablesUpdate<"triviagame"> = {
       quote: data.quote,
       category: data.category,
       difficulty: data.difficulty,
+
+      // Nuevos campos
+      global_index: data.global_index,
+      explanation: data.explanation || null,
+      source_url: data.source_url || null,
+
       options: data.options,
+
       person_id: data.target_type === "PERSON" ? data.correct_answer_id : null,
       political_party_id:
         data.target_type === "PARTY" ? data.correct_answer_id : null,

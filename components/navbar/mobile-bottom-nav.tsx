@@ -18,16 +18,17 @@ import {
   Home,
   UserCheck,
   Search,
-  BookHeadphones,
   Menu,
-  ScrollText,
   Flag,
+  Users,
+  BookUser,
 } from "lucide-react";
 
 export const MobileBottomNav = () => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [expandedIcon, setExpandedIcon] = useState<string | null>(null);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -52,17 +53,30 @@ export const MobileBottomNav = () => {
           icon: Search,
           isAction: true,
         },
-        { href: "/legisladores", label: "Congresistas", icon: BookHeadphones },
+        { href: "/legisladores", label: "Congresistas", icon: BookUser },
         { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
       ];
     }
     return [
-      { href: "/trivia", label: "Trivia", icon: ScrollText },
+      // { href: "/trivia", label: "Trivia", icon: ScrollText },
       { href: "/candidatos", label: "Candidatos", icon: UserCheck },
       { href: "/partidos", label: "Partidos", icon: Flag },
+      { href: "/equipo", label: "Equipo", icon: Users },
       { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
     ];
   }, [pathname]);
+
+  // Auto-expand the current active route icon
+  useEffect(() => {
+    // Find the active nav item based on current pathname
+    const activeItem = currentNavItems.find(
+      (item) => !item.isAction && pathname === item.href,
+    );
+
+    if (activeItem) {
+      setExpandedIcon(activeItem.href);
+    }
+  }, [pathname, currentNavItems]);
 
   const handleNavClick = (item: { href: string; isAction?: boolean }) => {
     if (item.href === "ACTION:SEARCH") {
@@ -74,6 +88,25 @@ export const MobileBottomNav = () => {
     if (item.href === "ACTION:MENU") {
       setIsMenuOpen(true);
       return;
+    }
+  };
+
+  const handleIconClick = (
+    href: string,
+    e: React.MouseEvent,
+    isAction?: boolean,
+  ) => {
+    if (isAction) return;
+
+    // Toggle expanded state - mantener expandido hasta que se haga click nuevamente
+    if (expandedIcon === href) {
+      // Si ya está expandido, colapsar solo si NO es la ruta activa
+      if (pathname !== href) {
+        setExpandedIcon(null);
+      }
+    } else {
+      // Expandir el nuevo ícono
+      setExpandedIcon(href);
     }
   };
 
@@ -97,7 +130,7 @@ export const MobileBottomNav = () => {
     <>
       {/* --- BARRA FLOTANTE --- */}
       <div className="fixed bottom-5 left-4 right-4 z-40 lg:hidden animate-in slide-in-from-bottom-10 duration-500">
-        <nav className="flex items-center justify-between px-2 py-1 rounded-[2.5rem] bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
+        <nav className="flex items-center justify-between px-4 py-1 rounded-[2rem] bg-background/80 backdrop-blur-xl border border-border/50 shadow-2xl ring-1 ring-black/5 dark:ring-white/10">
           {currentNavItems.map((item, index) => {
             const Icon = item.icon;
             const isActive =
@@ -105,26 +138,30 @@ export const MobileBottomNav = () => {
               (item.href === "ACTION:SEARCH" && isSearchActive) ||
               (item.href === "ACTION:MENU" && isMenuOpen);
 
+            // Botón central elevado (Search)
             if (item.href === "ACTION:SEARCH") {
               return (
                 <button
                   key={index}
                   onClick={() => handleNavClick(item)}
                   className={cn(
-                    "relative -top-5 flex items-center justify-center w-14 h-14 rounded-full shadow-lg border-4 border-background transition-all duration-300 active:scale-95",
+                    "relative -top-6 flex items-center justify-center w-16 h-16 rounded-full shadow-2xl border-4 border-background transition-all duration-300 active:scale-95",
                     isActive
                       ? "bg-foreground text-background rotate-90"
                       : "bg-primary text-primary-foreground",
                   )}
                 >
                   {isActive ? (
-                    <X className="w-6 h-6" />
+                    <X className="w-7 h-7" strokeWidth={2.5} />
                   ) : (
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-7 h-7" strokeWidth={2.5} />
                   )}
                 </button>
               );
             }
+
+            // Iconos laterales con expansión
+            const isExpanded = expandedIcon === item.href;
 
             return (
               <Link
@@ -134,32 +171,37 @@ export const MobileBottomNav = () => {
                   if (item.isAction) {
                     e.preventDefault();
                     handleNavClick(item);
+                  } else {
+                    handleIconClick(item.href, e, item.isAction);
                   }
                 }}
                 className={cn(
-                  "relative group flex flex-col items-center justify-center w-14 h-12 transition-all",
-                  pathname === "/" ? "flex-1" : "",
+                  "group relative flex items-center justify-center transition-all duration-300 rounded-full overflow-hidden",
+                  isExpanded
+                    ? "bg-primary text-primary-foreground px-4 py-2 gap-2 h-12"
+                    : "w-14 h-12",
                 )}
               >
-                {isActive && !item.isAction && (
-                  <span className="absolute -top-1 w-1 h-1 rounded-full bg-primary" />
-                )}
                 <Icon
                   className={cn(
-                    "w-6 h-6 transition-all duration-300",
-                    isActive
+                    "transition-all duration-300 flex-shrink-0",
+                    isExpanded ? "w-5 h-5" : "w-6 h-6",
+                    isActive && !isExpanded
                       ? "text-primary scale-110"
-                      : "text-muted-foreground group-hover:text-foreground",
-                    pathname === "/" && item.href === "/trivia" && !isActive
-                      ? "text-foreground animate-pulse duration-[3000ms]"
-                      : "",
+                      : isExpanded
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground group-hover:text-foreground group-active:scale-95",
                   )}
-                  strokeWidth={isActive ? 2.5 : 2}
+                  strokeWidth={isActive || isExpanded ? 2.5 : 2}
                 />
+
+                {/* Label expandible */}
                 <span
                   className={cn(
-                    "text-[9px] font-bold mt-0.5 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground/70",
+                    "font-bold text-sm whitespace-nowrap transition-all duration-300",
+                    isExpanded
+                      ? "opacity-100 max-w-[100px]"
+                      : "opacity-0 max-w-0 overflow-hidden",
                   )}
                 >
                   {item.label}

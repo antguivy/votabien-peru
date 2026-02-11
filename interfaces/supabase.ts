@@ -840,15 +840,16 @@ export type Database = {
           place_of_birth: string | null;
           political_role: Json | null;
           popular_election: Json | null;
-          postgraduate_education: Json | null;
+          postgraduate_education: Json;
           profession: string | null;
+          sanction_status: string | null;
           secondary_school: boolean | null;
           technical_education: Json | null;
           tiktok_url: string | null;
           twitter_url: string | null;
-          university_education: Json | null;
+          university_education: Json;
           updated_at: string;
-          work_experience: Json | null;
+          work_experience: Json;
         };
         Insert: {
           assets?: Json | null;
@@ -874,15 +875,16 @@ export type Database = {
           place_of_birth?: string | null;
           political_role?: Json | null;
           popular_election?: Json | null;
-          postgraduate_education?: Json | null;
+          postgraduate_education?: Json;
           profession?: string | null;
+          sanction_status?: string | null;
           secondary_school?: boolean | null;
           technical_education?: Json | null;
           tiktok_url?: string | null;
           twitter_url?: string | null;
-          university_education?: Json | null;
+          university_education?: Json;
           updated_at?: string;
-          work_experience?: Json | null;
+          work_experience?: Json;
         };
         Update: {
           assets?: Json | null;
@@ -908,15 +910,16 @@ export type Database = {
           place_of_birth?: string | null;
           political_role?: Json | null;
           popular_election?: Json | null;
-          postgraduate_education?: Json | null;
+          postgraduate_education?: Json;
           profession?: string | null;
+          sanction_status?: string | null;
           secondary_school?: boolean | null;
           technical_education?: Json | null;
           tiktok_url?: string | null;
           twitter_url?: string | null;
-          university_education?: Json | null;
+          university_education?: Json;
           updated_at?: string;
-          work_experience?: Json | null;
+          work_experience?: Json;
         };
         Relationships: [];
       };
@@ -1181,31 +1184,40 @@ export type Database = {
           category: string | null;
           created_at: string;
           difficulty: string | null;
+          explanation: string | null;
+          global_index: number;
           id: number;
           options: Json | null;
           person_id: string | null;
           political_party_id: string | null;
           quote: string | null;
+          source_url: string | null;
         };
         Insert: {
           category?: string | null;
           created_at?: string;
           difficulty?: string | null;
+          explanation?: string | null;
+          global_index: number;
           id?: number;
           options?: Json | null;
           person_id?: string | null;
           political_party_id?: string | null;
           quote?: string | null;
+          source_url?: string | null;
         };
         Update: {
           category?: string | null;
           created_at?: string;
           difficulty?: string | null;
+          explanation?: string | null;
+          global_index?: number;
           id?: number;
           options?: Json | null;
           person_id?: string | null;
           political_party_id?: string | null;
           quote?: string | null;
+          source_url?: string | null;
         };
         Relationships: [
           {

@@ -4,7 +4,11 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { TriviaFormDialog } from "./trivia-form-dialog";
 
-export function CreateTriviaButton() {
+export function CreateTriviaButton({
+  nextOrderIndex,
+}: {
+  nextOrderIndex: number;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -12,7 +16,11 @@ export function CreateTriviaButton() {
         <Plus className="mr-2 h-4 w-4" />
         Crear
       </Button>
-      <TriviaFormDialog open={isOpen} onOpenChange={setIsOpen} />
+      <TriviaFormDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        nextOrderIndex={nextOrderIndex}
+      />
     </>
   );
 }

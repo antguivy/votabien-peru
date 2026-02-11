@@ -55,16 +55,17 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: BookHeadphones,
   },
+  // { type: "link", href: "/comparador", label: "Comparador", icon: GitCompare },
 
   // --- Dropdown: Utilidades ---
-  {
-    type: "dropdown",
-    label: "Utilidades",
-    children: [
-      { href: "/trivia", label: "Trivia", icon: ScrollText },
-      { href: "/comparador", label: "Comparador", icon: GitCompare },
-    ],
-  },
+  // {
+  //   type: "dropdown",
+  //   label: "Utilidades",
+  //   children: [
+  //     { href: "/trivia", label: "Trivia", icon: ScrollText },
+  //     { href: "/comparador", label: "Comparador", icon: GitCompare },
+  //   ],
+  // },
 
   // --- Dropdown: Nosotros ---
   {
@@ -72,7 +73,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Nosotros",
     children: [
       { href: "/equipo", label: "Equipo", icon: Users },
-      { href: "/financiamiento", label: "Financiamiento", icon: DollarSign },
+      // { href: "/financiamiento", label: "Financiamiento", icon: DollarSign },
       { href: "/mision", label: "Misión y Visión", icon: Info },
     ],
   },
