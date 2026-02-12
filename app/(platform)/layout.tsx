@@ -8,8 +8,8 @@ export default async function PanelLayout({
   children: React.ReactNode;
 }) {
   const { profile } = await serverGetUser();
-  const isUser = profile?.role === "user";
-  if (isUser || !profile) {
+  // const isUser = profile?.role === "user";
+  if (!profile) {
     return (
       <UnderConstruction
         title="Plataforma en actualización"

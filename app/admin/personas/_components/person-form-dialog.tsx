@@ -133,7 +133,9 @@ const personSchema = z.object({
   lastname: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
   fullname: z.string(),
   image_url: z.string().nullable(),
-  image_candidate_url: z.string().nullable(),
+  image_candidate_url: z
+    .string()
+    .min(15, "Requiere url de la imagen del candidato"),
   birth_date: z.string().nullable(),
   place_of_birth: z.string().nullable(),
   profession: z.string().nullable(),
@@ -704,7 +706,7 @@ export function PersonFormDialog({
         lastname: initialData.lastname || "",
         fullname: initialData.fullname || "",
         image_url: initialData.image_url || null,
-        image_candidate_url: initialData.image_candidate_url || null,
+        image_candidate_url: initialData.image_candidate_url,
         birth_date: initialData.birth_date || null,
         place_of_birth: initialData.place_of_birth || null,
         profession: initialData.profession || null,
@@ -734,7 +736,7 @@ export function PersonFormDialog({
       lastname: "",
       fullname: "",
       image_url: null,
-      image_candidate_url: null,
+      image_candidate_url: "",
       birth_date: null,
       place_of_birth: null,
       profession: null,
@@ -811,17 +813,25 @@ export function PersonFormDialog({
       };
 
       try {
+        let result;
+
         if (isEditing) {
           const updatePayload: UpdatePersonRequest = {
             ...commonPayload,
             id: values.id,
           };
-          await updatePerson(updatePayload);
+          result = await updatePerson(updatePayload);
         } else {
           const createPayload: CreatePersonRequest = {
             ...commonPayload,
           };
-          await createPerson(createPayload);
+          result = await createPerson(createPayload);
+        }
+
+        if (!result.success) {
+          throw new Error(
+            result.error || `Error al ${message.slice(0, -1)} la persona`,
+          );
         }
 
         toast.success(`Persona ${message} exitosamente`);
@@ -833,6 +843,7 @@ export function PersonFormDialog({
             ? error.message
             : `Error al ${message.slice(0, -1)} la persona`;
         toast.error(errorMessage);
+        console.error(`Error en onSubmit (${mode}):`, error);
       }
     },
     [mode, onOpenChange, router],

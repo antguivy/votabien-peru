@@ -27,10 +27,37 @@ const toNullIfEmpty = (value: string | null | undefined): string | null => {
   return value;
 };
 
+const toJsonArray = <T>(value?: T[] | null): Json => {
+  return (value ?? []) as Json;
+};
+
 export async function createPerson(data: CreatePersonRequest) {
   const supabase = await createClient();
 
   try {
+    if (data.dni) {
+      const { data: existingPerson, error: checkError } = await supabase
+        .from("person")
+        .select("id, fullname, dni")
+        .eq("dni", data.dni)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("[createPerson] Error al verificar DNI:", checkError);
+        throw checkError;
+      }
+
+      if (existingPerson) {
+        console.warn("[createPerson] DNI duplicado encontrado:", {
+          dni: data.dni,
+          existingPerson: existingPerson,
+        });
+        throw new Error(
+          `Ya existe una persona registrada con el DNI ${data.dni}: ${existingPerson.fullname}`,
+        );
+      }
+    }
+
     const personId = createId();
 
     // Preparar datos optimizados para inserción
@@ -50,15 +77,15 @@ export async function createPerson(data: CreatePersonRequest) {
 
       // Campos JSON - Solo guardar si tienen datos
       secondary_school: data.secondary_school,
-      no_university_education: prepareJsonField(data.no_university_education),
-      technical_education: prepareJsonField(data.technical_education),
-      university_education: prepareJsonField(data.university_education),
-      postgraduate_education: prepareJsonField(data.postgraduate_education),
-      work_experience: prepareJsonField(data.work_experience),
-      political_role: prepareJsonField(data.political_role),
-      popular_election: prepareJsonField(data.popular_election),
-      incomes: prepareJsonField(data.incomes),
-      assets: prepareJsonField(data.assets),
+      no_university_education: toJsonArray(data.no_university_education),
+      technical_education: toJsonArray(data.technical_education),
+      university_education: toJsonArray(data.university_education),
+      postgraduate_education: toJsonArray(data.postgraduate_education),
+      work_experience: toJsonArray(data.work_experience),
+      political_role: toJsonArray(data.political_role),
+      popular_election: toJsonArray(data.popular_election),
+      incomes: toJsonArray(data.incomes),
+      assets: toJsonArray(data.assets),
 
       // Redes sociales
       facebook_url: toNullIfEmpty(data.facebook_url),
@@ -73,11 +100,15 @@ export async function createPerson(data: CreatePersonRequest) {
       .select()
       .single();
 
-    if (personError) throw personError;
+    if (personError) {
+      console.error("[createPerson] Error al insertar persona:", personError);
+      throw personError;
+    }
 
     revalidatePath("/admin/personas");
     return { success: true, data: person };
   } catch (error) {
+    console.error("[createPerson] Error capturado:", error);
     return {
       success: false,
       error: extractErrorMessage(error),
@@ -91,6 +122,27 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
   try {
     if (!data.id) {
       throw new Error("ID de la persona es requerido para actualizar");
+    }
+
+    // Validar si el DNI ya existe en otra persona
+    if (data.dni) {
+      const { data: existingPerson, error: checkError } = await supabase
+        .from("person")
+        .select("id, fullname, dni")
+        .eq("dni", data.dni)
+        .neq("id", data.id) // Excluir la persona actual
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("[updatePerson] Error al verificar DNI:", checkError);
+        throw checkError;
+      }
+
+      if (existingPerson) {
+        throw new Error(
+          `Ya existe otra persona registrada con el DNI ${data.dni}: ${existingPerson.fullname}`,
+        );
+      }
     }
 
     const personData: TablesUpdate<"person"> = {
@@ -131,11 +183,15 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       .select()
       .single();
 
-    if (personError) throw personError;
+    if (personError) {
+      console.error("[updatePerson] Error al actualizar persona:", personError);
+      throw personError;
+    }
 
     revalidatePath("/admin/personas");
     return { success: true, data: person };
   } catch (error) {
+    console.error("[updatePerson] Error capturado:", error);
     return {
       success: false,
       error: extractErrorMessage(error),
