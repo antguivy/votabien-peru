@@ -15,7 +15,6 @@ export const triviaSchema = z.object({
 
   category: z.string().min(1, "Selecciona una categoría"),
   difficulty: z.enum(["FACIL", "MEDIO", "DIFICIL"]),
-
   target_type: z.enum(["PERSON", "PARTY"]),
 
   correct_answer_id: z

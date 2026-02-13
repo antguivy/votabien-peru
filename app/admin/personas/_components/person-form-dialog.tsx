@@ -64,6 +64,7 @@ import {
   Incomes,
   Assets,
 } from "@/interfaces/person";
+import { Switch } from "@/components/ui/switch";
 
 // --- Schemas ---
 
@@ -867,7 +868,9 @@ export function PersonFormDialog({
     });
   };
 
-  const handleAutoFill = async () => {
+  const [jneMode, setJneMode] = useState<"classic" | "consolidated">("classic");
+
+  const handleAutoFill = async (jneMode: string) => {
     const rop = form.getValues("party_number_rop");
     const dni = form.getValues("dni");
 
@@ -882,7 +885,7 @@ export function PersonFormDialog({
     toast.info("Consultando JNE (esto toma unos segundos)...");
 
     try {
-      const result = await fetchCandidateFromJNE(rop, dni);
+      const result = await fetchCandidateFromJNE(jneMode, rop, dni);
 
       if (typeof result !== "object" || !("success" in result)) {
         throw new Error("Respuesta inesperada del servidor");
@@ -968,50 +971,73 @@ export function PersonFormDialog({
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-6 p-1"
             >
-              <div className="p-4 bg-muted/50 rounded-lg border border-dashed flex flex-col sm:flex-row gap-4 items-end">
-                <FormField
-                  control={form.control}
-                  name="party_number_rop"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Organización Política (ROP)</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Ej: 1366"
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="dni"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>DNI</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ej: 10001088" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="p-4 bg-muted/50 rounded-lg border border-dashed flex flex-col gap-4">
+                {/* Toggle JNE Mode */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Modo JNE</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      Clásico
+                    </span>
+                    <Switch
+                      checked={jneMode === "consolidated"}
+                      onCheckedChange={(checked) =>
+                        setJneMode(checked ? "consolidated" : "classic")
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Opcional
+                    </span>
+                  </div>
+                </div>
 
-                <Button
-                  type="button"
-                  onClick={handleAutoFill}
-                  disabled={loadingJNE}
-                >
-                  {loadingJNE ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="mr-2 h-4 w-4" />
-                  )}
-                  {loadingJNE ? "Buscando..." : "Importar JNE"}
-                </Button>
+                {/* Campos */}
+                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                  <FormField
+                    control={form.control}
+                    name="party_number_rop"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Organización Política (ROP)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Ej: 1366"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="dni"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>DNI</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ej: 10001088" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="button"
+                    onClick={() => handleAutoFill(jneMode)}
+                    disabled={loadingJNE}
+                  >
+                    {loadingJNE ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-2 h-4 w-4" />
+                    )}
+                    {loadingJNE ? "Buscando..." : "Importar JNE"}
+                  </Button>
+                </div>
               </div>
               <Tabs defaultValue="general" className="w-full">
                 <TabsList className="grid w-full grid-cols-5">

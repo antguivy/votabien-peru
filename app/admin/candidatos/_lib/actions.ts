@@ -15,6 +15,7 @@ import {
   CreateCandidatePeriodRequest,
   UpdateCandidatePeriodRequest,
 } from "@/interfaces/candidate";
+import { extractErrorMessage } from "@/lib/error-handler";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -25,31 +26,99 @@ const handleError = (error: unknown, msg: string) => {
   };
 };
 
-// ============= LEGISLADORES =============
-async function checkLegislatorOverlap(
-  supabase: SupabaseClient<Database>,
-  personId: string,
-  type: CandidacyType | undefined,
-) {
-  let query = supabase
-    .from("candidate")
-    .select("status, active")
-    .eq("active", true)
-    .eq("person_id", personId);
+const EXECUTIVE_TYPES = new Set<CandidacyType>([
+  CandidacyType.PRESIDENTE,
+  CandidacyType.VICEPRESIDENTE_1,
+  CandidacyType.VICEPRESIDENTE_2,
+]);
 
-  if (type) {
-    query = query.eq("type", type);
+function isExecutiveType(type: CandidacyType): boolean {
+  return EXECUTIVE_TYPES.has(type);
+}
+
+const SENATOR_NATIONAL = CandidacyType.SENADOR;
+
+/**
+ * Verifica si la combinación de candidaturas está permitida
+ * REGLA: Solo PRESIDENTE/VICE pueden ser también SENADOR (Nacional)
+ */
+function isCombinationAllowed(
+  existingType: CandidacyType,
+  newType: CandidacyType,
+  newDistrictId: string,
+  nationalDistrictId: string,
+): boolean {
+  if (existingType === newType) return false;
+
+  if (isExecutiveType(existingType) && newType === SENATOR_NATIONAL) {
+    return newDistrictId === nationalDistrictId;
   }
 
-  const { data: existingCandidate, error } = await query;
+  if (existingType === SENATOR_NATIONAL && isExecutiveType(newType)) {
+    return true;
+  }
 
-  if (error) throw error;
+  return false;
+}
 
-  if (existingCandidate && existingCandidate.length > 0) {
-    for (const cand of existingCandidate) {
-      if (cand.active && cand.status === status) {
-        throw new Error(`Ya existe una Candidatura activa que se solapa.`);
-      }
+// ============= VALIDACIONES =============
+async function checkCandidacyOverlap(
+  supabase: SupabaseClient<Database>,
+  personId: string,
+  processId: string,
+  type: CandidacyType,
+  districtId: string,
+  excludeCandidateId?: string,
+) {
+  const { data: nationalDistrict } = await supabase
+    .from("electoraldistrict")
+    .select("id")
+    .ilike("name", "%nacional%")
+    .single();
+
+  const nationalDistrictId = nationalDistrict?.id || "";
+
+  let query = supabase
+    .from("candidate")
+    .select("id, type, electoral_district_id")
+    .eq("active", true)
+    .eq("person_id", personId)
+    .eq("electoral_process_id", processId);
+
+  if (excludeCandidateId) {
+    query = query.neq("id", excludeCandidateId);
+  }
+
+  const { data: existingCandidates, error } = await query;
+
+  if (error) throw new Error(error.message);
+
+  if (!existingCandidates || existingCandidates.length === 0) {
+    return; // No hay candidaturas previas, OK
+  }
+
+  // 3. Verificar si ya tiene una candidatura del mismo tipo
+  const sameTypeExists = existingCandidates.some((c) => c.type === type);
+  if (sameTypeExists) {
+    throw new Error(
+      `Esta persona ya está registrada como ${type} en este proceso electoral.`,
+    );
+  }
+
+  // 4. Verificar combinaciones permitidas
+  for (const existing of existingCandidates) {
+    const isAllowed = isCombinationAllowed(
+      existing.type as CandidacyType,
+      type,
+      districtId,
+      nationalDistrictId,
+    );
+
+    if (!isAllowed) {
+      throw new Error(
+        `Esta persona ya tiene una candidatura como ${existing.type}. ` +
+          `Solo las candidaturas de PRESIDENTE/VICEPRESIDENTE pueden combinarse con SENADOR (Distrito Nacional).`,
+      );
     }
   }
 }
@@ -59,7 +128,25 @@ export async function createCandidatePeriod(
 ) {
   const supabase = await createClient();
   try {
-    await checkLegislatorOverlap(supabase, data.person_id, data.type);
+    await checkCandidacyOverlap(
+      supabase,
+      data.person_id,
+      data.electoral_process_id,
+      data.type,
+      data.electoral_district_id,
+    );
+
+    const { data: districtExists } = await supabase
+      .from("electoraldistrict")
+      .select("id")
+      .eq("id", data.electoral_district_id)
+      .single();
+
+    if (!districtExists) {
+      throw new Error(
+        "El distrito electoral seleccionado no existe o fue eliminado",
+      );
+    }
 
     const dbData: TablesInsert<"candidate"> = {
       id: createId(),
@@ -79,12 +166,22 @@ export async function createCandidatePeriod(
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23503") {
+        throw new Error(
+          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
+        );
+      }
+      throw error;
+    }
 
     revalidatePath("/admin/candidatos");
     return { success: true, data: result };
   } catch (error) {
-    return handleError(error, "Error al crear periodo legislativo");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 
@@ -95,6 +192,22 @@ export async function updateCandidatePeriod(
   try {
     const { id, ...updateBody } = data;
 
+    if (
+      updateBody.person_id &&
+      updateBody.electoral_process_id &&
+      updateBody.type &&
+      updateBody.electoral_district_id
+    ) {
+      await checkCandidacyOverlap(
+        supabase,
+        updateBody.person_id,
+        updateBody.electoral_process_id,
+        updateBody.type,
+        updateBody.electoral_district_id,
+        id,
+      );
+    }
+
     const payload: TablesUpdate<"candidate"> = updateBody;
 
     const { data: result, error } = await supabase
@@ -104,12 +217,22 @@ export async function updateCandidatePeriod(
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "23503") {
+        throw new Error(
+          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
+        );
+      }
+      throw error;
+    }
 
     revalidatePath("/admin/candidatos");
     return { success: true, data: result };
   } catch (error) {
-    return handleError(error, "Error al actualizar candidatura");
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }
 

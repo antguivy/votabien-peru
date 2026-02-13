@@ -239,7 +239,7 @@ export type Database = {
         Row: {
           active: boolean;
           created_at: string;
-          electoral_district_id: string | null;
+          electoral_district_id: string;
           electoral_process_id: string;
           id: string;
           list_number: number | null;
@@ -252,7 +252,7 @@ export type Database = {
         Insert: {
           active: boolean;
           created_at?: string;
-          electoral_district_id?: string | null;
+          electoral_district_id: string;
           electoral_process_id: string;
           id: string;
           list_number?: number | null;
@@ -265,7 +265,7 @@ export type Database = {
         Update: {
           active?: boolean;
           created_at?: string;
-          electoral_district_id?: string | null;
+          electoral_district_id?: string;
           electoral_process_id?: string;
           id?: string;
           list_number?: number | null;
@@ -826,7 +826,7 @@ export type Database = {
           facebook_url: string | null;
           fullname: string;
           gender: string | null;
-          has_criminal_record: boolean | null;
+          has_criminal_record: boolean;
           id: string;
           image_candidate_url: string | null;
           image_url: string | null;
@@ -861,7 +861,7 @@ export type Database = {
           facebook_url?: string | null;
           fullname: string;
           gender?: string | null;
-          has_criminal_record?: boolean | null;
+          has_criminal_record?: boolean;
           id: string;
           image_candidate_url?: string | null;
           image_url?: string | null;
@@ -896,7 +896,7 @@ export type Database = {
           facebook_url?: string | null;
           fullname?: string;
           gender?: string | null;
-          has_criminal_record?: boolean | null;
+          has_criminal_record?: boolean;
           id?: string;
           image_candidate_url?: string | null;
           image_url?: string | null;

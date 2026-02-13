@@ -357,6 +357,7 @@ export async function updatePersonBackgrounds(
 }
 
 export async function fetchCandidateFromJNE(
+  jne_mode: string,
   party_number_rop: string,
   dni: string,
 ) {
@@ -390,6 +391,7 @@ export async function fetchCandidateFromJNE(
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
+          jne_mode,
           party_number_rop,
           dni,
         }),

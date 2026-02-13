@@ -53,9 +53,9 @@ const candidateSchema = z.object({
   type: z.enum(CandidacyType),
   status: z.enum(CandidacyStatus),
   political_party_id: z.string().min(1, "Seleccione un partido"),
-  electoral_district_id: z.string().nullable().optional(),
+  electoral_district_id: z.string(),
   electoral_process_id: z.string().min(1, "Seleccione proceso electoral"),
-  list_number: z.number().nullable(),
+  list_number: z.number().min(1, "El número de lista es obligatorio"),
   active: z.boolean().optional(),
 });
 
@@ -77,7 +77,6 @@ export function CandidateFormDialog({
   const { districts, parties, active_process } = useContext(
     AdminCandidateContext,
   );
-  const router = useRouter();
 
   const [selectedPerson, setSelectedPerson] = useState<PersonBasicInfo | null>(
     null,
@@ -97,9 +96,9 @@ export function CandidateFormDialog({
         type: initialData.type ?? CandidacyType.DIPUTADO,
         status: initialData.status ?? CandidacyStatus.INSCRITO,
         political_party_id: initialData.political_party_id ?? "",
-        electoral_district_id: initialData.electoral_district_id ?? null,
+        electoral_district_id: initialData.electoral_district_id ?? "",
         electoral_process_id: initialData.electoral_process_id ?? "",
-        list_number: initialData.list_number ?? null,
+        list_number: initialData?.list_number ?? 0,
         active: initialData.active ?? true,
       };
     }
@@ -111,7 +110,7 @@ export function CandidateFormDialog({
       political_party_id: "",
       electoral_district_id: "",
       electoral_process_id: active_process[0].id,
-      list_number: null,
+      list_number: undefined as unknown as number,
       active: true,
     };
   }, [mode, initialData]);
@@ -132,41 +131,65 @@ export function CandidateFormDialog({
 
   // --- LÓGICA DE NEGOCIO ---
   useEffect(() => {
-    const currentDistrit = form.getValues("electoral_district_id");
+    if (open) {
+      if (mode === "edit" && initialData) {
+        form.reset({
+          id: initialData.id,
+          person_id: initialData.person_id ?? "",
+          type: initialData.type ?? CandidacyType.DIPUTADO,
+          status: initialData.status ?? CandidacyStatus.INSCRITO,
+          political_party_id: initialData.political_party_id ?? "",
+          electoral_district_id: initialData.electoral_district_id ?? "",
+          electoral_process_id: initialData.electoral_process_id ?? "",
+          list_number: initialData.list_number ?? 0,
+          active: initialData.active ?? true,
+        });
 
-    const typeStr = watchedType?.toString() || "";
-    const isPresidential =
-      typeStr === "PRESIDENTE" || typeStr.includes("VICEPRESIDENTE");
+        setSelectedPerson(initialData.person as PersonBasicInfo);
+        setGlobalSearch("");
 
-    if (isPresidential && nationalDistrictId) {
-      if (currentDistrit !== nationalDistrictId) {
-        form.setValue("electoral_district_id", nationalDistrictId);
-      }
-      setSenatorDistricType(null);
-    } else if (typeStr === "SENADOR") {
-      // Si cambiamos a senador y no tenemos tipo definido, limpiamos distrito
-      if (!senatorDistricType && mode === "create") {
-        form.setValue("electoral_district_id", "");
-      }
+        // ✅ Determinar el tipo de distrito de senador en modo edit
+        if (
+          initialData.type === "SENADOR" &&
+          initialData.electoral_district_id
+        ) {
+          if (initialData.electoral_district_id === nationalDistrictId) {
+            setSenatorDistricType("UNICO");
+          } else {
+            setSenatorDistricType("MULTIPLE");
+          }
+        } else {
+          setSenatorDistricType(null);
+        }
+      } else {
+        // Modo create
+        form.setValue("person_id", "");
+        form.setValue("list_number", "" as unknown as number);
+        form.setValue("id", "");
 
-      // Si elige Distrito Único -> Nacional
-      if (senatorDistricType === "UNICO" && nationalDistrictId) {
-        form.setValue("electoral_district_id", nationalDistrictId);
+        setSelectedPerson(null);
+        setGlobalSearch("");
+        setSenatorDistricType(null); // ✅ Reset
       }
-      // Si elige Múltiple -> Limpiar si estaba en nacional
-      if (
-        senatorDistricType === "MULTIPLE" &&
-        currentDistrit === nationalDistrictId
-      ) {
-        form.setValue("electoral_district_id", "");
-      }
-    } else if (typeStr === "DIPUTADO") {
-      setSenatorDistricType(null);
-      if (currentDistrit === nationalDistrictId) {
-        form.setValue("electoral_district_id", "");
+    } else {
+      // Al cerrar el modal
+      if (mode === "edit") {
+        form.reset({
+          id: "",
+          person_id: "",
+          type: CandidacyType.DIPUTADO,
+          status: CandidacyStatus.INSCRITO,
+          political_party_id: "",
+          electoral_district_id: "",
+          electoral_process_id: active_process[0]?.id || "",
+          list_number: undefined as unknown as number,
+          active: true,
+        });
+        setSelectedPerson(null);
+        setSenatorDistricType(null); // ✅ Reset
       }
     }
-  }, [watchedType, senatorDistricType, nationalDistrictId, form, mode]);
+  }, [open, mode, initialData, form, active_process, nationalDistrictId]);
 
   const filteredDistricts = useMemo(() => {
     if (!districts) return [];
@@ -182,6 +205,23 @@ export function CandidateFormDialog({
 
     return districts;
   }, [districts, watchedType, senatorDistricType, nationalDistrictId]);
+
+  useEffect(() => {
+    if (watchedType === "SENADOR" && senatorDistricType === "UNICO") {
+      if (nationalDistrictId) {
+        form.setValue("electoral_district_id", nationalDistrictId);
+      }
+    } else if (watchedType === "SENADOR" && senatorDistricType === "MULTIPLE") {
+      const currentDistrictId = form.getValues("electoral_district_id");
+      if (!currentDistrictId || currentDistrictId === nationalDistrictId) {
+        form.setValue("electoral_district_id", "");
+      }
+    } else if (watchedType !== "SENADOR") {
+      if (mode === "create") {
+        form.setValue("electoral_district_id", "");
+      }
+    }
+  }, [watchedType, senatorDistricType, nationalDistrictId, form, mode]);
 
   const handlePersonSelect = (person: PersonBasicInfo | null) => {
     setSelectedPerson(person);
@@ -200,26 +240,49 @@ export function CandidateFormDialog({
   };
 
   const onSubmit = async (values: CandidateFormValues) => {
-    const payload = {
-      ...values,
-      id: values.id || "",
-      list_number: values.list_number || null,
-      active: values.active ?? true,
-      electoral_district_id: values.electoral_district_id || null,
-    };
+    try {
+      if (values.type === "SENADOR" && !senatorDistricType) {
+        toast.error(
+          "Debe seleccionar si el Senador es de Distrito Único o Múltiple",
+        );
+        return;
+      }
 
-    const action =
-      mode === "edit" ? updateCandidatePeriod : createCandidatePeriod;
-    const messageAction = mode === "edit" ? "actualizada" : "creada";
+      if (!values.electoral_district_id) {
+        toast.error("Debe seleccionar un distrito electoral");
+        return;
+      }
 
-    toast.promise(action(payload), {
-      loading: "Guardando candidatura...",
-      success: `Candidatura ${messageAction} exitosamente`,
-      error: (err) => err?.message || "Ocurrió un error",
-    });
+      const payload = {
+        ...values,
+        id: values.id || "",
+        list_number: values.list_number,
+        active: values.active ?? true,
+        electoral_district_id: values.electoral_district_id,
+      };
 
-    onOpenChange(false);
-    router.refresh();
+      const action =
+        mode === "edit" ? updateCandidatePeriod : createCandidatePeriod;
+      const messageAction = mode === "edit" ? "actualizada" : "creada";
+
+      await toast.promise(
+        action(payload).then((result) => {
+          if (!result.success) {
+            throw new Error(result.error || "Error desconocido");
+          }
+          return result;
+        }),
+        {
+          loading: "Guardando candidatura...",
+          success: `Candidatura ${messageAction} exitosamente`,
+          error: (err) => err.message || "Error al guardar la candidatura",
+        },
+      );
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("❌ Error al guardar candidatura:", error);
+    }
   };
 
   return (
@@ -528,13 +591,14 @@ export function CandidateFormDialog({
                           type="number"
                           placeholder="Ej. 1"
                           {...field}
-                          value={field.value ?? ""}
+                          // TRUCO VISUAL: Si el valor es 0 (nuestro "vacío" lógico), mostramos cadena vacía
+                          value={field.value === 0 ? "" : field.value}
                           onChange={(e) => {
-                            const new_val = e.target.value;
-
-                            field.onChange(
-                              new_val === "" ? null : Number(new_val),
-                            );
+                            // LÓGICA:
+                            // Si el input está vacío (""), Number lo convierte a 0.
+                            // Si escriben "5", Number lo convierte a 5.
+                            // Enviamos SIEMPRE un número (0 o mayor) para satisfacer a TypeScript.
+                            field.onChange(Number(e.target.value));
                           }}
                         />
                       </FormControl>

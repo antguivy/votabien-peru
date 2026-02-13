@@ -22,7 +22,7 @@ export interface CandidateBase {
   active: boolean;
   electoral_process_id: string;
   political_party_id: string;
-  electoral_district_id: string | null;
+  electoral_district_id: string;
   type: CandidacyType;
   list_number: number | null;
   status: CandidacyStatus;
