@@ -17,11 +17,6 @@ import { BackgroundBase, BackgroundStatus } from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
 
-const prepareJsonField = <T>(data: T[] | undefined | null): Json => {
-  if (!data || data.length === 0) return null;
-  return data as Json;
-};
-
 const toNullIfEmpty = (value: string | null | undefined): string | null => {
   if (!value || value.trim() === "") return null;
   return value;
@@ -160,15 +155,15 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
 
       // Campos JSON
       secondary_school: data.secondary_school,
-      technical_education: prepareJsonField(data.technical_education),
-      no_university_education: prepareJsonField(data.no_university_education),
-      university_education: prepareJsonField(data.university_education),
-      postgraduate_education: prepareJsonField(data.postgraduate_education),
-      work_experience: prepareJsonField(data.work_experience),
-      political_role: prepareJsonField(data.political_role),
-      popular_election: prepareJsonField(data.popular_election),
-      incomes: prepareJsonField(data.incomes),
-      assets: prepareJsonField(data.assets),
+      technical_education: toJsonArray(data.technical_education),
+      no_university_education: toJsonArray(data.no_university_education),
+      university_education: toJsonArray(data.university_education),
+      postgraduate_education: toJsonArray(data.postgraduate_education),
+      work_experience: toJsonArray(data.work_experience),
+      political_role: toJsonArray(data.political_role),
+      popular_election: toJsonArray(data.popular_election),
+      incomes: toJsonArray(data.incomes),
+      assets: toJsonArray(data.assets),
 
       facebook_url: toNullIfEmpty(data.facebook_url),
       twitter_url: toNullIfEmpty(data.twitter_url),
@@ -272,7 +267,7 @@ export async function updatePersonBiography(
     const { data, error } = await supabase
       .from("person")
       .update({
-        detailed_biography: prepareJsonField(biography),
+        detailed_biography: toJsonArray(biography),
       })
       .eq("id", personId)
       .select("id, fullname, detailed_biography")
