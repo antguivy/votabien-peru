@@ -1152,6 +1152,7 @@ export type Database = {
           is_principal: boolean | null;
           last_name: string | null;
           linkedin_url: string | null;
+          phrase: string | null;
           portfolio_url: string | null;
           role: string | null;
         };
@@ -1163,6 +1164,7 @@ export type Database = {
           is_principal?: boolean | null;
           last_name?: string | null;
           linkedin_url?: string | null;
+          phrase?: string | null;
           portfolio_url?: string | null;
           role?: string | null;
         };
@@ -1174,6 +1176,7 @@ export type Database = {
           is_principal?: boolean | null;
           last_name?: string | null;
           linkedin_url?: string | null;
+          phrase?: string | null;
           portfolio_url?: string | null;
           role?: string | null;
         };
