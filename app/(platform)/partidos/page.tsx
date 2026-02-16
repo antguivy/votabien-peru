@@ -18,14 +18,18 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   const limit = parseInt(params.limit || "30");
   const offset = parseInt(params.offset || "0");
-  const activeValue =
-    params.active === "false"
-      ? false
-      : params.active === "all"
-        ? undefined
+
+  const activeApiValue =
+    params.active === "all"
+      ? undefined
+      : params.active === "false"
+        ? false
         : true;
-  const queryParams = {
-    active: activeValue,
+
+  const activeFilterValue = params.active || "true";
+
+  const apiParams = {
+    active: activeApiValue,
     search: params.search || undefined,
     limit,
     offset,
@@ -33,13 +37,13 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
   const currentFilters = {
     search: params.search || "",
-    active: params.active || "all",
+    active: activeFilterValue,
     limit,
     offset,
   };
 
   try {
-    const partidos = await getPartidosList(queryParams);
+    const partidos = await getPartidosList(apiParams);
 
     return (
       <ContentPlatformLayout>

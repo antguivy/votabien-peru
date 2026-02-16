@@ -58,6 +58,8 @@ export interface FilterField {
   placeholder?: string;
   defaultValue?: string | string[];
   searchPlaceholder?: string;
+  disabled?: boolean;
+  hideLabel?: boolean;
 }
 
 interface FilterPanelProps<T extends Record<string, unknown>> {
@@ -92,6 +94,9 @@ export function FilterPanel<T extends Record<string, unknown>>({
   const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
 
   // --- LÓGICA DE EVENTOS Y URL ---
+  useEffect(() => {
+    setFilters(currentFilters);
+  }, [currentFilters]);
 
   useEffect(() => {
     const handleToggle = () => setIsMobilePanelOpen((prev) => !prev);
@@ -143,7 +148,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
     Object.entries(filtersToApply).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         if (value.length > 0) {
-          value.forEach((v) => params.append(key, String(v)));
+          params.set(key, value.join(","));
         }
       } else if (
         value &&
@@ -247,6 +252,17 @@ export function FilterPanel<T extends Record<string, unknown>>({
   const searchFields = fields.filter((f) => f.type === "search");
   const selectFields = fields.filter((f) => f.type !== "search");
 
+  const groupedFilters = activeFilters.reduce(
+    (acc, filter) => {
+      if (!acc[filter.label]) {
+        acc[filter.label] = [];
+      }
+      acc[filter.label].push(filter);
+      return acc;
+    },
+    {} as Record<string, typeof activeFilters>,
+  );
+
   // --- RENDERIZADO DESKTOP ---
   const renderDesktopField = (field: FilterField) => {
     const fieldKey = field.id as keyof T;
@@ -268,14 +284,17 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
     if (
       (field.type === "multi-select" || field.type === "select") &&
-      field.options
+      field.options &&
+      !field.disabled
     ) {
       const isMulti = field.type === "multi-select";
+      const rawValue = filters[fieldKey] ?? field.defaultValue;
+
       const selectedValues = isMulti
         ? ((Array.isArray(filters[fieldKey])
             ? filters[fieldKey]
             : []) as string[])
-        : String(filters[fieldKey] || "");
+        : String(rawValue || "");
 
       const count = isMulti ? selectedValues.length : selectedValues ? 1 : 0;
 
@@ -295,13 +314,15 @@ export function FilterPanel<T extends Record<string, unknown>>({
                   "border-solid bg-accent/50 text-accent-foreground font-medium border-accent",
               )}
             >
-              <span className="mr-2">{field.label}</span>
+              {!field.hideLabel && <span className="mr-2">{field.label}</span>}
               {count > 0 && (
                 <>
-                  <Separator orientation="vertical" className="mx-2 h-4" />
+                  {!field.hideLabel && (
+                    <Separator orientation="vertical" className="mx-2 h-4" />
+                  )}
                   <Badge
                     variant="secondary"
-                    className="rounded-sm px-1 font-normal lg:hidden xl:inline-flex bg-background text-foreground"
+                    className="rounded-sm px-1 font-normal bg-background text-foreground ml-1"
                   >
                     {isMulti
                       ? `${count}`
@@ -506,20 +527,33 @@ export function FilterPanel<T extends Record<string, unknown>>({
         {/* Badges Desktop */}
         {hasActiveFilters && (
           <div className="flex flex-wrap gap-2 mt-3 pl-8">
-            {activeFilters.map((filter, idx) => (
+            {Object.entries(groupedFilters).map(([label, filters]) => (
               <Badge
-                key={`${String(filter.key)}-${idx}`}
+                key={label}
                 variant="secondary"
-                className="rounded-md font-normal pl-2 pr-1 py-1"
+                className="rounded-md font-normal pl-2 pr-2 py-1 flex items-center gap-2"
               >
-                <span className="opacity-70 mr-1">{filter.label}:</span>
-                <span className="font-semibold">{filter.valueLabel}</span>
-                <button
-                  onClick={() => removeFilter(filter.key, filter.specificValue)}
-                  className="ml-2 p-0.5 rounded-full hover:bg-muted-foreground/20 transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                <span className="opacity-70">{label}:</span>
+
+                <div className="flex flex-wrap gap-1">
+                  {filters.map((filter, idx) => (
+                    <span
+                      key={idx}
+                      className="flex items-center gap-1 bg-muted-foreground/10 px-2 py-0.5 rounded"
+                    >
+                      <span className="font-semibold">{filter.valueLabel}</span>
+
+                      <button
+                        onClick={() =>
+                          removeFilter(filter.key, filter.specificValue)
+                        }
+                        className="p-0.5 rounded-full hover:bg-muted-foreground/20 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </Badge>
             ))}
           </div>
@@ -604,6 +638,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
                   <Button
                     key={field.id}
                     variant={count > 0 ? "secondary" : "outline"}
+                    disabled={field.disabled}
                     className={cn(
                       "w-full h-16 justify-between px-4 rounded-xl text-base font-normal border-2",
                       count > 0

@@ -31,7 +31,9 @@ import { NoDataMessage } from "@/components/no-data-message"; // Asegúrate que 
 const formatCurrency = (amount: string | number) => {
   if (!amount) return "S/ 0.00";
   const num =
-    typeof amount === "string" ? parseFloat(amount.replace(/,/g, "")) : amount;
+    typeof amount === "string"
+      ? parseFloat(amount.replace(/[^\d.-]/g, ""))
+      : amount;
   return new Intl.NumberFormat("es-PE", {
     style: "currency",
     currency: "PEN",
@@ -110,19 +112,29 @@ export default function DetailCandidato({
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
             {/* Foto */}
             <div className="relative shrink-0">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background shadow-xl overflow-hidden relative z-10">
-                <Image
-                  src={
-                    persona.image_candidate_url ||
-                    persona.image_url ||
-                    "/images/default.svg"
-                  }
-                  alt={persona.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-foreground/5 shadow-xl overflow-hidden relative z-10">
+                {/* Background blur de la misma imagen */}
+                <div className="absolute inset-0 z-0">
+                  <Image
+                    src={persona.image_candidate_url || "/images/default.svg"}
+                    alt=""
+                    fill
+                    className="object-cover scale-110 blur-2xl opacity-40"
+                  />
+                </div>
+
+                {/* Imagen principal - completa y centrada */}
+                <div className="relative w-full h-full z-10 bg-white">
+                  <Image
+                    src={persona.image_candidate_url || "/images/default.svg"}
+                    alt={persona.name}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
               </div>
+
               {/* Badge de Partido Flotante */}
               <div className="absolute -bottom-2 -right-2 z-20 bg-white p-1.5 rounded-xl shadow-md border">
                 <div className="relative w-8 h-8 md:w-10 md:h-10">
@@ -137,6 +149,7 @@ export default function DetailCandidato({
                   />
                 </div>
               </div>
+
               {/* EL NÚMERO DE VOTACIÓN (Card destacada) */}
               <div className="absolute -bottom-2 -left-2 z-20 bg-white p-1.5 rounded-xl shadow-md border">
                 {candidate.list_number && (
@@ -232,7 +245,7 @@ export default function DetailCandidato({
               value="timeline"
               className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium"
             >
-              Biografía
+              Hechos/Declaraciones
             </TabsTrigger>
           </TabsList>
 
@@ -571,13 +584,13 @@ export default function DetailCandidato({
                 ))
               ) : (
                 <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed">
-                  <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4 opacity-50" />
+                  <CheckCircle2 className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
                   <h3 className="text-xl font-medium text-foreground">
-                    Hoja de vida limpia
+                    No se ha encontrado información
                   </h3>
                   <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                    No se registran sentencias penales, civiles o laborales
-                    declaradas en la hoja de vida presentada al JNE.
+                    No hay investigaciones realizadas por medios periodísticos
+                    y/o de investigación.
                   </p>
                 </div>
               )}
@@ -733,7 +746,7 @@ export default function DetailCandidato({
                     ))}
                   </div>
                 ) : (
-                  <NoDataMessage text="No hay biografía detallada disponible." />
+                  <NoDataMessage text="No se ha encontrado información en medios periodísticos y/o de investigación." />
                 )}
               </CardContent>
             </Card>

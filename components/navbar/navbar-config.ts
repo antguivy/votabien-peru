@@ -15,6 +15,7 @@ import {
   Menu,
   MessageCircleQuestionMark,
   LucideIcon,
+  UserCog,
 } from "lucide-react";
 import { NavGroup } from "@/interfaces/navbar";
 
@@ -115,13 +116,10 @@ export const adminNavGroups: NavGroup[] = [
       },
     ],
   },
-  // {
-  //   label: "Sistema",
-  //   requiresAuth: true,
-  //   requiresRole: ["super_admin"],
-  //   links: [
-  //     { href: "/admin/users", label: "Usuarios", icon: UserCog },
-  //     { href: "/admin/settings", label: "Configuración", icon: Settings },
-  //   ],
-  // },
+  {
+    label: "Sistema",
+    requiresAuth: true,
+    requiresRole: ["admin"],
+    links: [{ href: "/admin/team", label: "Equipo", icon: UserCog }],
+  },
 ];

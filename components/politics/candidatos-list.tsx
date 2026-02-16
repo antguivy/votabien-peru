@@ -1,154 +1,165 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ArrowUpRight, Users, Star } from "lucide-react";
+import { MapPin, ArrowUpRight, Users, Star, Sparkles } from "lucide-react";
 import { FilterPanel, FilterField } from "@/components/ui/filter-panel";
 import {
   CandidacyType,
   ElectoralDistrictBase,
   FiltersCandidates,
+  typeOptions,
 } from "@/interfaces/politics";
 import { cn } from "@/lib/utils";
 import { CandidateCard } from "@/interfaces/candidate";
 import { getCandidatesCards } from "@/queries/public/candidacies";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { getTextColor, needsOverlay } from "@/lib/utils/color-utils";
 
 const TYPE_CONFIG = {
   PRESIDENTE: {
-    color: "text-role-president",
-    bg: "bg-role-president",
-    border: "border-role-president/20",
-    light: "bg-role-president/10",
-    ring: "ring-role-president/20",
+    label: "PRESIDENTE",
+    bgBadge: "bg-role-president/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-role-president/30",
   },
   SENADOR: {
-    color: "text-role-senator",
-    bg: "bg-role-senator",
-    border: "border-role-senator/20",
-    light: "bg-role-senator/10",
-    ring: "ring-role-senator/20",
+    label: "SENADOR",
+    bgBadge: "bg-role-senator/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-role-senator/30",
   },
   DIPUTADO: {
-    color: "text-role-deputy",
-    bg: "bg-role-deputy",
-    border: "border-role-deputy/20",
-    light: "bg-role-deputy/10",
-    ring: "ring-role-deputy/20",
+    label: "DIPUTADO",
+    bgBadge: "bg-role-deputy/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-role-deputy/30",
+  },
+  // Fallback
+  DEFAULT: {
+    label: "CANDIDATO",
+    bgBadge: "bg-gray-600/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-gray-400/30",
   },
 };
 
 const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
-  const config = TYPE_CONFIG[candidato.type as keyof typeof TYPE_CONFIG] || {
-    color: "text-muted-foreground",
-    bg: "bg-muted",
-    border: "border-border",
-    light: "bg-muted/50",
-    ring: "ring-muted",
-  };
+  const typeKey = candidato.type as keyof typeof TYPE_CONFIG;
+  const config = TYPE_CONFIG[typeKey] || TYPE_CONFIG.DEFAULT;
+
+  const { person, political_party, electoral_district, list_number } =
+    candidato;
+  const partyColorHex = political_party?.color_hex || "#000000";
+  const dynamicTextColorClass = getTextColor(partyColorHex);
 
   return (
     <Link
-      href={`/candidatos/${candidato.person.id}`}
-      className="group relative flex flex-col h-full"
+      href={`/candidatos/${person.id}`}
+      className="group relative flex flex-col h-full select-none"
     >
       <div
         className={cn(
           "relative h-full overflow-hidden rounded-[1.5rem] bg-card transition-all duration-300 ease-out",
           "border border-border/50 shadow-sm",
-          "group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]",
-          "group-hover:ring-4 ring-offset-0 ring-offset-background",
+          "group-hover:-translate-y-1 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
+          "group-hover:ring-2 ring-offset-2 ring-offset-background",
           config.ring,
         )}
       >
-        <div className="relative aspect-square overflow-hidden bg-muted">
-          <div className="absolute top-2.5 left-2.5 z-10">
+        {/* --- SECCIÓN FOTO CON LOGO Y NÚMERO --- */}
+        <div className="relative w-full bg-muted overflow-hidden">
+          {/* Badge Tipo */}
+          <div className="absolute top-3 left-3 z-20">
             <span
               className={cn(
-                "px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-widest uppercase shadow-sm backdrop-blur-md bg-card/95",
-                config.color,
+                "px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-sm",
+                config.bgBadge,
               )}
             >
               {candidato.type}
             </span>
           </div>
 
-          {candidato.list_number && (
-            <div className="absolute top-2.5 right-2.5 z-10 transform transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110">
-              <div
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full shadow-md border-2 border-card",
-                  config.bg,
-                )}
-              >
-                <span className="text-primary-foreground font-black text-sm font-mono">
-                  {candidato.list_number}
-                </span>
-              </div>
+          {/* Imagen */}
+          {person.image_candidate_url ? (
+            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
+              <Image
+                src={person.image_candidate_url}
+                alt={person.fullname}
+                fill
+                className="object-contain transition-transform duration-700 ease-in-out group-hover:scale-105"
+              />
             </div>
-          )}
-
-          {candidato.person.image_candidate_url ? (
-            <Image
-              src={candidato.person.image_candidate_url}
-              alt={candidato.person.fullname}
-              fill
-              className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-105"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Users className="w-12 h-12 text-muted-foreground/30" />
+            <div className="w-full aspect-[3/4] rounded-xl overflow-hidden flex items-center justify-center bg-muted/50">
+              <Users className="w-16 h-16 text-muted-foreground/20" />
             </div>
           )}
 
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/50 to-transparent opacity-40 transition-opacity group-hover:opacity-30" />
-        </div>
+          {/* Gradiente inferior */}
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent z-10" />
 
-        <div className="relative p-3 -mt-8 flex-grow flex flex-col justify-end">
-          <div className="relative rounded-xl bg-card/95 backdrop-blur-md p-3.5 shadow-sm border border-border/50 transition-colors group-hover:border-border">
-            {candidato.political_party && (
-              <div className="flex items-start gap-1.5 mb-1.5">
-                <div
-                  className="w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0"
-                  style={{
-                    backgroundColor:
-                      candidato.political_party.color_hex || "currentColor",
-                  }}
+          {/* Logo y Número - DENTRO de la foto */}
+          <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between">
+            {/* Logo Partido */}
+            {political_party?.logo_url ? (
+              <div className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-white/80 bg-white p-0.5 shrink-0 shadow-lg">
+                <Image
+                  src={political_party.logo_url}
+                  alt={political_party.name}
+                  fill
+                  className="object-contain"
                 />
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-tight">
-                  {candidato.political_party.name}
-                </p>
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-white/90 flex items-center justify-center shadow-lg">
+                <Users className="w-6 h-6 text-muted-foreground" />
               </div>
             )}
 
-            <h3 className="font-bebas text-xl leading-[0.95] text-card-foreground mb-2 group-hover:text-primary transition-colors break-words">
-              {candidato.person.fullname.toUpperCase()}
-            </h3>
-
-            <div className="flex items-end justify-between mt-3 pt-2 border-t border-border/50">
-              {candidato.electoral_district && (
-                <div className="flex items-start gap-1 text-[11px] text-muted-foreground font-medium leading-tight pr-2">
-                  <MapPin className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                  <span>{candidato.electoral_district.name}</span>
-                </div>
-              )}
-
+            {/* Número Electoral */}
+            {list_number && (
               <div
+                style={{ backgroundColor: partyColorHex }}
                 className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ml-auto",
-                  config.light,
-                  "group-hover:bg-foreground group-hover:text-background",
+                  "flex items-center justify-center w-12 h-12 rounded-xl shadow-lg",
+                  "transform transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110",
+                  dynamicTextColorClass,
+                  "border-2 border-white/50",
                 )}
               >
-                <ArrowUpRight
-                  className={cn(
-                    "w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5",
-                    config.color,
-                    "group-hover:text-background",
-                  )}
-                />
+                <span className="font-black text-xl font-mono leading-none">
+                  {list_number}
+                </span>
               </div>
+            )}
+          </div>
+        </div>
+
+        <div className="relative flex flex-col p-3 z-20 min-h-[120px]">
+          {/* NOMBRE DEL CANDIDATO - ocupa el espacio disponible */}
+          <div className="flex-1 flex items-start mb-2">
+            <h3 className="font-bebas text-base sm:text-lg leading-tight text-card-foreground group-hover:text-primary transition-colors line-clamp-2 w-full">
+              {person.fullname.toUpperCase()}
+            </h3>
+          </div>
+
+          {/* FOOTER: Ubicación y Botón - siempre abajo */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">
+            {/* Distrito */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium truncate pr-2 max-w-[70%]">
+              <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{electoral_district?.name}</span>
+            </div>
+
+            {/* Botón de acción */}
+            <div
+              style={{ backgroundColor: partyColorHex }}
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ml-auto shadow-sm",
+                dynamicTextColorClass,
+                "group-hover:scale-110 group-hover:shadow-md",
+              )}
+            >
+              <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
         </div>
@@ -178,6 +189,10 @@ const CandidatosList = ({
   currentFilters,
   infiniteScroll = true,
 }: CandidatosListProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [candidatos, setCandidatos] =
     useState<CandidateCard[]>(initialCandidaturas);
   const [loading, setLoading] = useState(false);
@@ -186,13 +201,54 @@ const CandidatosList = ({
   );
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  const prevTypeRef = useRef(currentFilters.type);
+
+  useEffect(() => {
+    if (prevTypeRef.current !== currentFilters.type) {
+      const newParams = new URLSearchParams(searchParams.toString());
+
+      // 1. Siempre limpiamos 'search' y 'districts' al cambiar de cargo
+      if (newParams.has("search")) newParams.delete("search");
+      if (newParams.has("districts")) newParams.delete("districts");
+
+      // 2. Lógica específica para districtType
+      if (currentFilters.type === "SENADOR") {
+        // Si cambiamos a SENADOR y no hay districtType, seteamos "unico" por defecto
+        if (!newParams.has("districtType")) {
+          newParams.set("districtType", "unico");
+        }
+      } else {
+        // Para cualquier otro cargo, districtType no debe existir
+        if (newParams.has("districtType")) {
+          newParams.delete("districtType");
+        }
+      }
+
+      // Actualizamos la URL si hubo cambios
+      // Comparamos strings para evitar updates innecesarios
+      if (newParams.toString() !== searchParams.toString()) {
+        router.replace(`${pathname}?${newParams.toString()}`);
+      }
+
+      // Actualizamos la referencia
+      prevTypeRef.current = currentFilters.type;
+    }
+  }, [currentFilters.type, pathname, router, searchParams]);
+
+  const effectiveFilters = useMemo(() => {
+    const filters = { ...currentFilters };
+    if (filters.type === "SENADOR" && !filters.districtType) {
+      filters.districtType = "unico";
+    }
+    return filters;
+  }, [currentFilters]);
+
   const loadMore = useCallback(async () => {
     if (!infiniteScroll || loading || !hasMore) return;
     setLoading(true);
 
     try {
-      const currentPage = Math.ceil(candidatos.length / PAGE_SIZE);
-      const nextPage = currentPage + 1;
+      const nextPage = Math.ceil(candidatos.length / PAGE_SIZE) + 1;
 
       const districtsFilter =
         currentFilters.districts && currentFilters.districts !== "all"
@@ -213,6 +269,7 @@ const CandidatosList = ({
         search: currentFilters.search,
         type: typeFilter,
         districts: districtsFilter,
+        districtType: currentFilters.districtType,
       });
 
       if (!newCandidatos || newCandidatos.length === 0) {
@@ -265,50 +322,88 @@ const CandidatosList = ({
     setHasMore(initialCandidaturas.length >= PAGE_SIZE);
   }, [initialCandidaturas]);
 
-  const filterFields: FilterField[] = [
-    {
-      id: "search",
-      label: "Buscar",
-      type: "search",
-      placeholder: "Buscar candidato...",
-      searchPlaceholder: "Nombre",
-      defaultValue: "",
-    },
-    {
-      id: "type",
-      label: "Tipo",
-      type: "select",
-      placeholder: "Tipo",
-      options: Object.entries(CandidacyType).map(([key, label]) => ({
-        value: key,
-        label,
-      })),
-    },
-    {
+  // Lógica de visualización de campos
+  const showDistricts = useMemo(() => {
+    const type = currentFilters.type;
+    if (type === "DIPUTADO") return true;
+    if (type === "SENADOR") return currentFilters.districtType === "multiple";
+    return false;
+  }, [currentFilters.type, currentFilters.districtType]);
+
+  const showDistrictType = useMemo(() => {
+    return currentFilters.type === "SENADOR";
+  }, [currentFilters.type]);
+
+  const districtOptions = useMemo(() => {
+    return distritos.map((d) => ({
+      value: d.name,
+      label: d.name,
+    }));
+  }, [distritos]);
+
+  const filterFields: FilterField[] = useMemo(() => {
+    const fields: FilterField[] = [
+      {
+        id: "search",
+        label: "Buscar",
+        type: "search",
+        placeholder: "Buscar candidato...",
+        searchPlaceholder: "Nombre, DNI...",
+        defaultValue: "",
+      },
+      {
+        id: "type",
+        label: "Cargo",
+        type: "select",
+        placeholder: "Selecciona el cargo",
+        options: typeOptions,
+        hideLabel: true,
+      },
+    ];
+
+    if (showDistrictType) {
+      fields.push({
+        id: "districtType",
+        label: "Tipo de Distrito",
+        type: "select",
+        placeholder: "Selecciona el tipo",
+        options: [
+          { value: "unico", label: "Único (Nacional)" },
+          { value: "multiple", label: "Múltiple (Distrital)" },
+        ],
+        defaultValue: "unico",
+        hideLabel: true,
+      });
+    }
+
+    fields.push({
       id: "districts",
       label: "Distrito Electoral",
       type: "multi-select",
-      placeholder: "Distrito",
-      options: distritos.map((d) => ({
-        value: d.name,
-        label: d.name,
-      })),
-    },
-  ];
+      placeholder: showDistricts
+        ? "Selecciona distritos"
+        : "No disponible para este cargo",
+      disabled: !showDistricts,
+      options: districtOptions,
+    });
 
-  const defaultFilters = { search: "", type: "", districts: [] };
+    return fields;
+  }, [distritos, showDistricts, showDistrictType, districtOptions]);
+
+  const defaultFilters = {
+    search: "",
+    type: "",
+    districts: [],
+    districtType: undefined,
+  };
 
   return (
     <div className="w-full">
       {infiniteScroll && (
         <div className="sticky top-1 z-30 lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
-          {/* El FilterPanel ahora se encarga de todo:
-             - En Desktop: Muestra la barra normal
-             - En Mobile: Está invisible hasta que recibe el evento 'toggle-filter-panel' 
-          */}
           <FilterPanel
             fields={filterFields}
-            currentFilters={currentFilters}
+            currentFilters={effectiveFilters}
             onApplyFilters={() => {}}
             baseUrl="/candidatos"
             defaultFilters={defaultFilters}

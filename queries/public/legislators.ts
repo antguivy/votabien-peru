@@ -47,9 +47,14 @@ export async function getLegisladoresCards({
       start_date,
       end_date,
       person:person_id!inner ( id, fullname, dni, image_url, image_candidate_url, profession ),
-      electoral_district:electoral_district_id ( id, name, code ),
+      electoral_district:electoral_district_id!inner( id, name, code ),
       elected_by_party:elected_by_party_id ( id, name, acronym ),
-      current_parliamentary_group
+      current_parliamentary_group,
+      
+      parliamentarymembership!inner(
+        id,
+        parliamentarygroup!inner(name)
+      )
     `,
     )
     .range(from, to);
@@ -70,12 +75,9 @@ export async function getLegisladoresCards({
     query = query
       .not("parliamentarymembership.id", "is", null)
       .is("parliamentarymembership.end_date", null)
-      .or(
-        `name.in.(${groups.map((g) => `"${g}"`).join(",")}),acronym.in.(${groups.map((g) => `"${g}"`).join(",")})`,
-        {
-          foreignTable: "parliamentarymembership.parliamentarygroup",
-        },
-      );
+      .or(`name.in.(${groups})`, {
+        foreignTable: "parliamentarymembership.parliamentarygroup",
+      });
   }
 
   query = query.order("lastname", { foreignTable: "person", ascending: true });

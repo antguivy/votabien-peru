@@ -10,8 +10,8 @@ interface PageProps {
   searchParams: Promise<{
     chamber?: string;
     search?: string;
-    groups?: string[];
-    districts?: string[];
+    groups?: string | string[];
+    districts?: string | string[];
   }>;
 }
 
@@ -20,27 +20,44 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
 
   const limit = 30;
 
+  let groupsArray: string[] = [];
+  if (params.groups) {
+    if (typeof params.groups === "string") {
+      groupsArray = params.groups.split(",").map((d) => d.trim());
+    } else if (Array.isArray(params.groups)) {
+      groupsArray = params.groups;
+    }
+  }
+
+  let districtsArray: string[] = [];
+  if (params.districts) {
+    if (typeof params.districts === "string") {
+      districtsArray = params.districts.split(",").map((d) => d.trim());
+    } else if (Array.isArray(params.districts)) {
+      districtsArray = params.districts;
+    }
+  }
+
+  // 2. PARAMS PARA LA API (Arrays limpios)
   const apiParams = {
     active_only: true,
     chamber: (params.chamber && params.chamber !== "all"
       ? params.chamber
       : undefined) as ChamberType | undefined,
     search: params.search || undefined,
-    groups:
-      params.groups && params.groups.length > 0 ? params.groups : undefined,
-    districts:
-      params.districts && params.districts.length > 0
-        ? params.districts
-        : undefined,
+    groups: groupsArray.length > 0 ? groupsArray : undefined,
+    districts: districtsArray.length > 0 ? districtsArray : undefined,
     skip: 0,
     limit: limit,
   };
 
+  // 3. PARAMS PARA EL CLIENTE (Para mantener el estado de filtros)
+  // Nota: groupsArray ya es string[], perfecto para tu componente
   const currentParams = {
     search: params.search || "",
     chamber: params.chamber || "all",
-    groups: params.groups || [],
-    districts: params.districts || [],
+    groups: groupsArray,
+    districts: districtsArray,
     skip: 0,
     limit,
   };

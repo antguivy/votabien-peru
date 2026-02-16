@@ -1,8 +1,7 @@
 "use server";
 
-import { AdminCandidate, CandidateCard } from "@/interfaces/candidate";
+import { CandidateCard } from "@/interfaces/candidate";
 import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
-import { Database } from "@/interfaces/supabase";
 import { createClient } from "@/lib/supabase/server";
 import { QueryData } from "@supabase/supabase-js";
 
@@ -16,6 +15,7 @@ interface GetCandidatesParams {
   page?: number;
   pageSize?: number;
   limit?: number;
+  districtType?: "unico" | "multiple";
 }
 
 export async function getCandidatesCards({
@@ -27,6 +27,7 @@ export async function getCandidatesCards({
   ids,
   page = 1,
   pageSize = 20,
+  districtType,
 }: GetCandidatesParams): Promise<CandidateCard[]> {
   const supabase = await createClient();
 
@@ -46,7 +47,7 @@ export async function getCandidatesCards({
     political_party:political_party_id (
       id, name, acronym, logo_url, color_hex, active, foundation_date
     ),
-    electoral_district:electoral_district_id (
+    electoral_district:electoral_district_id!inner (
       id, name, code, is_national, active
     )
   `;
@@ -70,17 +71,34 @@ export async function getCandidatesCards({
     query = query.in("id", ids);
   }
 
-  if (type) {
-    if (type === "VICEPRESIDENTE") {
-      query = query.in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
+  if (type === "PRESIDENTE") {
+    // Filtrar por tipo Y distrito nacional
+    query = query.eq("type", "PRESIDENTE");
+    query = query.eq("electoral_district.is_national", true);
+  } else if (type === "VICEPRESIDENTE") {
+    // Agrupar VP_1 y VP_2, distrito nacional
+    query = query.in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
+    query = query.eq("electoral_district.is_national", true);
+  } else if (type === "SENADOR") {
+    query = query.eq("type", "SENADOR");
+
+    if (districtType === "multiple") {
+      query = query.eq("electoral_district.is_national", false);
+
+      if (districts && districts.length > 0) {
+        query = query.in("electoral_district.name", districts);
+      }
     } else {
-      query = query.eq("type", type as CandidacyType);
+      query = query.eq("electoral_district.is_national", true);
+    }
+  } else if (type === "DIPUTADO") {
+    query = query.eq("type", "DIPUTADO");
+
+    if (districts && districts.length > 0) {
+      query = query.in("electoral_district.name", districts);
     }
   }
 
-  if (districts && districts.length > 0) {
-    query = query.in("electoral_district.name", districts);
-  }
   if (parties && parties.length > 0) {
     query = query.in("political_party.name", parties);
   }
@@ -96,7 +114,6 @@ export async function getCandidatesCards({
   query = query.eq("active", true);
 
   const { data, error } = await query;
-
   if (error) {
     console.error("Error fetching candidates:", error);
     throw new Error("Error al obtener candidatos");
@@ -157,56 +174,4 @@ export async function getCandidatesCards({
   });
 
   return results;
-}
-export async function getAllCandidates(limit: number = 100) {
-  const supabase = await createClient();
-
-  const { data, error, count } = await supabase
-    .from("candidate")
-    .select(
-      `
-      id,
-      electoral_process_id,
-      political_party_id,
-      type,
-      list_number,
-      status,
-      created_at,
-      person:person_id (
-        id,
-        fullname,
-        image_url
-      ),
-      political_party:political_party_id (
-        id,
-        name,
-        acronym
-      ),
-      electoral_district:electoral_district_id (
-        id,
-        name
-      )
-    `,
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("Error verificando tabla candidate:", error);
-    return {
-      success: false,
-      error: error.message,
-      total: 0,
-      data: [],
-    };
-  }
-
-  return {
-    success: true,
-    error: null,
-    total: count || 0,
-    data: data || [],
-    message: `Se encontraron ${count || 0} candidatos en total. Mostrando ${data?.length || 0}.`,
-  };
 }

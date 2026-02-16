@@ -36,8 +36,6 @@ function isExecutiveType(type: CandidacyType): boolean {
   return EXECUTIVE_TYPES.has(type);
 }
 
-const SENATOR_NATIONAL = CandidacyType.SENADOR;
-
 /**
  * Verifica si la combinación de candidaturas está permitida
  * REGLA: Solo PRESIDENTE/VICE pueden ser también SENADOR (Nacional)
@@ -45,16 +43,14 @@ const SENATOR_NATIONAL = CandidacyType.SENADOR;
 function isCombinationAllowed(
   existingType: CandidacyType,
   newType: CandidacyType,
-  newDistrictId: string,
-  nationalDistrictId: string,
 ): boolean {
   if (existingType === newType) return false;
 
-  if (isExecutiveType(existingType) && newType === SENATOR_NATIONAL) {
-    return newDistrictId === nationalDistrictId;
+  if (isExecutiveType(existingType) && newType === CandidacyType.SENADOR) {
+    return true;
   }
 
-  if (existingType === SENATOR_NATIONAL && isExecutiveType(newType)) {
+  if (existingType === CandidacyType.SENADOR && isExecutiveType(newType)) {
     return true;
   }
 
@@ -110,8 +106,6 @@ async function checkCandidacyOverlap(
     const isAllowed = isCombinationAllowed(
       existing.type as CandidacyType,
       type,
-      districtId,
-      nationalDistrictId,
     );
 
     if (!isAllowed) {

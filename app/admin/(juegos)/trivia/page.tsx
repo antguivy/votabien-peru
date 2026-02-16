@@ -9,7 +9,6 @@ export default async function TriviaPage() {
     trivias.length > 0 ? Math.max(...trivias.map((t) => t.global_index)) : 0;
 
   const nextAvailableIndex = maxIndex + 1;
-  console.log("nextAvailableIndex", nextAvailableIndex);
 
   return (
     <ContentLayout title="Trivia">

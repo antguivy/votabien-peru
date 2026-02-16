@@ -18,6 +18,13 @@ export enum CandidacyType {
   DIPUTADO = "DIPUTADO",
 }
 
+export const typeOptions = [
+  { value: "PRESIDENTE", label: "Presidente" },
+  { value: "VICEPRESIDENTE", label: "Vicepresidente" },
+  { value: "SENADOR", label: "Senador" },
+  { value: "DIPUTADO", label: "Diputado" },
+];
+
 export enum CandidacyStatus {
   SOLICITUD_INSCRIPCION = "SOLICITUD_INSCRIPCION", // Paso 1: Presentan la lista
   INSCRITO = "INSCRITO", // Paso 2: El JNE la acepta formalmente (Ya sale en la web oficial)
@@ -224,6 +231,7 @@ export interface FiltersCandidates {
   search?: string;
   skip?: number;
   limit?: number;
+  districtType?: "unico" | "multiple";
   [key: string]: unknown;
 }
 

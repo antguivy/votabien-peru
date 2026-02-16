@@ -1,17 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, Heart } from "lucide-react";
 import TeamList from "@/app/(platform)/(nosotros)/equipo/_components/team-list";
-import { getTeam, type TeamMember } from "@/queries/public/team";
+import { getTeam } from "@/queries/public/team";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 export default async function TeamPage() {
-  let team: TeamMember[] = [];
-  try {
-    team = await getTeam();
-  } catch (error) {
-    console.error("Error al obtener el equipo:", error);
-  }
+  const [team] = await Promise.all([getTeam()]);
 
   return (
     <ContentPlatformLayout>

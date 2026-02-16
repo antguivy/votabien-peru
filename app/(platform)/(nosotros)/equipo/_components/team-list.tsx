@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Linkedin, Globe, User, Mail } from "lucide-react";
-import { TeamMember } from "@/queries/public/team";
 import { cn } from "@/lib/utils";
+import { TeamBasic } from "@/interfaces/team";
 
 interface TeamListProps {
-  members: TeamMember[];
+  members: TeamBasic[];
 }
 
 export default function TeamList({ members }: TeamListProps) {
@@ -63,7 +63,7 @@ function TeamMemberCard({
   member,
   isPrincipal = false,
 }: {
-  member: TeamMember;
+  member: TeamBasic;
   isPrincipal?: boolean;
 }) {
   return (

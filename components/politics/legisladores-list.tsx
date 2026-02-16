@@ -236,18 +236,16 @@ const LegisladoresList = ({
       const nextPage = currentPage + 1;
 
       // Transformación de filtros para la query
-      const groupsFilter =
-        currentFilters.groups && currentFilters.groups !== "all"
-          ? typeof currentFilters.groups === "string"
-            ? currentFilters.groups.split(",")
-            : currentFilters.groups
+      const groupsFilter = Array.isArray(currentFilters.groups)
+        ? currentFilters.groups
+        : typeof currentFilters.groups === "string"
+          ? (currentFilters.groups as string).split(",")
           : undefined;
 
-      const districtsFilter =
-        currentFilters.districts && currentFilters.districts !== "all"
-          ? typeof currentFilters.districts === "string"
-            ? currentFilters.districts.split(",")
-            : currentFilters.districts
+      const districtsFilter = Array.isArray(currentFilters.districts)
+        ? currentFilters.districts
+        : typeof currentFilters.districts === "string"
+          ? (currentFilters.districts as string).split(",")
           : undefined;
 
       const chamberFilter =
@@ -343,11 +341,10 @@ const LegisladoresList = ({
       label: "Cámara",
       type: "select",
       placeholder: "Cámara",
-      options: [
-        { value: "congreso", label: "Congreso" },
-        { value: "senado", label: "Senado" },
-        { value: "diputados", label: "Diputados" },
-      ],
+      options: Object.values(ChamberType).map((c) => ({
+        value: c,
+        label: c,
+      })),
     },
   ];
 

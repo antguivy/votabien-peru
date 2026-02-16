@@ -207,7 +207,12 @@ export function CandidateFormDialog({
   }, [districts, watchedType, senatorDistricType, nationalDistrictId]);
 
   useEffect(() => {
-    if (watchedType === "SENADOR" && senatorDistricType === "UNICO") {
+    if (
+      (watchedType === "SENADOR" && senatorDistricType === "UNICO") ||
+      watchedType === "VICEPRESIDENTE_1" ||
+      watchedType === "VICEPRESIDENTE_2" ||
+      watchedType === "PRESIDENTE"
+    ) {
       if (nationalDistrictId) {
         form.setValue("electoral_district_id", nationalDistrictId);
       }
@@ -216,7 +221,7 @@ export function CandidateFormDialog({
       if (!currentDistrictId || currentDistrictId === nationalDistrictId) {
         form.setValue("electoral_district_id", "");
       }
-    } else if (watchedType !== "SENADOR") {
+    } else {
       if (mode === "create") {
         form.setValue("electoral_district_id", "");
       }

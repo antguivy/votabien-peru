@@ -64,6 +64,7 @@ export async function getPartidosList(
   const { active, search, limit = 30, offset = 0 } = params;
 
   try {
+    // 1. Lógica para ocultar partidos que son parte de una alianza activa
     const { data: activeProcess } = await supabase
       .from("electoralprocess")
       .select("id")
@@ -85,22 +86,25 @@ export async function getPartidosList(
       }
     }
 
+    // 2. Construcción de la Query
     let query = supabase
       .from("politicalparty")
       .select("*", { count: "exact" })
       .order("name", { ascending: true });
 
-    // Filtro original
+    // Filtro de Estado
     if (active !== undefined) {
       query = query.eq("active", active);
     }
 
+    // Filtro para ocultar partidos (CORREGIDO: Formato ("id1","id2"))
     if (hiddenPartyIds.length > 0) {
-      const idsString = `(${hiddenPartyIds.join(",")})`;
+      // Importante: Agregar comillas a cada ID para que PostgREST lo entienda
+      const idsString = `("${hiddenPartyIds.join('","')}")`;
       query = query.filter("id", "not.in", idsString);
     }
 
-    // Búsqueda por texto
+    // Búsqueda por texto (Nombre o Acrónimo)
     if (search && search.trim() !== "") {
       const searchTerm = search.trim();
       query = query.or(
@@ -108,6 +112,7 @@ export async function getPartidosList(
       );
     }
 
+    // Paginación
     query = query.range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;

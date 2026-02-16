@@ -10,21 +10,34 @@ interface PageProps {
   searchParams: Promise<{
     search?: string;
     type?: string;
-    districts?: string[];
+    districts?: string | string[];
+    districtType?: "unico" | "multiple";
   }>;
 }
 
 const CandidatosPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
   const limit = 30;
+  let districtsArray: string[] = [];
 
+  if (params.districts) {
+    if (typeof params.districts === "string") {
+      // String → Array
+      districtsArray = params.districts.split(",").map((d) => d.trim());
+    } else if (Array.isArray(params.districts)) {
+      // Ya es array
+      districtsArray = params.districts;
+    }
+  }
   const currentParams = {
     search: params.search || "",
-    type: params.type || "all",
-    districts: params.districts || [],
+    type: params.type || "PRESIDENTE",
+    districts: districtsArray,
+    districtType: params.districtType || undefined,
     skip: 0,
     limit,
   };
+
   try {
     const procesosActivos = await getElectoralProcess(true);
 
@@ -69,11 +82,9 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     const apiParams = {
       search: params.search || undefined,
       electoral_process_id: procesoActivo.id,
-      type: params.type && params.type !== "all" ? params.type : undefined,
-      districts:
-        params.districts && params.districts.length > 0
-          ? params.districts
-          : undefined,
+      type: params.type && params.type !== "all" ? params.type : "PRESIDENTE",
+      districtType: params.districtType || undefined,
+      districts: districtsArray.length > 0 ? districtsArray : undefined,
       skip: 0,
       limit: limit,
     };

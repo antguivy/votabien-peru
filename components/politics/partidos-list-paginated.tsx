@@ -65,7 +65,7 @@ const PartidosListPaginated = ({
             fields={filterFields}
             currentFilters={currentFilters}
             onApplyFilters={() => {}}
-            baseUrl="/legisladores"
+            baseUrl="/partidos"
             defaultFilters={defaultFilters}
           />
         </div>
