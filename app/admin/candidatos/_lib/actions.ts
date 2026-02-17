@@ -46,7 +46,10 @@ function isCombinationAllowed(
 ): boolean {
   if (existingType === newType) return false;
 
-  if (isExecutiveType(existingType) && newType === CandidacyType.SENADOR) {
+  if (
+    (isExecutiveType(existingType) && newType === CandidacyType.SENADOR) ||
+    (isExecutiveType(existingType) && newType === CandidacyType.DIPUTADO)
+  ) {
     return true;
   }
 
