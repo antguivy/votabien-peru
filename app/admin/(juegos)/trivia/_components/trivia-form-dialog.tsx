@@ -235,7 +235,7 @@ export function TriviaFormDialog({
         const optionsWithFormId = (initialData.options || []).map((opt) => ({
           option_id: opt.option_id,
           name: opt.name,
-          image_candidate_url: opt.image_url || null,
+          image_url: opt.image_url || null,
         }));
 
         form.reset({
@@ -300,7 +300,7 @@ export function TriviaFormDialog({
     append({
       option_id: person.id,
       name: person.fullname,
-      image_candidate_url: person.image_candidate_url,
+      image_url: person.image_candidate_url,
     });
   };
 
@@ -320,7 +320,7 @@ export function TriviaFormDialog({
     append({
       option_id: party.id,
       name: party.name,
-      image_candidate_url: party.logo_url,
+      image_url: party.logo_url,
     });
   };
 

@@ -3,7 +3,7 @@ import * as z from "zod";
 export const optionItemSchema = z.object({
   option_id: z.string(),
   name: z.string(),
-  image_candidate_url: z.string().optional().nullable(),
+  image_url: z.string().optional().nullable(),
 });
 
 export const triviaSchema = z.object({
