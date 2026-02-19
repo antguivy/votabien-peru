@@ -571,7 +571,6 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
           ) : (
             <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
               <Table className="table-fixed w-full">
-                {" "}
                 {/* 1. table-fixed es vital */}
                 <TableHeader className="bg-muted/30">
                   <TableRow className="hover:bg-transparent">
@@ -641,7 +640,7 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
                                 rel="noreferrer"
                                 className="text-[10px] text-primary hover:underline flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-full whitespace-nowrap"
                               >
-                                Ver enlace{" "}
+                                Ver enlace
                                 <ExternalLink className="h-2.5 w-2.5" />
                               </a>
                             ) : (
@@ -726,7 +725,7 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
                               rel="noreferrer"
                               className="text-[10px] text-primary hover:underline flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-full whitespace-nowrap"
                             >
-                              Ver enlace{" "}
+                              Ver enlace
                               <ExternalLink className="h-2.5 w-2.5" />
                             </a>
                           )}
@@ -747,8 +746,8 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
         >
           <SectionToolbar
             title="Reporte de Calidad"
-            data={alertas} // <--- Pasamos la DATA
-            columns={colsAlertas} // <--- Pasamos la CONFIGURACIÓN
+            data={alertas}
+            columns={colsAlertas}
             isJsonMode={modeAlertas === "json"}
             onToggleJson={(val) => setModeAlertas(val ? "json" : "table")}
           />

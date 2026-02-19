@@ -52,11 +52,11 @@ export function ProgressStream({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="flex items-center gap-3">
           <div
-            className={`h-3 w-3 rounded-full ${
-              isStreaming ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+            className={`h-3 w-3 rounded-full transition-colors ${
+              isStreaming ? "bg-success animate-pulse" : "bg-destructive"
             }`}
           />
-          <h2 className="text-xl font-bold flex items-center gap-2">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
             <Server className="h-5 w-5 text-muted-foreground" />
             {isStreaming ? "Pipeline en Ejecución" : "Proceso Detenido"}
           </h2>
@@ -64,7 +64,7 @@ export function ProgressStream({
 
         <div className="flex items-center gap-3">
           {/* Navegación de Vistas */}
-          <div className="flex items-center bg-muted/50 rounded-lg p-1">
+          <div className="flex items-center bg-muted rounded-lg p-1">
             {navegacion.map((item) => {
               const Icon = item.icon;
               return (
@@ -73,7 +73,7 @@ export function ProgressStream({
                   onClick={() => setVistaActual(item.id)}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                     vistaActual === item.id
-                      ? "bg-background shadow-sm text-foreground"
+                      ? "bg-card shadow-sm text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -103,7 +103,9 @@ export function ProgressStream({
         <CardContent className="pt-6">
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="font-medium">Scraping de Fuentes</span>
+              <span className="font-medium text-foreground">
+                Scraping de Fuentes
+              </span>
               <span className="text-muted-foreground font-mono">
                 {progreso.current} / {progreso.total}
               </span>
@@ -120,10 +122,11 @@ export function ProgressStream({
         </CardContent>
       </Card>
 
-      {/* Contenido según Vista */}
+      {/* Vista: Proceso / Terminal */}
       {vistaActual === "proceso" && (
-        <Card className="bg-black/95 border-border overflow-hidden">
-          <div className="bg-muted/10 border-b border-white/10 p-3 flex items-center justify-between">
+        <Card className="overflow-hidden border-border">
+          {/* Terminal header bar */}
+          <div className="bg-muted border-b border-border p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Terminal className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground font-mono">
@@ -137,20 +140,21 @@ export function ProgressStream({
             )}
           </div>
 
-          <div className="h-[500px] overflow-y-auto">
+          {/* Log scroll area */}
+          <div className="h-[500px] overflow-y-auto bg-background">
             <div
               ref={scrollRef}
-              className="p-4 space-y-1.5 font-mono text-xs text-slate-300"
+              className="p-4 space-y-1.5 font-mono text-xs text-foreground"
             >
               {logs.map((log, i) => (
                 <div
                   key={i}
-                  className="border-l-2 border-transparent pl-3 py-1 hover:border-slate-700 hover:bg-white/5 transition-colors"
+                  className="border-l-2 border-transparent pl-3 py-1 hover:border-border hover:bg-muted/40 transition-colors rounded-sm"
                 >
-                  <span className="text-slate-600 mr-2">→</span>
+                  <span className="text-muted-foreground mr-2">→</span>
 
                   {log.type === "error" && (
-                    <span className="text-red-400 font-bold">
+                    <span className="text-destructive font-bold">
                       ERR: {log.message}
                     </span>
                   )}
@@ -158,11 +162,13 @@ export function ProgressStream({
                   {log.type === "progress" && (
                     <span>
                       {log.success ? (
-                        <span className="text-emerald-500">✓</span>
+                        <span className="text-success">✓</span>
                       ) : (
-                        <span className="text-amber-500">⚠</span>
+                        <span className="text-warning">⚠</span>
                       )}
-                      <span className="ml-2 text-slate-400">{log.url}</span>
+                      <span className="ml-2 text-muted-foreground">
+                        {log.url}
+                      </span>
                     </span>
                   )}
 
@@ -171,7 +177,7 @@ export function ProgressStream({
                     log.type === "final_result") && (
                     <span>
                       {log.type === "data_update" && (
-                        <span className="text-blue-400 mr-2">[DATA]</span>
+                        <span className="text-info mr-2">[DATA]</span>
                       )}
                       {log.type === "final_result" && (
                         <span className="text-primary mr-2">[DONE]</span>
@@ -181,6 +187,7 @@ export function ProgressStream({
                   )}
                 </div>
               ))}
+
               {isStreaming && (
                 <div className="animate-pulse text-primary mt-2">_</div>
               )}
@@ -189,21 +196,24 @@ export function ProgressStream({
         </Card>
       )}
 
+      {/* Vista: Datos / Borrador */}
       {vistaActual === "datos" && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Database className="h-5 w-5 text-muted-foreground" />
               Datos Estructurados (Borrador)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[500px] rounded-lg border border-dashed bg-muted/30 p-6">
+            <ScrollArea className="h-[500px] rounded-lg border border-dashed border-border bg-muted/30 p-6">
               {!draftData ? (
                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                   <Loader2
                     className={`h-12 w-12 mb-4 ${
-                      isStreaming ? "animate-spin" : ""
+                      isStreaming
+                        ? "animate-spin text-primary"
+                        : "text-muted-foreground"
                     }`}
                   />
                   <p className="text-sm">
@@ -217,17 +227,20 @@ export function ProgressStream({
                   {/* Antecedentes */}
                   <div>
                     <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
+                      <AlertCircle className="h-4 w-4 text-warning" />
                       Antecedentes ({draftData.antecedentes?.length || 0})
                     </h3>
                     <div className="space-y-3">
                       {draftData.antecedentes?.slice(0, 5).map((ant, i) => (
-                        <Card key={i} className="p-4">
+                        <Card key={i} className="p-4 bg-card border-border">
                           <div className="flex justify-between items-start mb-2">
-                            <span className="font-semibold text-sm">
+                            <span className="font-semibold text-sm text-foreground">
                               {ant.titulo}
                             </span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge
+                              variant="outline"
+                              className="text-xs border-border text-muted-foreground"
+                            >
                               {ant.estado}
                             </Badge>
                           </div>
@@ -242,7 +255,7 @@ export function ProgressStream({
                   {/* Timeline */}
                   <div>
                     <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
+                      <Globe className="h-4 w-4 text-info" />
                       Timeline ({draftData.posturas?.length || 0})
                     </h3>
                     <div className="space-y-4 border-l-2 border-border pl-6">
