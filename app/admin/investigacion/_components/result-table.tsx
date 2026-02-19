@@ -474,18 +474,14 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-6 gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <User className="h-8 w-8 text-primary" />
-            </div>
             {resultado.investigado}
           </h1>
           <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="h-3 w-3 text-green-500" />
             <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-green-500" /> Proceso
-              Completado
+              Abre una nueva ventana, copia los resultados <br />y guarda en la
+              persona que corresponda.
             </span>
-            <span>•</span>
-            <span>{scrapingResults.length} fuentes analizadas</span>
           </div>
         </div>
         {/* 3. Resultados Finales */}
@@ -532,7 +528,7 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
             value="biografia"
             className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <User className="h-4 w-4" /> Posturas
+            <User className="h-4 w-4" /> Discurso
           </TabsTrigger>
           <TabsTrigger
             value="alertas"

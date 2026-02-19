@@ -172,7 +172,7 @@ export function getColumns({
                 onSelect={() => setRowAction({ type: "update-biography", row })}
               >
                 <History className="size-4" />
-                Hechos/Declaraciones
+                Discurso
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() =>
