@@ -120,13 +120,32 @@ export function getColumns({
     {
       accessorKey: "list_number",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Número" />
+        <DataTableColumnHeader column={column} title="N°" />
       ),
       cell: ({ row }) => {
         return (
           <div className="flex space-x-2">
             <Badge variant="outline">{row.original.list_number}</Badge>
           </div>
+        );
+      },
+      enableSorting: false,
+    },
+    {
+      accessorKey: "electoral_district",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Distrito Elect." />
+      ),
+      cell: ({ row }) => {
+        const district = row.original.electoral_district;
+
+        return (
+          <Badge
+            variant="outline"
+            className=" block whitespace-normal break-words text-xs"
+          >
+            {district?.name}
+          </Badge>
         );
       },
       enableSorting: false,

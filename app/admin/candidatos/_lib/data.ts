@@ -179,36 +179,64 @@ export async function getCandidacyStatusCounts(): Promise<StatusCounts> {
   }
 }
 
-interface PartiesCountQueryRow {
-  political_party_id: string;
-  political_party: {
-    id: string;
-    name: string;
-  } | null;
-}
-
 export async function getPartiesCounts(): Promise<PartyCounts> {
   noStore();
   const supabase = await createClient();
-  try {
-    const { data } = await supabase.from("candidate").select(`
-        political_party_id,
-        political_party:political_party_id(id, name)
-      `);
 
+  try {
+    // 1. Obtener proceso activo y ocultar partidos que son parte de una alianza activa
+    const { data: activeProcess } = await supabase
+      .from("electoralprocess")
+      .select("id")
+      .eq("active", true)
+      .single();
+
+    let hiddenPartyIds: string[] = [];
+
+    if (activeProcess) {
+      const { data: allianceMembers } = await supabase
+        .from("alliancecomposition")
+        .select("child_org_id")
+        .eq("process_id", activeProcess.id);
+
+      if (allianceMembers && allianceMembers.length > 0) {
+        hiddenPartyIds = allianceMembers
+          .map((m) => m.child_org_id)
+          .filter((id): id is string => id !== null);
+      }
+    }
+
+    // 2. Query a politicalparty con conteo de candidatos agregado
+    let query = supabase
+      .from("politicalparty")
+      .select(
+        `
+        id,
+        name,
+        active,
+        candidates:candidate(count)
+      `,
+      )
+      .order("name", { ascending: true })
+      .eq("active", true);
+
+    if (hiddenPartyIds.length > 0) {
+      const idsString = `("${hiddenPartyIds.join('","')}")`;
+      query = query.filter("id", "not.in", idsString);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
     if (!data) return {};
 
-    const typedData = data as unknown as PartiesCountQueryRow[];
     const counts: PartyCounts = {};
-
-    typedData.forEach((item) => {
-      const dist = item.political_party;
-      if (dist && dist.id) {
-        if (!counts[dist.id]) {
-          counts[dist.id] = { name: dist.name, count: 0 };
-        }
-        counts[dist.id].count += 1;
-      }
+    data.forEach((party) => {
+      counts[party.id] = {
+        name: party.name,
+        count:
+          (party.candidates as unknown as { count: number }[])[0]?.count ?? 0,
+      };
     });
 
     return counts;
