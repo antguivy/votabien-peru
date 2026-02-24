@@ -78,7 +78,7 @@ export function SimplePagination({
       <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:gap-6 lg:gap-8">
         <div className="hidden items-center space-x-2 sm:flex">
           <p className="whitespace-nowrap text-sm font-medium text-muted-foreground">
-            Filas
+            Cantidad
           </p>
           <Select
             value={`${itemsPerPage}`}

@@ -16,7 +16,7 @@ interface PageProps {
 export default async function PartidosPage({ searchParams }: PageProps) {
   const params = await searchParams;
 
-  const limit = parseInt(params.limit || "30");
+  const limit = parseInt(params.limit || "40");
   const offset = parseInt(params.offset || "0");
 
   const activeApiValue =

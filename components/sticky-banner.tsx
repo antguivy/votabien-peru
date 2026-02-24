@@ -16,7 +16,7 @@ const FixedElectoralBanner = ({
 }: FixedElectoralBannerProps) => {
   const firstTwo = processName.split(" ").slice(0, 2).join(" ");
   return (
-    <div className="sticky top-14 left-0 right-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md">
+    <div className="sticky lg:top-14 left-0 right-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md">
       <div className="container mx-auto px-4 py-2.5">
         <div className="flex items-center justify-center gap-3 md:gap-4 text-xs md:text-sm">
           <span className="font-semibold inline truncate">{firstTwo}</span>

@@ -91,8 +91,8 @@ export async function getCandidates(
       query = query.in("status", input.status);
     }
 
-    if (input.party && input.party.length > 0) {
-      query = query.in("party.name", input.party);
+    if (input.parties && input.parties.length > 0) {
+      query = query.in("political_party.name", input.parties);
     }
 
     // Orden

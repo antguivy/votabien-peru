@@ -38,7 +38,7 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
     {
       id: "fullname",
       label: "Candidato",
-      placeholder: "Filtrar por candidato...",
+      placeholder: "Filtrar por nombre...",
     },
     {
       id: "type",
@@ -59,7 +59,7 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
       })),
     },
     {
-      id: "political_party" as keyof AdminCandidate,
+      id: "parties" as keyof AdminCandidate,
       label: "Org. Política",
       options: Object.entries(partyCounts).map(([, { name, count }]) => ({
         label: name,

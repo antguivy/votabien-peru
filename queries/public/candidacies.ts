@@ -44,7 +44,7 @@ export async function getCandidatesCards({
       id, fullname, name, lastname, dni, image_url, image_candidate_url,
       profession, incomes, work_experience, university_education
     ),
-    political_party:political_party_id (
+    political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
     ),
     electoral_district:electoral_district_id!inner (

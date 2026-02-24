@@ -74,6 +74,7 @@ export function getColumns({
       },
     },
     {
+      id: "parties",
       accessorKey: "political_party",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Org. Política" />

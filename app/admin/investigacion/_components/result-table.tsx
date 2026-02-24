@@ -462,9 +462,9 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
       accessor: (d) => d.descripcion,
     },
     {
-      id: "descripcion",
-      label: "Descripción",
-      accessor: (d) => d.descripcion,
+      id: "accion_sugerida",
+      label: "Acción sugerida",
+      accessor: (d) => d.accion_sugerida,
     },
   ];
 
@@ -528,7 +528,7 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
             value="biografia"
             className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
           >
-            <User className="h-4 w-4" /> Discurso
+            <User className="h-4 w-4" /> Posturas
           </TabsTrigger>
           <TabsTrigger
             value="alertas"

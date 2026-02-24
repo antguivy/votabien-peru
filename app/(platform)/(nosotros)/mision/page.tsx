@@ -6,50 +6,49 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react";
+import Image from "next/image";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+
+// Cuando tengas las imágenes, pásalas como prop imageSrc
+// Por ahora el componente usa un fondo decorativo CSS que se ve bien solo
 
 export default function MissionPage() {
   return (
     <ContentPlatformLayout>
-      <section className="pt-4 container mx-auto pb-20 lg:pb-0">
-        {/* <header className="relative border-b border-border bg-background overflow-hidden pt-20 pb-16 md:pt-24 md:pb-24">
-        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.1]" />
-
-        <div className="container mx-auto px-4 max-w-5xl relative">
-          <div className="flex flex-col items-center text-center space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground text-balance">
-              Información que construye <br />
-              <span className="text-muted-foreground">ciudadanía.</span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-pretty">
-              Transformamos datos legislativos complejos en herramientas claras
-              para que tú decidas el futuro del Perú.
-            </p>
-          </div>
-        </div>
-      </header> */}
-
-        <section className="py-20 md:py-28 bg-muted/20 border-b border-border">
+      <section className="pt-4 container mx-auto">
+        {/* ── Quote con imagen de fondo ── */}
+        <SectionWithBackground
+          className="py-20 md:py-28 border-b border-border"
+          imageSrc="/images/plaza-de-armas-lima.jpg"
+        >
           <div className="container mx-auto px-4 max-w-4xl text-center">
-            <h2 className="text-3xl md:text-4xl font-serif italic text-foreground/80 leading-snug mb-8">
-              “No queremos un país donde la desinformación decida el rumbo.
+            {/* Comillas decorativas */}
+            <span className="block text-6xl md:text-7xl font-serif leading-none text-white/30 mb-2 select-none">
+              ❝
+            </span>
+            <h2 className="text-2xl md:text-4xl font-serif italic text-white leading-snug mb-8 text-balance drop-shadow-md">
+              No queremos un país donde la desinformación decida el rumbo.
               Queremos electores que conozcan a quién votan, qué hicieron y qué
-              proponen.”
+              proponen.
             </h2>
-            <p className="text-base text-muted-foreground uppercase tracking-widest font-semibold">
-              — El equipo de Vota Bien
-            </p>
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-px w-8 bg-brand" />
+              <p className="text-sm text-white uppercase tracking-widest font-semibold">
+                Infórmate, tu voto importa
+              </p>
+              <div className="h-px w-8 bg-brand" />
+            </div>
           </div>
-        </section>
+        </SectionWithBackground>
 
-        <section className="py-16 md:py-24">
+        {/* ── Misión y Visión ── */}
+        <section className="py-16 md:py-24 bg-background">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
               {/* Misión */}
               <div className="space-y-6 group">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Target className="w-6 h-6" />
                 </div>
                 <h2 className="text-3xl font-bold text-foreground">
@@ -69,7 +68,7 @@ export default function MissionPage() {
 
               {/* Visión */}
               <div className="space-y-6 group">
-                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="w-12 h-12 bg-info/10 dark:bg-info/20 rounded-xl flex items-center justify-center text-info mb-4 group-hover:scale-110 transition-transform duration-300">
                   <Eye className="w-6 h-6" />
                 </div>
                 <h2 className="text-3xl font-bold text-foreground">
@@ -91,39 +90,48 @@ export default function MissionPage() {
           </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-card border-y border-border">
+        {/* ── Ejes de Acción con imagen de fondo ── */}
+        <SectionWithBackground
+          className="py-16 md:py-24 border-y border-border"
+          imageSrc="/images/congreso-peru.jpg"
+          variant="warm"
+        >
           <div className="container mx-auto px-4 max-w-6xl">
-            <div className="mb-16">
-              <h2 className="text-3xl font-bold text-foreground mb-4">
+            {/* Título */}
+            <div className="mb-12">
+              {/* <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-2 drop-shadow-md">
+                Lo que hacemos
+              </p> */}
+              <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-md">
                 Ejes de Acción 2026
               </h2>
-              <div className="h-1 w-20 bg-primary rounded-full" />
+              <div className="h-1 w-20 bg-brand rounded-full" />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               <FeatureCard
                 icon={<Database className="w-5 h-5" />}
                 title="Radiografía del Candidato"
                 description="Perfiles exhaustivos que cruzan antecedentes penales, formación académica y trayectoria partidaria. Sin filtros, solo datos."
               />
-              <FeatureCard
+              {/* <FeatureCard
                 icon={<TrendingUp className="w-5 h-5" />}
                 title="Métricas Legislativas"
                 description="Para quienes buscan reelección: analizamos asistencia, producción de leyes y sentido de votación en temas clave."
-              />
+              /> */}
               <FeatureCard
                 icon={<Scale className="w-5 h-5" />}
                 title="Imparcialidad Algorítmica"
                 description="Nuestros algoritmos no opinan. Presentan la información cruda y ordenada para evitar cualquier sesgo editorial."
               />
-              <FeatureCard
+              {/* <FeatureCard
                 icon={<CheckCircle2 className="w-5 h-5" />}
                 title="Verificación en Tiempo Real"
                 description="Un sistema vivo que se actualiza semanalmente conforme avanza la campaña y surgen nuevas alianzas o denuncias."
-              />
+              /> */}
             </div>
           </div>
-        </section>
+        </SectionWithBackground>
 
         <Footer />
       </section>
@@ -131,10 +139,76 @@ export default function MissionPage() {
   );
 }
 
+// ── Componente de sección con fondo decorativo CSS
+// Cuando tengas imágenes, agrega la prop imageSrc y descomentar el bloque de Image
+function SectionWithBackground({
+  imageSrc,
+  variant = "cool",
+  className,
+  children,
+}: {
+  imageSrc?: string;
+  variant?: "cool" | "warm";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden rounded-2xl ${className ?? ""}`}
+    >
+      {/* ── Fondo base siempre oscuro — estas secciones son zonas de contraste
+          intencional, no siguen el tema del sistema ── */}
+      <div className="absolute inset-0 bg-[oklch(0.13_0.03_240)]" />
+
+      {/* ── Capa de color según variante ── */}
+      {variant === "cool" ? (
+        <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.18_0.04_250)] via-transparent to-[oklch(0.10_0.02_230)] opacity-80" />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.16_0.04_20)] via-transparent to-[oklch(0.10_0.02_240)] opacity-80" />
+      )}
+
+      {/* ── Imagen opcional (cuando la tengas, pasa imageSrc) ── */}
+      {imageSrc && (
+        <>
+          <Image
+            src={imageSrc}
+            alt=""
+            fill
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+          {/* Overlay siempre oscuro — la imagen necesita oscuridad,
+              no el tema del sistema. Funciona igual en light y dark. */}
+          <div className="absolute inset-0 bg-black/65" />
+        </>
+      )}
+
+      {/* ── Resplandor con primary de la paleta ── */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,var(--primary)_0%,transparent_70%)] opacity-[0.08]" />
+
+      {/* ── Patrón de puntos con foreground de la paleta ── */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, var(--foreground) 1px, transparent 1px)",
+          backgroundSize: "22px 22px",
+        }}
+      />
+
+      {/* ── Franja brand en el borde superior ── */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand to-transparent" />
+
+      {/* Contenido */}
+      <div className="relative z-10">{children}</div>
+    </section>
+  );
+}
+
 function CheckItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-3 text-muted-foreground">
-      <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+      <div className="mt-2 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
       <span className="text-sm md:text-base">{text}</span>
     </li>
   );
@@ -150,12 +224,14 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="group p-6 rounded-xl border border-border bg-background hover:border-primary/30 hover:shadow-md transition-all duration-300">
-      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+    <div className="group p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm hover:border-brand/40 hover:bg-white/10 transition-all duration-300">
+      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white mb-4 group-hover:bg-brand group-hover:text-white transition-colors duration-200">
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
+      <p className="text-white/65 leading-relaxed text-sm md:text-base">
+        {description}
+      </p>
     </div>
   );
 }

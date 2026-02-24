@@ -516,7 +516,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="h-8 px-2 lg:px-3 ml-2 text-muted-foreground hover:text-destructive"
+                className="h-8 px-2 lg:px-3 ml-2 text-foreground hover:text-destructive"
               >
                 Limpiar todo
                 <X className="ml-2 h-3 w-3" />
@@ -579,7 +579,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
                   variant="ghost"
                   size="sm"
                   onClick={clearFilters}
-                  className="h-8 text-xs text-muted-foreground px-2"
+                  className="h-8 text-xs text-foreground px-2"
                 >
                   Limpiar Todo
                 </Button>

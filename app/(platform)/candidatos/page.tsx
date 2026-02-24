@@ -5,11 +5,16 @@ import { getCandidatesCards } from "@/queries/public/candidacies";
 import getDistritos from "@/queries/public/electoral-districts";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import {
+  getPartidosList,
+  getPartidosListSimple,
+} from "@/queries/public/parties";
 
 interface PageProps {
   searchParams: Promise<{
     search?: string;
     type?: string;
+    parties?: string | string[];
     districts?: string | string[];
     districtType?: "unico" | "multiple";
   }>;
@@ -19,6 +24,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
   const limit = 30;
   let districtsArray: string[] = [];
+  let partiesArray: string[] = [];
 
   if (params.districts) {
     if (typeof params.districts === "string") {
@@ -29,9 +35,19 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       districtsArray = params.districts;
     }
   }
+  if (params.parties) {
+    if (typeof params.parties === "string") {
+      // String → Array
+      partiesArray = params.parties.split(",").map((d) => d.trim());
+    } else if (Array.isArray(params.parties)) {
+      // Ya es array
+      partiesArray = params.parties;
+    }
+  }
   const currentParams = {
     search: params.search || "",
     type: params.type || "PRESIDENTE",
+    parties: partiesArray,
     districts: districtsArray,
     districtType: params.districtType || undefined,
     skip: 0,
@@ -84,13 +100,15 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       electoral_process_id: procesoActivo.id,
       type: params.type && params.type !== "all" ? params.type : "PRESIDENTE",
       districtType: params.districtType || undefined,
+      parties: partiesArray.length > 0 ? partiesArray : undefined,
       districts: districtsArray.length > 0 ? districtsArray : undefined,
       skip: 0,
       limit: limit,
     };
-    const [candidaturas, distritos] = await Promise.all([
+    const [candidaturas, distritos, parties] = await Promise.all([
       getCandidatesCards(apiParams),
       getDistritos(),
+      getPartidosList({ active: true, limit: 60 }),
     ]);
 
     const fechaElecciones = new Date(procesoActivo.election_date);
@@ -115,6 +133,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
           <CandidatosList
             candidaturas={candidaturas}
             distritos={distritos}
+            parties={parties.items}
             procesoId={procesoActivo.id}
             currentFilters={currentParams}
           />

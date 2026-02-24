@@ -227,6 +227,7 @@ export interface FiltersPerson {
 export interface FiltersCandidates {
   electoral_process_id?: string;
   type?: CandidacyType | string;
+  parties?: string[] | string;
   districts?: string[] | string;
   search?: string;
   skip?: number;
