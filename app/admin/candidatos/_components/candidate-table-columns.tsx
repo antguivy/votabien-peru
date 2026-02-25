@@ -22,6 +22,11 @@ import {
 } from "@/lib/utils/color-enums";
 import { Separator } from "@/components/ui/separator";
 import { AdminCandidate } from "@/interfaces/candidate";
+import {
+  getTextColor,
+  getTextShadowStyle,
+  needsOverlay,
+} from "@/lib/utils/color-utils";
 
 interface GetColumnsProps {
   setRowAction: React.Dispatch<
@@ -81,17 +86,27 @@ export function getColumns({
       ),
       cell: ({ row }) => {
         const party = row.original.political_party;
-        const textColor =
-          party?.color_hex === "#ffffff" ? "text-black" : "text-white";
+        const colorHex = party?.color_hex ?? "#888888";
+        const textColorClass = getTextColor(colorHex);
+        const hasOverlay = needsOverlay(colorHex);
+        const textShadow = getTextShadowStyle(colorHex);
 
         return (
           <div className="w-auto">
             <div
-              className={`px-2 py-0.5 rounded-md text-xs text-center whitespace-normal break-words ${textColor}`}
-              style={{ backgroundColor: party?.color_hex ?? "#888888" }}
+              className={`relative px-2 py-0.5 rounded-md text-xs text-center whitespace-normal break-words ${textColorClass}`}
+              style={{ backgroundColor: colorHex, ...textShadow }}
               title={party?.name}
             >
-              {party?.name}
+              {/* Overlay sutil para colores muy claros o fosforescentes */}
+              {hasOverlay && (
+                <span
+                  className="absolute inset-0 rounded-md"
+                  style={{ backgroundColor: "rgba(0,0,0,0.12)" }}
+                  aria-hidden="true"
+                />
+              )}
+              <span className="relative z-10">{party?.name}</span>
             </div>
           </div>
         );
