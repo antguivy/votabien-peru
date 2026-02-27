@@ -17,7 +17,10 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
     return (
       <ContentPlatformLayout>
         <section className="pt-4 container mx-auto pb-20 lg:pb-0">
-          <DetailCandidato persona={candidato} />
+          <DetailCandidato
+            persona={candidato}
+            shareUrl={`https://votabienperu.com/candidatos/${candidatosId}`}
+          />
         </section>
       </ContentPlatformLayout>
     );

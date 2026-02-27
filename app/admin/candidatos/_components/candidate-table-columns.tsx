@@ -19,7 +19,7 @@ import { booleanToText } from "@/lib/utils";
 import {
   getCandidateTypeColor,
   getCandidateTypeIcon,
-} from "@/lib/utils/color-enums";
+} from "@/lib/utils/helper-enums";
 import { Separator } from "@/components/ui/separator";
 import { AdminCandidate } from "@/interfaces/candidate";
 import {

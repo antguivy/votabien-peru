@@ -58,6 +58,9 @@ import {
 import { PlanGobiernoFlashcards } from "./flash-cards";
 import { useState, useEffect } from "react";
 import { NoDataMessage } from "@/components/no-data-message";
+import { ShareButton } from "@/components/share-rs";
+import { getCandidateTypeIcon, getFlowType } from "@/lib/utils/helper-enums";
+import { CandidatePresidentials } from "@/interfaces/candidate";
 
 // --- SUBCOMPONENTE: TIMELINE ---
 const TimelineList = ({ items }: { items: PartyHistory[] }) => {
@@ -116,8 +119,12 @@ const TimelineList = ({ items }: { items: PartyHistory[] }) => {
 
 export default function DetailParty({
   party,
+  principalCandidates,
+  shareUrl,
 }: {
   party: PoliticalPartyDetail;
+  principalCandidates: CandidatePresidentials[];
+  shareUrl: string;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
 
@@ -250,11 +257,6 @@ export default function DetailParty({
               {party.name}
             </span>
           </nav>
-          {party.active && (
-            <Badge variant="success" className="h-5 px-2 text-[10px]">
-              Activo
-            </Badge>
-          )}
         </div>
       </div>
 
@@ -296,11 +298,11 @@ export default function DetailParty({
               </h1>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4">
-                {party.acronym && (
+                {/* {party.acronym && (
                   <Badge className="bg-background/20 backdrop-blur-md border-0 text-inherit">
                     {party.acronym}
                   </Badge>
-                )}
+                )} */}
                 {party.ideology?.split("\n").map((ide, i) => (
                   <Badge
                     key={i}
@@ -356,13 +358,19 @@ export default function DetailParty({
                   </span>
                 </div>
               </div>
+              <ShareButton
+                title={`${party.name}`}
+                url={shareUrl}
+                text={`Conoce más sobre ${party.name} en VotaBien Perú`}
+                trackingId={party.id}
+                trackingType="partido"
+              />
             </div>
           </div>
         </div>
       </div>
-
       {/* CONTENIDO CON TABS */}
-      <div className="container mx-auto px-4 mt-8">
+      <div className="container mx-auto mt-8">
         <Tabs defaultValue="resumen" className="w-full space-y-6">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl gap-1">
             <TabsTrigger
@@ -428,49 +436,44 @@ export default function DetailParty({
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <ScrollText className="w-4 h-4 text-muted-foreground" />{" "}
-                    Identidad
+                    Candidatura Presidencial
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {party.party_president && (
-                    <div>
-                      <p className="text-xs text-muted-foreground font-bold uppercase mb-1">
-                        Presidente
-                      </p>
-                      <div className="flex items-center gap-2 font-medium">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Users className="w-4 h-4" />
+                  {principalCandidates &&
+                    principalCandidates.length > 0 &&
+                    principalCandidates.map((c) => (
+                      <Link
+                        key={c.id}
+                        href={`/candidatos/${c.person.id}`}
+                        className="flex items-center gap-4 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors cursor-pointer"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-muted flex-shrink-0 overflow-hidden">
+                          {c.person.image_candidate_url ? (
+                            <Image
+                              src={c.person.image_candidate_url}
+                              alt={c.person.fullname}
+                              width={48}
+                              height={48}
+                              className="object-contain w-full h-full"
+                            />
+                          ) : (
+                            <Users className="w-6 h-6 text-muted-foreground" />
+                          )}
                         </div>
-                        {party.party_president}
-                      </div>
-                    </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {c.person.fullname}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {c.type}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  {!principalCandidates && (
+                    <NoDataMessage text="Sin candidatos" />
                   )}
-                  {party.slogan && (
-                    <div>
-                      <p className="text-xs text-muted-foreground font-bold uppercase mb-1">
-                        Lema
-                      </p>
-                      <div className="italic text-foreground/80 border-l-2 border-primary pl-3 py-1">
-                        “{party.slogan}”
-                      </div>
-                    </div>
-                  )}
-                  {party.purpose && (
-                    <div>
-                      <p className="text-xs text-muted-foreground font-bold uppercase mb-1">
-                        Propósito
-                      </p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {party.purpose}
-                      </p>
-                    </div>
-                  )}
-                  {!party.party_president &&
-                    !party.slogan &&
-                    !party.purpose && (
-                      <NoDataMessage text="Sin información institucional." />
-                    )}
                 </CardContent>
               </Card>
 
@@ -779,8 +782,7 @@ export default function DetailParty({
                               >
                                 <div>
                                   <p className="text-xs font-medium text-foreground">
-                                    {t.flow_type?.replace(/_/g, " ") ||
-                                      "Transacción"}
+                                    {getFlowType(t.flow_type)}
                                   </p>
                                   <Badge
                                     variant="outline"

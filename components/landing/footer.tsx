@@ -71,25 +71,26 @@ export default function Footer() {
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Síguenos
               </p>
+
               <div className="flex items-center gap-2">
                 {[
+                  {
+                    href: "https://www.facebook.com/profile.php?id=61584547343222",
+                    icon: <FacebookIcon />,
+                    label: "Facebook",
+                    brandColor: "#1877F2",
+                  },
                   {
                     href: "https://www.instagram.com/votabienperu_oficial/",
                     icon: <InstagramIcon />,
                     label: "Instagram",
-                    brandColor: "#E1306C", // rosa Instagram
+                    brandColor: "#E1306C",
                   },
                   {
                     href: "https://www.tiktok.com/@vota.bien.per",
                     icon: <TikTokIcon />,
                     label: "TikTok",
-                    brandColor: "#69C9D0", // teal TikTok (el negro es aburrido)
-                  },
-                  {
-                    href: "https://www.facebook.com/profile.php?id=61584547343222",
-                    icon: <FacebookIcon />,
-                    label: "Facebook",
-                    brandColor: "#1877F2", // azul Facebook
+                    brandColor: "#69C9D0",
                   },
                   // {
                   //   href: "https://linkedin.com/company/votabienperu",
@@ -105,15 +106,13 @@ export default function Footer() {
                     rel="noopener noreferrer"
                     title={label}
                     style={
-                      { "--brand-color": brandColor } as React.CSSProperties
+                      {
+                        backgroundColor: brandColor,
+                      } as React.CSSProperties
                     }
-                    className="w-8 h-8 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center transition-all duration-200 hover:text-white"
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = brandColor)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "")
-                    }
+                    className="w-8 h-8 rounded-lg flex items-center justify-center 
+                   text-white transition-all duration-200 
+                   hover:opacity-80"
                   >
                     {icon}
                     <span className="sr-only">{label}</span>
@@ -205,7 +204,7 @@ export default function Footer() {
             ❝Infórmate, tu voto importa❞
           </p>
           <p className="text-xs text-muted-foreground/50">
-            © {new Date().getFullYear()} Vota Bien Perú
+            © {new Date().getFullYear()} VotaBien Perú
           </p>
         </div>
       </div>

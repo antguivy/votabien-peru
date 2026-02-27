@@ -23,7 +23,7 @@ import {
   getChamberIcon,
   getConditionColor,
   getConditionIcon,
-} from "@/lib/utils/color-enums";
+} from "@/lib/utils/helper-enums";
 import { Separator } from "@/components/ui/separator";
 import { AdminLegislator } from "@/interfaces/legislator";
 

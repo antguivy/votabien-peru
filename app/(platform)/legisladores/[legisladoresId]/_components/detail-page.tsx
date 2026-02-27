@@ -41,7 +41,7 @@ import { PersonDetailLegislator } from "@/interfaces/person";
 import BillsDialog from "./bills-dialog";
 import ProyectoItem from "./proyect-item";
 import { cn } from "@/lib/utils";
-import { getBackgroundVariant } from "@/lib/utils/color-enums";
+import { getBackgroundVariant } from "@/lib/utils/helper-enums";
 
 export default function DetailLegislador({
   persona,
@@ -511,14 +511,14 @@ export default function DetailLegislador({
               </Card>
 
               {/* Antecedentes */}
-              <Card className="shadow-sm border-warning/40">
-                <CardHeader className="bg-warning/5">
-                  <CardTitle className="flex items-center gap-2 text-warning-foreground/80">
+              <Card className="pt-0 shadow-sm border-warning/40">
+                <CardHeader className="bg-warning/5 py-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground/80">
                     <AlertTriangle className="w-5 h-5 text-warning" />{" "}
                     Antecedentes Reportados
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6 space-y-4">
+                <CardContent className="space-y-4">
                   {persona.backgrounds && persona.backgrounds.length > 0 ? (
                     persona.backgrounds.map((bg) => (
                       <div

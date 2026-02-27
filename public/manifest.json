@@ -1,7 +1,6 @@
 {
-  "name": "VotaBienPeru - Información Política del Perú",
-  "short_name": "VotaBienPeru",
-  "description": "Plataforma de información política del Perú",
+  "name": "VotaBien Perú",
+  "short_name": "VotaBien Peru",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

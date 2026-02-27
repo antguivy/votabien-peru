@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "media.votabienperu.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "www.congreso.gob.pe",
         pathname: "/**",
       },

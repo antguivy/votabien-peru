@@ -1,5 +1,5 @@
 import { ComparisonDataStatus } from "./comparator";
-import { PersonBasicInfo } from "./person";
+import { PersonBase, PersonBasicInfo } from "./person";
 import {
   CandidacyStatus,
   CandidacyType,
@@ -67,6 +67,12 @@ export interface CandidateCard extends CandidateBase {
   political_party: PoliticalPartyBase;
   electoral_district: ElectoralDistrictBasic | null;
   has_metrics: boolean;
+}
+
+export interface CandidatePresidentials {
+  id: string;
+  person: PersonBasicInfo;
+  type: CandidacyType;
 }
 
 // export interface CandidateMetrics {

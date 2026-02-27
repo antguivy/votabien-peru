@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PersonDetailCandidate } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message"; // Asegúrate que la ruta sea correcta
+import { ShareButton } from "@/components/share-rs";
 
 // Helper para formatear moneda
 const formatCurrency = (amount: string | number) => {
@@ -42,8 +43,10 @@ const formatCurrency = (amount: string | number) => {
 
 export default function DetailCandidato({
   persona,
+  shareUrl,
 }: {
   persona: PersonDetailCandidate;
+  shareUrl: string;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
   const candidate = persona.active_candidacy;
@@ -88,7 +91,7 @@ export default function DetailCandidato({
                 src={persona.image_candidate_url || "/placeholder.png"}
                 alt="Avatar"
                 fill
-                className="object-cover object-top"
+                className="object-contain"
               />
             </div>
             <span className="font-semibold text-sm max-w-[150px] sm:max-w-xs truncate">
@@ -119,7 +122,7 @@ export default function DetailCandidato({
                     src={persona.image_candidate_url || "/images/default.svg"}
                     alt=""
                     fill
-                    className="object-cover scale-110 blur-2xl opacity-40"
+                    className="object-contain scale-110 blur-2xl opacity-40"
                   />
                 </div>
 
@@ -196,12 +199,19 @@ export default function DetailCandidato({
                 )}
               </div>
             </div>
+            <ShareButton
+              title={`${persona.name} ${persona.lastname}`}
+              url={shareUrl}
+              text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
+              trackingId={persona.active_candidacy.id}
+              trackingType="candidato"
+            />
           </div>
         </div>
       </div>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <div className="container max-w-5xl mx-auto px-4">
+      <div className="container max-w-5xl mx-auto">
         {/* ALERTA DE ANTECEDENTES */}
         {persona.backgrounds && persona.backgrounds.length > 0 && (
           <div className="mb-8 p-4 border-l-4 border-destructive bg-destructive/5 rounded-r-lg flex items-start gap-4 shadow-sm">

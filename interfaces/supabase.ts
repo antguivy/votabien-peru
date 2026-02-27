@@ -373,6 +373,7 @@ export type Database = {
           id: string;
           is_national: boolean;
           name: string;
+          ubigeo: string | null;
           updated_at: string;
         };
         Insert: {
@@ -382,6 +383,7 @@ export type Database = {
           id: string;
           is_national: boolean;
           name: string;
+          ubigeo?: string | null;
           updated_at: string;
         };
         Update: {
@@ -391,6 +393,7 @@ export type Database = {
           id?: string;
           is_national?: boolean;
           name?: string;
+          ubigeo?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -518,6 +521,42 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      hito: {
+        Row: {
+          created_at: string;
+          date: string | null;
+          id: number;
+          index: number | null;
+          label: string | null;
+          location: string | null;
+          photo_description: string | null;
+          photo_url: string | null;
+          quote: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          date?: string | null;
+          id?: number;
+          index?: number | null;
+          label?: string | null;
+          location?: string | null;
+          photo_description?: string | null;
+          photo_url?: string | null;
+          quote?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          date?: string | null;
+          id?: number;
+          index?: number | null;
+          label?: string | null;
+          location?: string | null;
+          photo_description?: string | null;
+          photo_url?: string | null;
+          quote?: string | null;
+        };
+        Relationships: [];
       };
       legislator: {
         Row: {
@@ -985,6 +1024,7 @@ export type Database = {
           party_timeline: Json | null;
           phone: string | null;
           purpose: string | null;
+          rop: string | null;
           slogan: string | null;
           tiktok_url: string | null;
           total_afiliates: number | null;
@@ -1017,6 +1057,7 @@ export type Database = {
           party_timeline?: Json | null;
           phone?: string | null;
           purpose?: string | null;
+          rop?: string | null;
           slogan?: string | null;
           tiktok_url?: string | null;
           total_afiliates?: number | null;
@@ -1049,6 +1090,7 @@ export type Database = {
           party_timeline?: Json | null;
           phone?: string | null;
           purpose?: string | null;
+          rop?: string | null;
           slogan?: string | null;
           tiktok_url?: string | null;
           total_afiliates?: number | null;

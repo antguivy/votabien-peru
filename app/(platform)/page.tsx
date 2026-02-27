@@ -10,6 +10,9 @@ import PartidosListBasic from "@/components/landing/partidos-list-basic";
 import { getPartidosList } from "@/queries/public/parties";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import PhotoStory from "@/components/landing/photo-history";
+import Testimonials from "@/components/landing/testimonials";
+import { getHitos } from "@/queries/public/hito";
 // import { getSeatParliamentary } from "@/queries/public/seats";
 // import { ChamberType } from "@/interfaces/politics";
 
@@ -74,40 +77,45 @@ import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 export default async function VotaBienPage() {
   try {
-    const [
-      partidos,
-      proceso_electoral,
-      // seats
-    ] = await Promise.all([
-      getPartidosList({
-        active: true,
-        limit: 8,
-      }),
-      getElectoralProcess(true),
-      // getSeatParliamentary(ChamberType.CONGRESO),
-    ]);
+    const hitos = await getHitos();
+    // const [
+    //   partidos,
+    //   proceso_electoral,
+    // seats
+    // ] = await Promise.all([
+    //   getPartidosList({
+    //     active: true,
+    //     limit: 8,
+    //   }),
+    //   getElectoralProcess(true),
+    // getSeatParliamentary(ChamberType.CONGRESO),
+    // ]);
 
     // const seatsData = seats.sort((a, b) => {
     //   if (a.row !== b.row) return a.row - b.row;
     //   return a.number_seat - b.number_seat;
     // });
     return (
-      <ContentPlatformLayout>
-        {/* Hero Dual Split */}
-        {/* <HeroDualSplit
+      <>
+        <ContentPlatformLayout>
+          <PhotoStory hitos={hitos} />
+          {/* <Testimonials/> */}
+          {/* Hero Dual Split */}
+          {/* <HeroDualSplit
           proceso_electoral={proceso_electoral[0]}
           ejecutivos={ejecutivos}
         /> */}
-        <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
-        {/* <Suspense fallback={<ComparadorSkeleton />}>
+          {/* <HeroDualSplit proceso_electoral={proceso_electoral[0]} /> */}
+          {/* <Suspense fallback={<ComparadorSkeleton />}>
           <ComparadorServer />
         </Suspense> */}
 
-        {/* <HemiclicleLegislator seatsData={seatsData} /> */}
+          {/* <HemiclicleLegislator seatsData={seatsData} /> */}
 
-        <PartidosListBasic partidos={partidos.items} />
+          {/* <PartidosListBasic partidos={partidos.items} /> */}
+        </ContentPlatformLayout>
         <Footer />
-      </ContentPlatformLayout>
+      </>
     );
   } catch (error) {
     console.error("Error cargando datos de landing:", error);

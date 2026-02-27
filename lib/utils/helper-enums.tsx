@@ -22,6 +22,7 @@ import {
 } from "@/interfaces/politics";
 import { BadgeVariant } from "../utils-bill";
 import { BackgroundType } from "@/interfaces/background";
+import { FlowType } from "@/interfaces/party-financing";
 
 // Chamber helpers
 export function getCandidateTypeIcon(type: CandidacyType) {
@@ -129,4 +130,17 @@ export function getBackgroundVariant(type: string): BadgeVariant {
   };
 
   return map[type] || "secondary";
+}
+
+export function getFlowType(flowType: string): string {
+  const map: Record<string, string> = {
+    [FlowType.I_FPD]: "Financiamiento Público Directo",
+    [FlowType.I_F_PRIVADO]: "Financiamiento Privado",
+    [FlowType.I_OPERACIONALES]: "Operacionales",
+    [FlowType.G_FONDO_FPD]: "Fondo de Financiamiento Público Directo",
+    [FlowType.G_FONDO_F_PRIVADO]: "Fondo de Financiamiento Privado",
+    [FlowType.G_OPERACIONALES]: "Operacionales",
+    [FlowType.D_TOTAL]: "Total",
+  };
+  return map[flowType] || "Transacción";
 }

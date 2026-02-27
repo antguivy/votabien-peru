@@ -29,7 +29,7 @@ export default function TeamListV2({ members }: TeamListProps) {
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="flex flex-col sm:flex-row justify-center items-center sm:items-stretch gap-6">
         {principalMembers.map((member) => (
           <TeamMemberCard key={member.id} member={member} />
         ))}
@@ -42,80 +42,69 @@ function TeamMemberCard({ member }: { member: TeamBasic }) {
   return (
     <div
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-xl",
-        "bg-card border border-border dark:border-border/80",
+        "group flex flex-col items-center text-center px-6 py-7 rounded-2xl w-full sm:w-64",
+        "bg-card border border-border/60",
         "transition-all duration-300",
-        "hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10",
-        "dark:hover:border-primary/30 dark:hover:shadow-primary/10",
+        "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/8",
+        "hover:-translate-y-1",
       )}
     >
-      {/* Foto */}
-      <div className="relative w-full aspect-square overflow-hidden bg-muted">
+      {/* Foto circular */}
+      <div className="relative w-28 h-28 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border group-hover:ring-primary/40 transition-all duration-300">
         {member.image_url ? (
           <Image
             src={member.image_url}
             alt={`${member.first_name} ${member.last_name}`}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            sizes="112px"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-secondary dark:bg-muted text-muted-foreground/40 group-hover:text-primary/50 transition-colors duration-300">
-            <User className="w-20 h-20 stroke-[1.5]" />
+          <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground/40 group-hover:text-primary/50 transition-colors duration-300">
+            <User className="w-10 h-10 stroke-[1.5]" />
           </div>
         )}
-
-        {/* Overlay sutil al hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
-      {/* Contenido */}
-      <div className="flex flex-1 flex-col p-5 space-y-3">
-        {/* Nombre y rol */}
-        <div className="space-y-1">
-          <h4 className="text-lg font-bold leading-tight text-card-foreground group-hover:text-primary transition-colors duration-200">
-            {member.first_name} {member.last_name}
-          </h4>
-          {member.role && (
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              {member.role}
-            </p>
+      {/* Nombre y rol */}
+      <div className="mt-4 space-y-1">
+        <h4 className="text-sm font-bold leading-tight text-card-foreground group-hover:text-primary transition-colors duration-200">
+          {member.first_name} {member.last_name}
+        </h4>
+        {member.role && (
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+            {member.role}
+          </p>
+        )}
+      </div>
+
+      {/* Email */}
+      {member.email && (
+        <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground/60 max-w-full">
+          <Mail className="w-3 h-3 flex-shrink-0 text-primary/50" />
+          <span className="truncate">{member.email}</span>
+        </div>
+      )}
+
+      {/* Links sociales */}
+      {(member.linkedin_url || member.portfolio_url) && (
+        <div className="mt-4 flex items-center gap-2">
+          {member.linkedin_url && (
+            <SocialLink
+              href={member.linkedin_url}
+              icon={<Linkedin className="w-3.5 h-3.5" />}
+              label="LinkedIn"
+            />
+          )}
+          {member.portfolio_url && (
+            <SocialLink
+              href={member.portfolio_url}
+              icon={<Globe className="w-3.5 h-3.5" />}
+              label="Website / Portafolio"
+            />
           )}
         </div>
-
-        {/* Separador */}
-        <div className="h-px bg-border w-full" />
-
-        {/* Email */}
-        {member.email && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-            <Mail className="w-3.5 h-3.5 flex-shrink-0 text-primary/60" />
-            <span className="truncate">{member.email}</span>
-          </div>
-        )}
-
-        <div className="flex-1" />
-
-        {/* Links sociales */}
-        {(member.linkedin_url || member.portfolio_url) && (
-          <div className="flex items-center gap-2 pt-1">
-            {member.linkedin_url && (
-              <SocialLink
-                href={member.linkedin_url}
-                icon={<Linkedin className="w-3.5 h-3.5" />}
-                label="LinkedIn"
-              />
-            )}
-            {member.portfolio_url && (
-              <SocialLink
-                href={member.portfolio_url}
-                icon={<Globe className="w-3.5 h-3.5" />}
-                label="Website / Portafolio"
-              />
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -136,7 +125,7 @@ function SocialLink({
       rel="noopener noreferrer"
       title={label}
       className={cn(
-        "inline-flex items-center justify-center w-8 h-8 rounded-md",
+        "inline-flex items-center justify-center w-7 h-7 rounded-full",
         "bg-secondary text-secondary-foreground",
         "transition-all duration-200",
         "hover:bg-primary hover:text-primary-foreground",

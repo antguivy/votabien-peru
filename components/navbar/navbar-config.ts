@@ -120,6 +120,9 @@ export const adminNavGroups: NavGroup[] = [
     label: "Sistema",
     requiresAuth: true,
     requiresRole: ["admin"],
-    links: [{ href: "/admin/team", label: "Equipo", icon: UserCog }],
+    links: [
+      { href: "/admin/team", label: "Equipo", icon: UserCog },
+      { href: "/admin/hito", label: "Hito", icon: UserCog },
+    ],
   },
 ];

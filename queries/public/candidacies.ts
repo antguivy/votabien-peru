@@ -1,6 +1,6 @@
 "use server";
 
-import { CandidateCard } from "@/interfaces/candidate";
+import { CandidateCard, CandidatePresidentials } from "@/interfaces/candidate";
 import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import { createClient } from "@/lib/supabase/server";
 import { QueryData } from "@supabase/supabase-js";
@@ -174,4 +174,47 @@ export async function getCandidatesCards({
   });
 
   return results;
+}
+
+export async function getPrincipalCandidates(
+  partidoId: string,
+): Promise<CandidatePresidentials[]> {
+  const supabase = await createClient();
+
+  const { data: processValid } = await supabase
+    .from("electoralprocess")
+    .select("id")
+    .eq("active", true)
+    .single();
+  if (!processValid) {
+    throw new Error("No hay proceso electoral activo");
+  }
+
+  const { data, error } = await supabase
+    .from("candidate")
+    .select(
+      `
+      id,
+      person:person_id!inner (
+        id, fullname, image_candidate_url
+      ),
+      type
+    `,
+    )
+    .eq("electoral_process_id", processValid.id)
+    .eq("political_party_id", partidoId)
+    .in("type", ["PRESIDENTE", "VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
+
+  return (data as CandidatePresidentials[]).map((c) => ({
+    id: c.id,
+    type: c.type as CandidacyType,
+    person: {
+      id: c.person.id,
+      fullname: c.person.fullname,
+      image_url: null,
+      image_candidate_url: c.person.image_candidate_url,
+      dni: null,
+      profession: null,
+    },
+  }));
 }

@@ -696,36 +696,35 @@ export function FilterPanel<T extends Record<string, unknown>>({
           }}
         >
           <DrawerContent>
-            {/* Ancho completo aquí también */}
-            <DrawerHeader className="border-b px-4 py-4">
+            {/* Header sticky */}
+            <div className="sticky top-0 z-10 bg-background border-b px-4 py-4">
               <div className="flex items-center justify-between">
-                <DrawerTitle className="text-xl font-bold truncate pr-4">
+                <span className="text-xl font-bold truncate pr-4">
                   {field.label}
-                </DrawerTitle>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </DrawerClose>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full bg-secondary text-secondary-foreground"
+                  onClick={() => setActiveSubDrawer(null)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
-            </DrawerHeader>
+            </div>
 
-            <ScrollArea className="flex-1 -mx-px">
-              {renderMobileSubDrawer(field)}
-            </ScrollArea>
+            {/* Lista (fluye naturalmente) */}
+            {renderMobileSubDrawer(field)}
 
-            <DrawerFooter className="px-4 py-4 border-t pb-8">
+            {/* Footer sticky */}
+            <div className="sticky bottom-0 z-10 bg-background border-t px-4 py-4 pb-8">
               <Button
                 onClick={() => setActiveSubDrawer(null)}
                 className="w-full h-14 rounded-xl text-lg"
               >
                 Listo
               </Button>
-            </DrawerFooter>
+            </div>
           </DrawerContent>
         </Drawer>
       ))}
