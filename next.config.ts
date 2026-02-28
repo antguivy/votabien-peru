@@ -9,7 +9,7 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
-  exclude: [/\/api\/stats\/.*/, /cloudflareinsights\.com/],
+  // exclude: [/\/api\/stats\/.*/, /cloudflareinsights\.com/],
 });
 
 const nextConfig: NextConfig = {
