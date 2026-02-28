@@ -14,7 +14,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   // Para Docker/Dokploy
   output: "standalone",
-async rewrites() {
+  async rewrites() {
     return [
       {
         source: "/ingest/static/:path*",
