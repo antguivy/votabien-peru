@@ -9,12 +9,13 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
+  exclude: [/\/api\/stats\/.*/, /cloudflareinsights\.com/],
 });
 
 const nextConfig: NextConfig = {
   // Para Docker/Dokploy
   output: "standalone",
-async rewrites() {
+  async rewrites() {
     return [
       {
         source: "/ingest/static/:path*",
