@@ -1,21 +1,21 @@
 {
   "name": "VotaBien Perú",
-  "short_name": "VotaBien Peru",
+  "short_name": "VotaBien",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#F8F4F0",
+  "theme_color": "#AC3026",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
     {
-      "src": "/android-launchericon-192-192.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/android-launchericon-512-512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

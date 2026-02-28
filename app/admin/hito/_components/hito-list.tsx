@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -35,6 +36,7 @@ import { deleteHito } from "../_lib/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { HitoBasic } from "@/interfaces/hito";
+import Image from "next/image";
 
 interface HitosListProps {
   hitos: HitoBasic[];
@@ -136,39 +138,36 @@ function TeamPhotoItem({
   onDelete: () => void;
 }) {
   return (
-    <Card className="flex flex-col h-full hover:shadow-md transition-shadow overflow-hidden">
-      {/* IMAGEN PREVIEW */}
-      {item.photo_url ? (
-        <div className="relative w-full aspect-video bg-muted overflow-hidden">
-          <img
-            src={item.photo_url}
-            alt={item.photo_description || "Foto del equipo"}
-            className="object-contain w-full h-full"
-          />
-          {item.index !== null && (
-            <div className="absolute top-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Hash className="w-3 h-3" />
-              {item.index}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="relative w-full aspect-video bg-muted flex items-center justify-center">
-          <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
-          {item.index !== null && (
-            <div className="absolute top-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-              <Hash className="w-3 h-3" />
-              {item.index}
-            </div>
-          )}
-        </div>
-      )}
-
-      <CardHeader className="pb-2 pt-3">
-        <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap">
-          <span className="truncate">
-            {item.label || item.photo_description || "Sin título"}
-          </span>
+    <Card className="flex flex-col h-full hover:shadow-md transition-shadow overflow-hidden pt-0">
+      <CardHeader className="p-0">
+        {/* IMAGEN PREVIEW */}
+        {item.photo_url ? (
+          <div className="relative w-full aspect-video bg-muted overflow-hidden">
+            <Image
+              src={item.photo_url}
+              alt={item.photo_description || "Foto del equipo"}
+              className="object-contain"
+              fill
+            />
+            {item.index !== null && (
+              <div className="absolute top-2 right-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Hash className="w-3 h-3" />
+                {item.index}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="relative w-full aspect-video bg-muted flex items-center justify-center">
+            <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+            {item.index !== null && (
+              <div className="absolute top-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Hash className="w-3 h-3" />
+                {item.index}
+              </div>
+            )}
+          </div>
+        )}
+        <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap pt-0">
           {item.label && (
             <Badge
               variant="secondary"
@@ -181,7 +180,7 @@ function TeamPhotoItem({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-3 py-1">
+      <CardContent className="flex-1 space-y-3 pt-0">
         {/* DESCRIPCIÓN */}
         {item.photo_description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
@@ -220,7 +219,7 @@ function TeamPhotoItem({
         </div>
       </CardContent>
 
-      <CardFooter className="border-t pt-4 flex justify-end gap-2 bg-muted/5 mt-auto">
+      <CardFooter className="border-t flex justify-end gap-2 bg-muted/5 h-10">
         <Button variant="outline" size="sm" onClick={onEdit} className="h-8">
           <Edit className="w-3.5 h-3.5 mr-1.5" />
           Editar

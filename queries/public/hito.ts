@@ -8,11 +8,14 @@ export async function getHitos(): Promise<HitoBasic[]> {
   noStore();
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from("hito").select(
-    `
+  const { data, error } = await supabase
+    .from("hito")
+    .select(
+      `
       *
     `,
-  );
+    )
+    .order("index", { ascending: false });
 
   if (error) {
     console.error(error);

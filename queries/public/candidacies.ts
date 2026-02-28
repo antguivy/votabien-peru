@@ -61,7 +61,7 @@ export async function getCandidatesCards({
 
   let query = queryBuilder
     .range(from, to)
-    .order("created_at", { ascending: false });
+    .order("list_number", { ascending: true });
 
   if (electoral_process_id) {
     query = query.eq("electoral_process_id", electoral_process_id);

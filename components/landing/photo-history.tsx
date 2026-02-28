@@ -5,31 +5,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { HitoBasic } from "@/interfaces/hito";
 
-// const MOMENTS = [
-//   {
-//     id: "firma",
-//     date: "Febrero 2026",
-//     location: "Lima, Perú",
-//     photo: "/images/reunion-lima.jpeg",
-//     photoAlt: "Brida, Paula y Anthony en Lima",
-//     index: "01",
-//     quote:
-//       "Ese día pusimos fecha y firmamos. Ya no había vuelta atrás.",
-//     label: "El inicio",
-//   },
-//   {
-//     id: "meet",
-//     date: "Noviembre 2025",
-//     location: "Google Meet",
-//     photo: "/images/meet-01.jpg",
-//     photoAlt: "Primera reunión del equipo",
-//     index: "02",
-//     quote:
-//       "Nadie se conocía en persona. Todos venían de distintas ciudades, distintas carreras. Pero había algo que todos compartíamos: la misma preocupación.",
-//     label: "El equipo",
-//   },
-// ];
-
 const AUTOPLAY_INTERVAL = 6000;
 
 export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
@@ -91,6 +66,16 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
           Stack vertical: image top 58%, text panel bottom 42%
       ═══════════════════════════════════════════════════ */}
       <section className="md:hidden flex flex-col w-full h-[90dvh] min-h-[580px] bg-background overflow-hidden">
+        <div className="flex items-center justify-start py-3">
+          <Image
+            src="/logo_completo.png"
+            alt="VotaBien Perú"
+            width={110}
+            height={35}
+            priority
+            className="drop-shadow-sm"
+          />
+        </div>
         {/* Image area — 58% height, black bg so contain looks clean */}
         <div
           className="relative w-full bg-background"
@@ -130,6 +115,10 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
                 "linear-gradient(to bottom, transparent 0%, var(--background) 100%)",
             }}
           />
+          {/* Brand */}
+          <p className="text-md font-semibold tracking-[0.15em] text-foreground/65">
+            Infórmate, tu voto importa
+          </p>
         </div>
 
         {/* Text panel — 42% height, full bg-background, always legible */}
@@ -149,7 +138,7 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
               </span>
               <span className="w-6 h-px bg-brand/50" />
               <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground">
-                {moment.label}
+                {moment.photo_description}
               </span>
             </div>
             <blockquote className="text-base font-semibold text-foreground leading-[1.45] tracking-tight">
@@ -355,9 +344,9 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
                 className="flex items-center gap-2 group opacity-50 hover:opacity-80 transition-opacity"
                 onClick={next}
               >
-                <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground group-hover:text-foreground transition-colors">
+                {/* <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground group-hover:text-foreground transition-colors">
                   {nextMoment.label}
-                </span>
+                </span> */}
                 <div className="w-7 h-7 rounded overflow-hidden flex-shrink-0">
                   <Image
                     src={nextMoment.photo_url || ""}

@@ -17,7 +17,7 @@ export async function getTrivias(): Promise<TriviaBasic[]> {
       political_party:political_party_id(id, name)
     `,
     )
-    .order("created_at", { ascending: false });
+    .order("global_index", { ascending: false });
 
   if (error) {
     console.error(error);

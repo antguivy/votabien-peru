@@ -36,6 +36,7 @@ import {
   Hash,
   AlignLeft,
 } from "lucide-react";
+import { CalendarDatePicker } from "@/components/date-picker";
 
 interface HitoFormDialogProps {
   open: boolean;
@@ -194,10 +195,26 @@ export function HitoFormDialog({
                     <FormItem>
                       <FormLabel>Fecha</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input type="month" className="pl-9" {...field} />
-                        </div>
+                        <CalendarDatePicker
+                          date={{
+                            from: field.value
+                              ? new Date(field.value)
+                              : undefined,
+                            to: field.value ? new Date(field.value) : undefined,
+                          }}
+                          onDateSelect={({ from }) => {
+                            if (from) {
+                              form.setValue("date", from.toISOString());
+                            }
+                          }}
+                          variant="outline"
+                          numberOfMonths={1}
+                          withoutdropdown
+                          closeOnSelect
+                          yearsRange={13}
+                          centerCurrentYear
+                          className="w-full"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -227,7 +244,7 @@ export function HitoFormDialog({
 
               {/* --- BLOQUE 5: ETIQUETA E ÍNDICE --- */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="label"
                   render={({ field }) => (
@@ -246,7 +263,7 @@ export function HitoFormDialog({
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
                 <FormField
                   control={form.control}
                   name="index"
