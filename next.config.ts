@@ -14,14 +14,14 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   // Para Docker/Dokploy
   output: "standalone",
-async rewrites() {
+  async rewrites() {
     return [
       {
-        source: "/ingest/static/:path*",
+        source: "/api/stats/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
       },
       {
-        source: "/ingest/:path*",
+        source: "/api/stats/:path*",
         destination: "https://us.i.posthog.com/:path*",
       },
     ];
