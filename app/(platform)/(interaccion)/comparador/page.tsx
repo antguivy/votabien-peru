@@ -1,32 +1,17 @@
 import { SearchParams } from "nuqs";
-import {
-  searchParamsCache,
-  isCandidateMode,
-  ComparatorParamsSchema,
-} from "./_lib/validation";
+import { searchParamsCache, ComparatorParamsSchema } from "./_lib/validation";
 import { getComparisonData, getEntitiesByIds } from "./_lib/data";
 import { extractEntitiesFromComparison } from "./_lib/helpers";
-import { searchEntities } from "./_lib/actions";
+import { searchPresidentialCandidates } from "./_lib/actions";
 import { ComparatorProvider } from "@/components/context/comparator";
 import ComparatorLayout from "./_components/comparator-layout";
 import { SearchableEntity } from "@/interfaces/ui-types";
 import { ComparisonResponse } from "@/interfaces/comparator";
-import getDistritos from "@/queries/public/electoral-districts";
 import { getPartidosListSimple } from "@/queries/public/parties";
-import { ChamberType } from "@/interfaces/politics";
-import { SearchContext } from "./_components/selector";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 interface PageProps {
   searchParams: Promise<SearchParams>;
-}
-
-interface SearchExtras {
-  chamber?: ChamberType;
-  candidacy_type?: string;
-  parties?: string[];
-  districts?: string[];
-  has_metrics_only: boolean;
 }
 
 export default async function ComparatorPage(props: PageProps) {
@@ -34,75 +19,40 @@ export default async function ComparatorPage(props: PageProps) {
   const search = searchParamsCache.parse(
     resolvedParams,
   ) as ComparatorParamsSchema;
-  const currentMode = search.mode;
 
   let initialEntities: SearchableEntity[] = [];
   let comparisonData: ComparisonResponse = null;
 
-  if (search.dnis.length > 0) {
-    if (search.dnis.length >= 2) {
-      comparisonData = await getComparisonData(search);
-      if (comparisonData) {
-        initialEntities = extractEntitiesFromComparison(
-          comparisonData,
-          currentMode,
-        );
-      } else {
-        initialEntities = await getEntitiesByIds(search.dnis, currentMode);
-      }
-    } else {
-      initialEntities = await getEntitiesByIds(search.dnis, currentMode);
-    }
+  if (search.ids.length >= 2) {
+    comparisonData = await getComparisonData(search);
+    initialEntities = comparisonData
+      ? extractEntitiesFromComparison(comparisonData)
+      : await getEntitiesByIds(search.ids);
+  } else if (search.ids.length === 1) {
+    initialEntities = await getEntitiesByIds(search.ids);
   }
 
-  async function performSearch(
-    query: string,
-    context?: SearchContext,
-  ): Promise<SearchableEntity[]> {
+  async function performSearch(query: string): Promise<SearchableEntity[]> {
     "use server";
     try {
-      const extras: SearchExtras = { has_metrics_only: false };
-
-      if (currentMode === "legislator") {
-        extras.chamber = (context?.chamber || search.chamber) as
-          | ChamberType
-          | undefined;
-        extras.parties = context?.party ? [context.party] : search.parties;
-        extras.districts = context?.district
-          ? [context.district]
-          : search.districts;
-      } else if (isCandidateMode(currentMode)) {
-        const typeToUse = context?.type || search.type || search.candidacy_type;
-
-        extras.candidacy_type = typeToUse;
-        extras.parties = context?.party ? [context.party] : search.parties;
-        extras.districts = context?.district
-          ? [context.district]
-          : search.districts;
-      }
-
-      return await searchEntities(query, currentMode, extras);
-    } catch (error) {
-      console.error("Search Action Error:", error);
+      return await searchPresidentialCandidates(query, {
+        parties: search.parties,
+      });
+    } catch {
       return [];
     }
   }
 
-  const [districts, parties] = await Promise.all([
-    getDistritos(),
-    getPartidosListSimple({ active: true }),
-  ]);
+  const parties = await getPartidosListSimple({ active: true });
 
   return (
     <ComparatorProvider
       initialEntities={initialEntities}
-      districts={districts}
       parties={parties}
-      mode={currentMode}
-      selectedIds={search.dnis}
+      selectedIds={search.ids}
     >
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+        <section className="container mx-auto pb-20 lg:pb-0">
           <ComparatorLayout
             data={comparisonData}
             searchAction={performSearch}

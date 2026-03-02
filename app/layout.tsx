@@ -22,10 +22,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Vota Bien Perú",
+  description: "Plataforma de información electoral",
+  manifest: "/manifest.json",
+  icons: {
+    apple: "/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "VotaBienPeru",
+    title: "VotaBien",
   },
 };
 
@@ -38,16 +43,6 @@ export default async function RootLayout({
 
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
-
-        {/* Meta tags para iOS */}
-        <link rel="apple-touch-icon" href="/android-launchericon-192-192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="VotaBienPeru" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

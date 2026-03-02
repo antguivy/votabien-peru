@@ -163,15 +163,16 @@ export default function Footer() {
             </div>
 
             {/* Botones deshabilitados — próximamente */}
-            <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-brand">
+            {/* <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-brand">
               Pronto
-            </span>
+            </span> */}
             <div className="flex flex-row gap-2 pt-1">
               {[
                 {
                   icon: <AppleIcon />,
                   store: "App Store",
-                  platform: "Disponible en",
+                  // platform: "Disponible en",
+                  platform: "Próximamente en",
                 },
                 {
                   icon: <GooglePlayIcon />,

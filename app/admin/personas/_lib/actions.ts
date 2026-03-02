@@ -16,15 +16,7 @@ import {
 import { BackgroundBase, BackgroundStatus } from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
-
-const toNullIfEmpty = (value: string | null | undefined): string | null => {
-  if (!value || value.trim() === "") return null;
-  return value;
-};
-
-const toJsonArray = <T>(value?: T[] | null): Json => {
-  return (value ?? []) as Json;
-};
+import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
 
 export async function createPerson(data: CreatePersonRequest) {
   const supabase = await createClient();
@@ -72,15 +64,15 @@ export async function createPerson(data: CreatePersonRequest) {
 
       // Campos JSON - Solo guardar si tienen datos
       secondary_school: data.secondary_school,
-      no_university_education: toJsonArray(data.no_university_education),
-      technical_education: toJsonArray(data.technical_education),
-      university_education: toJsonArray(data.university_education),
-      postgraduate_education: toJsonArray(data.postgraduate_education),
-      work_experience: toJsonArray(data.work_experience),
-      political_role: toJsonArray(data.political_role),
-      popular_election: toJsonArray(data.popular_election),
-      incomes: toJsonArray(data.incomes),
-      assets: toJsonArray(data.assets),
+      no_university_education: toJsonInsert(data.no_university_education),
+      technical_education: toJsonInsert(data.technical_education),
+      university_education: toJsonInsert(data.university_education),
+      postgraduate_education: toJsonInsert(data.postgraduate_education),
+      work_experience: toJsonInsert(data.work_experience),
+      political_role: toJsonInsert(data.political_role),
+      popular_election: toJsonInsert(data.popular_election),
+      incomes: toJsonInsert(data.incomes),
+      assets: toJsonInsert(data.assets),
 
       // Redes sociales
       facebook_url: toNullIfEmpty(data.facebook_url),
@@ -155,15 +147,15 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
 
       // Campos JSON
       secondary_school: data.secondary_school,
-      technical_education: toJsonArray(data.technical_education),
-      no_university_education: toJsonArray(data.no_university_education),
-      university_education: toJsonArray(data.university_education),
-      postgraduate_education: toJsonArray(data.postgraduate_education),
-      work_experience: toJsonArray(data.work_experience),
-      political_role: toJsonArray(data.political_role),
-      popular_election: toJsonArray(data.popular_election),
-      incomes: toJsonArray(data.incomes),
-      assets: toJsonArray(data.assets),
+      technical_education: toJsonInsert(data.technical_education),
+      no_university_education: toJsonInsert(data.no_university_education),
+      university_education: toJsonInsert(data.university_education),
+      postgraduate_education: toJsonInsert(data.postgraduate_education),
+      work_experience: toJsonInsert(data.work_experience),
+      political_role: toJsonInsert(data.political_role),
+      popular_election: toJsonInsert(data.popular_election),
+      incomes: toJsonInsert(data.incomes),
+      assets: toJsonInsert(data.assets),
 
       facebook_url: toNullIfEmpty(data.facebook_url),
       twitter_url: toNullIfEmpty(data.twitter_url),
@@ -267,7 +259,7 @@ export async function updatePersonBiography(
     const { data, error } = await supabase
       .from("person")
       .update({
-        detailed_biography: toJsonArray(biography),
+        detailed_biography: toJsonInsert(biography),
       })
       .eq("id", personId)
       .select("id, fullname, detailed_biography")

@@ -56,7 +56,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: BookHeadphones,
   },
-  // { type: "link", href: "/comparador", label: "Comparador", icon: GitCompare },
+  { type: "link", href: "/comparador", label: "Comparador", icon: GitCompare },
 
   // --- Dropdown: Utilidades ---
   // {

@@ -27,6 +27,7 @@ import {
   LogOut,
   Settings,
   X,
+  GitCompare,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -37,7 +38,8 @@ import {
 const BOTTOM_NAV_ITEMS = [
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   { href: "/partidos", label: "Partidos", icon: Flag },
-  { href: "/legisladores", label: "Congresistas", icon: BookUser },
+  // { href: "/legisladores", label: "Congresistas", icon: BookUser },
+  { href: "/comparador", label: "Comparador", icon: GitCompare },
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
 ];
 
