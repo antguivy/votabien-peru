@@ -1,4 +1,6 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
+
 /**
  * Formatea fechas parcialmente completas como:
  *  - "2021-07-13"  →  "13 jul 2021"
@@ -94,3 +96,12 @@ export const formatterDateWithTime = (
 
   return formattedDate;
 };
+
+//CONVERTIR FECHA A HORA DE LIMA
+export function limaDateToUtc(dateString: string | null): string | null {
+  if (!dateString) return null;
+
+  const utcDate = fromZonedTime(`${dateString} 00:00:00`, "America/Lima");
+
+  return utcDate.toISOString();
+}

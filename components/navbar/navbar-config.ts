@@ -76,6 +76,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { href: "/equipo", label: "Equipo", icon: Users },
       // { href: "/financiamiento", label: "Financiamiento", icon: DollarSign },
       { href: "/mision", label: "Misión y Visión", icon: Info },
+      { href: "/contacto", label: "Contacto", icon: MessageCircleQuestionMark },
     ],
   },
 ];

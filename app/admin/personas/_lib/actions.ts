@@ -17,6 +17,7 @@ import { BackgroundBase, BackgroundStatus } from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
+import { limaDateToUtc } from "@/lib/utils/date";
 
 export async function createPerson(data: CreatePersonRequest) {
   const supabase = await createClient();
@@ -58,7 +59,7 @@ export async function createPerson(data: CreatePersonRequest) {
       fullname: data.fullname,
       image_url: toNullIfEmpty(data.image_url),
       image_candidate_url: toNullIfEmpty(data.image_candidate_url),
-      birth_date: toNullIfEmpty(data.birth_date),
+      birth_date: limaDateToUtc(data.birth_date),
       place_of_birth: toNullIfEmpty(data.place_of_birth),
       profession: toNullIfEmpty(data.profession),
 

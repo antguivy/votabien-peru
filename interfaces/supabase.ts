@@ -1281,6 +1281,57 @@ export type Database = {
           },
         ];
       };
+      userfeedback: {
+        Row: {
+          candidate_name: string | null;
+          candidate_url: string | null;
+          correct_value: string | null;
+          correction_field: string | null;
+          created_at: string;
+          current_value: string | null;
+          email: string | null;
+          id: string;
+          image_url: string | null;
+          message: string | null;
+          reference_url: string | null;
+          source_url: string | null;
+          status: string;
+          type: string;
+        };
+        Insert: {
+          candidate_name?: string | null;
+          candidate_url?: string | null;
+          correct_value?: string | null;
+          correction_field?: string | null;
+          created_at?: string;
+          current_value?: string | null;
+          email?: string | null;
+          id?: string;
+          image_url?: string | null;
+          message?: string | null;
+          reference_url?: string | null;
+          source_url?: string | null;
+          status?: string;
+          type: string;
+        };
+        Update: {
+          candidate_name?: string | null;
+          candidate_url?: string | null;
+          correct_value?: string | null;
+          correction_field?: string | null;
+          created_at?: string;
+          current_value?: string | null;
+          email?: string | null;
+          id?: string;
+          image_url?: string | null;
+          message?: string | null;
+          reference_url?: string | null;
+          source_url?: string | null;
+          status?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       party_seats_by_district: {

@@ -45,6 +45,10 @@ export async function updateSession(request: NextRequest) {
     "/equipo",
     "/financiamiento",
     "/mision",
+    "/contacto",
+    "/reportar",
+    "/privacidad",
+    "/terminos",
     "/api/stats",
   ];
 
