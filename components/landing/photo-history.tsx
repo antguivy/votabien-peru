@@ -66,17 +66,7 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
           Stack vertical: image top 58%, text panel bottom 42%
       ═══════════════════════════════════════════════════ */}
       <section className="md:hidden flex flex-col w-full h-[90dvh] min-h-[580px] bg-background overflow-hidden">
-        <div className="flex items-center justify-start py-3">
-          <Image
-            src="/logo_completo.png"
-            alt="VotaBien Perú"
-            width={110}
-            height={35}
-            priority
-            className="drop-shadow-sm"
-          />
-        </div>
-        {/* Image area — 58% height, black bg so contain looks clean */}
+        {/* Image area — 58% height */}
         <div
           className="relative w-full bg-background"
           style={{ height: "58%" }}
@@ -115,13 +105,9 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
                 "linear-gradient(to bottom, transparent 0%, var(--background) 100%)",
             }}
           />
-          {/* Brand */}
-          <p className="text-md font-semibold tracking-[0.15em] text-foreground/65">
-            Infórmate, tu voto importa
-          </p>
         </div>
 
-        {/* Text panel — 42% height, full bg-background, always legible */}
+        {/* Text panel — 42% height */}
         <div
           className="flex flex-col justify-between pt-3 pb-7 flex-1 bg-background"
           style={{
@@ -132,6 +118,14 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
         >
           {/* Index + label + quote */}
           <div className="flex flex-col gap-3">
+            {/* Título de sección */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground">
+                Equipo que apoyó el proyecto
+              </p>
+              <div className="h-0.5 w-6 bg-brand rounded-full" />
+            </div>
+
             <div className="flex items-center gap-2.5">
               <span className="text-[10px] font-mono text-brand font-bold">
                 {moment.index}
@@ -160,7 +154,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
 
             {/* Progress + arrows */}
             <div className="flex items-center gap-4">
-              {/* Progress bars */}
               <div className="flex gap-1.5 flex-1">
                 {hitos.map((_, i) => (
                   <button
@@ -188,7 +181,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
                 ))}
               </div>
 
-              {/* Arrow buttons */}
               <div className="flex gap-2 flex-shrink-0">
                 <button
                   onClick={prev}
@@ -235,11 +227,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
       <section className="hidden md:flex relative w-full h-[90dvh] min-h-[600px] pt-4 bg-background overflow-hidden">
         {/* Left text panel */}
         <div className="relative z-10 flex flex-col justify-between w-[42%] lg:w-[38%] px-10 lg:px-16 py-12 lg:py-14 flex-shrink-0 bg-background">
-          {/* Brand */}
-          <p className="text-md font-semibold tracking-[0.15em] text-foreground/65">
-            Infórmate, tu voto importa
-          </p>
-
           {/* Main content */}
           <div
             className="flex flex-col gap-6"
@@ -344,9 +331,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
                 className="flex items-center gap-2 group opacity-50 hover:opacity-80 transition-opacity"
                 onClick={next}
               >
-                {/* <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground group-hover:text-foreground transition-colors">
-                  {nextMoment.label}
-                </span> */}
                 <div className="w-7 h-7 rounded overflow-hidden flex-shrink-0">
                   <Image
                     src={nextMoment.photo_url || ""}
@@ -363,7 +347,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
 
         {/* Right image panel */}
         <div className="relative flex-1 overflow-hidden bg-background rounded-xl">
-          {/* Left fade: image bleeds into text panel */}
           <div
             className="absolute inset-y-0 left-0 w-10 z-10 pointer-events-none"
             style={{
@@ -399,7 +382,6 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
             </div>
           ))}
 
-          {/* Top/bottom vignette */}
           <div
             className="absolute inset-x-0 top-0 h-28 z-10 pointer-events-none"
             style={{

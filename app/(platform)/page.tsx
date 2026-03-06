@@ -5,6 +5,7 @@ import PhotoStory from "@/components/landing/photo-history";
 import { getHitos } from "@/queries/public/hito";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
+import Image from "next/image";
 // import PeruReadinessSection from "@/components/landing/peru-readiness-section";
 
 export default async function VotaBienPage() {
@@ -18,6 +19,13 @@ export default async function VotaBienPage() {
       <>
         <ContentPlatformLayout>
           <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
+          {/* Encabezado de sección */}
+          <div className=" pt-10 pb-2 max-w-lg md:max-w-none md:px-8">
+            <h2 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-tight">
+              El equipo que hizo posible el proyecto
+            </h2>
+            <div className="h-1 w-16 bg-brand rounded-full mt-4" />
+          </div>
           <PhotoStory hitos={hitos} />
           {/* <PeruReadinessSection /> */}
         </ContentPlatformLayout>
