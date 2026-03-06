@@ -2,7 +2,6 @@ import Link from "next/link";
 import PartidosListPaginated from "@/components/politics/partidos-list-paginated";
 import { getPartidosList } from "@/queries/public/parties";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import { cn } from "@/lib/utils";
 
 interface PageProps {
   searchParams: Promise<{
@@ -47,7 +46,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+        <section className="container mx-auto pb-20 lg:pb-0">
           <PartidosListPaginated
             partidos={partidos}
             currentFilters={currentFilters}

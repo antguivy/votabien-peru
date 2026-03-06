@@ -9,7 +9,7 @@ import { getColumns } from "./party-table-columns";
 import type { DataTableFilterField, DataTableRowAction } from "@/lib/types";
 import { PartyFormDialog } from "./party-form-dialog";
 import { ActivePartiesCounts, PaginatedPartiesResponse } from "../_lib/types";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 import { PartiesTableFloatingBar } from "./party-table-floating-bar";
 import { PartiesTableToolbarActions } from "./party-table-toolbar-actions";
 

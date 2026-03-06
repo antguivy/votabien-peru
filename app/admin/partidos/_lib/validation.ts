@@ -8,7 +8,7 @@ import {
 } from "nuqs/server";
 
 import { getSortingStateParser } from "@/lib/parsers";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 
 export const searchParamsCache = createSearchParamsCache({
   flags: parseAsArrayOf(

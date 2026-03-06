@@ -1,5 +1,3 @@
-import { Database, Lock, FileText } from "lucide-react";
-
 export default function FundingHero() {
   return (
     <section className="relative border-b border-border bg-background">

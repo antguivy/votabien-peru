@@ -1,5 +1,3 @@
-import { PoliticalPartyBase } from "./politics";
-
 export type EntityType = "president-candidate";
 
 export interface EntityMetadata {

@@ -62,7 +62,7 @@ import {
   AdminPoliticalParty,
   CreatePartyRequest,
   UpdatePartyRequest,
-} from "@/interfaces/party";
+} from "@/interfaces/political-party";
 import {
   GovernmentPlanSummary,
   OrganizationType,

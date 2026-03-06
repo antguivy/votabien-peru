@@ -1,16 +1,22 @@
-import { getPlayableTrivias } from "./_lib/data";
-import { TriviaGameEngine } from "./_components/trivia-game-engine";
+import { questionsService } from "@/services/questions";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import TriviaMapClient from "./_components/trivia-map-client";
+import UnderConstruction from "@/components/under-construction";
 
 export default async function TriviaPage() {
-  const questions = await getPlayableTrivias();
+  const questions = await questionsService.getQuestions();
 
   return (
     <ContentPlatformLayout>
-      <section className="pt-4 container mx-auto pb-20 lg:pb-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background -z-10" />
-        <TriviaGameEngine questions={questions} />
-      </section>
+      {/* <div
+        className="flex justify-center bg-background"
+        style={{ height: "100dvh" }}
+      >
+        <div className="w-full" style={{ maxWidth: 480 }}>
+          <TriviaMapClient initialQuestions={questions} />
+        </div>
+      </div> */}
+      <UnderConstruction title="Disponible a partir desde el 08 de marzo" />;
     </ContentPlatformLayout>
   );
 }

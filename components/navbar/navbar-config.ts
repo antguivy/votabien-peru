@@ -5,7 +5,6 @@ import {
   Info,
   BookHeadphones,
   Users,
-  DollarSign,
   LayoutDashboard,
   UserCheck,
   ScrollText,
@@ -56,17 +55,22 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: BookHeadphones,
   },
-  { type: "link", href: "/comparador", label: "Comparador", icon: GitCompare },
 
   // --- Dropdown: Utilidades ---
-  // {
-  //   type: "dropdown",
-  //   label: "Utilidades",
-  //   children: [
-  //     { href: "/trivia", label: "Trivia", icon: ScrollText },
-  //     { href: "/comparador", label: "Comparador", icon: GitCompare },
-  //   ],
-  // },
+  {
+    type: "dropdown",
+    label: "Aprendiendo",
+    children: [
+      {
+        href: "/comparador",
+        label: "Comparador",
+        icon: GitCompare,
+      },
+      { href: "/trivia", label: "Trivia", icon: ScrollText },
+      { href: "/match", label: "Match", icon: GitCompare },
+      { href: "/simulador", label: "Simulador", icon: GitCompare },
+    ],
+  },
 
   // --- Dropdown: Nosotros ---
   {

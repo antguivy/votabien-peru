@@ -1,4 +1,4 @@
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 import { FinancingReport } from "@/interfaces/party-financing";
 import {
   GovernmentPlanSummary,

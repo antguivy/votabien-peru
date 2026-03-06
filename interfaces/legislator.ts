@@ -1,17 +1,16 @@
 import { Attendance } from "./attendance";
 import { BillBasic } from "./bill";
 import {
+  ElectoralDistrictBase,
+  ElectoralDistrictBasic,
+} from "./electoral-district";
+import {
   ParliamentaryGroupBasic,
   ParliamentaryMembershipWithGroup,
 } from "./parliamentary-membership";
 import { PersonBasicInfo } from "./person";
-import {
-  ChamberType,
-  ElectoralDistrictBase,
-  ElectoralDistrictBasic,
-  LegislatorCondition,
-  PoliticalPartyBase,
-} from "./politics";
+import { PoliticalPartyBase } from "./political-party";
+import { ChamberType, LegislatorCondition } from "./politics";
 
 export interface LegislatorBasicInfo {
   id: string;

@@ -29,10 +29,8 @@ import { createTeamPhoto, updateTeamPhoto } from "../_lib/actions";
 import { HitoBasic } from "@/interfaces/hito";
 import {
   MapPin,
-  Calendar,
   Image as ImageIcon,
   Quote,
-  Tag,
   Hash,
   AlignLeft,
 } from "lucide-react";

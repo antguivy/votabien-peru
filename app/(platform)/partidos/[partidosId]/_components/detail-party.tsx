@@ -13,14 +13,11 @@ import {
   Users,
   ChevronRight,
   Home,
-  ScrollText,
   Gavel,
-  AlertCircle,
   Maximize2,
   Info,
   ArrowDownCircle,
   ArrowUpCircle,
-  FileText,
   LayoutDashboard,
   CircleDollarSign,
   Map as MapIcon,
@@ -41,7 +38,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PartyHistory, PoliticalPartyDetail } from "@/interfaces/politics";
+import { PartyHistory } from "@/interfaces/politics";
 import Image from "next/image";
 import Link from "next/link";
 import { getTextColor, needsOverlay } from "@/lib/utils/color-utils";
@@ -59,8 +56,9 @@ import { PlanGobiernoFlashcards } from "./flash-cards";
 import { useState, useEffect } from "react";
 import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
-import { getCandidateTypeIcon, getFlowType } from "@/lib/utils/helper-enums";
+import { getFlowType } from "@/lib/utils/helper-enums";
 import { CandidatePresidentials } from "@/interfaces/candidate";
+import { PoliticalPartyDetail } from "@/interfaces/political-party";
 
 // --- SUBCOMPONENTE: TIMELINE ---
 const TimelineList = ({ items }: { items: PartyHistory[] }) => {

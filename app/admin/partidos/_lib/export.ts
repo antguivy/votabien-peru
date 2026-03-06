@@ -1,6 +1,6 @@
 import { type Table } from "@tanstack/react-table";
 import { formatterDate } from "@/lib/utils/date";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 
 export function exportTableToCSV<TData extends AdminPoliticalParty>(
   /**

@@ -3,11 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createId } from "@paralleldrive/cuid2";
-import {
-  Json,
-  type TablesInsert,
-  type TablesUpdate,
-} from "@/interfaces/supabase";
+import { type TablesInsert, type TablesUpdate } from "@/interfaces/supabase";
 import {
   BiographyDetail,
   CreatePersonRequest,

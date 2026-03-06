@@ -50,6 +50,9 @@ export async function updateSession(request: NextRequest) {
     "/privacidad",
     "/terminos",
     "/api/stats",
+    "/match",
+    "/trivia",
+    "/simulador",
   ];
 
   const isAuthRoute = authRoutes.some((route) => path.startsWith(route));

@@ -1,10 +1,70 @@
 import { FinancingReport } from "./party-financing";
 import {
+  ElectedLegislatorBasic,
   GovernmentPlanSummary,
   OrganizationType,
   PartyHistory,
   PartyLegalCase,
+  SeatsByDistrict,
 } from "./politics";
+
+export interface PoliticalPartyBase {
+  id: string;
+  name: string;
+  acronym: string | null;
+  logo_url: string | null;
+  color_hex: string | null;
+  active: boolean;
+  foundation_date: string | null;
+}
+
+export interface PoliticalPartyDetail extends PoliticalPartyBase {
+  founder: string | null;
+  ideology: string | null;
+  main_office: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  facebook_url: string | null;
+  twitter_url: string | null;
+  youtube_url: string | null;
+  tiktok_url: string | null;
+  total_afiliates: number | null;
+  party_president: string | null;
+  purpose: string | null;
+  slogan: string | null;
+  government_plan_url: string | null;
+  government_audio_url: string | null;
+  government_plan_summary: GovernmentPlanSummary[];
+  party_timeline: PartyHistory[];
+  legal_cases: PartyLegalCase[];
+  seats_by_district: SeatsByDistrict[];
+  financing_reports: FinancingReport[];
+  type: OrganizationType;
+  elected_legislators: ElectedLegislatorBasic[];
+  composition: {
+    party: {
+      id: string | null;
+      name: string;
+      logo_url: string | null;
+      active: boolean;
+    };
+  }[];
+  parent_alliance: {
+    government_plan_summary: GovernmentPlanSummary[];
+    government_plan_url: string | null;
+    government_audio_url: string | null;
+    name: string;
+    id: string;
+  } | null;
+}
+
+export interface PoliticalPartyListPaginated {
+  items: PoliticalPartyBase[];
+  total: number;
+  limit: number;
+  offset: number;
+}
 
 export interface AdminPoliticalParty {
   id: string;

@@ -37,7 +37,6 @@ import {
   Credenza,
   CredenzaBody,
   CredenzaContent,
-  CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
   CredenzaTitle,

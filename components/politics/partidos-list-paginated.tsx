@@ -1,12 +1,12 @@
 "use client";
 
 import { Building2 } from "lucide-react";
-import { PoliticalPartyListPaginated } from "@/interfaces/politics";
 import Image from "next/image";
 import Link from "next/link";
 import { FilterField, FilterPanel } from "../ui/filter-panel";
 import { SimplePagination } from "../ui/pagination";
 import { cn } from "@/lib/utils";
+import { PoliticalPartyListPaginated } from "@/interfaces/political-party";
 
 interface PartidosListPaginatedProps {
   partidos: PoliticalPartyListPaginated;
@@ -53,13 +53,17 @@ const PartidosListPaginated = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div
+          className="sticky top-1 z-30 mb-4
+        lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm"
+        >
           <FilterPanel
             fields={filterFields}
             currentFilters={currentFilters}
             onApplyFilters={() => {}}
             baseUrl="/partidos"
             defaultFilters={defaultFilters}
+            showMobileTrigger={true}
           />
         </div>
       )}

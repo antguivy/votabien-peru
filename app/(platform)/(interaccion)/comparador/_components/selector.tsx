@@ -19,6 +19,7 @@ import {
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import Image from "next/image";
 
 const MAX_SLOTS = 4;
 const MIN_TO_COMPARE = 2;
@@ -287,8 +288,8 @@ function CandidateCard({
     <button
       onClick={() => !isDisabled && !isSelected && onSelect()}
       className={cn(
-        "relative flex flex-col items-center",
-        "h-[190px] px-4 rounded-xl border text-center transition-all",
+        "relative flex flex-col items-center justify-between",
+        "h-[190px] w-full px-3 py-3 rounded-xl border text-center transition-all",
         isSelected && "border-primary bg-primary/5 ring-1 ring-primary/30",
         !isSelected &&
           !isDisabled &&
@@ -296,6 +297,7 @@ function CandidateCard({
         isDisabled && "opacity-40 cursor-not-allowed",
       )}
     >
+      {/* Barra de color del partido */}
       {item.group_color && (
         <div
           className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
@@ -304,32 +306,51 @@ function CandidateCard({
       )}
 
       {isSelected && (
-        <CheckCircle2 className="absolute top-2 right-2 h-5 w-5 text-primary" />
+        <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
       )}
 
-      <Avatar className="h-16 w-16 border shadow-sm mt-3">
-        <AvatarImage src={item.image_candidate_url || ""} alt={item.fullname} />
-        <AvatarFallback className="text-base font-bold">
-          {item.fullname.substring(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-
-      <div className="w-full mt-3">
-        <p className="text-sm font-semibold line-clamp-2 min-h-[2.6em]">
-          {item.fullname}
-        </p>
-
-        <div className="flex items-center justify-center gap-1 mt-2">
-          {item.group_image && (
-            <img
-              src={item.group_image}
-              alt={item.group_name}
-              className="h-4 w-4 object-contain rounded-sm"
+      {/* Logo del partido — protagonista */}
+      <div className="flex items-center justify-center w-16 h-16 mt-1">
+        {item.group_image ? (
+          <Image
+            src={item.group_image}
+            alt={item.group_name}
+            width={64}
+            height={64}
+            className="object-contain w-full h-full rounded-lg"
+          />
+        ) : (
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-black"
+            style={{ background: item.group_color || "#6b7280" }}
+          >
+            {item.group_name.substring(0, 2).toUpperCase()}
+          </div>
+        )}
+      </div>
+      {/* Nombre del partido */}
+      <p
+        className="text-xs font-medium"
+        style={{ color: item.group_color || undefined }}
+      >
+        {item.group_name}
+      </p>
+      {/* Info del candidato */}
+      <div className="w-full space-y-1">
+        {/* Foto pequeña + nombre */}
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6 shrink-0 border">
+            <AvatarImage
+              src={item.image_candidate_url || ""}
+              alt={item.fullname}
             />
-          )}
-          <span className="text-xs text-muted-foreground line-clamp-2">
-            {item.group_name}
-          </span>
+            <AvatarFallback className="text-[10px] font-bold">
+              {item.fullname.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <p className="text-xs font-semibold text-left line-clamp-2 leading-tight">
+            {item.fullname}
+          </p>
         </div>
       </div>
     </button>

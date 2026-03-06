@@ -1,11 +1,11 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PoliticalPartyBase } from "@/interfaces/politics";
 import { Building2, ChevronRight, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { getTextColor, needsOverlay } from "@/lib/utils/color-utils";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 
 interface PartidosListProps {
   partidos: PoliticalPartyBase[];

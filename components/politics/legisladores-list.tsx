@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Users,
-  ChevronRight,
   AlertCircle,
   Ban,
   Briefcase,
@@ -13,12 +12,10 @@ import {
   Skull,
   MapPin,
   ArrowUpRight,
-  Star,
 } from "lucide-react";
 import { FilterField, FilterPanel } from "@/components/ui/filter-panel";
 import {
   ChamberType,
-  ElectoralDistrictBase,
   FiltersPerson,
   LegislatorCondition,
 } from "@/interfaces/politics";
@@ -26,6 +23,7 @@ import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
 import { LegislatorCard } from "@/interfaces/legislator";
 import { getLegisladoresCards } from "@/queries/public/legislators";
 import { cn } from "@/lib/utils";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 
 // --- CONFIGURACIÓN DE ESTILOS ---
 
@@ -358,13 +356,17 @@ const LegisladoresList = ({
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="sticky top-1 z-30 lg:bg-primary/30 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div
+          className="sticky top-1 z-30 mb-4
+        lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm"
+        >
           <FilterPanel
             fields={filterFields}
             currentFilters={currentFilters}
             onApplyFilters={() => {}}
             baseUrl="/legisladores"
             defaultFilters={defaultFilters}
+            showMobileTrigger={true}
           />
         </div>
       )}

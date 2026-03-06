@@ -1,5 +1,5 @@
 "use client";
-import { PoliticalPartyBase } from "@/interfaces/politics";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 import React, { createContext, ReactNode } from "react";
 
 type AdminPartyContextProps = {

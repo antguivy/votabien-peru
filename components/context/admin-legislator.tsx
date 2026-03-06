@@ -1,9 +1,7 @@
 "use client";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
-import {
-  ElectoralDistrictBase,
-  PoliticalPartyBase,
-} from "@/interfaces/politics";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 import React, { createContext, ReactNode } from "react";
 
 type AdminLegislatorContextProps = {

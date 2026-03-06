@@ -1,26 +1,11 @@
 "use server";
 
-import {
-  BackgroundBase,
-  BackgroundStatus,
-  BackgroundType,
-} from "@/interfaces/background";
 import { BillBasic } from "@/interfaces/bill";
 import { LegislatorDetail } from "@/interfaces/legislator";
 import {
-  Assets,
-  BiographyDetail,
-  Incomes,
-  NoUniversityEducation,
   PersonDetailCandidate,
   PersonDetailLegislator,
   PersonWithActivePeriod,
-  PoliticalRole,
-  PopularElection,
-  PostgraduateEducation,
-  TechnicalEducation,
-  UniversityEducation,
-  WorkExperience,
 } from "@/interfaces/person";
 import { createClient } from "@/lib/supabase/server";
 import { getBillStatusGroup } from "@/lib/utils-bill";

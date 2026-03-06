@@ -13,6 +13,13 @@ const TikTokIcon = () => (
     <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.27 8.27 0 004.84 1.55V6.79a4.85 4.85 0 01-1.07-.1z" />
   </svg>
 );
+
+// const LinkedInIcon = () => (
+//   <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+//     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+//   </svg>
+// );
+
 const AppleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -160,51 +167,50 @@ export default function Footer() {
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <div className="w-1 h-4 bg-brand rounded-full" />
-              App Móvil
+              Herramientas
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Un espacio interactivo con match, trivia y simulaciones para que
-              llegues listo el día de las elecciones.
+              Explora nuestras herramientas interactivas para llegar bien
+              informado el día de las elecciones.
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wide">
-                <Zap className="w-3 h-3" />
-                Match
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">
-                <Smartphone className="w-3 h-3" />
-                Trivia
-              </span>
-            </div>
 
-            <div className="flex flex-col xl:flex-row gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               {[
                 {
-                  icon: <AppleIcon />,
-                  store: "App Store",
-                  platform: "Próximamente en",
+                  href: "/match",
+                  label: "Match",
+                  icon: <Zap className="w-3 h-3" />,
+                  color: "brand",
                 },
                 {
-                  icon: <GooglePlayIcon />,
-                  store: "Google Play",
-                  platform: "Próximamente en",
+                  href: "/trivia",
+                  label: "Trivia",
+                  icon: <Smartphone className="w-3 h-3" />,
+                  color: "primary",
                 },
-              ].map(({ icon, store, platform }) => (
-                <div
-                  key={store}
-                  title="Próximamente"
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-muted border border-border/50 text-muted-foreground cursor-not-allowed opacity-60 select-none w-fit"
+                {
+                  href: "/comparador",
+                  label: "Comparador",
+                  icon: <ExternalLink className="w-3 h-3" />,
+                  color: "brand",
+                },
+                {
+                  href: "/simulador",
+                  label: "Simulador",
+                  icon: <Zap className="w-3 h-3" />,
+                  color: "primary",
+                },
+              ].map(({ href, label, icon, color }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full 
+          bg-${color}/10 text-${color} text-[10px] font-bold uppercase tracking-wide
+          hover:bg-${color}/20 transition-colors`}
                 >
                   {icon}
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-[10px] font-medium whitespace-nowrap">
-                      {platform}
-                    </span>
-                    <span className="text-sm font-bold whitespace-nowrap">
-                      {store}
-                    </span>
-                  </div>
-                </div>
+                  {label}
+                </Link>
               ))}
             </div>
           </div>

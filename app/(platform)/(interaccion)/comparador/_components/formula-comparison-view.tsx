@@ -28,15 +28,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  BiographyDetail,
-  WorkExperience,
-  PopularElection,
-  PoliticalRole,
-  Incomes,
-  Assets,
-} from "@/interfaces/person";
+import { BiographyDetail, Assets } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message";
+import Image from "next/image";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -926,9 +920,11 @@ function FormulaCard({
       <div className="h-[3px]" style={{ background: partyColor }} />
       <div className="flex items-center gap-2.5 px-4 py-2.5 border-b bg-muted/20">
         {formula.political_party?.logo_url ? (
-          <img
+          <Image
             src={formula.political_party.logo_url}
             alt={formula.political_party.name}
+            width={40}
+            height={40}
             className="h-7 w-7 object-contain rounded shrink-0"
           />
         ) : (
@@ -1072,9 +1068,11 @@ function MobileBottomNav({
             }}
           >
             {activeFormula?.political_party?.logo_url ? (
-              <img
+              <Image
                 src={activeFormula.political_party.logo_url}
                 alt=""
+                width={40}
+                height={40}
                 className="h-6 w-6 object-contain rounded shrink-0"
               />
             ) : (

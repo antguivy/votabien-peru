@@ -51,7 +51,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useInvestigacionStream } from "@/hooks/use-research-stream";
 
 // --- UTILIDAD: PRETTY JSON CON COLORES Y WRAP ---
 const PrettyJson = ({ data }: { data: unknown }) => {

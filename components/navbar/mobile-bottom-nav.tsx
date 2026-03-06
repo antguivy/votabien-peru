@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -21,30 +21,18 @@ import type { UserProfile } from "@/lib/auth-actions";
 import {
   UserCheck,
   Flag,
-  BookUser,
   Menu,
-  Search,
   LogOut,
   Settings,
-  X,
   GitCompare,
 } from "lucide-react";
 
-// ─────────────────────────────────────────────
-// Barra ÚNICA y estable — nunca cambia por ruta
-// El botón de filtro se mostrará/ocultará en su
-// propio botón flotante secundario (ver abajo)
-// ─────────────────────────────────────────────
-const BOTTOM_NAV_ITEMS = [
+const NAV_ITEMS = [
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   { href: "/partidos", label: "Partidos", icon: Flag },
-  // { href: "/legisladores", label: "Congresistas", icon: BookUser },
   { href: "/comparador", label: "Comparador", icon: GitCompare },
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
-];
-
-// Rutas donde el botón de filtro flotante debe aparecer
-const FILTER_ROUTES = ["/candidatos", "/legisladores", "/partidos"];
+] as const;
 
 interface MobileBottomNavProps {
   user: User | null;
@@ -54,63 +42,14 @@ interface MobileBottomNavProps {
 export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchActive, setIsSearchActive] = useState(false);
-
-  // Ref para que la animación de entrada solo ocurra una vez
   const hasAnimated = useRef(false);
-
-  // Cerrar search si un evento externo lo pide
-  useEffect(() => {
-    const close = () => setIsSearchActive(false);
-    window.addEventListener("close-mobile-filter", close);
-    return () => window.removeEventListener("close-mobile-filter", close);
-  }, []);
-
-  // Resetear search al cambiar de ruta (sin animar la barra)
-  const prevPathname = useRef(pathname);
-  useEffect(() => {
-    if (prevPathname.current !== pathname) {
-      prevPathname.current = pathname;
-      setIsSearchActive(false);
-    }
-  }, [pathname]);
-
-  const handleSearchToggle = useCallback(() => {
-    const next = !isSearchActive;
-    setIsSearchActive(next);
-    window.dispatchEvent(new CustomEvent("toggle-filter-panel"));
-  }, [isSearchActive]);
 
   const isActiveLink = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
-  // Estado del ícono expandido: derivado del pathname, sin useEffect
-  // Solo se sobreescribe si el usuario hace click en un ícono distinto al activo
-  const derivedActive =
-    BOTTOM_NAV_ITEMS.find((item) => !item.isAction && isActiveLink(item.href))
-      ?.href ?? null;
-
-  const [expandedIcon, setExpandedIcon] = useState<string | null>(
-    derivedActive,
-  );
-
-  // Sincronizar con navegación SIN render extra: solo si el pathname cambia
-  const lastSyncedPath = useRef(pathname);
-  if (lastSyncedPath.current !== pathname) {
-    lastSyncedPath.current = pathname;
-    if (derivedActive !== expandedIcon) {
-      // Actualización síncrona durante render — evita el useEffect + flush
-      setExpandedIcon(derivedActive);
-    }
-  }
-
-  const showFilterButton = FILTER_ROUTES.some((r) => pathname.startsWith(r));
-
-  // Grid para el drawer
   const gridItems = MAIN_NAV_ITEMS.flatMap((item: NavItem) => {
     if (item.type === "link") return [item];
     if (item.type === "dropdown" && item.children) {
@@ -124,11 +63,10 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
 
   return (
     <>
-      {/* ── BARRA PRINCIPAL (siempre la misma) ── */}
+      {/* ── BARRA ── */}
       <div
         className={cn(
           "fixed bottom-5 left-4 right-4 z-40 lg:hidden",
-          // La animación solo se aplica en el primer montaje
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",
         )}
@@ -138,35 +76,61 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
       >
         <nav
           className={cn(
-            "flex items-center justify-between px-4 py-1 rounded-[2rem] backdrop-blur-xl",
-            "bg-card border border-border/60 shadow-xl shadow-black/10",
-            "dark:bg-[oklch(0.14_0.02_240)] dark:border-white/10 dark:shadow-black/40",
+            "flex items-center justify-around px-2 pt-0 pb-2.5 rounded-[2rem]",
+            "backdrop-blur-2xl",
+            "bg-white/85 border border-black/[0.07]",
+            "shadow-[0_10px_40px_oklch(0_0_0/0.16),0_2px_8px_oklch(0_0_0/0.08)]",
+            "dark:bg-[oklch(0.14_0.02_240/0.90)] dark:border-white/[0.08]",
+            "dark:shadow-[0_10px_40px_oklch(0_0_0/0.40),0_2px_8px_oklch(0_0_0/0.20)]",
           )}
         >
-          {BOTTOM_NAV_ITEMS.map((item, index) => {
+          {NAV_ITEMS.map((item, index) => {
             const Icon = item.icon;
-            const isAction = item.isAction ?? false;
+            const isAction = "isAction" in item;
             const isActive = !isAction && isActiveLink(item.href);
-            const isExpanded = expandedIcon === item.href;
-            const isMenuActive = item.href === "ACTION:MENU" && isMenuOpen;
+            const isMenuActive = isAction && isMenuOpen;
+            const showActive = isActive || isMenuActive;
+
+            const sharedClass = cn(
+              "relative flex flex-col items-center justify-center gap-1.5",
+              "pt-3 pb-1 w-[60px] rounded-2xl select-none",
+              "transition-transform duration-150 active:scale-90",
+            );
+
+            const content = (
+              <>
+                <ActiveIndicator showActive={showActive} />
+                <Icon
+                  className={cn(
+                    "w-[21px] h-[21px] flex-shrink-0 transition-all duration-200",
+                    showActive
+                      ? "text-brand"
+                      : "text-foreground/[0.58] dark:text-white/[0.65]",
+                  )}
+                  strokeWidth={showActive ? 2.5 : 2}
+                />
+                <span
+                  className={cn(
+                    "text-[9.5px] leading-none transition-all duration-200",
+                    showActive
+                      ? "text-brand font-extrabold"
+                      : "text-foreground/[0.58] font-semibold dark:text-white/[0.65]",
+                  )}
+                >
+                  {item.label}
+                </span>
+              </>
+            );
 
             if (isAction) {
               return (
                 <button
                   key={index}
                   onClick={() => setIsMenuOpen(true)}
-                  className={cn(
-                    "group relative flex items-center justify-center w-14 h-12 rounded-full",
-                    "transition-all duration-200 active:scale-95",
-                    isMenuActive
-                      ? "text-brand"
-                      : "text-muted-foreground hover:text-foreground dark:text-white/40 dark:hover:text-white/80",
-                  )}
+                  className={sharedClass}
+                  aria-label={item.label}
                 >
-                  <Icon
-                    className="w-6 h-6 transition-transform duration-200 group-active:scale-90"
-                    strokeWidth={isMenuActive ? 2.5 : 2}
-                  />
+                  {content}
                 </button>
               );
             }
@@ -175,60 +139,23 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
               <Link
                 key={index}
                 href={item.href}
-                onClick={() => {
-                  setExpandedIcon(isExpanded ? null : item.href);
-                }}
-                className={cn(
-                  "group relative flex items-center justify-center transition-all duration-300 rounded-full overflow-hidden",
-                  isExpanded
-                    ? "bg-brand/90 text-white px-4 py-2 gap-2 h-10"
-                    : "w-14 h-12",
-                )}
+                className={sharedClass}
+                aria-current={showActive ? "page" : undefined}
               >
-                <Icon
-                  className={cn(
-                    "transition-all duration-200 flex-shrink-0",
-                    isExpanded
-                      ? "w-5 h-5 text-white"
-                      : isActive
-                        ? "w-6 h-6 text-brand scale-110"
-                        : "w-6 h-6 text-muted-foreground group-hover:text-foreground dark:text-white/40 dark:group-hover:text-white/80 group-active:scale-90",
-                  )}
-                  strokeWidth={isActive || isExpanded ? 2.5 : 2}
-                />
-                <span
-                  className={cn(
-                    "font-bold text-sm whitespace-nowrap transition-all duration-300 text-white",
-                    isExpanded
-                      ? "opacity-100 max-w-[100px]"
-                      : "opacity-0 max-w-0 overflow-hidden",
-                  )}
-                >
-                  {item.label}
-                </span>
+                {content}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* ── BOTÓN FLOTANTE DE FILTRO (solo en rutas con filtro) ── */}
-      {/*
-        Al ser un componente separado de la barra, no causa que la
-        barra re-renderice ni parpadee al aparecer/desaparecer.
-      */}
-      {showFilterButton && (
-        <FilterFab isActive={isSearchActive} onToggle={handleSearchToggle} />
-      )}
-
-      {/* ── DRAWER ── */}
+      {/* ── DRAWER MENÚ ── */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <DrawerContent className="px-4 pb-6 outline-none bg-background/95 backdrop-blur-xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Menú de Navegación</DrawerTitle>
           </DrawerHeader>
 
-          {/* Logo */}
           <div className="flex items-center justify-center pt-2 pb-4 border-b border-border/50">
             <Link href="/" onClick={() => setIsMenuOpen(false)}>
               <Image
@@ -242,7 +169,6 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
             </Link>
           </div>
 
-          {/* Usuario */}
           {user && (
             <div className="flex items-center justify-between py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
@@ -291,7 +217,6 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
             </div>
           )}
 
-          {/* Grid de navegación */}
           <div className="grid grid-cols-4 md:grid-cols-5 gap-2 py-4 overflow-hidden">
             {gridItems.map((item, index) => {
               const Icon = item.icon;
@@ -334,34 +259,26 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
 };
 
 // ─────────────────────────────────────────────
-// Botón flotante de filtro — componente aislado
-// Su aparición/desaparición no toca la barra
+// Indicador activo — línea + glow
 // ─────────────────────────────────────────────
-const FilterFab = ({
-  isActive,
-  onToggle,
-}: {
-  isActive: boolean;
-  onToggle: () => void;
-}) => (
-  <button
-    onClick={onToggle}
-    className={cn(
-      // Posicionado sobre la barra (bottom-20 para no solaparse)
-      "fixed bottom-20 right-5 z-40 lg:hidden",
-      "flex items-center justify-center w-12 h-12 rounded-full",
-      "shadow-xl border-2 transition-all duration-300 active:scale-90",
-      "animate-in fade-in zoom-in-75 duration-200",
-      isActive
-        ? "bg-white text-[oklch(0.14_0.02_240)] border-white/20 rotate-90"
-        : "bg-brand text-white border-brand/30",
-    )}
-    aria-label={isActive ? "Cerrar filtros" : "Abrir filtros"}
-  >
-    {isActive ? (
-      <X className="w-5 h-5" strokeWidth={2.5} />
-    ) : (
-      <Search className="w-5 h-5" strokeWidth={2.5} />
-    )}
-  </button>
+const ActiveIndicator = ({ showActive }: { showActive: boolean }) => (
+  <>
+    <span
+      aria-hidden
+      className={cn(
+        "absolute top-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full bg-brand",
+        "transition-[width,opacity] duration-300 ease-[cubic-bezier(0.34,1.4,0.64,1)]",
+        showActive ? "w-7 opacity-100" : "w-0 opacity-0",
+      )}
+    />
+    <span
+      aria-hidden
+      className={cn(
+        "absolute -top-1 left-1/2 -translate-x-1/2 h-4 pointer-events-none",
+        "transition-[width,opacity] duration-300",
+        "[background:radial-gradient(ellipse_at_50%_0%,oklch(0.4936_0.165_28.53/0.55),transparent_70%)]",
+        showActive ? "w-12 opacity-100" : "w-0 opacity-0",
+      )}
+    />
+  </>
 );

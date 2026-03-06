@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { getPartidosSelectorList } from "@/queries/public/parties";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { PoliticalPartyBase } from "@/interfaces/politics";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 
 interface PartySelectorProps {
   onSelect: (party: PoliticalPartyBase) => void;

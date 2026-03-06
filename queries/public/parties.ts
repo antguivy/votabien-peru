@@ -2,12 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import {
-  PoliticalPartyListPaginated,
-  PoliticalPartyDetail,
   ElectedLegislatorBasic,
   PartyHistory,
   PartyLegalCase,
-  PoliticalPartyBase,
   GovernmentPlanSummary,
   OrganizationType,
 } from "@/interfaces/politics";
@@ -19,6 +16,11 @@ import {
   PartyFinancingBasic,
 } from "@/interfaces/party-financing";
 import { Database } from "@/interfaces/supabase";
+import {
+  PoliticalPartyBase,
+  PoliticalPartyDetail,
+  PoliticalPartyListPaginated,
+} from "@/interfaces/political-party";
 
 export async function getPartidosListSimple({
   active,

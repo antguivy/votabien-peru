@@ -5,10 +5,7 @@ import { getCandidatesCards } from "@/queries/public/candidacies";
 import getDistritos from "@/queries/public/electoral-districts";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import {
-  getPartidosList,
-  getPartidosListSimple,
-} from "@/queries/public/parties";
+import { getPartidosList } from "@/queries/public/parties";
 
 interface PageProps {
   searchParams: Promise<{
@@ -131,6 +128,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
         />
         <section className="pt-4 container mx-auto pb-10 lg:pb-0">
           <CandidatosList
+            key={`${params.type ?? "PRESIDENTE"}-${params.search ?? ""}-${partiesArray.join(",")}-${districtsArray.join(",")}-${params.districtType ?? ""}`}
             candidaturas={candidaturas}
             distritos={distritos}
             parties={parties.items}

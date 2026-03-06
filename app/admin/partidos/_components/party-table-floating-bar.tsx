@@ -21,7 +21,7 @@ import {
 import { Kbd } from "@/components/kbd";
 // import { bulkUpdateLegislators } from "../_lib/actions";
 import { toast } from "sonner";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 import { bulkUpdateStatusParties } from "../_lib/actions";
 
 interface PartiesTableFloatingBarProps {

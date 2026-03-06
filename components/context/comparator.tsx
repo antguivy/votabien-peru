@@ -2,7 +2,7 @@
 
 import { createContext, ReactNode, useState, useEffect } from "react";
 import { SearchableEntity } from "@/interfaces/ui-types";
-import { PoliticalPartyBase } from "@/interfaces/politics";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 
 interface ComparatorContextType {
   entities: SearchableEntity[];

@@ -1,6 +1,5 @@
 // import { DateRangePicker } from "@/components/date-range-picker";
 import { type SearchParams } from "@/lib/types";
-import { Shell } from "@/components/shell";
 import { Data2TableSkeleton, Skeleton } from "@/components/ui/skeletons";
 import React, { Suspense } from "react";
 import { PersonTable } from "./_components/person-table";

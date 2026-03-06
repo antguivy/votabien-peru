@@ -1,11 +1,4 @@
-import {
-  Target,
-  Eye,
-  Scale,
-  Database,
-  CheckCircle2,
-  TrendingUp,
-} from "lucide-react";
+import { Target, Eye, Scale, Database } from "lucide-react";
 import Image from "next/image";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";

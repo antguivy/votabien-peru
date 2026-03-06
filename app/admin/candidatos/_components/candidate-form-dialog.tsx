@@ -1,7 +1,6 @@
 "use client";
 
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,12 +27,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CandidacyType, CandidacyStatus } from "@/interfaces/politics";
 import { createCandidatePeriod, updateCandidatePeriod } from "../_lib/actions";
 import { toast } from "sonner";
-import { Loader2, Info, X, User, Search, Trash2 } from "lucide-react";
+import { Loader2, Info, User, Search, Trash2 } from "lucide-react";
 import {
   Credenza,
   CredenzaBody,
   CredenzaContent,
-  CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
   CredenzaTitle,

@@ -3,20 +3,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ArrowUpRight, Users, Star } from "lucide-react";
-import { FilterPanel, FilterField } from "@/components/ui/filter-panel";
 import {
-  ElectoralDistrictBase,
-  FiltersCandidates,
-  PoliticalPartyBase,
-  PoliticalPartyListPaginated,
-  typeOptions,
-} from "@/interfaces/politics";
+  MapPin,
+  ArrowUpRight,
+  Users,
+  Star,
+  SlidersHorizontal,
+  MapPinned,
+} from "lucide-react";
+import { FilterPanel, FilterField } from "@/components/ui/filter-panel";
+import { FiltersCandidates, typeOptions } from "@/interfaces/politics";
 import { cn } from "@/lib/utils";
 import { CandidateCard } from "@/interfaces/candidate";
 import { getCandidatesCards } from "@/queries/public/candidacies";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getTextColor } from "@/lib/utils/color-utils";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
+import { PoliticalPartyListPaginated } from "@/interfaces/political-party";
+import { shuffleArray } from "@/lib/utils/arrays";
 
 const TYPE_CONFIG = {
   PRESIDENTE: {
@@ -44,7 +48,6 @@ const TYPE_CONFIG = {
 const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const typeKey = candidato.type as keyof typeof TYPE_CONFIG;
   const config = TYPE_CONFIG[typeKey] || TYPE_CONFIG.DEFAULT;
-
   const { person, political_party, electoral_district, list_number } =
     candidato;
   const partyColorHex = political_party?.color_hex || "#6b7280";
@@ -64,19 +67,12 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
           config.ring,
         )}
       >
-        {/* ── Franja de color del partido como acento visual principal ── */}
         <div
           className="h-1.5 w-full flex-shrink-0"
           style={{ backgroundColor: partyColorHex }}
         />
-
-        {/* ── Cuerpo ── */}
         <div className="flex flex-col flex-1 p-3 gap-3">
-          {/* ── Fila superior: avatar circular + número y badge ── */}
           <div className="flex items-start justify-between gap-2">
-            {/* Avatar circular
-                object-cover + object-top → recorta desde la cabeza hacia abajo,
-                priorizando cara y no cortando la parte superior */}
             <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 border-2 border-border bg-muted shadow-sm">
               {person.image_candidate_url ? (
                 <Image
@@ -91,11 +87,8 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                 </div>
               )}
             </div>
-
-            {/* Número de lista + badge de cargo */}
             <div className="flex flex-col items-end gap-1.5">
               <div className="flex flex-row justify-between gap-2">
-                {/* ── Partido + logo ── */}
                 {political_party?.logo_url ? (
                   <div className="relative size-9 rounded overflow-hidden bg-white flex-shrink-0 border border-border/50">
                     <Image
@@ -121,7 +114,6 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                   </div>
                 )}
               </div>
-
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-full text-[9px] font-black tracking-widest uppercase",
@@ -132,18 +124,12 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
               </span>
             </div>
           </div>
-
-          {/* ── Nombre del candidato ── */}
           <div className="flex-1">
             <h3 className="font-bebas text-base sm:text-lg leading-tight text-card-foreground group-hover:text-primary transition-colors line-clamp-2">
               {person.fullname.toUpperCase()}
             </h3>
           </div>
-
-          {/* ── Separador ── */}
           <div className="h-px bg-border/60" />
-
-          {/* ── Footer: Distrito + botón ── */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium truncate">
               <MapPin className="w-3 h-3 flex-shrink-0" />
@@ -202,6 +188,55 @@ const CandidatoSkeleton = () => (
   </div>
 );
 
+// ─────────────────────────────────────────────
+// Banner contextual: SENADOR MÚLTIPLE sin distrito
+// ─────────────────────────────────────────────
+const DistrictHintBanner = ({
+  onOpenFilters,
+}: {
+  onOpenFilters: () => void;
+}) => (
+  <div
+    className={cn(
+      "col-span-full flex flex-col sm:flex-row items-start sm:items-center gap-4",
+      "px-5 py-4 rounded-2xl border-2 border-dashed",
+      "border-brand/30 bg-brand/5",
+      "animate-in fade-in slide-in-from-top-2 duration-400",
+    )}
+  >
+    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-brand/10 flex-shrink-0">
+      <MapPinned className="w-5 h-5 text-brand" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-bold text-foreground leading-tight">
+        Selecciona tu distrito electoral
+      </p>
+      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+        Para ver senadores por región, elige uno o más distritos en los filtros.
+        O{" "}
+        <span className="font-semibold text-foreground">
+          mantén ❝Único Nacional❞
+        </span>{" "}
+        para ver todos.
+      </p>
+    </div>
+    <button
+      onClick={onOpenFilters}
+      className={cn(
+        "flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl",
+        "bg-brand text-white text-sm font-bold",
+        "shadow-sm shadow-brand/25 transition-all duration-200",
+        "hover:bg-brand/90 active:scale-95",
+        // En mobile el botón se muestra debajo del texto
+        "w-full sm:w-auto justify-center sm:justify-start",
+      )}
+    >
+      <SlidersHorizontal className="w-3.5 h-3.5" />
+      Elegir distrito
+    </button>
+  </div>
+);
+
 const PAGE_SIZE = 20;
 
 const CandidatosList = ({
@@ -218,10 +253,51 @@ const CandidatosList = ({
 
   const [candidatos, setCandidatos] =
     useState<CandidateCard[]>(initialCandidaturas);
+  const [isReady, setIsReady] = useState(
+    currentFilters.type !== "PRESIDENTE", // Para no-presidentes, listo de inmediato
+  );
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(
     initialCandidaturas.length >= PAGE_SIZE,
   );
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (currentFilters.search) count++;
+    if (
+      currentFilters.type &&
+      currentFilters.type !== "all" &&
+      currentFilters.type !== ""
+    )
+      count++;
+    if (
+      Array.isArray(currentFilters.districts) &&
+      currentFilters.districts.length > 0
+    )
+      count++;
+    if (
+      Array.isArray(currentFilters.parties) &&
+      currentFilters.parties.length > 0
+    )
+      count++;
+    return count;
+  }, [currentFilters]);
+
+  // ── ¿Mostrar el banner de distrito? ──
+  // Solo cuando: tipo=SENADOR + districtType=multiple + sin distritos elegidos
+  const showDistrictHint = useMemo(() => {
+    return (
+      currentFilters.type === "SENADOR" &&
+      currentFilters.districtType === "multiple" &&
+      (!Array.isArray(currentFilters.districts) ||
+        currentFilters.districts.length === 0)
+    );
+  }, [
+    currentFilters.type,
+    currentFilters.districtType,
+    currentFilters.districts,
+  ]);
+
   const observerTarget = useRef<HTMLDivElement>(null);
   const prevTypeRef = useRef(currentFilters.type);
 
@@ -263,14 +339,12 @@ const CandidatosList = ({
             ? currentFilters.districts.split(",")
             : currentFilters.districts
           : undefined;
-
       const partiesFilter =
         currentFilters.parties && currentFilters.parties !== "all"
           ? typeof currentFilters.parties === "string"
             ? currentFilters.parties.split(",")
             : currentFilters.parties
           : undefined;
-
       const typeFilter =
         currentFilters.type && currentFilters.type !== "all"
           ? currentFilters.type
@@ -329,9 +403,27 @@ const CandidatosList = ({
   }, [infiniteScroll, hasMore, loading, loadMore]);
 
   useEffect(() => {
-    setCandidatos(initialCandidaturas);
-    setHasMore(initialCandidaturas.length >= PAGE_SIZE);
-  }, [initialCandidaturas]);
+    if (currentFilters.type === "PRESIDENTE") {
+      setCandidatos(shuffleArray(initialCandidaturas));
+    }
+    setIsReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // const isFirstMount = useRef(true);
+  // useEffect(() => {
+  //   if (isFirstMount.current) {
+  //     isFirstMount.current = false;
+  //     return;
+  //   }
+  //   const data =
+  //     currentFilters.type === "PRESIDENTE"
+  //       ? shuffleArray(initialCandidaturas)
+  //       : initialCandidaturas;
+
+  //   setCandidatos(data);
+  //   setHasMore(initialCandidaturas.length >= PAGE_SIZE);
+  // }, [initialCandidaturas]);
 
   const showDistricts = useMemo(() => {
     const type = currentFilters.type;
@@ -339,12 +431,6 @@ const CandidatosList = ({
     if (type === "SENADOR") return currentFilters.districtType === "multiple";
     return false;
   }, [currentFilters.type, currentFilters.districtType]);
-
-  // const showParties = useMemo(() => {
-  //   const type = currentFilters.type;
-  //   if (type === "PRESIDENTE") return false;
-  //   return false;
-  // }, [currentFilters.type, currentFilters.districtType]);
 
   const showDistrictType = useMemo(
     () => currentFilters.type === "SENADOR",
@@ -359,6 +445,7 @@ const CandidatosList = ({
     () => parties.map((d) => ({ value: d.name, label: d.name })),
     [parties],
   );
+
   const filterFields: FilterField[] = useMemo(() => {
     const fields: FilterField[] = [
       {
@@ -366,7 +453,7 @@ const CandidatosList = ({
         label: "Buscar",
         type: "search",
         placeholder: "Buscar candidato...",
-        searchPlaceholder: "Nombre, DNI...",
+        searchPlaceholder: "Nombre, DNI… (Enter para buscar)",
         defaultValue: "",
       },
       {
@@ -382,7 +469,6 @@ const CandidatosList = ({
         label: "Partido",
         type: "multi-select",
         placeholder: "Selecciona partidos",
-        // disabled: !showParties,
         options: partyOptions,
       },
     ];
@@ -415,7 +501,6 @@ const CandidatosList = ({
   }, [
     distritos,
     showDistricts,
-    // showParties,
     partyOptions,
     showDistrictType,
     districtOptions,
@@ -429,22 +514,43 @@ const CandidatosList = ({
     districtType: undefined,
   };
 
+  // Abre el panel de filtros mobile (para el botón del banner)
+  const handleOpenFilters = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("toggle-filter-panel"));
+  }, []);
+
   return (
     <div className="w-full">
       {infiniteScroll && (
-        <div className="sticky top-1 z-30 lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl lg:border lg:border-border/50 lg:shadow-sm">
+        <div
+          className={cn(
+            "sticky top-1 z-30 mb-4",
+            "lg:bg-background/80 lg:backdrop-blur-xl lg:p-2 lg:rounded-2xl",
+            "lg:border lg:border-border/50 lg:shadow-sm",
+          )}
+        >
           <FilterPanel
             fields={filterFields}
             currentFilters={effectiveFilters}
             onApplyFilters={() => {}}
             baseUrl="/candidatos"
             defaultFilters={defaultFilters}
+            showMobileTrigger={true}
           />
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:pt-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 font-manrope">
-        {candidatos.length === 0 ? (
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 font-manrope">
+        {/* ── Banner SENADOR MÚLTIPLE sin distrito ── */}
+        {showDistrictHint && (
+          <DistrictHintBanner onOpenFilters={handleOpenFilters} />
+        )}
+
+        {!isReady ? (
+          Array.from({ length: 10 }).map((_, i) => (
+            <CandidatoSkeleton key={i} />
+          ))
+        ) : candidatos.length === 0 && !showDistrictHint ? (
           <div className="col-span-full flex flex-col items-center justify-center py-32 text-center opacity-0 animate-in fade-in zoom-in duration-500">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce">
               <Star className="w-10 h-10 text-muted-foreground" />

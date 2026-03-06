@@ -166,3 +166,7 @@ export type CreatePersonRequest = Omit<AdminPerson, "id" | "created_at"> & {
 export type UpdatePersonRequest = Omit<AdminPerson, "created_at"> & {
   backgrounds?: BackgroundBase[];
 };
+
+export interface PersonWithBackground extends PersonBase {
+  backgrounds: BackgroundBase[];
+}

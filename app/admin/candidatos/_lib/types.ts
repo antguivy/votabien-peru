@@ -1,11 +1,11 @@
 import { AdminCandidate } from "@/interfaces/candidate";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 import { PersonBase } from "@/interfaces/person";
 import {
   CandidacyStatus,
   CandidacyType,
-  ElectoralDistrictBase,
   ElectoralProcess,
-  PoliticalPartyBase,
 } from "@/interfaces/politics";
 
 // Legislator

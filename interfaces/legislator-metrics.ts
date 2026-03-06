@@ -1,5 +1,6 @@
+import { ElectoralDistrictBasic } from "./electoral-district";
 import { ParliamentaryGroupBasic } from "./parliamentary-membership";
-import { ElectoralDistrictBasic, PoliticalPartyBase } from "./politics";
+import { PoliticalPartyBase } from "./political-party";
 
 export interface LegislatorVersusCard {
   id: string;

@@ -45,7 +45,6 @@ import { PartySelector } from "@/components/party-selector";
 import { Input } from "@/components/ui/input";
 import { TriviaBasic, TriviaOption } from "@/interfaces/trivia";
 import { PersonBasicInfo } from "@/interfaces/person";
-import { PoliticalPartyBase } from "@/interfaces/politics";
 import {
   DndContext,
   closestCenter,
@@ -56,13 +55,13 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 
 interface SortableOptionProps {
   id: string;

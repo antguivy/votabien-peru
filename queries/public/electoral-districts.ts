@@ -1,6 +1,6 @@
 "use server";
 
-import { ElectoralDistrictBase } from "@/interfaces/politics";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function getDistritos(): Promise<ElectoralDistrictBase[]> {

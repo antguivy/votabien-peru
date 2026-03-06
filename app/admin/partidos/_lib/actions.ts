@@ -8,7 +8,10 @@ import {
   type TablesInsert,
   type TablesUpdate,
 } from "@/interfaces/supabase";
-import { CreatePartyRequest, UpdatePartyRequest } from "@/interfaces/party";
+import {
+  CreatePartyRequest,
+  UpdatePartyRequest,
+} from "@/interfaces/political-party";
 import { BulkUpdatePartiesRequest } from "./types";
 
 // Helper para manejo de errores tipado

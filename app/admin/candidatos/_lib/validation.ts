@@ -7,12 +7,7 @@ import {
 } from "nuqs/server";
 
 import { getSortingStateParser } from "@/lib/parsers";
-import {
-  CandidacyStatus,
-  CandidacyType,
-  ChamberType,
-  LegislatorCondition,
-} from "@/interfaces/politics";
+import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import { AdminLegislator } from "@/interfaces/legislator";
 
 export const searchParamsCache = createSearchParamsCache({

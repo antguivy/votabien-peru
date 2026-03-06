@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ComparatorContext } from "@/components/context/comparator";
 import { SearchableEntity } from "@/interfaces/ui-types";
@@ -13,6 +13,7 @@ import {
 
 import PresidentialSelector from "./selector";
 import FormulaComparisonView from "./formula-comparison-view";
+import { useReadiness } from "@/hooks/use-readiness";
 
 interface ComparatorLayoutProps {
   data: ComparisonResponse;
@@ -36,6 +37,8 @@ export default function ComparatorLayout({
   searchAction,
 }: ComparatorLayoutProps) {
   const { entities } = useContext(ComparatorContext);
+  const { markComparadorInteraction } = useReadiness();
+  const lastTrackedPair = useRef<string>("");
 
   const availableFormulas = useMemo<FormulaWithData[]>(() => {
     if (!data || !isFormulaComparison(data)) return [];
@@ -52,6 +55,20 @@ export default function ComparatorLayout({
   }, [data]);
 
   const showComparison = availableFormulas.length >= 2;
+
+  useEffect(() => {
+    if (!showComparison) return;
+
+    const pairKey = entities
+      .map((e) => e.id)
+      .sort()
+      .join("|");
+
+    if (pairKey === lastTrackedPair.current) return;
+    lastTrackedPair.current = pairKey;
+
+    markComparadorInteraction();
+  }, [showComparison, entities, markComparadorInteraction]);
 
   return (
     <div className="w-full md:pt-4 space-y-6 max-w-7xl mx-auto">

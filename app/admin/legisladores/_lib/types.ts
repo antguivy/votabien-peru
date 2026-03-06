@@ -1,11 +1,8 @@
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { AdminLegislator } from "@/interfaces/legislator";
 import { PersonBase } from "@/interfaces/person";
-import {
-  ChamberType,
-  ElectoralDistrictBase,
-  LegislatorCondition,
-  PoliticalPartyBase,
-} from "@/interfaces/politics";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
+import { ChamberType, LegislatorCondition } from "@/interfaces/politics";
 
 // Legislator
 export interface LegislatorResponse {

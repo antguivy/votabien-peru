@@ -1,13 +1,10 @@
-import { ComparisonDataStatus } from "./comparator";
-import { PersonBase, PersonBasicInfo } from "./person";
 import {
-  CandidacyStatus,
-  CandidacyType,
   ElectoralDistrictBase,
   ElectoralDistrictBasic,
-  ElectoralProcess,
-  PoliticalPartyBase,
-} from "./politics";
+} from "./electoral-district";
+import { PersonBasicInfo, PersonWithBackground } from "./person";
+import { PoliticalPartyBase } from "./political-party";
+import { CandidacyStatus, CandidacyType, ElectoralProcess } from "./politics";
 
 export interface AllianceBase {
   id?: string | number;
@@ -73,6 +70,12 @@ export interface CandidatePresidentials {
   id: string;
   person: PersonBasicInfo;
   type: CandidacyType;
+}
+
+export interface CandidateDetail extends CandidateBase {
+  person: PersonWithBackground;
+  political_party: PoliticalPartyBase;
+  electoral_district: ElectoralDistrictBasic | null;
 }
 
 // export interface CandidateMetrics {

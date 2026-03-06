@@ -18,6 +18,28 @@ interface GetCandidatesParams {
   districtType?: "unico" | "multiple";
 }
 
+// ─────────────────────────────────────────────
+// Fisher-Yates shuffle — O(n), sin mutación del
+// array original
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// Normaliza tildes para búsqueda
+// ─────────────────────────────────────────────
+function normalizeSearchTerm(term: string): string {
+  return term
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function parseSearchWords(search: string): string[] {
+  return normalizeSearchTerm(search)
+    .split(/\s+/)
+    .filter((w) => w.length >= 2);
+}
+
 export async function getCandidatesCards({
   electoral_process_id,
   type,
@@ -42,7 +64,7 @@ export async function getCandidatesCards({
     active,
     person:person_id!inner (
       id, fullname, name, lastname, dni, image_url, image_candidate_url,
-      profession, incomes, work_experience, university_education
+      profession
     ),
     political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
@@ -51,17 +73,41 @@ export async function getCandidatesCards({
       id, name, code, is_national, active
     )
   `;
+
   const queryBuilder = supabase
     .from("candidate")
     .select(selectQuery, { count: "exact" });
+
   type CandidatesWithRelations = QueryData<typeof queryBuilder>;
 
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const searchWords = search?.trim() ? parseSearchWords(search) : [];
+  const hasSearch = searchWords.length > 0;
 
-  let query = queryBuilder
-    .range(from, to)
-    .order("list_number", { ascending: true });
+  // ─────────────────────────────────────────────
+  // Para PRESIDENTE sin búsqueda activa:
+  //   - Traemos todos los presidentes (sin paginación)
+  //     para poder hacer el shuffle completo.
+  //     Los presidentes son pocos (~15-20) así que
+  //     el costo es mínimo.
+  //   - Para el resto de tipos mantenemos paginación normal.
+  //
+  // ¿Por qué no usar ORDER BY random() en Supabase?
+  //   PostgREST no soporta .order('random()') directamente.
+  //   Una RPC funcionaría pero agrega complejidad innecesaria
+  //   para un conjunto tan pequeño de registros.
+  // ─────────────────────────────────────────────
+  const PRESIDENTE_MAX = 40; // ~3x partidos posibles, margen seguro
+  const isPresidente = !hasSearch && type === "PRESIDENTE";
+
+  const from = isPresidente ? 0 : (page - 1) * pageSize;
+  const to = isPresidente ? PRESIDENTE_MAX - 1 : from + pageSize - 1;
+
+  let query = queryBuilder.range(from, to);
+
+  // Solo ordenamos por list_number cuando NO es presidente aleatorio
+  if (!isPresidente) {
+    query = query.order("list_number", { ascending: true });
+  }
 
   if (electoral_process_id) {
     query = query.eq("electoral_process_id", electoral_process_id);
@@ -71,67 +117,67 @@ export async function getCandidatesCards({
     query = query.in("id", ids);
   }
 
-  if (type === "PRESIDENTE") {
-    // Filtrar por tipo Y distrito nacional
-    query = query.eq("type", "PRESIDENTE");
-    query = query.eq("electoral_district.is_national", true);
-  } else if (type === "VICEPRESIDENTE") {
-    // Agrupar VP_1 y VP_2, distrito nacional
-    query = query.in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
-    query = query.eq("electoral_district.is_national", true);
-  } else if (type === "SENADOR") {
-    query = query.eq("type", "SENADOR");
-
-    if (districtType === "multiple") {
-      query = query.eq("electoral_district.is_national", false);
-
+  // ── Filtros de tipo y distrito ──
+  if (!hasSearch) {
+    if (type === "PRESIDENTE") {
+      query = query.eq("type", "PRESIDENTE");
+      query = query.eq("electoral_district.is_national", true);
+    } else if (type === "VICEPRESIDENTE") {
+      query = query.in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
+      query = query.eq("electoral_district.is_national", true);
+    } else if (type === "SENADOR") {
+      query = query.eq("type", "SENADOR");
+      if (districtType === "multiple") {
+        query = query.eq("electoral_district.is_national", false);
+        if (districts && districts.length > 0) {
+          query = query.in("electoral_district.name", districts);
+        }
+      } else {
+        query = query.eq("electoral_district.is_national", true);
+      }
+    } else if (type === "DIPUTADO") {
+      query = query.eq("type", "DIPUTADO");
       if (districts && districts.length > 0) {
         query = query.in("electoral_district.name", districts);
       }
-    } else {
-      query = query.eq("electoral_district.is_national", true);
-    }
-  } else if (type === "DIPUTADO") {
-    query = query.eq("type", "DIPUTADO");
-
-    if (districts && districts.length > 0) {
-      query = query.in("electoral_district.name", districts);
     }
   }
 
+  // Filtro de partido — siempre activo
   if (parties && parties.length > 0) {
     query = query.in("political_party.name", parties);
   }
 
-  if (search) {
-    const term = search.trim();
-    query = query.or(
-      `fullname.ilike.%${term}%,name.ilike.%${term}%,lastname.ilike.%${term}%,dni.ilike.%${term}%`,
-      { foreignTable: "person" },
-    );
+  // ── Búsqueda multi-palabra ──
+  if (hasSearch) {
+    for (const word of searchWords) {
+      const normalized = normalizeSearchTerm(word);
+      query = query.or(
+        [
+          `fullname.ilike.%${normalized}%`,
+          `name.ilike.%${normalized}%`,
+          `lastname.ilike.%${normalized}%`,
+          `dni.ilike.%${normalized}%`,
+        ].join(","),
+        { foreignTable: "person" },
+      );
+    }
   }
 
   query = query.eq("active", true);
 
   const { data, error } = await query;
+
   if (error) {
     console.error("Error fetching candidates:", error);
     throw new Error("Error al obtener candidatos");
   }
 
   const rawCandidates = data as CandidatesWithRelations;
-
   if (!rawCandidates) return [];
 
   const results: CandidateCard[] = rawCandidates.map((candidate) => {
     const p = candidate.person;
-
-    const hasData = Boolean(
-      (Array.isArray(p.incomes) && p.incomes.length > 0) ||
-        (Array.isArray(p.work_experience) && p.work_experience.length > 0) ||
-        (Array.isArray(p.university_education) &&
-          p.university_education.length > 0),
-    );
 
     return {
       id: candidate.id,
@@ -168,11 +214,14 @@ export async function getCandidatesCards({
             active: candidate.electoral_district.active,
           }
         : null,
-
-      has_metrics: hasData,
+      has_metrics: false,
     };
   });
 
+  // ── Shuffle aleatorio para PRESIDENTE ──
+  // Se aplica solo cuando no hay búsqueda activa y el tipo es PRESIDENTE.
+  // Cada visita/recarga muestra un orden diferente — ningún partido
+  // tiene ventaja por aparecer siempre primero.
   return results;
 }
 
@@ -186,20 +235,13 @@ export async function getPrincipalCandidates(
     .select("id")
     .eq("active", true)
     .single();
-  if (!processValid) {
-    throw new Error("No hay proceso electoral activo");
-  }
+
+  if (!processValid) throw new Error("No hay proceso electoral activo");
 
   const { data, error } = await supabase
     .from("candidate")
     .select(
-      `
-      id,
-      person:person_id!inner (
-        id, fullname, image_candidate_url
-      ),
-      type
-    `,
+      `id, person:person_id!inner (id, fullname, image_candidate_url), type`,
     )
     .eq("electoral_process_id", processValid.id)
     .eq("political_party_id", partidoId)

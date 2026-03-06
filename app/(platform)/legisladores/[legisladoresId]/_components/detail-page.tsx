@@ -15,7 +15,6 @@ import {
   DollarSign,
   Home,
   Vote,
-  Clock,
   ArrowRightLeft,
   User,
   ScrollText,

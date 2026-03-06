@@ -4,7 +4,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import type { GetPartySchema } from "./validation";
 import { createClient } from "@/lib/supabase/server";
 import { type Tables } from "@/interfaces/supabase";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 import {
   ActivePartiesCounts,
   PaginatedPartiesResponse,

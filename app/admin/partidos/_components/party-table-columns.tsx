@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Separator } from "@/components/ui/separator";
-import { AdminPoliticalParty } from "@/interfaces/party";
+import { AdminPoliticalParty } from "@/interfaces/political-party";
 
 interface GetColumnsProps {
   setRowAction: React.Dispatch<

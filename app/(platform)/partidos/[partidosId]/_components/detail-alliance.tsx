@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronRight, Home, Building2, FileText } from "lucide-react";
-import { PoliticalPartyDetail } from "@/interfaces/politics";
 import Image from "next/image";
 import Link from "next/link";
 // import { cn } from "@/lib/utils";
@@ -14,6 +13,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { PoliticalPartyDetail } from "@/interfaces/political-party";
 // import { Button } from "@/components/ui/button";
 // import {
 //   SlSocialFacebook,
