@@ -16,11 +16,15 @@ import { DistrictSelect } from "@/components/match/district-select";
 import { PartyExcludeSheet } from "@/components/match/party-excluded";
 import { QuestionCard } from "@/components/match/question-card";
 import { ResultsFlow } from "@/components/match/results-flow";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 
-export default function MatchScreen() {
+export default function MatchScreen({
+  districts,
+}: {
+  districts: ElectoralDistrictBase[];
+}) {
   const {
     parties,
-    districts,
     formData,
     results,
     loading,

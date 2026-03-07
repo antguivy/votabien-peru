@@ -1,8 +1,6 @@
 "use client";
-
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
-
 import { cn } from "@/lib/utils";
 
 function Drawer({
@@ -48,15 +46,20 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  noScroll = false,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  /** Cuando es true, el consumidor gestiona su propio scroll interno.
+   *  Por defecto (false) se mantiene el comportamiento original. */
+  noScroll?: boolean;
+}) {
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          "group/drawer-content bg-background fixed z-50 flex h-auto flex-col max-h-[90%]",
+          "group/drawer-content bg-background fixed z-50 flex flex-col h-auto",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",
           "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[90vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg data-[vaul-drawer-direction=bottom]:border-t",
           "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
@@ -65,8 +68,14 @@ function DrawerContent({
         )}
         {...props}
       >
-        <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted-foreground/50" />
-        <div className="flex-grow overflow-y-auto">{children}</div>
+        <div className="mx-auto mt-4 mb-2 h-2 w-[100px] flex-shrink-0 rounded-full bg-muted-foreground/50" />
+        {noScroll ? (
+          // El consumidor gestiona header / scroll / footer por su cuenta
+          children
+        ) : (
+          // Comportamiento original: todo el contenido scrollea como bloque
+          <div className="flex-grow overflow-y-auto">{children}</div>
+        )}
       </DrawerPrimitive.Content>
     </DrawerPortal>
   );

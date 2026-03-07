@@ -188,9 +188,6 @@ const CandidatoSkeleton = () => (
   </div>
 );
 
-// ─────────────────────────────────────────────
-// Banner contextual: SENADOR MÚLTIPLE sin distrito
-// ─────────────────────────────────────────────
 const DistrictHintBanner = ({
   onOpenFilters,
 }: {
@@ -227,7 +224,6 @@ const DistrictHintBanner = ({
         "bg-brand text-white text-sm font-bold",
         "shadow-sm shadow-brand/25 transition-all duration-200",
         "hover:bg-brand/90 active:scale-95",
-        // En mobile el botón se muestra debajo del texto
         "w-full sm:w-auto justify-center sm:justify-start",
       )}
     >
@@ -238,6 +234,21 @@ const DistrictHintBanner = ({
 );
 
 const PAGE_SIZE = 20;
+
+// ─────────────────────────────────────────────
+// Helper: determina si el campo "districts" debe
+// estar habilitado según el estado de filtros actual.
+// Se usa tanto en desktop (con filters confirmados)
+// como en mobile (con pendingFilters), via disabledWhen.
+// ─────────────────────────────────────────────
+function isDistrictsDisabled(filters: Record<string, unknown>): boolean {
+  const type = filters.type as string | undefined;
+  const districtType = filters.districtType as string | undefined;
+
+  if (type === "DIPUTADO") return false;
+  if (type === "SENADOR" && districtType === "multiple") return false;
+  return true;
+}
 
 const CandidatosList = ({
   candidaturas: initialCandidaturas,
@@ -253,38 +264,12 @@ const CandidatosList = ({
 
   const [candidatos, setCandidatos] =
     useState<CandidateCard[]>(initialCandidaturas);
-  const [isReady, setIsReady] = useState(
-    currentFilters.type !== "PRESIDENTE", // Para no-presidentes, listo de inmediato
-  );
+  const [isReady, setIsReady] = useState(currentFilters.type !== "PRESIDENTE");
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(
     initialCandidaturas.length >= PAGE_SIZE,
   );
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (currentFilters.search) count++;
-    if (
-      currentFilters.type &&
-      currentFilters.type !== "all" &&
-      currentFilters.type !== ""
-    )
-      count++;
-    if (
-      Array.isArray(currentFilters.districts) &&
-      currentFilters.districts.length > 0
-    )
-      count++;
-    if (
-      Array.isArray(currentFilters.parties) &&
-      currentFilters.parties.length > 0
-    )
-      count++;
-    return count;
-  }, [currentFilters]);
-
-  // ── ¿Mostrar el banner de distrito? ──
-  // Solo cuando: tipo=SENADOR + districtType=multiple + sin distritos elegidos
   const showDistrictHint = useMemo(() => {
     return (
       currentFilters.type === "SENADOR" &&
@@ -410,33 +395,6 @@ const CandidatosList = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // const isFirstMount = useRef(true);
-  // useEffect(() => {
-  //   if (isFirstMount.current) {
-  //     isFirstMount.current = false;
-  //     return;
-  //   }
-  //   const data =
-  //     currentFilters.type === "PRESIDENTE"
-  //       ? shuffleArray(initialCandidaturas)
-  //       : initialCandidaturas;
-
-  //   setCandidatos(data);
-  //   setHasMore(initialCandidaturas.length >= PAGE_SIZE);
-  // }, [initialCandidaturas]);
-
-  const showDistricts = useMemo(() => {
-    const type = currentFilters.type;
-    if (type === "DIPUTADO") return true;
-    if (type === "SENADOR") return currentFilters.districtType === "multiple";
-    return false;
-  }, [currentFilters.type, currentFilters.districtType]);
-
-  const showDistrictType = useMemo(
-    () => currentFilters.type === "SENADOR",
-    [currentFilters.type],
-  );
-
   const districtOptions = useMemo(
     () => distritos.map((d) => ({ value: d.name, label: d.name })),
     [distritos],
@@ -446,14 +404,20 @@ const CandidatosList = ({
     [parties],
   );
 
+  // ─────────────────────────────────────────────
+  // filterFields — ya NO depende de showDistricts ni showDistrictType
+  // derivados de currentFilters. La lógica condicional vive en
+  // disabledWhen / el campo se muestra siempre pero se habilita dinámicamente.
+  // Esto evita el parpadeo en desktop al cambiar tipo.
+  // ─────────────────────────────────────────────
   const filterFields: FilterField[] = useMemo(() => {
-    const fields: FilterField[] = [
+    return [
       {
         id: "search",
         label: "Buscar",
         type: "search",
         placeholder: "Buscar candidato...",
-        searchPlaceholder: "Nombre, DNI… (Enter para buscar)",
+        searchPlaceholder: "Nombre (Enter para buscar)",
         defaultValue: "",
       },
       {
@@ -471,40 +435,34 @@ const CandidatosList = ({
         placeholder: "Selecciona partidos",
         options: partyOptions,
       },
-    ];
-    if (showDistrictType) {
-      fields.push({
+      {
         id: "districtType",
         label: "Tipo de Distrito",
         type: "select",
-        placeholder: "Selecciona el tipo",
         options: [
           { value: "unico", label: "Único (Nacional)" },
           { value: "multiple", label: "Múltiple (Distrital)" },
         ],
         defaultValue: "unico",
         hideLabel: true,
-      });
-    }
-    fields.push({
-      id: "districts",
-      label: "Distrito Electoral",
-      type: "multi-select",
-      placeholder: showDistricts
-        ? "Selecciona distritos"
-        : "No disponible para este cargo",
-      disabled: !showDistricts,
-      options: districtOptions,
-    });
-
-    return fields;
-  }, [
-    distritos,
-    showDistricts,
-    partyOptions,
-    showDistrictType,
-    districtOptions,
-  ]);
+        // Ocultar completamente cuando el cargo no es SENADOR
+        // En desktop → retorna null. En mobile → campo tipo select → null también.
+        disabledWhen: (f) => f.type !== "SENADOR",
+      },
+      {
+        id: "districts",
+        label: "Distrito Electoral",
+        type: "multi-select",
+        // El placeholder cambia según el contexto para orientar al usuario
+        placeholder: "Selecciona DIPUTADO o SENADOR Múltiple para habilitar",
+        options: districtOptions,
+        // Habilitado solo para DIPUTADO o SENADOR con districtType=multiple
+        disabledWhen: isDistrictsDisabled,
+      },
+    ];
+  }, [partyOptions, districtOptions]);
+  // ↑ Solo se recomputa cuando cambian las opciones de datos,
+  //   nunca por cambios en currentFilters → sin parpadeo en desktop.
 
   const defaultFilters = {
     search: "",
@@ -514,9 +472,15 @@ const CandidatosList = ({
     districtType: undefined,
   };
 
-  // Abre el panel de filtros mobile (para el botón del banner)
   const handleOpenFilters = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("toggle-filter-panel"));
+    // lg = 1024px — misma breakpoint que el toolbar desktop del FilterPanel
+    if (window.innerWidth >= 1024) {
+      window.dispatchEvent(
+        new CustomEvent("open-desktop-filter", { detail: "districts" }),
+      );
+    } else {
+      window.dispatchEvent(new CustomEvent("toggle-filter-panel"));
+    }
   }, []);
 
   return (
@@ -541,7 +505,6 @@ const CandidatosList = ({
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 font-manrope">
-        {/* ── Banner SENADOR MÚLTIPLE sin distrito ── */}
         {showDistrictHint && (
           <DistrictHintBanner onOpenFilters={handleOpenFilters} />
         )}

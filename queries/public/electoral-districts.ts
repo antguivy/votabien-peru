@@ -19,6 +19,7 @@ export default async function getDistritos(): Promise<ElectoralDistrictBase[]> {
     `,
     )
     .eq("active", true)
+    .eq("is_national", false)
     .order("name", { ascending: true });
 
   if (error) {
