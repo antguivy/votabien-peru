@@ -207,15 +207,6 @@ export default function HeroDualSplit({
                       </span>
                     </div>
                   </div>
-
-                  {/* CAMBIO: Botón secundario más sutil (glassmorphism) en lugar de blanco sólido vibrante. */}
-                  <Link
-                    href="/legisladores"
-                    className="relative inline-flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl bg-white/10 text-white border border-white/20 text-sm md:text-base font-semibold hover:bg-white/20 transition-colors"
-                  >
-                    Ver Congresistas
-                    <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  </Link>
                 </div>
               </div>
             </div>
@@ -275,6 +266,14 @@ export default function HeroDualSplit({
                         190
                       </span>
                     </div>
+                    {/* CAMBIO: Botón secundario más sutil (glassmorphism) en lugar de blanco sólido vibrante. */}
+                    <Link
+                      href="/candidatos"
+                      className="relative inline-flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl bg-white/10 text-white border border-white/20 text-sm md:text-base font-semibold hover:bg-white/20 transition-colors"
+                    >
+                      Ver Candidatos
+                      <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </Link>
                   </div>
                 </div>
               </div>

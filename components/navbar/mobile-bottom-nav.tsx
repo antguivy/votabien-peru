@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import { MAIN_NAV_ITEMS } from "./navbar-config";
+import { MAIN_NAV_ITEMS, NAV_MOBILE_ITEMS } from "./navbar-config";
 import { MobileThemeToggle } from "./navbar-theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,13 +27,6 @@ import {
   GitCompare,
 } from "lucide-react";
 import { NavItem } from "@/interfaces/navbar";
-
-const NAV_ITEMS = [
-  { href: "/candidatos", label: "Candidatos", icon: UserCheck },
-  { href: "/partidos", label: "Partidos", icon: Flag },
-  { href: "/comparador", label: "Comparador", icon: GitCompare },
-  { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
-] as const;
 
 interface MobileBottomNavProps {
   user: User | null;
@@ -85,7 +78,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
             "dark:shadow-[0_10px_40px_oklch(0_0_0/0.40),0_2px_8px_oklch(0_0_0/0.20)]",
           )}
         >
-          {NAV_ITEMS.map((item, index) => {
+          {NAV_MOBILE_ITEMS.map((item, index) => {
             const Icon = item.icon;
             const isAction = "isAction" in item;
             const isActive = !isAction && isActiveLink(item.href);

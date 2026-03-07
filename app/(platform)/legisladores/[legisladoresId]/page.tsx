@@ -16,7 +16,7 @@ export default async function LegisladorDetailPage({ params }: PageProps) {
 
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-14 lg:pb-0">
+        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
           <DetailLegislador persona={legislador} />
         </section>
       </ContentPlatformLayout>

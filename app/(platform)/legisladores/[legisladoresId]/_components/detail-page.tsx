@@ -289,7 +289,7 @@ export default function DetailLegislador({
                     {stats_proyectos.total}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Proyectos
+                    Total Proyectos
                   </span>
                 </CardContent>
               </Card>
@@ -299,11 +299,11 @@ export default function DetailLegislador({
                     {stats_proyectos.APROBADO}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Aprobados
+                    Proyectos Aprobados
                   </span>
                 </CardContent>
               </Card>
-              <Card className="shadow-none border bg-card">
+              {/* <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-2xl font-bold text-blue-500">
                     {stats_asistencia?.porcentajePresencia || 0}%
@@ -312,14 +312,14 @@ export default function DetailLegislador({
                     Asistencia
                   </span>
                 </CardContent>
-              </Card>
+              </Card> */}
               <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-2xl font-bold text-orange-500">
                     {bancadas.length}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Bancadas
+                    Cambios de Bancada
                   </span>
                 </CardContent>
               </Card>
@@ -362,7 +362,7 @@ export default function DetailLegislador({
               </div>
 
               {/* Columna Derecha: Asistencia (1/3 ancho) */}
-              <div className="lg:col-span-1">
+              {/* <div className="lg:col-span-1">
                 <Card className="h-full shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -439,7 +439,7 @@ export default function DetailLegislador({
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              </div> */}
             </div>
           </TabsContent>
 

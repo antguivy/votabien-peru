@@ -105,9 +105,8 @@ export default function MatchScreen({
       <div className="max-w-lg mx-auto px-6 pt-4">
         {/* Hero */}
         <div className="pb-8">
-          <h1 className="text-5xl font-black text-foreground tracking-tight leading-tight">
-            Encuentra tu <br />
-            candidato ideal
+          <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
+            Encuentra tu candidato ideal
           </h1>
           <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
           <p className="text-muted-foreground text-lg leading-7 mt-5">

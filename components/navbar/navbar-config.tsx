@@ -25,18 +25,14 @@ import {
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
 
-export const BOTTOM_NAV_ITEMS = [
-  { href: "/", label: "Inicio", icon: Home },
+export const NAV_MOBILE_ITEMS = [
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },
-  {
-    href: "ACTION:SEARCH",
-    label: "Filtrar",
-    icon: SlidersHorizontal,
-    isAction: true,
-  },
-  { href: "/legisladores", label: "Congresistas", icon: Landmark },
+  { href: "/partidos", label: "Partidos", icon: Flag },
+  { href: "/match", label: "Match", icon: Heart },
+
+  { href: "/comparador", label: "Comparador", icon: Scale },
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
-];
+] as const;
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Inicio", icon: Home },
