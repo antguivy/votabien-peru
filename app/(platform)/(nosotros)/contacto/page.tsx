@@ -4,11 +4,9 @@ import ContactDetail from "./_components/contact";
 
 export default function ContactoPage() {
   return (
-    <>
-      <ContentPlatformLayout>
-        <ContactDetail />
-      </ContentPlatformLayout>
+    <ContentPlatformLayout>
+      <ContactDetail />
       <Footer />
-    </>
+    </ContentPlatformLayout>
   );
 }

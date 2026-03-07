@@ -126,7 +126,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
           electionDate={fechaFormateada}
           daysRemaining={diasRestantes}
         />
-        <section className="pt-4 container mx-auto pb-10 lg:pb-0">
+        <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-0">
           <CandidatosList
             key={`${params.type ?? "PRESIDENTE"}-${params.search ?? ""}-${partiesArray.join(",")}-${districtsArray.join(",")}-${params.districtType ?? ""}`}
             candidaturas={candidaturas}

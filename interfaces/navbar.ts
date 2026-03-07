@@ -15,6 +15,18 @@ export interface NavGroup {
   requiresRole?: UserRole[];
 }
 
+export type NavItem = {
+  type: "link" | "dropdown";
+  label: string;
+  href?: string;
+  icon?: LucideIcon;
+  children?: {
+    label: string;
+    href: string;
+    icon?: LucideIcon;
+  }[];
+};
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Administrador",
   admin: "Administrador",

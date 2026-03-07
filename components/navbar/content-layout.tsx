@@ -25,9 +25,8 @@ export function ContentPlatformLayout({
   return (
     <>
       <Navbar />
-      <div className="pt-4 pb-28 lg:pt-14 lg:pb-4 px-4 bg-background">
-        {children}
-      </div>
+      {/* Sin px ni pb — cada hijo maneja su propio espaciado */}
+      <main className="lg:pt-14 bg-background">{children}</main>
     </>
   );
 }

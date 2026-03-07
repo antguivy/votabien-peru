@@ -16,21 +16,19 @@ export default async function VotaBienPage() {
     ]);
 
     return (
-      <>
-        <ContentPlatformLayout>
-          <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
-          {/* Encabezado de sección */}
-          <div className=" pt-10 pb-2 max-w-lg md:max-w-none md:px-8">
-            <h2 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-tight">
-              El equipo que hizo posible el proyecto
-            </h2>
-            <div className="h-1 w-16 bg-brand rounded-full mt-4" />
-          </div>
-          <PhotoStory hitos={hitos} />
-          {/* <PeruReadinessSection /> */}
-        </ContentPlatformLayout>
+      <ContentPlatformLayout>
+        <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
+        {/* Encabezado de sección */}
+        {/* <div className=" pt-10 pb-2 max-w-lg md:max-w-none px-4 md:px-8">
+          <h2 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-tight">
+            El equipo que hizo posible el proyecto
+          </h2>
+          <div className="h-1 w-16 bg-brand rounded-full mt-4" />
+        </div> */}
+        {/* <PhotoStory hitos={hitos} /> */}
+        {/* <PeruReadinessSection /> */}
         <Footer />
-      </>
+      </ContentPlatformLayout>
     );
   } catch (error) {
     console.error("Error cargando datos de landing:", error);

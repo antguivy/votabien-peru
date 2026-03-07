@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import { MAIN_NAV_ITEMS, NavItem } from "./navbar-config";
+import { MAIN_NAV_ITEMS } from "./navbar-config";
 import { MobileThemeToggle } from "./navbar-theme-toggle";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +26,7 @@ import {
   Settings,
   GitCompare,
 } from "lucide-react";
+import { NavItem } from "@/interfaces/navbar";
 
 const NAV_ITEMS = [
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },

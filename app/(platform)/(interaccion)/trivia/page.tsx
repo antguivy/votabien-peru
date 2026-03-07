@@ -4,7 +4,7 @@ import TriviaMapClient from "./_components/trivia-map-client";
 import UnderConstruction from "@/components/under-construction";
 
 export default async function TriviaPage() {
-  const questions = await questionsService.getQuestions();
+  // const questions = await questionsService.getQuestions();
 
   return (
     <ContentPlatformLayout>

@@ -16,7 +16,7 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
     if (!candidato) notFound();
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+        <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-0">
           <DetailCandidato
             persona={candidato}
             shareUrl={`https://votabienperu.com/candidatos/${candidatosId}`}

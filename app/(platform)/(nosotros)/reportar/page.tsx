@@ -4,11 +4,9 @@ import Footer from "@/components/landing/footer";
 
 export default function ReportarPage() {
   return (
-    <>
-      <ContentPlatformLayout>
-        <ReportForm />
-      </ContentPlatformLayout>
+    <ContentPlatformLayout>
+      <ReportForm />
       <Footer />
-    </>
+    </ContentPlatformLayout>
   );
 }

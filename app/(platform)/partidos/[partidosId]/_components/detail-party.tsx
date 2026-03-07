@@ -231,7 +231,7 @@ export default function DetailParty({
   const hasMoreTimeline = sortedTimeline.length > MAX_TIMELINE_ITEMS;
 
   return (
-    <div className="min-h-screen bg-background pb-10">
+    <div className="min-h-screen bg-background">
       {/* NAVBAR STICKY */}
       <div
         className={cn(
@@ -368,7 +368,7 @@ export default function DetailParty({
         </div>
       </div>
       {/* CONTENIDO CON TABS */}
-      <div className="container mx-auto mt-8">
+      <div className="container mx-auto mt-8 px-4">
         <Tabs defaultValue="resumen" className="w-full space-y-6">
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl gap-1">
             <TabsTrigger

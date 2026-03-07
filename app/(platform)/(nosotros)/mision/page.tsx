@@ -8,129 +8,126 @@ import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 export default function MissionPage() {
   return (
-    <>
-      <ContentPlatformLayout>
-        <section className="container mx-auto">
-          {/* ── Quote con imagen de fondo ── */}
-          <SectionWithBackground
-            className="py-20 md:py-28 border-b border-border"
-            imageSrc="/images/plaza-de-armas-lima.jpg"
-          >
-            <div className="container mx-auto px-4 max-w-4xl text-center">
-              {/* Comillas decorativas */}
-              <span className="block text-6xl md:text-7xl font-serif leading-none text-white/30 mb-2 select-none">
-                ❝
-              </span>
-              <h2 className="text-2xl md:text-4xl font-serif italic text-white leading-snug mb-8 text-balance drop-shadow-md">
-                No queremos un país donde la desinformación decida el rumbo.
-                Queremos electores que conozcan a quién votan, qué hicieron y
-                qué proponen.
-              </h2>
-              <div className="flex items-center justify-center gap-3">
-                <div className="h-px w-8 bg-brand" />
-                <p className="text-sm text-white uppercase tracking-widest font-semibold">
-                  Infórmate, tu voto importa
+    <ContentPlatformLayout>
+      <section className="container mx-auto px-4 pt-4">
+        {/* ── Quote con imagen de fondo ── */}
+        <SectionWithBackground
+          className="py-20 md:py-28 border-b border-border"
+          imageSrc="/images/plaza-de-armas-lima.jpg"
+        >
+          <div className="container mx-auto px-4 max-w-4xl text-center">
+            {/* Comillas decorativas */}
+            <span className="block text-6xl md:text-7xl font-serif leading-none text-white/30 mb-2 select-none">
+              ❝
+            </span>
+            <h2 className="text-2xl md:text-4xl font-serif italic text-white leading-snug mb-8 text-balance drop-shadow-md">
+              No queremos un país donde la desinformación decida el rumbo.
+              Queremos electores que conozcan a quién votan, qué hicieron y qué
+              proponen.
+            </h2>
+            <div className="flex items-center justify-center gap-3">
+              <div className="h-px w-8 bg-brand" />
+              <p className="text-sm text-white uppercase tracking-widest font-semibold">
+                Infórmate, tu voto importa
+              </p>
+              <div className="h-px w-8 bg-brand" />
+            </div>
+          </div>
+        </SectionWithBackground>
+
+        {/* ── Misión y Visión ── */}
+        <section className="py-16 md:py-24 bg-background">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
+              {/* Misión */}
+              <div className="space-y-6 group">
+                <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Target className="w-6 h-6" />
+                </div>
+                <h2 className="text-3xl font-bold text-foreground">
+                  Nuestra Misión
+                </h2>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Centralizar, verificar y democratizar el acceso a la
+                  información política. Existimos para eliminar la barrera
+                  técnica entre los datos del Congreso y el ciudadano de a pie.
                 </p>
-                <div className="h-px w-8 bg-brand" />
+                <ul className="space-y-3 pt-2">
+                  <CheckItem text="Verificación rigurosa con fuentes primarias" />
+                  <CheckItem text="Neutralidad política absoluta" />
+                  <CheckItem text="Tecnología de código abierto" />
+                </ul>
+              </div>
+
+              {/* Visión */}
+              <div className="space-y-6 group">
+                <div className="w-12 h-12 bg-info/10 dark:bg-info/20 rounded-xl flex items-center justify-center text-info mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Eye className="w-6 h-6" />
+                </div>
+                <h2 className="text-3xl font-bold text-foreground">
+                  Nuestra Visión
+                </h2>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Ser el estándar de referencia para la transparencia electoral
+                  en Latinoamérica. Visualizamos un 2026 donde el debate público
+                  se base en métricas de desempeño y hechos, no en ruido
+                  mediático.
+                </p>
+                <ul className="space-y-3 pt-2">
+                  <CheckItem text="Ciudadanía digitalmente activa" />
+                  <CheckItem text="Voto basado en evidencia" />
+                  <CheckItem text="Reducción de la brecha informativa" />
+                </ul>
               </div>
             </div>
-          </SectionWithBackground>
+          </div>
+        </section>
 
-          {/* ── Misión y Visión ── */}
-          <section className="py-16 md:py-24 bg-background">
-            <div className="container mx-auto px-4 max-w-6xl">
-              <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start">
-                {/* Misión */}
-                <div className="space-y-6 group">
-                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Target className="w-6 h-6" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-foreground">
-                    Nuestra Misión
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    Centralizar, verificar y democratizar el acceso a la
-                    información política. Existimos para eliminar la barrera
-                    técnica entre los datos del Congreso y el ciudadano de a
-                    pie.
-                  </p>
-                  <ul className="space-y-3 pt-2">
-                    <CheckItem text="Verificación rigurosa con fuentes primarias" />
-                    <CheckItem text="Neutralidad política absoluta" />
-                    <CheckItem text="Tecnología de código abierto" />
-                  </ul>
-                </div>
-
-                {/* Visión */}
-                <div className="space-y-6 group">
-                  <div className="w-12 h-12 bg-info/10 dark:bg-info/20 rounded-xl flex items-center justify-center text-info mb-4 group-hover:scale-110 transition-transform duration-300">
-                    <Eye className="w-6 h-6" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-foreground">
-                    Nuestra Visión
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    Ser el estándar de referencia para la transparencia
-                    electoral en Latinoamérica. Visualizamos un 2026 donde el
-                    debate público se base en métricas de desempeño y hechos, no
-                    en ruido mediático.
-                  </p>
-                  <ul className="space-y-3 pt-2">
-                    <CheckItem text="Ciudadanía digitalmente activa" />
-                    <CheckItem text="Voto basado en evidencia" />
-                    <CheckItem text="Reducción de la brecha informativa" />
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Ejes de Acción con imagen de fondo ── */}
-          <SectionWithBackground
-            className="py-16 md:py-24 border-y border-border"
-            imageSrc="/images/congreso-peru.jpg"
-            variant="warm"
-          >
-            <div className="container mx-auto px-4 max-w-6xl">
-              {/* Título */}
-              <div className="mb-12">
-                {/* <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-2 drop-shadow-md">
+        {/* ── Ejes de Acción con imagen de fondo ── */}
+        <SectionWithBackground
+          className="py-16 md:py-24 border-y border-border"
+          imageSrc="/images/congreso-peru.jpg"
+          variant="warm"
+        >
+          <div className="container mx-auto px-4 max-w-6xl">
+            {/* Título */}
+            <div className="mb-12">
+              {/* <p className="text-xs font-semibold uppercase tracking-widest text-brand mb-2 drop-shadow-md">
                 Lo que hacemos
               </p> */}
-                <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-md">
-                  Ejes de Acción 2026
-                </h2>
-                <div className="h-1 w-20 bg-brand rounded-full" />
-              </div>
+              <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-md">
+                Ejes de Acción 2026
+              </h2>
+              <div className="h-1 w-20 bg-brand rounded-full" />
+            </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <FeatureCard
-                  icon={<Database className="w-5 h-5" />}
-                  title="Radiografía del Candidato"
-                  description="Perfiles exhaustivos que cruzan antecedentes penales, formación académica y trayectoria partidaria. Sin filtros, solo datos."
-                />
-                {/* <FeatureCard
+            <div className="grid md:grid-cols-2 gap-6">
+              <FeatureCard
+                icon={<Database className="w-5 h-5" />}
+                title="Radiografía del Candidato"
+                description="Perfiles exhaustivos que cruzan antecedentes penales, formación académica y trayectoria partidaria. Sin filtros, solo datos."
+              />
+              {/* <FeatureCard
                 icon={<TrendingUp className="w-5 h-5" />}
                 title="Métricas Legislativas"
                 description="Para quienes buscan reelección: analizamos asistencia, producción de leyes y sentido de votación en temas clave."
               /> */}
-                <FeatureCard
-                  icon={<Scale className="w-5 h-5" />}
-                  title="Imparcialidad Algorítmica"
-                  description="Nuestros algoritmos no opinan. Presentan la información cruda y ordenada para evitar cualquier sesgo editorial."
-                />
-                {/* <FeatureCard
+              <FeatureCard
+                icon={<Scale className="w-5 h-5" />}
+                title="Imparcialidad Algorítmica"
+                description="Nuestros algoritmos no opinan. Presentan la información cruda y ordenada para evitar cualquier sesgo editorial."
+              />
+              {/* <FeatureCard
                 icon={<CheckCircle2 className="w-5 h-5" />}
                 title="Verificación en Tiempo Real"
                 description="Un sistema vivo que se actualiza semanalmente conforme avanza la campaña y surgen nuevas alianzas o denuncias."
               /> */}
-              </div>
             </div>
-          </SectionWithBackground>
-        </section>
-      </ContentPlatformLayout>
+          </div>
+        </SectionWithBackground>
+      </section>
       <Footer />
-    </>
+    </ContentPlatformLayout>
   );
 }
 

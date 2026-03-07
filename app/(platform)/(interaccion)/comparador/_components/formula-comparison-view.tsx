@@ -28,9 +28,31 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getLuminance, getTextColor } from "@/lib/utils/color-utils";
 import { BiographyDetail, Assets } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message";
 import Image from "next/image";
+
+// ─── Color helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Retorna el color del partido para texto sobre fondo claro.
+ * Si es muy luminoso/fosforescente, usa gray-700 para legibilidad.
+ */
+function safeTextColor(color: string | null | undefined): string {
+  if (!color) return "#6B7280";
+  const lum = getLuminance(color);
+  if (lum > 0.65) return "#374151"; // gray-700
+  return color;
+}
+
+/**
+ * Clase de texto para avatares fallback con fondo del partido.
+ */
+function fallbackTextClass(color: string | null | undefined): string {
+  if (!color) return "text-white";
+  return getTextColor(color);
+}
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -231,63 +253,35 @@ function QuickStats({
 }
 
 // ─── Background card ──────────────────────────────────────────────────────────
+
 function BackgroundCard({ background }: { background: BackgroundBase }) {
   const sev = bgSeverity(background.type, background.status);
-
   return (
     <div
-      className="
-        relative overflow-hidden
-        rounded-xl border
-        bg-card
-        p-4 space-y-3
-        transition-colors
-      "
-      style={{
-        borderLeftWidth: 4,
-        borderLeftColor: sev.color,
-      }}
+      className="relative overflow-hidden rounded-xl border bg-card p-4 space-y-3 transition-colors"
+      style={{ borderLeftWidth: 4, borderLeftColor: sev.color }}
     >
-      {/* Subtle severity tint overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          background: sev.color,
-          opacity: 0.04, // 👈 clave para que funcione en light y dark
-        }}
+        style={{ background: sev.color, opacity: 0.04 }}
       />
-
       <div className="relative z-10 space-y-3">
-        {/* Severity Label */}
-        <div className="flex items-center justify-between gap-2">
-          <span
-            className="text-[11px] font-bold uppercase tracking-wide"
-            style={{ color: sev.color }}
-          >
-            {sev.label}
-          </span>
-        </div>
-
-        {/* Title */}
+        <span
+          className="text-[11px] font-bold uppercase tracking-wide"
+          style={{ color: sev.color }}
+        >
+          {sev.label}
+        </span>
         <p className="text-sm font-semibold text-foreground leading-snug">
           {background.title}
         </p>
-
-        {/* Summary */}
         <p className="text-xs text-muted-foreground leading-relaxed">
           {background.summary}
         </p>
-
-        {/* Sanction */}
         {background.sanction && (
           <div
-            className="
-              rounded-md border px-3 py-2 text-xs
-              bg-muted/40
-            "
-            style={{
-              borderColor: sev.color + "40",
-            }}
+            className="rounded-md border px-3 py-2 text-xs bg-muted/40"
+            style={{ borderColor: sev.color + "40" }}
           >
             <span className="font-semibold" style={{ color: sev.color }}>
               Sanción:
@@ -295,32 +289,21 @@ function BackgroundCard({ background }: { background: BackgroundBase }) {
             <span className="text-muted-foreground">{background.sanction}</span>
           </div>
         )}
-
-        {/* Footer */}
         <div className="flex items-center justify-between pt-2 gap-2">
           {background.publication_date && (
             <span className="text-[11px] text-muted-foreground">
               {new Date(background.publication_date).toLocaleDateString(
                 "es-PE",
-                {
-                  year: "numeric",
-                  month: "long",
-                },
+                { year: "numeric", month: "long" },
               )}
             </span>
           )}
-
           {background.source_url && (
             <a
               href={background.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="
-                flex items-center gap-1 text-[11px]
-                text-muted-foreground
-                hover:text-foreground
-                transition-colors
-              "
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
             >
               {background.source}
               <ExternalLink className="h-3 w-3" />
@@ -331,6 +314,7 @@ function BackgroundCard({ background }: { background: BackgroundBase }) {
     </div>
   );
 }
+
 // ─── Biography card ───────────────────────────────────────────────────────────
 
 function BiographyCard({ entry }: { entry: BiographyDetail }) {
@@ -634,12 +618,10 @@ function AssetsBreakdown({
     },
     new Map(),
   );
-
   const entries = Array.from(grouped.entries()).sort(
     ([, a], [, b]) => b.total - a.total,
   );
   const totalAll = entries.reduce((sum, [, v]) => sum + v.total, 0);
-
   const iconForType = (type: string) => {
     const t = type.toUpperCase();
     if (t.includes("VEHICUL")) return <Car className="h-3 w-3" />;
@@ -647,7 +629,6 @@ function AssetsBreakdown({
       return <Building2 className="h-3 w-3" />;
     return <Wallet className="h-3 w-3" />;
   };
-
   return (
     <div className="bg-muted/30 rounded-lg p-3 space-y-2">
       <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2">
@@ -692,33 +673,26 @@ function MemberSection({
   const { person, backgrounds } = member;
   const bgCount = backgrounds.length;
   const hasActive = hasActiveBackground(backgrounds);
-
   const bioTypes = useMemo(() => {
     const types = new Set<string>();
     person.detailed_biography?.forEach((b) => types.add(b.type));
     return ["Todas", ...Array.from(types)];
   }, [person.detailed_biography]);
-
   const [localBioType, setLocalBioType] = useState("Todas");
   const [showAllBio, setShowAllBio] = useState(false);
-
   const filteredBio = useMemo(() => {
     const bio = person.detailed_biography ?? [];
-
     const filtered =
       localBioType === "Todas"
         ? bio
         : bio.filter((b) => b.type === localBioType);
-
     return [...filtered].sort((a, b) => {
       if (!a.date) return 1;
       if (!b.date) return -1;
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }, [person.detailed_biography, localBioType]);
-
   const visibleBio = showAllBio ? filteredBio : filteredBio.slice(0, 3);
-
   const hasMore = filteredBio.length > 5;
 
   return (
@@ -747,7 +721,10 @@ function MemberSection({
             />
             <AvatarFallback
               className="text-[10px] font-bold"
-              style={{ background: partyColor + "20", color: partyColor }}
+              style={{
+                background: partyColor + "20",
+                color: safeTextColor(partyColor),
+              }}
             >
               {person.fullname.substring(0, 2).toUpperCase()}
             </AvatarFallback>
@@ -815,15 +792,14 @@ function MemberSection({
                 ))
               ) : (
                 <p className="text-xs text-muted-foreground py-2 text-center">
-                  No se encontraron antecedentes registrados para este
-                  candidato.
+                  No se encontraron antecedentes registrados.
                 </p>
               ))}
             {activeTab === "biography" && (
               <>
                 {(person.detailed_biography?.length ?? 0) === 0 ? (
                   <p className="text-xs text-muted-foreground py-2 text-center">
-                    No hay posturas registradas en medios de investigación.
+                    No hay posturas registradas.
                   </p>
                 ) : (
                   <>
@@ -856,19 +832,11 @@ function MemberSection({
                             <BiographyCard key={i} entry={entry} />
                           ))}
                         </div>
-
                         {hasMore && (
                           <div className="flex justify-center pt-2">
                             <button
                               onClick={() => setShowAllBio((prev) => !prev)}
-                              className="
-                                text-xs font-semibold
-                                text-blue-900
-                                hover:text-blue-900/80
-                                transition-colors
-                                underline-offset-4 hover:underline
-
-                              "
+                              className="text-xs font-semibold text-blue-900 hover:text-blue-900/80 transition-colors underline-offset-4 hover:underline"
                             >
                               {showAllBio
                                 ? "Ver menos"
@@ -917,7 +885,10 @@ function FormulaCard({
       transition={{ delay: index * 0.07, duration: 0.3 }}
       className="flex flex-col rounded-xl border bg-card overflow-hidden"
     >
+      {/* Barra de color */}
       <div className="h-[3px]" style={{ background: partyColor }} />
+
+      {/* Header simplificado — logo + acrónimo */}
       <div className="flex items-center gap-2.5 px-4 py-2.5 border-b bg-muted/20">
         {formula.political_party?.logo_url ? (
           <Image
@@ -925,29 +896,36 @@ function FormulaCard({
             alt={formula.political_party.name}
             width={40}
             height={40}
-            className="h-7 w-7 object-contain rounded shrink-0"
+            className="h-8 w-8 object-contain rounded shrink-0"
           />
         ) : (
           <div
-            className="h-7 w-7 rounded flex items-center justify-center shrink-0 text-[9px] font-bold text-white"
+            className={cn(
+              "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-[9px] font-black",
+              fallbackTextClass(partyColor),
+            )}
             style={{ background: partyColor }}
           >
             {formula.political_party?.acronym?.substring(0, 3) ?? "?"}
           </div>
         )}
-        <div className="min-w-0">
-          <p className="text-xs font-bold truncate">
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-xs font-black truncate"
+            style={{ color: safeTextColor(partyColor) }}
+          >
             {formula.political_party?.acronym ??
               formula.political_party?.name ??
               "Independiente"}
           </p>
           {formula.political_party?.acronym && (
-            <p className="text-[10px] text-muted-foreground truncate">
+            <p className="text-[10px] text-muted-foreground truncate leading-tight">
               {formula.political_party.name}
             </p>
           )}
         </div>
       </div>
+
       <div className="flex-1">
         {members.map((member) => (
           <MemberSection
@@ -963,7 +941,7 @@ function FormulaCard({
   );
 }
 
-// ─── Mobile sticky bottom navigator ──────────────────────────────────────────
+// ─── Mobile Bottom Nav — rediseñado ──────────────────────────────────────────
 
 function MobileBottomNav({
   formulas,
@@ -976,16 +954,16 @@ function MobileBottomNav({
   onChange: (index: number) => void;
   scrollTargetRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const pillsRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLDivElement>(null);
   const activeFormula = formulas[activeIndex];
-  const partyColor = activeFormula?.political_party?.color_hex ?? "#6B7280";
+  const activeColor = activeFormula?.political_party?.color_hex ?? "#6B7280";
 
-  // Auto-scroll active pill into view
+  // Auto-scroll active logo into view
   useEffect(() => {
-    const container = pillsRef.current;
+    const container = railRef.current;
     if (!container) return;
-    const activePill = container.children[activeIndex] as HTMLElement;
-    activePill?.scrollIntoView({
+    const activeEl = container.children[activeIndex] as HTMLElement;
+    activeEl?.scrollIntoView({
       behavior: "smooth",
       inline: "center",
       block: "nearest",
@@ -994,7 +972,6 @@ function MobileBottomNav({
 
   const handleChange = (index: number) => {
     onChange(index);
-    // Scroll back to top of card so user sees the new formula from the start
     scrollTargetRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -1002,116 +979,108 @@ function MobileBottomNav({
   };
 
   return (
-    <div className="fixed bottom-18 pb-4 left-0 p-2 right-0 z-30 md:hidden">
-      {/* Frosted glass backdrop */}
-      <div className="absolute inset-0 bg-background/90 backdrop-blur-md border-t border-border/60" />
+    <div className="fixed bottom-20 left-0 right-0 z-30 md:hidden">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-background/95 backdrop-blur-md border-t border-border/50" />
 
-      <div className="relative px-3 pt-2 pb-[env(safe-area-inset-bottom,8px)] space-y-2">
-        {/* Scrollable party pills */}
-        <div
-          ref={pillsRef}
-          className="flex gap-1.5 overflow-x-auto pb-0.5"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {formulas.map((f, i) => {
-            const color = f.political_party?.color_hex ?? "#6B7280";
-            const isActive = i === activeIndex;
-            const hasActiveBg = [f.president, f.vp1, f.vp2]
-              .filter(Boolean)
-              .some((m) =>
-                hasActiveBackground((m as FormulaMember).backgrounds),
-              );
-
-            return (
-              <button
-                key={i}
-                onClick={() => handleChange(i)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 text-xs font-bold shrink-0 transition-all duration-200"
-                style={{
-                  borderColor: isActive ? color : "transparent",
-                  background: isActive ? color + "18" : "hsl(var(--muted))",
-                  color: isActive ? color : "hsl(var(--muted-foreground))",
-                }}
-              >
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: color }}
-                  />
-                  {hasActiveBg && (
-                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 border border-background" />
-                  )}
-                </span>
-                {f.political_party?.acronym ?? f.political_party?.name ?? "?"}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Prev / current info / next */}
+      <div className="relative px-3 py-2 space-y-2">
+        {/* Rail de logos */}
         <div className="flex items-center gap-2">
+          {/* Prev */}
           <button
             onClick={() => handleChange(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
-            className="flex items-center justify-center h-9 w-9 rounded-xl border bg-background disabled:opacity-30 transition-opacity active:scale-95 shrink-0"
+            className="shrink-0 w-8 h-8 rounded-full border bg-background flex items-center justify-center disabled:opacity-20 active:scale-95 transition-all"
             aria-label="Fórmula anterior"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {/* Active formula identity card */}
+          {/* Logos scrollables */}
           <div
-            className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl border-2 min-w-0 transition-colors duration-300"
-            style={{
-              borderColor: partyColor + "60",
-              background: partyColor + "0C",
-            }}
+            ref={railRef}
+            className="flex-1 flex items-center gap-2 overflow-x-auto"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {activeFormula?.political_party?.logo_url ? (
-              <Image
-                src={activeFormula.political_party.logo_url}
-                alt=""
-                width={40}
-                height={40}
-                className="h-6 w-6 object-contain rounded shrink-0"
-              />
-            ) : (
-              <div
-                className="h-6 w-6 rounded-md flex items-center justify-center text-[8px] font-bold text-white shrink-0"
-                style={{ background: partyColor }}
-              >
-                {activeFormula?.political_party?.acronym?.substring(0, 3) ??
-                  "?"}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-xs font-bold truncate leading-tight"
-                style={{ color: partyColor }}
-              >
-                {activeFormula?.political_party?.acronym ??
-                  activeFormula?.political_party?.name ??
-                  "Independiente"}
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate leading-tight">
-                {activeFormula?.president?.person?.fullname ?? ""}
-              </p>
-            </div>
-            <span className="text-[10px] text-muted-foreground font-medium tabular-nums shrink-0">
-              {activeIndex + 1}/{formulas.length}
-            </span>
+            {formulas.map((f, i) => {
+              const color = f.political_party?.color_hex ?? "#6B7280";
+              const isActive = i === activeIndex;
+              const hasActiveBg = [f.president, f.vp1, f.vp2]
+                .filter(Boolean)
+                .some((m) =>
+                  hasActiveBackground((m as FormulaMember).backgrounds),
+                );
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => handleChange(i)}
+                  className="relative shrink-0 transition-all duration-200 active:scale-95"
+                  aria-label={f.political_party?.name ?? `Fórmula ${i + 1}`}
+                >
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-lg overflow-hidden border-2 transition-all duration-200",
+                      isActive
+                        ? "opacity-100"
+                        : "opacity-40 border-transparent",
+                    )}
+                    style={isActive ? { borderColor: color } : undefined}
+                  >
+                    {f.political_party?.logo_url ? (
+                      <Image
+                        src={f.political_party.logo_url}
+                        alt={f.political_party.name}
+                        width={36}
+                        height={36}
+                        className="w-full h-full object-contain bg-white p-0.5"
+                      />
+                    ) : (
+                      <div
+                        className={cn(
+                          "w-full h-full flex items-center justify-center text-[9px] font-black",
+                          fallbackTextClass(color),
+                        )}
+                        style={{ background: color }}
+                      >
+                        {f.political_party?.acronym?.substring(0, 2) ?? "?"}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Punto rojo si tiene antecedentes activos */}
+                  {hasActiveBg && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 border border-background" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
+          {/* Next */}
           <button
             onClick={() =>
               handleChange(Math.min(formulas.length - 1, activeIndex + 1))
             }
             disabled={activeIndex === formulas.length - 1}
-            className="flex items-center justify-center h-9 w-9 rounded-xl border bg-background disabled:opacity-30 transition-opacity active:scale-95 shrink-0"
+            className="shrink-0 w-8 h-8 rounded-full border bg-background flex items-center justify-center disabled:opacity-20 active:scale-95 transition-all"
             aria-label="Siguiente fórmula"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* Info de la fórmula activa — una sola línea, limpia */}
+        <div className="flex items-center justify-between px-1">
+          <p
+            className="text-xs font-semibold truncate"
+            style={{ color: safeTextColor(activeColor) }}
+          >
+            {activeFormula?.president?.person?.fullname ?? ""}
+          </p>
+          <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 ml-2">
+            {activeIndex + 1} / {formulas.length}
+          </span>
         </div>
       </div>
     </div>
@@ -1122,18 +1091,28 @@ function MobileBottomNav({
 
 interface FormulaComparisonViewProps {
   formulas: FormulaWithData[];
+  tabCounts: { backgrounds: number; biography: number; hoja_de_vida: number };
 }
 
 export default function FormulaComparisonView({
   formulas,
+  tabCounts,
 }: FormulaComparisonViewProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("backgrounds");
   const [mobileIndex, setMobileIndex] = useState(0);
   const mobileCardRef = useRef<HTMLDivElement>(null);
 
-  const tabs: { id: ActiveTab; label: string }[] = [
-    { id: "backgrounds", label: "Antecedentes" },
-    { id: "biography", label: "Posturas" },
+  const tabs: { id: ActiveTab; label: string; count?: number }[] = [
+    {
+      id: "backgrounds",
+      label: "Antecedentes",
+      count: tabCounts.backgrounds || undefined,
+    },
+    {
+      id: "biography",
+      label: "Posturas",
+      count: tabCounts.biography || undefined,
+    },
     { id: "hoja_de_vida", label: "Hoja de vida" },
   ];
 
@@ -1141,29 +1120,39 @@ export default function FormulaComparisonView({
 
   return (
     <div className="space-y-0">
-      {/* Sticky tab bar */}
+      {/* ── Sticky tab bar con conteos ── */}
       <div className="sticky top-0 h-14 z-20 bg-background/95 backdrop-blur-sm border-b flex gap-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px",
+              "px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px flex items-center gap-1.5",
               activeTab === tab.id
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30",
             )}
           >
             {tab.label}
+            {tab.count !== undefined && (
+              <span
+                className={cn(
+                  "text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums",
+                  activeTab === tab.id
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {/* ── Mobile ── */}
-      <div className="md:hidden pt-4">
-        {/* Scroll anchor — sits at the very top of the card area */}
+      <div className="md:hidden pt-4 px-4">
         <div ref={mobileCardRef} className="scroll-mt-16" />
-
         <AnimatePresence mode="wait">
           <motion.div
             key={safeIndex}
@@ -1171,8 +1160,7 @@ export default function FormulaComparisonView({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -32 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            // pb-32 prevents content from being hidden under the sticky bottom nav
-            className="pb-32"
+            className="pb-36"
           >
             <FormulaCard
               formula={formulas[safeIndex]}
@@ -1202,7 +1190,7 @@ export default function FormulaComparisonView({
         ))}
       </div>
 
-      {/* Sticky bottom navigator — mobile only, always accessible */}
+      {/* ── Mobile bottom nav ── */}
       <MobileBottomNav
         formulas={formulas}
         activeIndex={safeIndex}

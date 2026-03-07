@@ -52,7 +52,7 @@ export default async function ComparatorPage(props: PageProps) {
       selectedIds={search.ids}
     >
       <ContentPlatformLayout>
-        <section className="container mx-auto pb-20 lg:pb-0">
+        <section className="container px-4 pt-4 mx-auto pb-20 lg:pb-0">
           <ComparatorLayout
             data={comparisonData}
             searchAction={performSearch}

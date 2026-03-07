@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { X, Plus, Search, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getLuminance, getTextColor } from "@/lib/utils/color-utils";
 import {
   Credenza,
   CredenzaBody,
@@ -22,7 +23,26 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 
 const MAX_SLOTS = 4;
-const MIN_TO_COMPARE = 2;
+
+/**
+ * Retorna el color del partido para uso en texto sobre fondo claro.
+ * Colores fosforescentes/muy claros se reemplazan por un gris legible.
+ */
+function safeTextColor(color: string | null | undefined): string | undefined {
+  if (!color) return undefined;
+  const lum = getLuminance(color);
+  if (lum > 0.65) return "#374151"; // gray-700 — legible sobre fondo claro
+  return color;
+}
+
+/**
+ * Para avatares fallback (fondo sólido del partido):
+ * retorna la clase de texto correcta (oscuro o blanco).
+ */
+function fallbackTextClass(color: string | null | undefined): string {
+  if (!color) return "text-white";
+  return getTextColor(color);
+}
 
 interface PresidentialSelectorProps {
   initialSelected?: SearchableEntity[];
@@ -44,7 +64,6 @@ export default function PresidentialSelector({
   const [allCandidates, setAllCandidates] = useState<SearchableEntity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync server state
   const initialIds = useMemo(
     () =>
       initialSelected
@@ -59,12 +78,9 @@ export default function PresidentialSelector({
       .map((i) => i.id)
       .sort()
       .join(",");
-    if (initialIds !== currentIds) {
-      setSelectedItems(initialSelected);
-    }
+    if (initialIds !== currentIds) setSelectedItems(initialSelected);
   }, [initialIds, initialSelected]);
 
-  // Load once
   useEffect(() => {
     if (!isOpen || allCandidates.length > 0) return;
     setIsLoading(true);
@@ -87,21 +103,17 @@ export default function PresidentialSelector({
   const updateUrl = (items: SearchableEntity[]) => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("ids");
-
     const ids = items.map((i) => i.id).filter(Boolean);
     if (ids.length > 0) params.set("ids", ids.join(","));
-
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleSelect = (item: SearchableEntity) => {
     if (selectedItems.some((i) => i.id === item.id)) return;
-
     if (selectedItems.length >= MAX_SLOTS) {
       toast.warning(`Máximo ${MAX_SLOTS} fórmulas permitidas`);
       return;
     }
-
     const next = [...selectedItems, item];
     setSelectedItems(next);
     setIsOpen(false);
@@ -117,14 +129,12 @@ export default function PresidentialSelector({
 
   const statusText = () => {
     if (selectedItems.length === 0)
-      return "Selecciona al menos 2 candidatos para comparar";
+      return "Selecciona al menos 2 fórmulas para comparar";
     if (selectedItems.length === 1)
-      return "Agrega un candidato más para comenzar";
+      return "Agrega una fórmula más para comenzar";
     if (selectedItems.length < MAX_SLOTS)
-      return `${selectedItems.length} fórmulas · Puedes agregar ${
-        MAX_SLOTS - selectedItems.length
-      } más`;
-    return `${selectedItems.length} fórmulas seleccionadas`;
+      return `${selectedItems.length} fórmulas · Puedes agregar ${MAX_SLOTS - selectedItems.length} más`;
+    return `${selectedItems.length} fórmulas seleccionadas · máximo alcanzado`;
   };
 
   return (
@@ -134,7 +144,6 @@ export default function PresidentialSelector({
           {statusText()}
         </p>
 
-        {/* GRID SELECCIONADOS */}
         <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
           {selectedItems.map((item) => (
             <SelectedCard
@@ -147,7 +156,7 @@ export default function PresidentialSelector({
           {selectedItems.length < MAX_SLOTS && (
             <button
               onClick={() => setIsOpen(true)}
-              className="flex flex-col items-center justify-center h-[88px] rounded-xl border-2 border-dashed text-xs font-medium text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-all"
+              className="flex flex-col items-center justify-center h-[88px] rounded-xl border-2 border-dashed text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all"
             >
               <Plus className="h-4 w-4 mb-1" />
               Agregar
@@ -156,7 +165,7 @@ export default function PresidentialSelector({
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* Modal */}
       <Credenza
         open={isOpen}
         onOpenChange={(open) => {
@@ -167,9 +176,8 @@ export default function PresidentialSelector({
         <CredenzaContent className="p-0 overflow-hidden max-w-2xl">
           <CredenzaHeader className="px-4 pt-5 pb-3 border-b space-y-3">
             <CredenzaTitle className="text-base font-semibold">
-              Elegir candidato presidencial
+              Elegir fórmula presidencial
             </CredenzaTitle>
-
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -198,7 +206,6 @@ export default function PresidentialSelector({
                     );
                     const isDisabled =
                       selectedItems.length >= MAX_SLOTS && !isSelected;
-
                     return (
                       <CandidateCard
                         key={item.id}
@@ -227,7 +234,7 @@ export default function PresidentialSelector({
   );
 }
 
-/* ---------------- Selected Card ---------------- */
+// ─── Selected Card ────────────────────────────────────────────────────────────
 
 function SelectedCard({
   item,
@@ -238,32 +245,53 @@ function SelectedCard({
 }) {
   return (
     <div
-      className="relative flex items-center gap-3 h-[88px] px-3 rounded-xl border bg-card"
+      className="relative flex items-center gap-2.5 h-[88px] px-3 rounded-xl border bg-card overflow-hidden"
       style={{
         borderTopColor: item.group_color || undefined,
         borderTopWidth: item.group_color ? 3 : undefined,
       }}
     >
-      <Avatar className="h-12 w-12 border shrink-0">
-        <AvatarImage src={item.image_candidate_url || ""} alt={item.fullname} />
-        <AvatarFallback className="text-sm font-bold">
-          {item.fullname.substring(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+      {/* Logo del partido — pequeño, a la izquierda */}
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+        {item.group_image ? (
+          <Image
+            src={item.group_image}
+            alt={item.group_name}
+            width={40}
+            height={40}
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <div
+            className={cn(
+              "w-full h-full flex items-center justify-center text-[10px] font-black",
+              fallbackTextClass(item.group_color),
+            )}
+            style={{ background: item.group_color || "#6b7280" }}
+          >
+            {item.group_name.substring(0, 2).toUpperCase()}
+          </div>
+        )}
+      </div>
 
+      {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold">{item.fullname}</p>
         <p
-          className="text-xs truncate"
-          style={{ color: item.group_color || undefined }}
+          className="text-[10px] font-bold line-clamp-2"
+          style={{ color: safeTextColor(item.group_color) }}
         >
           {item.group_name}
         </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <p className="text-xs font-semibold leading-tight line-clamp-2">
+            {item.fullname}
+          </p>
+        </div>
       </div>
 
       <button
         onClick={onRemove}
-        className="absolute top-2 right-2 h-6 w-6 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
+        className="absolute top-2 right-2 h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
       >
         <X className="h-3 w-3" />
       </button>
@@ -271,7 +299,7 @@ function SelectedCard({
   );
 }
 
-/* ---------------- Candidate Card ---------------- */
+// ─── Candidate Card (modal) ───────────────────────────────────────────────────
 
 function CandidateCard({
   item,
@@ -297,14 +325,12 @@ function CandidateCard({
         isDisabled && "opacity-40 cursor-not-allowed",
       )}
     >
-      {/* Barra de color del partido */}
       {item.group_color && (
         <div
           className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
           style={{ background: item.group_color }}
         />
       )}
-
       {isSelected && (
         <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
       )}
@@ -321,37 +347,39 @@ function CandidateCard({
           />
         ) : (
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-black"
+            className={cn(
+              "w-14 h-14 rounded-full flex items-center justify-center text-lg font-black",
+              fallbackTextClass(item.group_color),
+            )}
             style={{ background: item.group_color || "#6b7280" }}
           >
             {item.group_name.substring(0, 2).toUpperCase()}
           </div>
         )}
       </div>
+
       {/* Nombre del partido */}
       <p
-        className="text-xs font-medium"
-        style={{ color: item.group_color || undefined }}
+        className="text-[10px] font-bold uppercase tracking-wide line-clamp-1"
+        style={{ color: safeTextColor(item.group_color) }}
       >
         {item.group_name}
       </p>
-      {/* Info del candidato */}
-      <div className="w-full space-y-1">
-        {/* Foto pequeña + nombre */}
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6 shrink-0 border">
-            <AvatarImage
-              src={item.image_candidate_url || ""}
-              alt={item.fullname}
-            />
-            <AvatarFallback className="text-[10px] font-bold">
-              {item.fullname.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <p className="text-xs font-semibold text-left line-clamp-2 leading-tight">
-            {item.fullname}
-          </p>
-        </div>
+
+      {/* Candidato */}
+      <div className="w-full flex items-center gap-2">
+        <Avatar className="h-6 w-6 shrink-0 border">
+          <AvatarImage
+            src={item.image_candidate_url || ""}
+            alt={item.fullname}
+          />
+          <AvatarFallback className="text-[10px] font-bold">
+            {item.fullname.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <p className="text-xs font-semibold text-left line-clamp-2 leading-tight">
+          {item.fullname}
+        </p>
       </div>
     </button>
   );

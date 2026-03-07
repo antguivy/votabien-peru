@@ -152,7 +152,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function SuccessScreen({ onReset }: { onReset: () => void }) {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
+    <div className="min-h-[60vh] flex items-center justify-center pt-4 px-4">
       <div className="text-center space-y-5 max-w-sm">
         <div className="w-14 h-14 bg-success/10 rounded-2xl flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-7 h-7 text-success" />
@@ -268,7 +268,7 @@ export function ReportForm() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-xl">
+    <div className="container mx-auto px-4 pt-4 max-w-xl">
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-2xl font-semibold tracking-tight mb-1.5">

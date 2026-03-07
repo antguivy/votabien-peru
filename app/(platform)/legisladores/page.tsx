@@ -71,7 +71,7 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
       ]);
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+        <section className="pt-4 px-4 container mx-auto pb-20 lg:pb-0">
           <LegisladoresList
             legisladores={initialLegisladores}
             bancadas={parliamentaryGroups}

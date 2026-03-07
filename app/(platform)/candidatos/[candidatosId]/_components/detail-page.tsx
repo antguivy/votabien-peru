@@ -74,7 +74,7 @@ export default function DetailCandidato({
     (persona.political_role?.length || 0) > 0;
 
   return (
-    <div className="bg-background min-h-screen pb-10">
+    <div className="bg-background min-h-screen">
       {/* --- STICKY NAV --- */}
       <div
         className={cn(

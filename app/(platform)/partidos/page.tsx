@@ -46,7 +46,7 @@ export default async function PartidosPage({ searchParams }: PageProps) {
 
     return (
       <ContentPlatformLayout>
-        <section className="container mx-auto pb-20 lg:pb-0">
+        <section className="px-4 pt-4 container mx-auto pb-10 lg:pb-0">
           <PartidosListPaginated
             partidos={partidos}
             currentFilters={currentFilters}

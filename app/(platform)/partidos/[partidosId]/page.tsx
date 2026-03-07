@@ -25,7 +25,7 @@ export default async function PartidoDetailPage({ params }: PageProps) {
 
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
+        <section className="container mx-auto pb-20 lg:pb-0">
           <DetailParty
             party={party}
             principalCandidates={principalCandidates}

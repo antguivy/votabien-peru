@@ -114,52 +114,50 @@ const SECTIONS = [
 
 export default function TerminosPage() {
   return (
-    <>
-      <ContentPlatformLayout>
-        <div className="container mx-auto px-4 py-16 max-w-2xl">
-          <div className="mb-4">
-            <h1 className="text-3xl font-semibold tracking-tight mb-2">
-              Términos y Condiciones
-            </h1>
-            {/* <p className="text-xs text-muted-foreground">
+    <ContentPlatformLayout>
+      <div className="container mx-auto px-4 pt-4 max-w-2xl">
+        <div className="mb-4">
+          <h1 className="text-3xl font-semibold tracking-tight mb-2">
+            Términos y Condiciones
+          </h1>
+          {/* <p className="text-xs text-muted-foreground">
               Última actualización: {LAST_UPDATED}
             </p> */}
-          </div>
-
-          <p className="text-muted-foreground leading-relaxed mb-10 mt-8">
-            Bienvenido a{" "}
-            <strong className="text-foreground">VotaBien Perú</strong>. Al
-            acceder y utilizar nuestra plataforma, usted acepta los siguientes
-            términos y condiciones de uso.
-          </p>
-
-          <div className="space-y-8">
-            {SECTIONS.map(({ title, content }) => (
-              <div key={title}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-1 h-4 bg-primary rounded-full shrink-0" />
-                  <h2 className="font-semibold text-foreground">{title}</h2>
-                </div>
-                <div className="pl-4 text-sm text-muted-foreground leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_strong]:text-foreground [&_a]:text-primary [&_a]:hover:underline">
-                  {content}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 p-4 rounded-xl border border-border bg-muted/30 text-sm text-muted-foreground">
-            ¿Tienes preguntas?{" "}
-            <Link
-              href="/contacto"
-              className="text-primary hover:underline font-medium"
-            >
-              Contáctanos
-            </Link>
-            .
-          </div>
         </div>
-      </ContentPlatformLayout>
+
+        <p className="text-muted-foreground leading-relaxed mb-10 mt-8">
+          Bienvenido a{" "}
+          <strong className="text-foreground">VotaBien Perú</strong>. Al acceder
+          y utilizar nuestra plataforma, usted acepta los siguientes términos y
+          condiciones de uso.
+        </p>
+
+        <div className="space-y-8">
+          {SECTIONS.map(({ title, content }) => (
+            <div key={title}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-1 h-4 bg-primary rounded-full shrink-0" />
+                <h2 className="font-semibold text-foreground">{title}</h2>
+              </div>
+              <div className="pl-4 text-sm text-muted-foreground leading-relaxed space-y-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_strong]:text-foreground [&_a]:text-primary [&_a]:hover:underline">
+                {content}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 p-4 rounded-xl border border-border bg-muted/30 text-sm text-muted-foreground">
+          ¿Tienes preguntas?{" "}
+          <Link
+            href="/contacto"
+            className="text-primary hover:underline font-medium"
+          >
+            Contáctanos
+          </Link>
+          .
+        </div>
+      </div>
       <Footer />
-    </>
+    </ContentPlatformLayout>
   );
 }

@@ -243,7 +243,7 @@ export default function DetailLegislador({
       </div>
 
       {/* ===== CONTENIDO CON TABS ===== */}
-      <div className="container mx-auto">
+      <div className="container mx-auto px-4">
         <Tabs defaultValue="labor" className="w-full space-y-6">
           {/* LISTA DE PESTAÑAS */}
           <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 rounded-xl">

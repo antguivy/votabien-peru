@@ -143,32 +143,19 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
       <div className="flex-1 flex flex-col justify-between p-3 min-w-0">
         {/* Parte Superior: Estado y Bancada */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            {/* Bancada */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{
-                  backgroundColor:
-                    legislador.current_parliamentary_group?.color_hex ||
-                    "#94a3b8",
-                }}
-              />
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
-                {legislador.current_parliamentary_group?.name || "Sin Bancada"}
-              </p>
-            </div>
-
-            {/* Estado (Icono o Badge pequeño) */}
+          {/* Bancada */}
+          <div className="flex items-center mb-1.5 gap-1.5 min-w-0">
             <div
-              className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border",
-                condition.badge,
-              )}
-            >
-              <ConditionIcon className="w-2.5 h-2.5" />
-              <span className="hidden sm:inline">{condition.label}</span>
-            </div>
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{
+                backgroundColor:
+                  legislador.current_parliamentary_group?.color_hex ||
+                  "#94a3b8",
+              }}
+            />
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+              {legislador.current_parliamentary_group?.name || "Sin Bancada"}
+            </p>
           </div>
 
           {/* Nombre: Line-clamp-2 asegura que no rompa la altura fija */}

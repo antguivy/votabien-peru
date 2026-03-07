@@ -61,7 +61,7 @@ function EmailCard() {
 
 export default function ContactDetail() {
   return (
-    <div className="container mx-auto px-4 py-16 max-w-2xl">
+    <div className="container mx-auto px-4 pt-4 max-w-2xl">
       {/* Header */}
       <div className="mb-12">
         <h1 className="text-3xl font-semibold tracking-tight mb-3">Contacto</h1>
