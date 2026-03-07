@@ -20,9 +20,12 @@ export async function apiClient<T>(
       ...options,
       headers: {
         "Content-Type": "application/json",
+        // 👇 ESTE ES EL HEADER MÁGICO PARA NGROK
+        "ngrok-skip-browser-warning": "true",
         ...options?.headers,
       },
     });
+
     if (!response.ok) {
       throw new ApiError(response.status, `Error: ${response.statusText}`);
     }

@@ -49,16 +49,12 @@ export const SwipeCard = ({
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!isDragging) return;
-
       const dx = e.clientX - startX.current;
       const dy = e.clientY - startY.current;
-
       if (isScrolling.current === null) {
         isScrolling.current = Math.abs(dy) > Math.abs(dx);
       }
-
       if (isScrolling.current) return;
-
       setDragX(dx);
     },
     [isDragging],
@@ -67,7 +63,6 @@ export const SwipeCard = ({
   const handlePointerUp = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
-
     if (!isScrolling.current) {
       if (dragX > SWIPE_THRESHOLD) {
         setIsSwiping(true);
@@ -79,16 +74,13 @@ export const SwipeCard = ({
         return;
       }
     }
-
     setDragX(0);
     isScrolling.current = null;
   }, [isDragging, dragX, onSwipeRight, onSwipeLeft]);
 
   const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (Math.abs(dragX) < 5) {
-        onPress(candidate.id);
-      }
+    (_e: React.MouseEvent) => {
+      if (Math.abs(dragX) < 5) onPress(candidate.id);
     },
     [dragX, onPress, candidate.id],
   );
@@ -103,9 +95,9 @@ export const SwipeCard = ({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onClick={handleClick}
-      className="relative bg-card rounded-3xl border border-border shadow-lg overflow-hidden select-none"
+      className="relative bg-card rounded-3xl border border-border shadow-lg overflow-hidden select-none w-full"
       style={{
-        width: "min(320px, 85vw)",
+        maxWidth: "min(340px, 90vw)",
         cursor: isDragging ? "grabbing" : "grab",
         transform: isSwiping
           ? `translateX(${swipeOutX}) rotate(${rotation}deg)`
@@ -115,99 +107,105 @@ export const SwipeCard = ({
         userSelect: "none",
       }}
     >
-      {/* Imagen del candidato */}
-      <div className="relative w-full" style={{ aspectRatio: "3/4" }}>
-        {candidate.person.image_candidate_url && (
-          <Image
-            src={candidate.person.image_candidate_url}
-            alt={candidate.person.fullname}
-            fill
-            className="object-cover pointer-events-none"
-            draggable={false}
-            sizes="320px"
-          />
-        )}
-
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-        {/* Badge ME GUSTA */}
-        <div
-          className="absolute top-6 right-6 bg-success rounded-2xl px-6 py-3 border-4 border-success rotate-12 z-10"
-          style={{ opacity: likeOpacity }}
-        >
-          <span className="text-white font-black text-2xl">ME GUSTA</span>
-        </div>
-
-        {/* Badge DESCARTO */}
-        <div
-          className="absolute top-6 left-6 bg-destructive rounded-2xl px-6 py-3 border-4 border-destructive -rotate-12 z-10"
-          style={{ opacity: nopeOpacity }}
-        >
-          <span className="text-white font-black text-2xl">DESCARTO</span>
-        </div>
-
-        {/* Partido + Número de lista */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
-          {candidate.political_party?.logo_url && (
-            <div className="bg-white rounded-xl p-2 shadow-lg">
+      {/* ── Zona imagen: 3 columnas (logo | foto | número) ── */}
+      <div className="flex items-center bg-muted/20 px-3 pt-3 pb-2 gap-3">
+        {/* Columna izquierda — logo del partido */}
+        <div className="w-12 shrink-0 flex items-center justify-center">
+          {candidate.political_party?.logo_url ? (
+            <div className="bg-white rounded-xl p-1.5 shadow border border-border/40">
               <Image
                 src={candidate.political_party.logo_url}
                 alt={candidate.political_party.name ?? "Partido"}
-                width={48}
-                height={48}
+                width={36}
+                height={36}
                 className="object-contain"
                 draggable={false}
               />
             </div>
+          ) : null}
+        </div>
+
+        {/* Imagen centrada — proporción vertical tipo carnet */}
+        <div
+          className="flex-1 relative rounded-2xl overflow-hidden bg-muted"
+          style={{ height: 230 }}
+        >
+          {candidate.person.image_candidate_url ? (
+            <Image
+              src={candidate.person.image_candidate_url}
+              alt={candidate.person.fullname}
+              fill
+              className="object-contain pointer-events-none"
+              draggable={false}
+              sizes="220px"
+            />
+          ) : (
+            <div className="w-full h-full bg-muted" />
           )}
-          {candidate.list_number && (
-            <div className="bg-primary rounded-xl px-4 py-2 shadow-lg ml-auto">
-              <span className="text-white font-black text-2xl">
+
+          {/* Gradiente inferior */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+          {/* Badge ME GUSTA */}
+          <div
+            className="absolute top-2 right-2 bg-success rounded-xl px-3 py-1.5 border-[3px] border-success rotate-12 z-10"
+            style={{ opacity: likeOpacity }}
+          >
+            <span className="text-white font-black text-sm">ME GUSTA</span>
+          </div>
+
+          {/* Badge DESCARTO */}
+          <div
+            className="absolute top-2 left-2 bg-destructive rounded-xl px-3 py-1.5 border-[3px] border-destructive -rotate-12 z-10"
+            style={{ opacity: nopeOpacity }}
+          >
+            <span className="text-white font-black text-sm">DESCARTO</span>
+          </div>
+        </div>
+
+        {/* Columna derecha — número de lista */}
+        <div className="w-12 shrink-0 flex items-center justify-center">
+          {candidate.list_number ? (
+            <div className="bg-primary rounded-xl w-12 h-12 flex items-center justify-center shadow">
+              <span className="text-white font-black text-xl leading-none">
                 {candidate.list_number}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Cuerpo: nombre + botón info */}
-      <div className="px-5 pt-4 pb-1 bg-card">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-foreground text-xl font-black leading-tight flex-1">
-            {candidate.person.fullname}
-          </p>
-
-          {/* Botón "Ver perfil" — independiente del swipe */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPress(candidate.id);
-            }}
-            className="bg-muted rounded-full p-2.5 mt-0.5 hover:bg-muted/70 transition-colors shrink-0"
-          >
-            <Info size={18} className="text-muted-foreground" />
-          </button>
-        </div>
+      {/* ── Nombre + botón info ── */}
+      <div className="px-4 py-3 flex items-center gap-3 bg-card">
+        <p className="text-foreground text-base font-black leading-tight flex-1">
+          {candidate.person.fullname}
+        </p>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPress(candidate.id);
+          }}
+          className="bg-muted rounded-full p-2 hover:bg-muted/70 transition-colors shrink-0"
+        >
+          <Info size={16} className="text-muted-foreground" />
+        </button>
       </div>
 
-      {/* Instrucciones de swipe */}
-      <div className="flex items-center justify-center gap-4 px-5 py-4 border-t border-border bg-card mt-3">
-        <div className="flex items-center gap-2">
-          <div className="bg-destructive/20 rounded-full p-2">
-            <X size={16} className="text-destructive" />
+      {/* ── Instrucciones swipe ── */}
+      <div className="flex items-center justify-center gap-4 px-4 py-2.5 border-t border-border bg-card">
+        <div className="flex items-center gap-1.5">
+          <div className="bg-destructive/15 rounded-full p-1.5">
+            <X size={12} className="text-destructive" />
           </div>
-          <span className="text-muted-foreground text-xs">
-            Desliza izquierda
-          </span>
+          <span className="text-muted-foreground text-xs">Izquierda</span>
         </div>
-        <span className="text-muted-foreground">•</span>
-        <div className="flex items-center gap-2">
-          <div className="bg-success/20 rounded-full p-2">
-            <Heart size={16} className="text-success" />
+        <span className="text-border text-xs">|</span>
+        <div className="flex items-center gap-1.5">
+          <div className="bg-success/15 rounded-full p-1.5">
+            <Heart size={12} className="text-success" />
           </div>
-          <span className="text-muted-foreground text-xs">Desliza derecha</span>
+          <span className="text-muted-foreground text-xs">Derecha</span>
         </div>
       </div>
     </div>

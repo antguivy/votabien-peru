@@ -52,8 +52,6 @@ export default function MatchScreen({
         updateAnswer(option.paramKey, option.value);
       }
       if (isLastQuestion) {
-        // Pasamos el valor de la última pregunta como override
-        // para evitar la race condition con el state de React
         const finalOverride = option.paramKey
           ? { [option.paramKey]: option.value }
           : {};
@@ -66,12 +64,10 @@ export default function MatchScreen({
   );
 
   // ── Loading ───────────────────────────────────────────────────────────────
-  // h-full: hereda la altura del flex-1 del ContentPlatformLayout.
-  // El spinner queda perfectamente centrado en el espacio disponible.
-
+  // flex-1: ocupa todo el espacio vertical disponible en el padre flex
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center pb-20">
         <div className="bg-card rounded-3xl p-8 flex flex-col items-center shadow-lg border border-border">
           <Loader2 size={48} className="text-primary animate-spin" />
           <p className="mt-6 text-foreground font-semibold text-base">
@@ -85,109 +81,104 @@ export default function MatchScreen({
     );
   }
 
-  // ── Step 9: Resultados ────────────────────────────────────────────────────
-
+  // ── Step N+1: Resultados ──────────────────────────────────────────────────
+  // ResultsFlow maneja su propio scroll interno con overflow-y-auto + pb-20
   if (step === MATCH_QUESTIONS.length + 1 && results) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex flex-col min-h-0">
         <ResultsFlow results={results} onReset={resetMatch} />
       </div>
     );
   }
 
-  // ── Step 0: Intro (distrito + partidos) ───────────────────────────────────
-  // El scroll aquí lo maneja el overflow-auto del wrapper en ContentPlatformLayout,
-  // no el documento. Así la barra de scroll aparece dentro del content area
-  // y nunca en el <html>/<body>.
-
+  // ── Step 0: Inicio ────────────────────────────────────────────────────────
+  // Esta vista puede tener contenido largo → overflow-y-auto + pb-20
   if (step === 0) {
     return (
-      <div className="max-w-lg mx-auto px-6 pt-4">
-        {/* Hero */}
-        <div className="pb-8">
-          <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
-            Encuentra tu candidato ideal
-          </h1>
-          <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
-          <p className="text-muted-foreground text-lg leading-7 mt-5">
-            Responde algunas preguntas y descubre qué candidatos se alinean
-            mejor con tus valores y propuestas.
-          </p>
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-lg mx-auto px-6 pt-4 pb-20">
+          {/* Hero */}
+          <div className="pb-8">
+            <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
+              Encuentra tu candidato ideal
+            </h1>
+            <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
+            <p className="text-muted-foreground text-lg leading-7 mt-5">
+              Responde algunas preguntas y descubre qué candidatos se alinean
+              mejor con tus valores y propuestas.
+            </p>
+          </div>
 
-        {/* Info card */}
-        <div className="bg-card rounded-2xl border border-border p-4 mb-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center">
-              <CheckCircle size={24} className="text-primary" />
-            </div>
-            <div>
-              <p className="text-card-foreground font-semibold text-base mb-1">
-                Votación informada
-              </p>
-              <p className="text-muted-foreground text-sm leading-5">
-                Conoce su perfil antes de votar
-              </p>
-            </div>
-            <div className="bg-success/10 px-3 py-1.5 rounded-full flex items-center gap-1">
-              <Clock size={14} className="text-success" />
-              <span className="text-success font-semibold text-xs">
-                2-3 minutos
-              </span>
+          {/* Info card */}
+          <div className="bg-card rounded-2xl border border-border p-4 mb-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-card-foreground font-semibold text-base mb-1">
+                  Votación informada
+                </p>
+                <p className="text-muted-foreground text-sm leading-5">
+                  Conoce su perfil antes de votar
+                </p>
+              </div>
+              <div className="bg-success/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1">
+                <Clock size={14} className="text-success" />
+                <span className="text-success font-semibold text-xs">
+                  2-3 min.
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Distrito */}
-        <div className="pb-4">
-          <h2 className="text-foreground font-bold text-lg mb-3">
-            Selecciona tu distrito
-          </h2>
-          <DistrictSelect
-            districts={districts}
-            selectedId={formData.electoral_district_id}
-            onSelect={handleDistrictSelect}
-          />
-        </div>
+          {/* Distrito */}
+          <div className="pb-4">
+            <h2 className="text-foreground font-bold text-lg mb-3">
+              Selecciona tu distrito
+            </h2>
+            <DistrictSelect
+              districts={districts}
+              selectedId={formData.electoral_district_id}
+              onSelect={handleDistrictSelect}
+            />
+          </div>
 
-        {/* Partidos */}
-        <div className="pb-6">
-          <h2 className="text-foreground font-bold text-lg mb-3">
-            Preferencias de partido
-          </h2>
-          <PartyExcludeSheet
-            parties={parties}
-            excludedIds={formData.excluded_party_ids ?? []}
-            onToggle={toggleExcludedParty}
-          />
-        </div>
+          {/* Partidos */}
+          <div className="pb-6">
+            <h2 className="text-foreground font-bold text-lg mb-3">
+              Preferencias de partido
+            </h2>
+            <PartyExcludeSheet
+              parties={parties}
+              excludedIds={formData.excluded_party_ids ?? []}
+              onToggle={toggleExcludedParty}
+            />
+          </div>
 
-        {/* CTA */}
-        <div className="pt-2">
-          <button
-            type="button"
-            disabled={!formData.electoral_district_id}
-            onClick={nextStep}
-            className={`w-full py-4 rounded-2xl font-bold text-base transition-colors ${
-              formData.electoral_district_id
-                ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            {formData.electoral_district_id
-              ? "Comenzar test"
-              : "Selecciona un distrito"}
-          </button>
+          {/* CTA */}
+          <div className="pt-2">
+            <button
+              type="button"
+              disabled={!formData.electoral_district_id}
+              onClick={nextStep}
+              className={`w-full py-4 rounded-2xl font-bold text-base transition-colors ${
+                formData.electoral_district_id
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              {formData.electoral_district_id
+                ? "Comenzar test"
+                : "Selecciona un distrito"}
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   // ── Invalid question ──────────────────────────────────────────────────────
-
   if (!currentQuestion) {
     return (
-      <div className="h-full flex items-center justify-center px-6">
+      <div className="flex-1 flex items-center justify-center px-6 pb-20">
         <div className="flex flex-col items-center">
           <div className="bg-destructive/10 rounded-full w-20 h-20 flex items-center justify-center mb-4">
             <AlertTriangle size={48} className="text-destructive" />
@@ -211,12 +202,11 @@ export default function MatchScreen({
   }
 
   // ── Steps 1..N: Preguntas ─────────────────────────────────────────────────
-  // h-full + flex-col: ocupa exactamente el espacio que le da el wrapper
-  // (100dvh - navbar). Sin scroll, todo cabe exacto en pantalla.
-
+  // Layout rígido: progress bar arriba (shrink-0), pregunta en el medio
+  // (flex-1 min-h-0), botón atrás abajo (shrink-0).
   return (
-    <div className="h-full flex flex-col max-w-lg mx-auto w-full">
-      {/* Progress bar */}
+    <div className="flex-1 flex flex-col min-h-0 max-w-lg mx-auto w-full">
+      {/* Progress bar — tamaño fijo, no se encoge */}
       <div className="px-6 pt-6 pb-2 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <span className="text-muted-foreground text-sm font-medium">
@@ -234,14 +224,16 @@ export default function MatchScreen({
         </div>
       </div>
 
-      {/* Question — crece para ocupar todo el espacio disponible */}
-      <div className="flex-1 flex flex-col min-h-0">
+      {/* Pregunta — crece para ocupar el espacio restante; puede scrollear si
+          el contenido es muy largo en pantallas pequeñas */}
+      <div className="flex min-h-0 overflow-y-auto">
         <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
       </div>
 
-      {/* Back button */}
+      {/* Botón atrás — siempre visible en la parte inferior, reserva pb-20
+          para el bottom nav */}
       {step > 1 && (
-        <div className="px-6 py-4 shrink-0">
+        <div className="px-6 shrink-0">
           <button
             type="button"
             onClick={prevStep}
@@ -254,6 +246,9 @@ export default function MatchScreen({
           </button>
         </div>
       )}
+
+      {/* Si no hay botón atrás (step 1), igual reservamos el espacio del nav */}
+      {step === 1 && <div className="pb-20 shrink-0" />}
     </div>
   );
 }

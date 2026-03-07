@@ -4,22 +4,16 @@ import { candidateService } from "@/services/candidate";
 import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
 import { MatchResponse } from "@/interfaces/match";
 import {
-  Building2,
   CheckCircle,
   ChevronRight,
-  Crown,
   Loader2,
-  MapPin,
   SkipForward,
-  Users,
   X as XIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
 import { SwipeCard } from "./swipe-card";
 import { CandidateDetailDrawer } from "./candidate-detail";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type CategoryType =
   | "presidente"
@@ -34,29 +28,47 @@ const CATEGORY_ORDER: CategoryType[] = [
   "diputado_regional",
 ];
 
-const CATEGORY_CONFIG = {
+const CATEGORY_CONFIG: Record<
+  CategoryType,
+  {
+    title: string;
+    abbr: string;
+    color: string;
+    bg: string;
+    border: string;
+    description: string;
+  }
+> = {
   presidente: {
     title: "Presidente",
-    Icon: Crown,
-    color: "#2563EB",
-    description: "Desliza para seleccionar tu presidente favorito",
+    abbr: "PRES",
+    color: "#1d4ed8",
+    bg: "rgba(37,99,235,0.08)",
+    border: "rgba(37,99,235,0.25)",
+    description: "Desliza para seleccionar tu candidato favorito",
   },
   senador_nacional: {
     title: "Senador Nacional",
-    Icon: Building2,
-    color: "#7c3aed",
+    abbr: "SEN·NAC",
+    color: "#6d28d9",
+    bg: "rgba(109,40,217,0.08)",
+    border: "rgba(109,40,217,0.25)",
     description: "Selecciona tu senador nacional",
   },
   senador_regional: {
     title: "Senador Regional",
-    Icon: MapPin,
-    color: "#059669",
+    abbr: "SEN·REG",
+    color: "#047857",
+    bg: "rgba(4,120,87,0.08)",
+    border: "rgba(4,120,87,0.25)",
     description: "Selecciona tu senador regional",
   },
   diputado_regional: {
     title: "Diputado Regional",
-    Icon: Users,
-    color: "#dc2626",
+    abbr: "DIP·REG",
+    color: "#b91c1c",
+    bg: "rgba(185,28,28,0.08)",
+    border: "rgba(185,28,28,0.25)",
     description: "Selecciona tu diputado regional",
   },
 };
@@ -67,8 +79,6 @@ interface Props {
   results: MatchResponse;
   onReset: () => void;
 }
-
-// ─── ResultsFlow ──────────────────────────────────────────────────────────────
 
 export const ResultsFlow = ({ results, onReset }: Props) => {
   const activeCategories = useMemo(
@@ -178,12 +188,12 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     return (
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center mb-3">
-            <div className="bg-success/20 rounded-full w-14 h-14 flex items-center justify-center mr-4 flex-shrink-0">
-              <CheckCircle size={32} className="text-success" />
+          <div className="flex items-start gap-4 mb-3">
+            <div className="bg-success/15 rounded-2xl w-14 h-14 flex items-center justify-center flex-shrink-0 border border-success/20">
+              <CheckCircle size={28} className="text-success" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground">
+            <div className="pt-1">
+              <h2 className="text-2xl font-black text-foreground tracking-tight">
                 Tu Selección Final
               </h2>
               <p className="text-muted-foreground text-sm mt-0.5">
@@ -200,47 +210,50 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                 const selected = selectedCandidates[cat] ?? [];
                 if (selected.length === 0) return null;
                 const config = CATEGORY_CONFIG[cat];
-                const IconComponent = config.Icon;
-
                 return (
-                  <div key={cat} className="mb-6">
-                    <div className="flex items-center mb-3">
-                      <div className="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center mr-3">
-                        <IconComponent
-                          size={20}
-                          style={{ color: config.color }}
-                        />
-                      </div>
-                      <h3 className="text-xl font-black text-foreground">
+                  <div key={cat} className="mb-7">
+                    {/* Section header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3
+                        className="text-base font-bold text-foreground tracking-tight"
+                        style={{ color: config.color }}
+                      >
                         {config.title}
                       </h3>
+                      {/* Thin divider line */}
+                      <div
+                        className="flex-1 h-px"
+                        style={{ background: config.border }}
+                      />
                     </div>
-                    <div className="flex flex-col gap-3">
+
+                    {/* Candidate cards */}
+                    <div className="flex flex-col gap-2">
                       {selected.map((candidate) => (
                         <button
                           key={candidate.id}
                           type="button"
                           onClick={() => openDetail(candidate.id)}
-                          className="bg-card rounded-2xl border border-border p-4 flex items-center text-left hover:border-primary/40 transition-colors w-full"
+                          className="bg-card rounded-2xl border border-border p-4 flex items-center text-left hover:border-primary/40 transition-colors w-full group"
                         >
-                          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-muted mr-4 flex-shrink-0">
+                          <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted mr-4 flex-shrink-0">
                             {candidate.person.image_candidate_url && (
                               <Image
                                 src={candidate.person.image_candidate_url}
                                 alt={candidate.person.fullname}
                                 fill
-                                className="object-cover"
+                                className="object-contain object-top"
                               />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-card-foreground font-bold truncate">
+                            <p className="text-card-foreground font-semibold text-sm leading-snug">
                               {candidate.person.fullname}
                             </p>
                           </div>
                           <ChevronRight
-                            size={24}
-                            className="text-muted-foreground flex-shrink-0"
+                            size={18}
+                            className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors"
                           />
                         </button>
                       ))}
@@ -252,7 +265,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
               <button
                 type="button"
                 onClick={onReset}
-                className="w-full bg-secondary border border-border py-4 rounded-2xl font-bold text-secondary-foreground hover:bg-muted transition-colors"
+                className="w-full bg-secondary border border-border py-4 rounded-2xl font-bold text-secondary-foreground hover:bg-muted transition-colors mt-2"
               >
                 Volver a intentar
               </button>
@@ -293,7 +306,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
 
   if (!currentCategory) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
         <p className="text-foreground text-xl font-bold text-center mb-6">
           No hay candidatos disponibles para mostrar.
         </p>
@@ -311,59 +324,67 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   // ── SWIPE VIEW ────────────────────────────────────────────────────────────
 
   const config = CATEGORY_CONFIG[currentCategory];
-  const IconComponent = config.Icon;
   const progress = ((categoryIndex + 1) / activeCategories.length) * 100;
 
   return (
-    <div className="flex-1 flex flex-col">
-      {/* Header progress */}
-      <div className="px-6 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center flex-1">
-            <div className="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center mr-3 flex-shrink-0">
-              <IconComponent size={20} style={{ color: config.color }} />
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs font-medium">
-                Paso {categoryIndex + 1} de {activeCategories.length}
-              </p>
-              <p className="text-foreground font-black text-lg leading-tight">
-                {config.title}
-              </p>
-            </div>
+    <div className="flex flex-col min-h-0">
+      {/* Header — tamaño fijo */}
+      <div className="px-6 pt-4 pb-2 shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3 flex-1">
+            <p className="text-muted-foreground text-xs font-medium">
+              Paso {categoryIndex + 1} de {activeCategories.length}
+            </p>
+            <p className="text-foreground font-black text-lg leading-tight tracking-tight">
+              {config.title}
+            </p>
           </div>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+
+        {/* Barra de progreso */}
+        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${progress}%`,
+              background: config.color,
+            }}
           />
         </div>
       </div>
 
-      {/* Description + counter */}
-      <div className="px-6 py-3 bg-card/50 border-y border-border flex items-center justify-between">
+      {/* Descripción + counter */}
+      <div className="px-6 py-2.5 bg-card/50 border-y border-border flex items-center justify-between shrink-0">
         <p className="text-muted-foreground text-sm flex-1">
           {config.description}
         </p>
-        <div className="bg-primary/10 rounded-full px-3 py-1 ml-3 flex-shrink-0">
-          <span className="text-primary font-bold text-sm">
+        <div
+          className="rounded-full px-3 py-1 ml-3 flex-shrink-0"
+          style={{
+            background: config.bg,
+            border: `1px solid ${config.border}`,
+          }}
+        >
+          <span
+            className="font-bold text-sm"
+            style={{
+              color: config.color,
+              fontFamily: "'Courier New', Courier, monospace",
+              letterSpacing: "0.04em",
+            }}
+          >
             {cardIndex + 1}/{currentCandidates.length}
           </span>
         </div>
       </div>
 
       {/* Card stack */}
-      <div className="flex-1 flex items-center justify-center px-6 py-4 relative">
-        {/* Background card ghost */}
+      <div className="flex items-center justify-center px-6 py-3 relative overflow-hidden">
         {cardIndex < currentCandidates.length - 1 && (
-          <div
-            className="absolute opacity-40 scale-95"
-            style={{ pointerEvents: "none" }}
-          >
+          <div className="absolute opacity-40 scale-95 pointer-events-none">
             <div
               className="bg-card rounded-3xl border border-border"
-              style={{ width: "min(320px, 85vw)", aspectRatio: "3/4" }}
+              style={{ width: "min(300px, 85vw)", height: 280 }}
             />
           </div>
         )}
@@ -380,19 +401,18 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
         )}
       </div>
 
-      {/* Actions */}
-      <div className="px-6 pb-8 flex flex-col gap-3">
+      {/* Botones de acción */}
+      <div className="px-6 pt-2 flex flex-col gap-2.5 shrink-0">
         {currentCandidates.length - cardIndex > 3 && (
           <button
             type="button"
             onClick={handleAcceptRemaining}
-            className="bg-success py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-white hover:bg-success/90 transition-colors"
+            className="bg-success py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold text-white hover:bg-success/90 transition-colors"
           >
-            <CheckCircle size={20} />
+            <CheckCircle size={18} />
             Me gustan todos ({currentCandidates.length - cardIndex})
           </button>
         )}
-
         <button
           type="button"
           onClick={goToNextCategory}

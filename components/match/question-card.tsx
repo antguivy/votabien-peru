@@ -18,8 +18,6 @@ import {
 } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes, useState } from "react";
 
-// ── Icon map (lucide-react, not lucide-react-native) ──────────────────────────
-
 const ICON_MAP: Record<
   string,
   ForwardRefExoticComponent<
@@ -49,7 +47,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
   const IconComponent = question.icon ? ICON_MAP[question.icon] : null;
 
   const handlePress = (opt: QuestionOption, index: number) => {
-    if (selectedIndex !== null) return; // prevent double tap
+    if (selectedIndex !== null) return;
     setSelectedIndex(index);
     setTimeout(() => {
       onAnswer(opt);
@@ -58,18 +56,25 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center px-6 pb-20 animate-in fade-in duration-300">
+    /*
+      Sin pb-20 aquí: el padding inferior del bottom nav lo maneja el padre
+      (match-screen) con un div shrink-0 fijo. Así este componente puede
+      reutilizarse en contextos sin bottom nav sin cargar ese espacio.
+
+      px-6 py-6: padding cómodo en todos lados.
+      flex flex-col gap-6: separa icono/pregunta del listado de opciones.
+    */
+    <div className="px-6 py-6 flex flex-col gap-6 animate-in fade-in duration-300">
       {/* Icon + Question */}
-      <div className="mb-6">
-        {IconComponent && (
+      <div>
+        {/* {IconComponent && (
           <div className="bg-primary/10 rounded-2xl w-16 h-16 flex items-center justify-center mb-4">
             <IconComponent size={32} className="text-primary" />
           </div>
-        )}
+        )} */}
         <h2 className="text-2xl font-black text-foreground leading-tight">
           {question.question}
         </h2>
-        {/* Subtítulo contextual — aparece solo si la pregunta lo define */}
         {question.description && (
           <p className="text-sm text-muted-foreground mt-2">
             {question.description}
@@ -92,9 +97,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
                   ? "bg-primary/10 border-primary scale-[0.98]"
                   : "bg-card border-border hover:border-primary/40 active:scale-[0.98]"
               }`}
-              style={{
-                animationDelay: `${index * 80}ms`,
-              }}
+              style={{ animationDelay: `${index * 80}ms` }}
             >
               <div className="flex-1 mr-3">
                 <span
@@ -127,7 +130,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
         })}
       </div>
 
-      <p className="text-muted-foreground text-sm text-center mt-6">
+      <p className="text-muted-foreground text-sm text-center">
         Selecciona la opción que mejor te represente
       </p>
     </div>

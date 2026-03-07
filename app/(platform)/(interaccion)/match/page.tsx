@@ -7,11 +7,8 @@ export default async function MatchPage() {
 
   return (
     <ContentPlatformLayout fullHeight>
-      <div
-        className="flex justify-center bg-background"
-        style={{ height: "100dvh" }}
-      >
-        <div className="w-full" style={{ maxWidth: 480 }}>
+      <div className="h-dvh flex justify-center bg-background pb-20">
+        <div className="w-full max-w-[480px] flex flex-col min-h-0">
           <MatchScreen districts={districts} />
         </div>
       </div>
