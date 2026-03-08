@@ -15,15 +15,24 @@ export function useAnalytics() {
     },
 
     // Cuando comparten algo
-    trackCompartir: (tipo: "candidato" | "partido", id: string) => {
+    trackCompartir: (
+      tipo: "candidato" | "partido" | "resultado",
+      id: string,
+    ) => {
       posthog?.capture("compartir_intento", { tipo, id });
     },
 
-    trackCompartirExitoso: (tipo: "candidato" | "partido", id: string) => {
+    trackCompartirExitoso: (
+      tipo: "candidato" | "partido" | "resultado",
+      id: string,
+    ) => {
       posthog?.capture("compartir_exitoso", { tipo, id });
     },
 
-    trackCompartirCancelado: (tipo: "candidato" | "partido", id: string) => {
+    trackCompartirCancelado: (
+      tipo: "candidato" | "partido" | "resultado",
+      id: string,
+    ) => {
       posthog?.capture("compartir_cancelado", { tipo, id });
     },
   };

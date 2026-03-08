@@ -1,5 +1,9 @@
 "use client";
 
+// CAMBIO: Se agrega markTriviaLevel al completar cada nivel en TriviaGameView.
+// El patrón es: TriviaMapClient pasa onLevelComplete a TriviaGameView,
+// que lo invoca cuando el juego termina con éxito (resultado "passed" / XP ganado).
+
 import { IllustratedNode } from "@/components/game/illustrated-node";
 import { LevelModal } from "@/components/game/level-game";
 import { RegionTransitionModal } from "@/components/game/region-transition-modal";
@@ -9,6 +13,7 @@ import { getRegionByLevel } from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
 import { GameLevel, TriviaQuestion } from "@/interfaces/game-types";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReadiness } from "@/store/readiness-store";
 
 const NODE_SPACING = 160;
 const REGION_START_LEVELS = [11, 21, 31];
@@ -23,6 +28,8 @@ export default function TriviaMapClient({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(MAP_WIDTH);
 
+  const { markTriviaRegion } = useReadiness();
+
   const {
     getLevels,
     userXp,
@@ -32,12 +39,10 @@ export default function TriviaMapClient({
     levelsProgress,
   } = useGameStore();
 
-  // Feed server-fetched questions into the store
   useEffect(() => {
     setQuestions(initialQuestions);
   }, [initialQuestions, setQuestions]);
 
-  // Sync container width for responsive node positions
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver(([entry]) => {
@@ -58,7 +63,6 @@ export default function TriviaMapClient({
   const [showRegionTransition, setShowRegionTransition] = useState(false);
   const prevHighest = useRef(highestUnlockedLevel);
 
-  // Detect when user enters a new region
   useEffect(() => {
     const prev = prevHighest.current;
     const curr = highestUnlockedLevel;
@@ -68,7 +72,6 @@ export default function TriviaMapClient({
     prevHighest.current = curr;
   }, [highestUnlockedLevel]);
 
-  // Auto-scroll to current node
   useEffect(() => {
     if (!levels || levels.length === 0) return;
     const idx = levels.findIndex((l) => l.id === highestUnlockedLevel);
@@ -81,7 +84,12 @@ export default function TriviaMapClient({
     return () => clearTimeout(t);
   }, [levels.length, highestUnlockedLevel]);
 
-  // ── Node position helpers ────────────────────────────────────────────────
+  // Called by TriviaGameView when the user passes a level
+  const handleLevelComplete = () => {
+    markTriviaRegion(currentTheme.id);
+    setActiveLevelId(null);
+  };
+
   const getNodeX = (i: number) =>
     i % 2 === 0
       ? 100 + (i % 3) * 10
@@ -114,7 +122,6 @@ export default function TriviaMapClient({
       className="relative flex flex-col"
       style={{ height: "100dvh", overflow: "hidden" }}
     >
-      {/* Base background color */}
       <div
         className="absolute inset-0"
         style={{ backgroundColor: currentTheme.colors.backgroundTop }}
@@ -160,7 +167,6 @@ export default function TriviaMapClient({
         className="absolute inset-0 overflow-y-auto overflow-x-hidden"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* Background layers */}
         <div
           className="absolute inset-x-0 top-0"
           ref={containerRef}
@@ -191,7 +197,6 @@ export default function TriviaMapClient({
           />
         </div>
 
-        {/* Map container */}
         <div
           style={{
             position: "relative",
@@ -272,7 +277,7 @@ export default function TriviaMapClient({
         </div>
       </div>
 
-      {/* ── Level select modal ── */}
+      {/* Level select modal */}
       <LevelModal
         visible={!!selectedLevel}
         level={selectedLevel}
@@ -284,11 +289,12 @@ export default function TriviaMapClient({
         }}
       />
 
-      {/* ── Game view — mounts inline, no URL change ── */}
+      {/* Game view — pasa onComplete para trackear readiness */}
       {activeLevelId !== null && (
         <TriviaGameView
           levelId={activeLevelId}
           onExit={() => setActiveLevelId(null)}
+          onComplete={handleLevelComplete}
         />
       )}
 

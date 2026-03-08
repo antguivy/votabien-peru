@@ -6,7 +6,6 @@ import {
   Assets,
   BiographyDetail,
   Incomes,
-  PersonDetailCandidate,
   PersonWithBackground,
   PoliticalRole,
   PopularElection,
@@ -27,46 +26,32 @@ import {
   Shield,
   TrendingUp,
   User,
-  X,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import {
+  Credenza,
+  CredenzaBody,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+} from "@/components/ui/credenza";
 
 interface Props {
   candidate: CandidateDetail | null;
   onClose: () => void;
 }
 
-type TabType = "perfil" | "legal" | "bienes" | "timeline";
+type TabType = "perfil" | "legal" | "bienes" | "posturas";
 
 export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
   const [activeTab, setActiveTab] = useState<TabType>("perfil");
-  const [visible, setVisible] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (candidate) {
-      setActiveTab("perfil");
-      // Small delay to trigger CSS transition
-      requestAnimationFrame(() => setVisible(true));
-    } else {
-      setVisible(false);
-    }
-  }, [candidate]);
-
-  const handleClose = () => {
-    setVisible(false);
-    setTimeout(onClose, 300);
+  const handleOpenChange = (open: boolean) => {
+    if (!open) onClose();
   };
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
-    };
-    if (candidate) document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [candidate]);
+  const isOpen = candidate !== null;
 
   if (!candidate) return null;
 
@@ -77,45 +62,15 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
     : null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{
-        backgroundColor: visible ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0)",
-        transition: "background-color 0.3s ease",
-      }}
-      onClick={handleClose}
-    >
-      <div
-        className="bg-background w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
-        style={{
-          maxHeight: "90dvh",
-          transform: visible ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Drag handle (mobile) */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-border rounded-full" />
-        </div>
-
-        {/* Close button */}
-        <div className="absolute top-4 right-4 z-10">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="bg-secondary rounded-full w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <X size={20} className="text-foreground" />
-          </button>
-        </div>
-
-        {/* Scrollable content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          {/* ── HERO SECTION ── */}
-          <div className="px-6 pb-6 border-b border-border">
+    <Credenza open={isOpen} onOpenChange={handleOpenChange}>
+      <CredenzaHeader className="hidden">
+        <CredenzaTitle>{person.fullname}</CredenzaTitle>
+      </CredenzaHeader>
+      <CredenzaContent>
+        <CredenzaBody className="overflow-y-auto">
+          {/* ── HERO ── */}
+          <div className="pb-6 border-b border-border">
             <div className="flex flex-col items-center">
-              {/* Photo + badges */}
               <div className="relative mb-4 mt-4">
                 <div className="w-28 h-28 rounded-full border-4 border-background overflow-hidden ring-2 ring-border">
                   {person.image_candidate_url ? (
@@ -133,7 +88,6 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                   )}
                 </div>
 
-                {/* Party logo badge */}
                 {political_party?.logo_url && (
                   <div className="absolute -bottom-2 -right-2 bg-card p-1.5 rounded-xl border border-border shadow-md">
                     <Image
@@ -146,7 +100,6 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                   </div>
                 )}
 
-                {/* List number badge */}
                 {candidate.list_number && (
                   <div className="absolute -bottom-2 -left-2 bg-primary rounded-xl border-2 border-background w-11 h-11 flex items-center justify-center shadow-md">
                     <span className="text-white text-xl font-black leading-none">
@@ -156,7 +109,6 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                 )}
               </div>
 
-              {/* Name + type */}
               <div className="items-center text-center mb-3">
                 <div className="inline-block bg-primary/10 rounded-full px-3 py-1.5 mb-2">
                   <span className="text-primary font-semibold text-xs uppercase tracking-wide">
@@ -168,7 +120,6 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                 </h2>
               </div>
 
-              {/* Quick meta */}
               <div className="flex flex-wrap items-center justify-center gap-3 mt-1">
                 {electoral_district?.name && (
                   <div className="flex items-center gap-1">
@@ -195,7 +146,6 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                 )}
               </div>
 
-              {/* Party card */}
               {political_party && (
                 <div className="mt-4 w-full bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
                   {political_party.logo_url && (
@@ -222,7 +172,7 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
 
           {/* ── BACKGROUND ALERT ── */}
           {hasBackgrounds && (
-            <div className="mx-6 mt-6 p-4 bg-destructive/10 border-l-4 border-destructive rounded-r-2xl flex gap-3">
+            <div className="py-4 bg-destructive/10 border-l-4 border-destructive rounded-r-2xl flex gap-3">
               <AlertCircle
                 size={22}
                 className="text-destructive flex-shrink-0 mt-0.5"
@@ -240,9 +190,9 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
           )}
 
           {/* ── TABS ── */}
-          <div className="px-6 mt-6">
+          <div className="mt-6 pb-8">
             <div className="flex bg-muted/50 rounded-xl p-1 mb-6">
-              {(["perfil", "legal", "bienes", "timeline"] as TabType[]).map(
+              {(["perfil", "legal", "bienes", "posturas"] as TabType[]).map(
                 (tab) => (
                   <button
                     key={tab}
@@ -263,23 +213,20 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
               )}
             </div>
 
-            {/* Tab content */}
-            <div className="pb-8">
-              {activeTab === "perfil" && <TabPerfil person={person} />}
-              {activeTab === "legal" && (
-                <TabLegal backgrounds={person.backgrounds} />
-              )}
-              {activeTab === "bienes" && (
-                <TabBienes incomes={person.incomes} assets={person.assets} />
-              )}
-              {activeTab === "timeline" && (
-                <TabTimeline biography={person.detailed_biography} />
-              )}
-            </div>
+            {activeTab === "perfil" && <TabPerfil person={person} />}
+            {activeTab === "legal" && (
+              <TabLegal backgrounds={person.backgrounds} />
+            )}
+            {activeTab === "bienes" && (
+              <TabBienes incomes={person.incomes} assets={person.assets} />
+            )}
+            {activeTab === "posturas" && (
+              <TabPosturas biography={person.detailed_biography} />
+            )}
           </div>
-        </div>
-      </div>
-    </div>
+        </CredenzaBody>
+      </CredenzaContent>
+    </Credenza>
   );
 };
 
@@ -486,9 +433,9 @@ const TabBienes = ({
   </div>
 );
 
-// ─── TAB: TIMELINE ────────────────────────────────────────────────────────────
+// ─── TAB: POSTURAS ────────────────────────────────────────────────────────────
 
-const TabTimeline = ({ biography }: { biography: BiographyDetail[] }) => (
+const TabPosturas = ({ biography }: { biography: BiographyDetail[] }) => (
   <div>
     {biography?.length > 0 ? (
       <div className="relative border-l-2 border-primary/30 ml-3 flex flex-col gap-6">

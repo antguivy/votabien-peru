@@ -4,6 +4,7 @@ import { candidateService } from "@/services/candidate";
 import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
 import { MatchResponse } from "@/interfaces/match";
 import {
+  BookmarkCheck,
   CheckCircle,
   ChevronRight,
   Loader2,
@@ -11,15 +12,11 @@ import {
   X as XIcon,
 } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SwipeCard } from "./swipe-card";
 import { CandidateDetailDrawer } from "./candidate-detail";
-
-type CategoryType =
-  | "presidente"
-  | "senador_nacional"
-  | "senador_regional"
-  | "diputado_regional";
+import { CategoryType, useSavedResults } from "@/store/saved-match-results";
+import { useReadiness } from "@/store/readiness-store";
 
 const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
@@ -32,7 +29,6 @@ const CATEGORY_CONFIG: Record<
   CategoryType,
   {
     title: string;
-    abbr: string;
     color: string;
     bg: string;
     border: string;
@@ -41,39 +37,35 @@ const CATEGORY_CONFIG: Record<
 > = {
   presidente: {
     title: "Presidente",
-    abbr: "PRES",
     color: "#1d4ed8",
     bg: "rgba(37,99,235,0.08)",
     border: "rgba(37,99,235,0.25)",
-    description: "Desliza para seleccionar tu candidato favorito",
+    description: "Desliza o usa los botones para elegir",
   },
   senador_nacional: {
     title: "Senador Nacional",
-    abbr: "SEN·NAC",
     color: "#6d28d9",
     bg: "rgba(109,40,217,0.08)",
     border: "rgba(109,40,217,0.25)",
-    description: "Selecciona tu senador nacional",
+    description: "Desliza o usa los botones para elegir",
   },
   senador_regional: {
     title: "Senador Regional",
-    abbr: "SEN·REG",
     color: "#047857",
     bg: "rgba(4,120,87,0.08)",
     border: "rgba(4,120,87,0.25)",
-    description: "Selecciona tu senador regional",
+    description: "Desliza o usa los botones para elegir",
   },
   diputado_regional: {
     title: "Diputado Regional",
-    abbr: "DIP·REG",
     color: "#b91c1c",
     bg: "rgba(185,28,28,0.08)",
     border: "rgba(185,28,28,0.25)",
-    description: "Selecciona tu diputado regional",
+    description: "Desliza o usa los botones para elegir",
   },
 };
 
-const MAX_SWIPE_CANDIDATES = 40;
+const MAX_SWIPE_CANDIDATES = 60;
 
 interface Props {
   results: MatchResponse;
@@ -81,12 +73,14 @@ interface Props {
 }
 
 export const ResultsFlow = ({ results, onReset }: Props) => {
+  const { saveResults, removeCandidate } = useSavedResults();
+  const { markMatchInteraction } = useReadiness();
+  // ID of the result entry created for this session (so we can call removeCandidate correctly)
+  const savedIdRef = useRef<string | null>(null);
+  const didInitialSave = useRef(false);
+
   const activeCategories = useMemo(
-    () =>
-      CATEGORY_ORDER.filter((cat) => {
-        const list = results.data[cat];
-        return list && list.length > 0;
-      }),
+    () => CATEGORY_ORDER.filter((cat) => (results.data[cat]?.length ?? 0) > 0),
     [results],
   );
 
@@ -94,12 +88,30 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   const [cardIndex, setCardIndex] = useState(0);
   const [showFinal, setShowFinal] = useState(false);
 
+  // Local mirror of selected candidates (starts with ALL matched candidates)
   const [selectedCandidates, setSelectedCandidates] = useState<
     Partial<Record<CategoryType, CandidateCard[]>>
-  >({});
-  const [rejectedCandidates, setRejectedCandidates] = useState<
-    Partial<Record<CategoryType, CandidateCard[]>>
-  >({});
+  >(() => {
+    const initial: Partial<Record<CategoryType, CandidateCard[]>> = {};
+    CATEGORY_ORDER.forEach((cat) => {
+      const list = results.data[cat];
+      if (list?.length) initial[cat] = list.slice(0, MAX_SWIPE_CANDIDATES);
+    });
+    return initial;
+  });
+
+  // Save ALL candidates immediately on mount — creates a new result entry
+  useEffect(() => {
+    if (didInitialSave.current) return;
+    didInitialSave.current = true;
+    const initial: Partial<Record<CategoryType, CandidateCard[]>> = {};
+    CATEGORY_ORDER.forEach((cat) => {
+      const list = results.data[cat];
+      if (list?.length) initial[cat] = list.slice(0, MAX_SWIPE_CANDIDATES);
+    });
+    savedIdRef.current = saveResults(initial);
+    markMatchInteraction();
+  }, [results, saveResults, markMatchInteraction]);
 
   const [selectedDetailCandidate, setSelectedDetailCandidate] =
     useState<CandidateDetail | null>(null);
@@ -108,16 +120,15 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   const openDetail = useCallback(async (candidateId: string) => {
     setLoadingDetail(true);
     try {
-      const detail = await candidateService.getCandidateDetail(candidateId);
-      setSelectedDetailCandidate(detail);
-    } catch (err) {
-      console.error("Error obteniendo detalle:", err);
+      setSelectedDetailCandidate(
+        await candidateService.getCandidateDetail(candidateId),
+      );
+    } catch {
+      /* silent */
     } finally {
       setLoadingDetail(false);
     }
   }, []);
-
-  const closeDetail = useCallback(() => setSelectedDetailCandidate(null), []);
 
   const currentCategory = activeCategories[categoryIndex];
 
@@ -129,66 +140,82 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   const currentCandidate = currentCandidates[cardIndex];
 
   const goToNextCategory = useCallback(() => {
+    // Sync store: elimina todos los dislikes acumulados de esta categoría
+    if (currentCategory && savedIdRef.current) {
+      const dislikes = dislikedRef.current[currentCategory];
+      if (dislikes) {
+        dislikes.forEach((id) => {
+          removeCandidate(savedIdRef.current!, currentCategory, id);
+        });
+      }
+    }
+
     if (categoryIndex < activeCategories.length - 1) {
-      setCategoryIndex((prev) => prev + 1);
+      setCategoryIndex((p) => p + 1);
       setCardIndex(0);
     } else {
       setShowFinal(true);
     }
-  }, [categoryIndex, activeCategories.length]);
+  }, [
+    categoryIndex,
+    activeCategories.length,
+    currentCategory,
+    removeCandidate,
+  ]);
 
   const goToNextCard = useCallback(() => {
     if (cardIndex < currentCandidates.length - 1) {
-      setCardIndex((prev) => prev + 1);
+      setCardIndex((p) => p + 1);
     } else {
       goToNextCategory();
     }
   }, [cardIndex, currentCandidates.length, goToNextCategory]);
 
+  const dislikedRef = useRef<Partial<Record<CategoryType, Set<string>>>>({});
+
+  // Swipe left → remove from persisted result + local state
   const handleSwipeLeft = useCallback(() => {
     if (!currentCategory || !currentCandidate) return;
-    setRejectedCandidates((prev) => {
-      const list = prev[currentCategory] ?? [];
-      if (list.some((c) => c.id === currentCandidate.id)) return prev;
-      return { ...prev, [currentCategory]: [...list, currentCandidate] };
-    });
+
+    // Acumula el dislike
+    if (!dislikedRef.current[currentCategory]) {
+      dislikedRef.current[currentCategory] = new Set();
+    }
+    dislikedRef.current[currentCategory]!.add(currentCandidate.id);
+
+    // Actualiza estado local inmediatamente
+    setSelectedCandidates((prev) => ({
+      ...prev,
+      [currentCategory]: (prev[currentCategory] ?? []).filter(
+        (c) => c.id !== currentCandidate.id,
+      ),
+    }));
+
     goToNextCard();
   }, [currentCategory, currentCandidate, goToNextCard]);
 
+  // Swipe right → candidate already saved, just advance
   const handleSwipeRight = useCallback(() => {
-    if (!currentCategory || !currentCandidate) return;
-    setSelectedCandidates((prev) => {
-      const list = prev[currentCategory] ?? [];
-      if (list.some((c) => c.id === currentCandidate.id)) return prev;
-      return { ...prev, [currentCategory]: [...list, currentCandidate] };
-    });
     goToNextCard();
-  }, [currentCategory, currentCandidate, goToNextCard]);
+  }, [goToNextCard]);
 
-  const handleAcceptRemaining = () => {
-    if (!currentCategory) return;
-    const remaining = currentCandidates.slice(cardIndex);
-    setSelectedCandidates((prev) => {
-      const list = prev[currentCategory] ?? [];
-      const newItems = remaining.filter(
-        (r) => !list.some((c) => c.id === r.id),
-      );
-      return { ...prev, [currentCategory]: [...list, ...newItems] };
-    });
+  const handleAcceptRemaining = useCallback(() => {
     goToNextCategory();
-  };
+  }, [goToNextCategory]);
 
-  // ── FINAL VIEW ────────────────────────────────────────────────────────────
-
+  // ── FINAL VIEW ─────────────────────────────────────────────────────────────
   if (showFinal) {
     const hasSelections = Object.values(selectedCandidates).some(
       (arr) => arr && arr.length > 0,
     );
 
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ overscrollBehaviorY: "contain", scrollbarWidth: "none" }}
+      >
         <div className="px-6 pt-6 pb-4">
-          <div className="flex items-start gap-4 mb-3">
+          <div className="flex items-start gap-4 mb-2">
             <div className="bg-success/15 rounded-2xl w-14 h-14 flex items-center justify-center flex-shrink-0 border border-success/20">
               <CheckCircle size={28} className="text-success" />
             </div>
@@ -201,6 +228,13 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
               </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 bg-success/8 border border-success/20 rounded-xl px-3 py-2 mt-3">
+            <BookmarkCheck size={14} className="text-success flex-shrink-0" />
+            <p className="text-success text-xs font-semibold">
+              Guardado en ❝ Mis resultados❞ - puedes consultarlo después
+            </p>
+          </div>
         </div>
 
         <div className="px-6 pb-20">
@@ -212,22 +246,18 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                 const config = CATEGORY_CONFIG[cat];
                 return (
                   <div key={cat} className="mb-7">
-                    {/* Section header */}
                     <div className="flex items-center gap-3 mb-3">
                       <h3
-                        className="text-base font-bold text-foreground tracking-tight"
+                        className="text-base font-bold tracking-tight"
                         style={{ color: config.color }}
                       >
                         {config.title}
                       </h3>
-                      {/* Thin divider line */}
                       <div
                         className="flex-1 h-px"
                         style={{ background: config.border }}
                       />
                     </div>
-
-                    {/* Candidate cards */}
                     <div className="flex flex-col gap-2">
                       {selected.map((candidate) => (
                         <button
@@ -250,6 +280,9 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                             <p className="text-card-foreground font-semibold text-sm leading-snug">
                               {candidate.person.fullname}
                             </p>
+                            <p className="text-muted-foreground text-xs mt-0.5">
+                              Toca para ver su perfil
+                            </p>
                           </div>
                           <ChevronRight
                             size={18}
@@ -261,7 +294,6 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                   </div>
                 );
               })}
-
               <button
                 type="button"
                 onClick={onReset}
@@ -296,14 +328,13 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
         )}
         <CandidateDetailDrawer
           candidate={selectedDetailCandidate}
-          onClose={closeDetail}
+          onClose={() => setSelectedDetailCandidate(null)}
         />
       </div>
     );
   }
 
-  // ── NO CATEGORIES ─────────────────────────────────────────────────────────
-
+  // ── NO CATEGORIES ──────────────────────────────────────────────────────────
   if (!currentCategory) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
@@ -321,40 +352,35 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     );
   }
 
-  // ── SWIPE VIEW ────────────────────────────────────────────────────────────
-
+  // ── SWIPE VIEW ─────────────────────────────────────────────────────────────
   const config = CATEGORY_CONFIG[currentCategory];
   const progress = ((categoryIndex + 1) / activeCategories.length) * 100;
 
   return (
-    <div className="flex flex-col min-h-0">
-      {/* Header — tamaño fijo */}
-      <div className="px-6 pt-4 pb-2 shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3 flex-1">
-            <p className="text-muted-foreground text-xs font-medium">
-              Paso {categoryIndex + 1} de {activeCategories.length}
-            </p>
-            <p className="text-foreground font-black text-lg leading-tight tracking-tight">
-              {config.title}
-            </p>
-          </div>
+    <div
+      className="flex-1 flex flex-col min-h-0"
+      style={{ overscrollBehaviorY: "contain" }}
+    >
+      {/* Header */}
+      <div className="pb-2 shrink-0">
+        <div className="flex items-center gap-3 mb-3">
+          <p className="text-muted-foreground text-xs font-medium">
+            Paso {categoryIndex + 1} de {activeCategories.length}
+          </p>
+          <p className="text-foreground font-black text-lg leading-tight tracking-tight">
+            {config.title}
+          </p>
         </div>
-
-        {/* Barra de progreso */}
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${progress}%`,
-              background: config.color,
-            }}
+            style={{ width: `${progress}%`, background: config.color }}
           />
         </div>
       </div>
 
-      {/* Descripción + counter */}
-      <div className="px-6 py-2.5 bg-card/50 border-y border-border flex items-center justify-between shrink-0">
+      {/* Counter row */}
+      <div className="py-2 bg-card/50 border-y border-border flex items-center justify-between shrink-0">
         <p className="text-muted-foreground text-sm flex-1">
           {config.description}
         </p>
@@ -379,16 +405,21 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
       </div>
 
       {/* Card stack */}
-      <div className="flex items-center justify-center px-6 py-3 relative overflow-hidden">
+      <div
+        className="flex-1 min-h-0 flex items-start justify-center pt-3 relative"
+        style={{ overflowX: "hidden", overflowY: "visible" }}
+      >
         {cardIndex < currentCandidates.length - 1 && (
-          <div className="absolute opacity-40 scale-95 pointer-events-none">
+          <div className="absolute opacity-40 scale-95 pointer-events-none top-3">
             <div
               className="bg-card rounded-3xl border border-border"
-              style={{ width: "min(300px, 85vw)", height: 280 }}
+              style={{
+                width: "min(300px, 85vw)",
+                height: "clamp(160px, 28vh, 260px)",
+              }}
             />
           </div>
         )}
-
         {currentCandidate && (
           <SwipeCard
             key={currentCandidate.id}
@@ -401,8 +432,8 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
         )}
       </div>
 
-      {/* Botones de acción */}
-      <div className="px-6 pt-2 flex flex-col gap-2.5 shrink-0">
+      {/* Bottom buttons */}
+      <div className="pt-1 pb-2 flex flex-col gap-2 shrink-0">
         {currentCandidates.length - cardIndex > 3 && (
           <button
             type="button"
@@ -432,10 +463,9 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
           </div>
         </div>
       )}
-
       <CandidateDetailDrawer
         candidate={selectedDetailCandidate}
-        onClose={closeDetail}
+        onClose={() => setSelectedDetailCandidate(null)}
       />
     </div>
   );

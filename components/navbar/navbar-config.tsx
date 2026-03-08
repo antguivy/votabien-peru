@@ -26,11 +26,11 @@ import {
 import { NavGroup, NavItem } from "@/interfaces/navbar";
 
 export const NAV_MOBILE_ITEMS = [
+  { href: "/", label: "Inicio", icon: Home },
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   { href: "/partidos", label: "Partidos", icon: Flag },
-  { href: "/match", label: "Match", icon: Heart },
+  { href: "/match", label: "Mi Candidato", icon: Heart },
 
-  { href: "/comparador", label: "Comparador", icon: Scale },
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
 ] as const;
 
@@ -55,7 +55,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     children: [
       { href: "/comparador", label: "Comparador", icon: Scale },
       { href: "/trivia", label: "Trivia", icon: HelpCircle },
-      { href: "/match", label: "Match", icon: Heart },
+      { href: "/match", label: "Mi Candidato", icon: Heart },
       { href: "/simulador", label: "Simulador", icon: Vote },
     ],
   },

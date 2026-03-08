@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAnalytics } from "@/hooks/use-analytics";
+import Link from "next/link";
 
 interface ShareButtonProps {
   title: string;
@@ -18,7 +19,8 @@ interface ShareButtonProps {
   url: string;
   className?: string;
   trackingId: string;
-  trackingType: "candidato" | "partido";
+  trackingType: "candidato" | "partido" | "resultado";
+  whatsappText?: string;
 }
 
 export function ShareButton({
@@ -28,6 +30,7 @@ export function ShareButton({
   className,
   trackingId,
   trackingType,
+  whatsappText,
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
@@ -37,26 +40,22 @@ export function ShareButton({
     text ?? `Conoce más sobre ${title} en Vota Bien Perú antes de votar.`;
 
   const handleShare = async () => {
-    const canShare = typeof navigator !== "undefined" && !!navigator.share;
     trackCompartir(trackingType, trackingId);
-    try {
-      await navigator.share(/*...*/);
-      trackCompartirExitoso(trackingType, trackingId);
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") {
-        trackCompartirCancelado(trackingType, trackingId);
-      }
-    }
-    if (canShare) {
+
+    // Mobile: Web Share API → panel nativo
+    if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({ title, text: shareText, url });
-      } catch {
-        // usuario canceló
+        trackCompartirExitoso(trackingType, trackingId);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") {
+          trackCompartirCancelado(trackingType, trackingId);
+        }
       }
       return;
     }
 
-    // Desktop: abrir popover
+    // Desktop: fallback popover con copia de enlace
     setOpen(true);
   };
 
@@ -95,6 +94,20 @@ export function ShareButton({
 
       {/* Solo se muestra en desktop (isMobile hace early return antes de setOpen) */}
       <PopoverContent className="w-72 p-3" align="end" sideOffset={8}>
+        {whatsappText && (
+          <Link
+            href={`https://wa.me/?text=${encodeURIComponent(`${whatsappText} ${url}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/15 transition-colors mb-2"
+          >
+            {/* WhatsApp SVG */}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967..." />
+            </svg>
+            Compartir por WhatsApp
+          </Link>
+        )}
         <p className="text-xs font-semibold text-foreground mb-2">
           Copiar enlace
         </p>

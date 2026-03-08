@@ -2,11 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-// ── Replace these with your actual Next.js service imports ──────────────────
 import { candidateService } from "@/services/candidate";
 import { districtService } from "@/services/district";
 import { partyService } from "@/services/parties";
-// ────────────────────────────────────────────────────────────────────────────
 
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
@@ -32,10 +30,6 @@ const defaultFormState: MatchFormParams = {
   has_political_roles: undefined,
   born_in_district: undefined,
 };
-
-// step 0  → pantalla intro (distrito + partidos)
-// step 1..8 → preguntas
-// step 9  → resultados (swipe de candidatos)
 
 export const useMatchmaking = () => {
   const [districts, setDistricts] = useState<ElectoralDistrictBase[]>([]);
@@ -87,14 +81,10 @@ export const useMatchmaking = () => {
     [],
   );
 
-  const toggleExcludedParty = useCallback((partyId: string) => {
-    setFormData((prev) => {
-      const current = prev.excluded_party_ids ?? [];
-      const next = current.includes(partyId)
-        ? current.filter((id) => id !== partyId)
-        : [...current, partyId];
-      return { ...prev, excluded_party_ids: next };
-    });
+  // Used by PartyExcludeSheet — replaces the entire excluded list at once
+  // (filter only applies when the user presses the confirm button)
+  const setExcludedParties = useCallback((ids: string[]) => {
+    setFormData((prev) => ({ ...prev, excluded_party_ids: ids }));
   }, []);
 
   const nextStep = useCallback(() => setStep((prev) => prev + 1), []);
@@ -110,7 +100,6 @@ export const useMatchmaking = () => {
       setError(null);
 
       try {
-        // Mezclamos el formData actual con el último valor que aún no se aplicó al state
         const mergedData = { ...formData, ...finalOverride };
 
         const cleanedParams = Object.entries(mergedData).reduce(
@@ -130,7 +119,7 @@ export const useMatchmaking = () => {
 
         const data = await candidateService.getCandidatesMatch(cleanedParams);
         setResults(data);
-        setStep(MATCH_QUESTIONS.length + 1); // ← ya no hardcodeado
+        setStep(MATCH_QUESTIONS.length + 1);
       } catch (err) {
         setError("Error al obtener resultados. Por favor intenta de nuevo.");
         console.error("Error submitting match:", err);
@@ -162,7 +151,7 @@ export const useMatchmaking = () => {
     error,
     step,
     updateAnswer,
-    toggleExcludedParty,
+    setExcludedParties,
     nextStep,
     prevStep,
     submitMatch,

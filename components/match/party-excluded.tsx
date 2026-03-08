@@ -4,7 +4,6 @@ import { PoliticalPartyBase } from "@/interfaces/political-party";
 import {
   Credenza,
   CredenzaBody,
-  CredenzaClose,
   CredenzaContent,
   CredenzaDescription,
   CredenzaFooter,
@@ -139,23 +138,51 @@ ExcludedPreview.displayName = "ExcludedPreview";
 interface Props {
   parties: PoliticalPartyBase[];
   excludedIds: string[];
-  onToggle: (id: string) => void;
+  /** Receives the final confirmed list of excluded party IDs */
+  onConfirm: (excludedIds: string[]) => void;
 }
 
 export const PartyExcludeSheet = memo(function PartyExcludeSheet({
   parties,
   excludedIds,
-  onToggle,
+  onConfirm,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const excludedCount = excludedIds.length;
+  // Local draft — only committed when user presses the confirm button
+  const [localExcluded, setLocalExcluded] = useState<string[]>([]);
+
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (next) {
+        // Seed local state from current confirmed state when opening
+        setLocalExcluded([...excludedIds]);
+      }
+      setOpen(next);
+    },
+    [excludedIds],
+  );
+
+  const handleToggle = useCallback((id: string) => {
+    setLocalExcluded((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
 
   const handleClearAll = useCallback(() => {
-    excludedIds.forEach((id) => onToggle(id));
-  }, [excludedIds, onToggle]);
+    setLocalExcluded([]);
+  }, []);
+
+  const handleConfirm = useCallback(() => {
+    onConfirm(localExcluded);
+    setOpen(false);
+  }, [localExcluded, onConfirm]);
+
+  const localExcludedCount = localExcluded.length;
+  // What the trigger chip shows = the last *confirmed* state
+  const confirmedCount = excludedIds.length;
 
   return (
-    <Credenza open={open} onOpenChange={setOpen}>
+    <Credenza open={open} onOpenChange={handleOpenChange}>
       {/* ── Trigger ── */}
       <CredenzaTrigger asChild>
         <button
@@ -164,16 +191,16 @@ export const PartyExcludeSheet = memo(function PartyExcludeSheet({
         >
           <div className="flex-1 text-left">
             <span className="text-foreground font-semibold text-sm block">
-              Excluir partidos
+              Ignorar partidos
             </span>
             <span className="text-muted-foreground text-xs mt-0.5 block">
-              {excludedCount === 0
-                ? "Mostrar todos los partidos"
-                : `${excludedCount} partido${excludedCount > 1 ? "s" : ""} excluido${excludedCount > 1 ? "s" : ""}`}
+              {confirmedCount === 0
+                ? "Todos los partidos incluidos"
+                : `${confirmedCount} partido${confirmedCount > 1 ? "s" : ""} ignorado${confirmedCount > 1 ? "s" : ""}`}
             </span>
           </div>
 
-          {excludedCount > 0 && (
+          {confirmedCount > 0 && (
             <ExcludedPreview parties={parties} excludedIds={excludedIds} />
           )}
 
@@ -187,21 +214,17 @@ export const PartyExcludeSheet = memo(function PartyExcludeSheet({
 
       {/* ── Credenza content ── */}
       <CredenzaContent>
-        {/*
-          CredenzaHeader hereda "flex flex-col gap-1.5 p-4".
-          El layout título + botón "Limpiar" se resuelve con un div interno flex-row.
-        */}
         <CredenzaHeader className="flex-row items-center justify-between mr-4">
           <div className="flex-1 min-w-0">
-            <CredenzaTitle>Excluir partidos</CredenzaTitle>
+            <CredenzaTitle>¿Hay partidos que quieres ignorar?</CredenzaTitle>
             <CredenzaDescription>
-              Toca los partidos que{" "}
+              Toca los que{" "}
               <strong className="font-semibold text-foreground">no</strong>{" "}
-              quieres ver
+              quieres ver en tus resultados
             </CredenzaDescription>
           </div>
 
-          {excludedCount > 0 && (
+          {localExcludedCount > 0 && (
             <button
               type="button"
               onClick={handleClearAll}
@@ -215,13 +238,6 @@ export const PartyExcludeSheet = memo(function PartyExcludeSheet({
           )}
         </CredenzaHeader>
 
-        {/*
-          CredenzaBody con flex-1 + overflow-y-auto:
-          — En Dialog: DialogContent es "flex flex-col overflow-hidden max-h-[90vh]",
-            así que el body ocupa el espacio restante y scrollea de forma independiente.
-          — En Drawer: DrawerContent envuelve en "flex-grow overflow-y-auto"; el body
-            tiene su propio scroll interno para que el footer no se vaya.
-        */}
         <CredenzaBody className="flex-1 overflow-y-auto">
           {parties.length === 0 ? (
             <div className="flex items-center justify-center py-12">
@@ -235,32 +251,25 @@ export const PartyExcludeSheet = memo(function PartyExcludeSheet({
                 <PartyItem
                   key={party.id}
                   party={party}
-                  isExcluded={excludedIds.includes(String(party.id))}
-                  onToggle={onToggle}
+                  isExcluded={localExcluded.includes(String(party.id))}
+                  onToggle={handleToggle}
                 />
               ))}
             </div>
           )}
         </CredenzaBody>
 
-        {/*
-          CredenzaFooter con sticky bottom-0 + bg-background:
-          — En Dialog: queda fijo al pie del flex-col del DialogContent.
-          — En Drawer: todo está en el div "flex-grow overflow-y-auto" de DrawerContent;
-            sticky bottom-0 lo ancla al borde inferior visible del scroll container,
-            por lo que el botón siempre es accesible sin importar cuántos partidos haya.
-        */}
+        {/* Confirm button — this is when the filter actually applies */}
         <CredenzaFooter className="sticky bottom-0 bg-background border-t border-border">
-          <CredenzaClose asChild>
-            <button
-              type="button"
-              className="w-full bg-primary py-4 rounded-2xl font-bold text-primary-foreground text-base hover:bg-primary/90 transition-colors"
-            >
-              {excludedCount === 0
-                ? "Continuar sin excluir"
-                : `Excluir ${excludedCount} partido${excludedCount > 1 ? "s" : ""}`}
-            </button>
-          </CredenzaClose>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="w-full bg-primary py-4 rounded-2xl font-bold text-primary-foreground text-base hover:bg-primary/90 transition-colors"
+          >
+            {localExcludedCount === 0
+              ? "Continuar sin ignorar"
+              : `Ignorar ${localExcludedCount} partido${localExcludedCount > 1 ? "s" : ""}`}
+          </button>
         </CredenzaFooter>
       </CredenzaContent>
     </Credenza>

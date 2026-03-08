@@ -1,5 +1,5 @@
 import { MatchFormParams, MatchResponse } from "@/interfaces/match";
-import { CandidateDetail } from "@/interfaces/candidate";
+import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
 import { apiClient } from "./api";
 
 export const candidateService = {
@@ -39,6 +39,18 @@ export const candidateService = {
       return response;
     } catch (error) {
       console.error("Error fetching candidate detail:", error);
+      throw error;
+    }
+  },
+  getCandidatesBulk: async (ids: string[]): Promise<CandidateCard[]> => {
+    if (ids.length === 0) return [];
+    try {
+      return await apiClient<CandidateCard[]>("/api/v1/candidates/bulk", {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      });
+    } catch (error) {
+      console.error("Error fetching bulk candidates:", error);
       throw error;
     }
   },

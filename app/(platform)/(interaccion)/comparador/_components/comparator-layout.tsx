@@ -13,7 +13,7 @@ import {
 
 import PresidentialSelector from "./selector";
 import FormulaComparisonView from "./formula-comparison-view";
-import { useReadiness } from "@/hooks/use-readiness";
+import { useReadiness } from "@/store/readiness-store";
 
 interface ComparatorLayoutProps {
   data: ComparisonResponse;
@@ -97,7 +97,7 @@ export default function ComparatorLayout({
   searchAction,
 }: ComparatorLayoutProps) {
   const { entities } = useContext(ComparatorContext);
-  const { markComparadorInteraction } = useReadiness();
+  const { markComparadorPair } = useReadiness();
   const lastTrackedPair = useRef<string>("");
 
   const availableFormulas = useMemo<FormulaWithData[]>(() => {
@@ -143,9 +143,8 @@ export default function ComparatorLayout({
       .sort()
       .join("|");
     if (pairKey === lastTrackedPair.current) return;
-    lastTrackedPair.current = pairKey;
-    markComparadorInteraction();
-  }, [showComparison, entities, markComparadorInteraction]);
+    markComparadorPair(pairKey);
+  }, [showComparison, entities, markComparadorPair]);
 
   return (
     <div className="w-full md:pt-4 space-y-6 max-w-7xl mx-auto">

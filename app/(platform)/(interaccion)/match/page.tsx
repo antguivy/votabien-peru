@@ -7,8 +7,8 @@ export default async function MatchPage() {
 
   return (
     <ContentPlatformLayout fullHeight>
-      <div className="h-dvh flex justify-center bg-background pb-20">
-        <div className="w-full max-w-[480px] flex flex-col min-h-0">
+      <div className="h-full overflow-hidden flex justify-center bg-background px-4 pt-4">
+        <div className="w-full max-w-[480px] flex flex-col min-h-0 h-full">
           <MatchScreen districts={districts} />
         </div>
       </div>

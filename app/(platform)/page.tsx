@@ -6,6 +6,7 @@ import { getHitos } from "@/queries/public/hito";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
 import Image from "next/image";
+import PeruReadinessSection from "@/components/landing/peru-readiness-section";
 // import PeruReadinessSection from "@/components/landing/peru-readiness-section";
 
 export default async function VotaBienPage() {
@@ -26,7 +27,7 @@ export default async function VotaBienPage() {
           <div className="h-1 w-16 bg-brand rounded-full mt-4" />
         </div> */}
         {/* <PhotoStory hitos={hitos} /> */}
-        {/* <PeruReadinessSection /> */}
+        <PeruReadinessSection />
         <Footer />
       </ContentPlatformLayout>
     );

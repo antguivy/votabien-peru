@@ -56,22 +56,9 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
   };
 
   return (
-    /*
-      Sin pb-20 aquí: el padding inferior del bottom nav lo maneja el padre
-      (match-screen) con un div shrink-0 fijo. Así este componente puede
-      reutilizarse en contextos sin bottom nav sin cargar ese espacio.
-
-      px-6 py-6: padding cómodo en todos lados.
-      flex flex-col gap-6: separa icono/pregunta del listado de opciones.
-    */
-    <div className="px-6 py-6 flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="py-4 flex flex-col gap-6 animate-in fade-in duration-300">
       {/* Icon + Question */}
       <div>
-        {/* {IconComponent && (
-          <div className="bg-primary/10 rounded-2xl w-16 h-16 flex items-center justify-center mb-4">
-            <IconComponent size={32} className="text-primary" />
-          </div>
-        )} */}
         <h2 className="text-2xl font-black text-foreground leading-tight">
           {question.question}
         </h2>
@@ -83,7 +70,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
       </div>
 
       {/* Options */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {question.options.map((opt, index) => {
           const isSelected = selectedIndex === index;
           return (

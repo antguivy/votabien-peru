@@ -330,9 +330,14 @@ function ResultsScreen({
 interface TriviaGameViewProps {
   levelId: number;
   onExit: () => void;
+  onComplete?: () => void;
 }
 
-export function TriviaGameView({ levelId, onExit }: TriviaGameViewProps) {
+export function TriviaGameView({
+  levelId,
+  onExit,
+  onComplete,
+}: TriviaGameViewProps) {
   const { getLevels, completeLevel, rawQuestions } = useGameStore();
 
   const level = useMemo(
@@ -414,7 +419,9 @@ export function TriviaGameView({ levelId, onExit }: TriviaGameViewProps) {
     if (isLastQ) {
       const correct = answers.filter(Boolean).length;
       const stars = calcStars(correct, questions.length);
-      completeLevel(levelId, stars, calcXp(stars));
+      const xp = calcXp(stars);
+      completeLevel(levelId, stars, xp);
+      onComplete?.();
       setPhase("results");
     } else {
       setCurrentIdx((i) => i + 1);

@@ -5,18 +5,22 @@ import { useMatchmaking } from "@/hooks/use-matchmaking";
 import { QuestionOption } from "@/interfaces/match";
 import {
   AlertTriangle,
-  CheckCircle,
+  Bookmark,
   ChevronLeft,
-  Clock,
+  ChevronRight,
   Loader2,
 } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import { DistrictSelect } from "@/components/match/district-select";
 import { PartyExcludeSheet } from "@/components/match/party-excluded";
 import { QuestionCard } from "@/components/match/question-card";
 import { ResultsFlow } from "@/components/match/results-flow";
+import { SavedResultsView } from "@/components/match/saved-results";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
+import { useSavedResults } from "@/store/saved-match-results";
+
+type View = "home" | "saved";
 
 export default function MatchScreen({
   districts,
@@ -30,12 +34,14 @@ export default function MatchScreen({
     loading,
     step,
     updateAnswer,
-    toggleExcludedParty,
+    setExcludedParties,
     nextStep,
     prevStep,
     submitMatch,
     resetMatch,
   } = useMatchmaking();
+  const { savedResults } = useSavedResults();
+  const [view, setView] = useState<View>("home");
 
   const currentQuestionIndex = step - 1;
   const currentQuestion = MATCH_QUESTIONS[currentQuestionIndex];
@@ -48,9 +54,7 @@ export default function MatchScreen({
 
   const handleAnswer = useCallback(
     (option: QuestionOption) => {
-      if (option.paramKey) {
-        updateAnswer(option.paramKey, option.value);
-      }
+      if (option.paramKey) updateAnswer(option.paramKey, option.value);
       if (isLastQuestion) {
         const finalOverride = option.paramKey
           ? { [option.paramKey]: option.value }
@@ -63,8 +67,16 @@ export default function MatchScreen({
     [isLastQuestion, updateAnswer, submitMatch, nextStep],
   );
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  // flex-1: ocupa todo el espacio vertical disponible en el padre flex
+  const handleRestartMatch = useCallback(() => {
+    setView("home");
+    resetMatch();
+  }, [resetMatch]);
+
+  const handleGoToSaved = useCallback(() => {
+    setView("saved");
+  }, []);
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center pb-20">
@@ -81,58 +93,92 @@ export default function MatchScreen({
     );
   }
 
-  // ── Step N+1: Resultados ──────────────────────────────────────────────────
-  // ResultsFlow maneja su propio scroll interno con overflow-y-auto + pb-20
+  // ── Results flow ───────────────────────────────────────────────────────────
   if (step === MATCH_QUESTIONS.length + 1 && results) {
+    return <ResultsFlow results={results} onReset={resetMatch} />;
+  }
+
+  // ── Saved results view ─────────────────────────────────────────────────────
+  if (step === 0 && view === "saved") {
     return (
-      <div className="flex flex-col min-h-0">
-        <ResultsFlow results={results} onReset={resetMatch} />
-      </div>
+      <SavedResultsView
+        onClose={() => setView("home")}
+        onRestartMatch={handleRestartMatch}
+      />
     );
   }
 
-  // ── Step 0: Inicio ────────────────────────────────────────────────────────
-  // Esta vista puede tener contenido largo → overflow-y-auto + pb-20
+  // ── Step 0: Home ───────────────────────────────────────────────────────────
   if (step === 0) {
     return (
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-lg mx-auto px-6 pt-4 pb-20">
-          {/* Hero */}
-          <div className="pb-8">
-            <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
-              Encuentra tu candidato ideal
-            </h1>
-            <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
-            <p className="text-muted-foreground text-lg leading-7 mt-5">
-              Responde algunas preguntas y descubre qué candidatos se alinean
-              mejor con tus valores y propuestas.
-            </p>
-          </div>
-
-          {/* Info card */}
-          <div className="bg-card rounded-2xl border border-border p-4 mb-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-card-foreground font-semibold text-base mb-1">
-                  Votación informada
-                </p>
-                <p className="text-muted-foreground text-sm leading-5">
-                  Conoce su perfil antes de votar
-                </p>
-              </div>
-              <div className="bg-success/10 px-3 py-1.5 rounded-xl flex flex-col items-center gap-1">
-                <Clock size={14} className="text-success" />
-                <span className="text-success font-semibold text-xs">
-                  2-3 min.
-                </span>
-              </div>
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {/* Saved results banner */}
+        {savedResults.length > 0 && (
+          <button
+            type="button"
+            onClick={handleGoToSaved}
+            className="w-full flex items-center gap-3 bg-primary/8 border border-primary/25 rounded-2xl px-4 py-3 mb-5 hover:bg-primary/12 transition-colors group text-left"
+          >
+            <div className="bg-primary/15 rounded-xl w-9 h-9 flex items-center justify-center shrink-0">
+              <Bookmark size={16} className="text-primary" />
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-primary font-bold text-sm">
+                {savedResults.length === 1
+                  ? "Tienes 1 lista guardada"
+                  : `Tienes ${savedResults.length} listas guardadas`}
+              </p>
+              <p className="text-primary/70 text-xs mt-0.5">
+                Toca para verlas o compartirlas
+              </p>
+            </div>
+            <ChevronRight
+              size={16}
+              className="text-primary/60 group-hover:translate-x-0.5 transition-transform shrink-0"
+            />
+          </button>
+        )}
 
-          {/* Distrito */}
+        {/* Hero */}
+        <div className="pb-5">
+          <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
+            ¿Por quién podrías votar?
+          </h1>
+          <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
+          <p className="text-muted-foreground text-lg leading-7 mt-5">
+            Responde 8 preguntas sobre lo que te importa y te mostramos qué
+            candidatos coinciden contigo.
+          </p>
+        </div>
+
+        {/* How it works */}
+        <div className="flex-1">
+          <p className="text-card-foreground font-bold text-base mb-2">
+            ¿Cómo funciona?
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {[
+              "Elige tu distrito electoral",
+              "Responde 8 preguntas rápidas",
+              "Ve los candidatos que más te representan",
+            ].map((text, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                  {i + 1}
+                </span>
+                <p className="text-muted-foreground text-sm">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-2xl border border-border p-4 mt-6 shadow-sm">
           <div className="pb-4">
             <h2 className="text-foreground font-bold text-lg mb-3">
-              Selecciona tu distrito
+              ¿Cuál es la región en la que votas?
             </h2>
             <DistrictSelect
               districts={districts}
@@ -140,20 +186,16 @@ export default function MatchScreen({
               onSelect={handleDistrictSelect}
             />
           </div>
-
-          {/* Partidos */}
           <div className="pb-6">
             <h2 className="text-foreground font-bold text-lg mb-3">
-              Preferencias de partido
+              ¿Hay partidos que quieres ignorar?
             </h2>
             <PartyExcludeSheet
               parties={parties}
               excludedIds={formData.excluded_party_ids ?? []}
-              onToggle={toggleExcludedParty}
+              onConfirm={setExcludedParties}
             />
           </div>
-
-          {/* CTA */}
           <div className="pt-2">
             <button
               type="button"
@@ -171,11 +213,13 @@ export default function MatchScreen({
             </button>
           </div>
         </div>
+
+        <div className="pb-24" />
       </div>
     );
   }
 
-  // ── Invalid question ──────────────────────────────────────────────────────
+  // ── Invalid question ───────────────────────────────────────────────────────
   if (!currentQuestion) {
     return (
       <div className="flex-1 flex items-center justify-center px-6 pb-20">
@@ -201,12 +245,9 @@ export default function MatchScreen({
     );
   }
 
-  // ── Steps 1..N: Preguntas ─────────────────────────────────────────────────
-  // Layout rígido: progress bar arriba (shrink-0), pregunta en el medio
-  // (flex-1 min-h-0), botón atrás abajo (shrink-0).
+  // ── Questions ──────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col min-h-0 max-w-lg mx-auto w-full">
-      {/* Progress bar — tamaño fijo, no se encoge */}
       <div className="px-6 pt-6 pb-2 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <span className="text-muted-foreground text-sm font-medium">
@@ -224,14 +265,10 @@ export default function MatchScreen({
         </div>
       </div>
 
-      {/* Pregunta — crece para ocupar el espacio restante; puede scrollear si
-          el contenido es muy largo en pantallas pequeñas */}
-      <div className="flex min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
       </div>
 
-      {/* Botón atrás — siempre visible en la parte inferior, reserva pb-20
-          para el bottom nav */}
       {step > 1 && (
         <div className="px-6 shrink-0">
           <button
@@ -246,8 +283,6 @@ export default function MatchScreen({
           </button>
         </div>
       )}
-
-      {/* Si no hay botón atrás (step 1), igual reservamos el espacio del nav */}
       {step === 1 && <div className="pb-20 shrink-0" />}
     </div>
   );

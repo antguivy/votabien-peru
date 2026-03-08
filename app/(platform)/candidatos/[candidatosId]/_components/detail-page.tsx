@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PersonDetailCandidate } from "@/interfaces/person";
-import { NoDataMessage } from "@/components/no-data-message"; // Asegúrate que la ruta sea correcta
+import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
 
 // Helper para formatear moneda
