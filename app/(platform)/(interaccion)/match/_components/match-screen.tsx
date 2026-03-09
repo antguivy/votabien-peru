@@ -149,7 +149,7 @@ export default function MatchScreen({
           </h1>
           <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
           <p className="text-muted-foreground text-lg leading-7 mt-5">
-            Responde 8 preguntas sobre lo que te importa y te mostramos qué
+            Responde 9 preguntas sobre lo que te importa y te mostramos qué
             candidatos coinciden contigo.
           </p>
         </div>
@@ -162,8 +162,9 @@ export default function MatchScreen({
           <div className="flex flex-col gap-1.5">
             {[
               "Elige tu distrito electoral",
-              "Responde 8 preguntas rápidas",
+              "Responde 9 preguntas rápidas",
               "Ve los candidatos que más te representan",
+              "Guarda tu selección y compártela con tus amigos",
             ].map((text, i) => (
               <div key={i} className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-black flex items-center justify-center flex-shrink-0">

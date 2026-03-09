@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/credenza";
 import { ChevronDown, Search, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { Input } from "../ui/input";
 
 interface Props {
   districts: ElectoralDistrictBase[];
@@ -90,18 +91,13 @@ export const DistrictSelect = ({ districts, selectedId, onSelect }: Props) => {
           {/* Search bar — stays fixed above the scrollable list */}
           <div className="bg-card border border-border rounded-2xl flex items-center px-4 py-3 gap-3 mt-2">
             <Search size={20} className="text-muted-foreground flex-shrink-0" />
-            <input
+            <Input
               ref={inputRef}
-              type="search"
-              inputMode="search"
               placeholder="Buscar región..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              autoCorrect="off"
-              autoCapitalize="none"
               autoComplete="off"
-              spellCheck={false}
-              className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-base outline-none"
+              className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 h-auto p-0"
             />
             {searchQuery.length > 0 && (
               <button

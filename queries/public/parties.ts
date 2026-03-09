@@ -21,36 +21,24 @@ import {
   PoliticalPartyDetail,
   PoliticalPartyListPaginated,
 } from "@/interfaces/political-party";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 
-export async function getPartidosListSimple({
-  active,
-}: {
-  active: boolean;
-}): Promise<PoliticalPartyBase[]> {
-  const supabase = await createClient();
-  const TABLE_NAME = "politicalparty";
-  try {
+export const getPartidosListSimple = unstable_cache(
+  async ({ active }: { active: boolean }): Promise<PoliticalPartyBase[]> => {
+    const supabase = await createPublicClient();
     const { data, error } = await supabase
-      .from(TABLE_NAME)
-      .select(
-        `
-        id, name, acronym, logo_url, color_hex, active, foundation_date
-        `,
-      )
+      .from("politicalparty")
+      .select("id, name, acronym, logo_url, color_hex, active, foundation_date")
       .eq("active", active)
       .order("name", { ascending: true });
 
-    if (error) {
-      console.error("Error al obtener partidos:", error);
-      throw new Error(`Error al obtener partidos: ${error.message}`);
-    }
-
+    if (error) throw new Error(`Error al obtener partidos: ${error.message}`);
     return data as unknown as PoliticalPartyBase[];
-  } catch (error) {
-    console.error("Error en getPartidosListSimple:", error);
-    throw error;
-  }
-}
+  },
+  ["partidos-list-simple"],
+  { revalidate: 86400, tags: ["partidos-list"] },
+);
 
 interface GetPartidosParams {
   active?: boolean;
@@ -59,82 +47,86 @@ interface GetPartidosParams {
   offset?: number;
 }
 
-export async function getPartidosList(
-  params: GetPartidosParams = {},
-): Promise<PoliticalPartyListPaginated> {
-  const supabase = await createClient();
-  const { active, search, limit = 30, offset = 0 } = params;
+export const getPartidosList = unstable_cache(
+  async (
+    params: GetPartidosParams = {},
+  ): Promise<PoliticalPartyListPaginated> => {
+    const supabase = await createPublicClient();
+    const { active, search, limit = 30, offset = 0 } = params;
 
-  try {
-    // 1. Lógica para ocultar partidos que son parte de una alianza activa
-    const { data: activeProcess } = await supabase
-      .from("electoralprocess")
-      .select("id")
-      .eq("active", true)
-      .single();
+    try {
+      // 1. Lógica para ocultar partidos que son parte de una alianza activa
+      const { data: activeProcess } = await supabase
+        .from("electoralprocess")
+        .select("id")
+        .eq("active", true)
+        .single();
 
-    let hiddenPartyIds: string[] = [];
+      let hiddenPartyIds: string[] = [];
 
-    if (activeProcess) {
-      const { data: allianceMembers } = await supabase
-        .from("alliancecomposition")
-        .select("child_org_id")
-        .eq("process_id", activeProcess.id);
+      if (activeProcess) {
+        const { data: allianceMembers } = await supabase
+          .from("alliancecomposition")
+          .select("child_org_id")
+          .eq("process_id", activeProcess.id);
 
-      if (allianceMembers && allianceMembers.length > 0) {
-        hiddenPartyIds = allianceMembers
-          .map((m) => m.child_org_id)
-          .filter((id): id is string => id !== null);
+        if (allianceMembers && allianceMembers.length > 0) {
+          hiddenPartyIds = allianceMembers
+            .map((m) => m.child_org_id)
+            .filter((id): id is string => id !== null);
+        }
       }
+
+      // 2. Construcción de la Query
+      let query = supabase
+        .from("politicalparty")
+        .select("*", { count: "exact" })
+        .order("name", { ascending: true });
+
+      // Filtro de Estado
+      if (active !== undefined) {
+        query = query.eq("active", active);
+      }
+
+      // Filtro para ocultar partidos (CORREGIDO: Formato ("id1","id2"))
+      if (hiddenPartyIds.length > 0) {
+        // Importante: Agregar comillas a cada ID para que PostgREST lo entienda
+        const idsString = `("${hiddenPartyIds.join('","')}")`;
+        query = query.filter("id", "not.in", idsString);
+      }
+
+      // Búsqueda por texto (Nombre o Acrónimo)
+      if (search && search.trim() !== "") {
+        const searchTerm = search.trim();
+        query = query.or(
+          `name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%`,
+        );
+      }
+
+      // Paginación
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw new Error(`Error al obtener partidos: ${error.message}`);
+      }
+
+      return {
+        items: data || [],
+        total: count || 0,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      console.error("Error en getPartidosList:", error);
+      throw error;
     }
-
-    // 2. Construcción de la Query
-    let query = supabase
-      .from("politicalparty")
-      .select("*", { count: "exact" })
-      .order("name", { ascending: true });
-
-    // Filtro de Estado
-    if (active !== undefined) {
-      query = query.eq("active", active);
-    }
-
-    // Filtro para ocultar partidos (CORREGIDO: Formato ("id1","id2"))
-    if (hiddenPartyIds.length > 0) {
-      // Importante: Agregar comillas a cada ID para que PostgREST lo entienda
-      const idsString = `("${hiddenPartyIds.join('","')}")`;
-      query = query.filter("id", "not.in", idsString);
-    }
-
-    // Búsqueda por texto (Nombre o Acrónimo)
-    if (search && search.trim() !== "") {
-      const searchTerm = search.trim();
-      query = query.or(
-        `name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%`,
-      );
-    }
-
-    // Paginación
-    query = query.range(offset, offset + limit - 1);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      console.error("Supabase error:", error);
-      throw new Error(`Error al obtener partidos: ${error.message}`);
-    }
-
-    return {
-      items: data || [],
-      total: count || 0,
-      limit,
-      offset,
-    };
-  } catch (error) {
-    console.error("Error en getPartidosList:", error);
-    throw error;
-  }
-}
+  },
+  ["partidos-list"],
+  { revalidate: 86400, tags: ["partidos-list"] },
+);
 
 type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];

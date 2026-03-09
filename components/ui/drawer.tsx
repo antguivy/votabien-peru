@@ -57,6 +57,7 @@ function DrawerContent({
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
+        onOpenAutoFocus={(e) => e.preventDefault()}
         data-slot="drawer-content"
         className={cn(
           "group/drawer-content bg-background fixed z-50 flex flex-col h-auto",
@@ -68,8 +69,6 @@ function DrawerContent({
         )}
         {...props}
       >
-        {/* Absorbe el foco automático sin abrir el teclado */}
-        <span tabIndex={0} className="sr-only" aria-hidden="true" />
         <div className="mx-auto mt-4 mb-2 h-2 w-[100px] flex-shrink-0 rounded-full bg-muted-foreground/50" />
         {noScroll ? (
           // El consumidor gestiona header / scroll / footer por su cuenta

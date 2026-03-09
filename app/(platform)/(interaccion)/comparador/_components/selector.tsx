@@ -185,7 +185,6 @@ export default function PresidentialSelector({
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
                 className="pl-9 h-9 text-sm bg-muted/40 border-0 focus-visible:ring-1"
-                autoFocus
               />
             </div>
           </CredenzaHeader>
@@ -199,7 +198,7 @@ export default function PresidentialSelector({
                   ))}
                 </div>
               ) : displayCandidates.length > 0 ? (
-                <div className="grid gap-3 p-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+                <div className="grid gap-3 p-4 grid-cols-3 sm:grid-cols-3 md:grid-cols-4">
                   {displayCandidates.map((item) => {
                     const isSelected = selectedItems.some(
                       (s) => s.id === item.id,
@@ -234,6 +233,40 @@ export default function PresidentialSelector({
   );
 }
 
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+function GroupLogo({
+  item,
+  size = 40,
+}: {
+  item: SearchableEntity;
+  size?: number;
+}) {
+  if (item.group_image) {
+    return (
+      <Image
+        src={item.group_image}
+        alt={item.group_name}
+        width={size}
+        height={size}
+        className="w-full h-full object-contain rounded-lg"
+      />
+    );
+  }
+  return (
+    <div
+      className={cn(
+        "w-full h-full flex items-center justify-center font-black",
+        size >= 56 ? "text-lg rounded-full" : "text-[10px] rounded-lg",
+        fallbackTextClass(item.group_color),
+      )}
+      style={{ background: item.group_color ?? "#6b7280" }}
+    >
+      {item.group_name.substring(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
 // ─── Selected Card ────────────────────────────────────────────────────────────
 
 function SelectedCard({
@@ -247,34 +280,14 @@ function SelectedCard({
     <div
       className="relative flex items-center gap-2.5 h-[88px] px-3 rounded-xl border bg-card overflow-hidden"
       style={{
-        borderTopColor: item.group_color || undefined,
+        borderTopColor: item.group_color ?? undefined,
         borderTopWidth: item.group_color ? 3 : undefined,
       }}
     >
-      {/* Logo del partido — pequeño, a la izquierda */}
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-        {item.group_image ? (
-          <Image
-            src={item.group_image}
-            alt={item.group_name}
-            width={40}
-            height={40}
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          <div
-            className={cn(
-              "w-full h-full flex items-center justify-center text-[10px] font-black",
-              fallbackTextClass(item.group_color),
-            )}
-            style={{ background: item.group_color || "#6b7280" }}
-          >
-            {item.group_name.substring(0, 2).toUpperCase()}
-          </div>
-        )}
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-muted">
+        <GroupLogo item={item} size={40} />
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p
           className="text-[10px] font-bold line-clamp-2"
@@ -282,15 +295,11 @@ function SelectedCard({
         >
           {item.group_name}
         </p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <p className="text-xs font-semibold leading-tight line-clamp-2">
-            {item.fullname}
-          </p>
-        </div>
       </div>
 
       <button
         onClick={onRemove}
+        aria-label={`Quitar ${item.group_name}`}
         className="absolute top-2 right-2 h-5 w-5 rounded-full bg-muted flex items-center justify-center hover:bg-destructive/10 hover:text-destructive transition-colors"
       >
         <X className="h-3 w-3" />
@@ -299,7 +308,7 @@ function SelectedCard({
   );
 }
 
-// ─── Candidate Card (modal) ───────────────────────────────────────────────────
+// ─── Candidate Card ───────────────────────────────────────────────────────────
 
 function CandidateCard({
   item,
@@ -314,10 +323,11 @@ function CandidateCard({
 }) {
   return (
     <button
-      onClick={() => !isDisabled && !isSelected && onSelect()}
+      onClick={onSelect}
+      disabled={isDisabled || isSelected}
       className={cn(
         "relative flex flex-col items-center justify-between",
-        "h-[190px] w-full px-3 py-3 rounded-xl border text-center transition-all",
+        "h-full w-full px-3 py-3 rounded-xl border text-center transition-all",
         isSelected && "border-primary bg-primary/5 ring-1 ring-primary/30",
         !isSelected &&
           !isDisabled &&
@@ -335,52 +345,16 @@ function CandidateCard({
         <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />
       )}
 
-      {/* Logo del partido — protagonista */}
       <div className="flex items-center justify-center w-16 h-16 mt-1">
-        {item.group_image ? (
-          <Image
-            src={item.group_image}
-            alt={item.group_name}
-            width={64}
-            height={64}
-            className="object-contain w-full h-full rounded-lg"
-          />
-        ) : (
-          <div
-            className={cn(
-              "w-14 h-14 rounded-full flex items-center justify-center text-lg font-black",
-              fallbackTextClass(item.group_color),
-            )}
-            style={{ background: item.group_color || "#6b7280" }}
-          >
-            {item.group_name.substring(0, 2).toUpperCase()}
-          </div>
-        )}
+        <GroupLogo item={item} size={64} />
       </div>
 
-      {/* Nombre del partido */}
       <p
-        className="text-[10px] font-bold uppercase tracking-wide line-clamp-1"
+        className="text-[10px] font-bold uppercase tracking-wide line-clamp-3"
         style={{ color: safeTextColor(item.group_color) }}
       >
         {item.group_name}
       </p>
-
-      {/* Candidato */}
-      <div className="w-full flex items-center gap-2">
-        <Avatar className="h-6 w-6 shrink-0 border">
-          <AvatarImage
-            src={item.image_candidate_url || ""}
-            alt={item.fullname}
-          />
-          <AvatarFallback className="text-[10px] font-bold">
-            {item.fullname.substring(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <p className="text-xs font-semibold text-left line-clamp-2 leading-tight">
-          {item.fullname}
-        </p>
-      </div>
     </button>
   );
 }

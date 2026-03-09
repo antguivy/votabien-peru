@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createId } from "@paralleldrive/cuid2";
 import {
@@ -151,6 +151,7 @@ export async function createPoliticalParty(data: CreatePartyRequest) {
     }
 
     revalidatePath("/admin/partidos");
+    revalidateTag("partidos-list");
     return { success: true, data: party };
   } catch (error) {
     return handleError(error, "Error al crear partido político");
@@ -396,6 +397,7 @@ export async function updatePoliticalParty(data: Partial<UpdatePartyRequest>) {
     }
 
     revalidatePath("/admin/partidos");
+    revalidateTag("partidos-list");
     return { success: true, data: party };
   } catch (error) {
     return handleError(error, "Error al actualizar partido político");
