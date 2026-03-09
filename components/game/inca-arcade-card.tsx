@@ -221,12 +221,11 @@ export function IncaArcadeCard({
                       className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
                       style={{ background: "#292524" }}
                     >
-                      <Image
+                      <img
                         src={correctOption.image_url}
                         alt={correctOption.name}
+                        crossOrigin="anonymous"
                         className="w-full h-full object-contain"
-                        width={30}
-                        height={30}
                       />
                     </div>
                   )}
