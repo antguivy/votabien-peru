@@ -225,7 +225,6 @@ export function IncaArcadeCard({
                         src={correctOption.image_url}
                         alt={correctOption.name}
                         className="w-full h-full object-contain"
-                        crossOrigin="anonymous"
                         width={30}
                         height={30}
                       />

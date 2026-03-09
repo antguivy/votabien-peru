@@ -26,6 +26,7 @@ const TOOL_CONFIG: Record<
     href: string;
     color: string;
     icon: LucideIcon;
+    badge?: { text: string; color: string; active?: boolean };
   }
 > = {
   match: {
@@ -35,6 +36,8 @@ const TOOL_CONFIG: Record<
     href: "/match",
     color: "#2563eb",
     icon: Heart,
+    // active: true hace que parpadee toda la tarjeta
+    badge: { text: "ACTUALIZADO", color: "#2563eb", active: true },
   },
   comparador: {
     label: "Comparador",
@@ -51,6 +54,8 @@ const TOOL_CONFIG: Record<
     href: "/trivia",
     color: "#d97706",
     icon: HelpCircle,
+    // active: true hace que parpadee toda la tarjeta
+    badge: { text: "NUEVO", color: "#d97706", active: true },
   },
   simulador: {
     label: "Simulador de Voto",
@@ -59,6 +64,8 @@ const TOOL_CONFIG: Record<
     href: "/simulador",
     color: "#059669",
     icon: Vote,
+    // active: false la mantiene estática
+    badge: { text: "PRONTO", color: "#64748b", active: false },
   },
 };
 
@@ -150,15 +157,28 @@ function ToolCard({
           : { borderColor: "var(--border)", backgroundColor: "var(--card)" }
       }
     >
+      {/* EFECTO DE BORDE ANIMADO:
+        Cubre toda la tarjeta con un resplandor palpitante (pulse) hacia adentro
+        solo si está activo y la herramienta AÚN NO está completada (!done).
+      */}
+      {cfg.badge?.active && !done && (
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none animate-pulse z-10"
+          style={{
+            boxShadow: `inset 0 0 0 2px ${cfg.badge.color}80, inset 0 0 12px ${cfg.badge.color}25`,
+          }}
+        />
+      )}
+
       {/* left color bar */}
       <div
-        className="absolute top-0 left-0 w-[3px] h-full rounded-l-2xl"
+        className="absolute top-0 left-0 w-[3px] h-full rounded-l-2xl z-20"
         style={{ background: done ? cfg.color : "var(--border)" }}
       />
 
-      {/* icon badge — icono pintado con su color, bg tono más bajo */}
+      {/* icon badge */}
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110 z-20"
         style={{
           background: `${cfg.color}10`,
           border: `1px solid ${cfg.color}20`,
@@ -174,14 +194,35 @@ function ToolCard({
       </div>
 
       {/* text + bar */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 z-20">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <p
-            className="text-sm font-black leading-tight"
-            style={{ color: done ? cfg.color : "var(--foreground)" }}
-          >
-            {cfg.label}
-          </p>
+          {/* label + inline static badge */}
+          <div className="flex items-center gap-2 min-w-0">
+            <p
+              className="text-sm font-black leading-tight truncate"
+              style={{ color: done ? cfg.color : "var(--foreground)" }}
+            >
+              {cfg.label}
+            </p>
+            {cfg.badge && (
+              <span
+                className="relative inline-flex items-center px-2 py-0.5 rounded-full bg-background shadow-sm"
+                style={{
+                  borderColor: cfg.badge.color,
+                  borderWidth: "1px",
+                  borderStyle: "solid",
+                }}
+              >
+                <span
+                  className="text-[9px] font-black tracking-widest leading-none mt-[1px]"
+                  style={{ color: cfg.badge.color }}
+                >
+                  {cfg.badge.text}
+                </span>
+              </span>
+            )}
+          </div>
+
           {done ? (
             <span
               className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
