@@ -123,7 +123,7 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
           </div>
 
           <blockquote className="text-lg font-semibold text-foreground leading-[1.45] tracking-tight">
-            ❝{moment.quote}❞
+            {moment.quote}
           </blockquote>
 
           <div className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export default function PhotoStory({ hitos }: { hitos: HitoBasic[] }) {
             </div>
 
             <blockquote className="text-2xl md:text-3xl lg:text-[2rem] font-semibold text-foreground leading-[1.3] tracking-tight">
-              ❝{moment.quote}❞
+              {moment.quote}
             </blockquote>
 
             <div className="flex items-center gap-2">

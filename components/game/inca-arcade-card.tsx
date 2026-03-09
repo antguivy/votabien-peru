@@ -1,9 +1,5 @@
 "use client";
 
-// trivia/_components/inca-arcade-card.tsx
-// Tarjeta de resultado para compartir — migrada de React Native a web.
-// Se captura con html2canvas desde trivia-game-view.tsx
-
 import { REGION_ASSETS } from "@/constants/game-assets";
 import { RegionTheme } from "@/constants/regions-data";
 import { TriviaQuestion } from "@/interfaces/game-types";
@@ -33,8 +29,6 @@ export function IncaArcadeCard({
     (opt) => opt.option_id === featuredQuestion.correct_answer_id,
   );
 
-  const levelLabel = currentLevel;
-
   // Arcade font applied via CSS variable set in layout.tsx
   const arcade: React.CSSProperties = {
     fontFamily: "'Press Start 2P', var(--font-arcade, monospace)",
@@ -46,7 +40,9 @@ export function IncaArcadeCard({
       style={{
         background: "#1c1917",
         borderRadius: 20,
-        border: `5px solid ${accentColor}`,
+        borderWidth: 5,
+        borderStyle: "solid",
+        borderColor: accentColor,
         padding: 3,
       }}
     >
@@ -55,7 +51,9 @@ export function IncaArcadeCard({
         style={{
           background: "#0c0a09",
           borderRadius: 16,
-          border: `3px solid ${primaryColor}`,
+          borderWidth: 3,
+          borderStyle: "solid",
+          borderColor: primaryColor,
           overflow: "hidden",
         }}
       >
@@ -63,7 +61,11 @@ export function IncaArcadeCard({
           {/* ── Header ── */}
           <div
             className="flex items-center justify-between pb-3 mb-4"
-            style={{ borderBottom: "2px solid #292524" }}
+            style={{
+              borderBottomWidth: 2,
+              borderBottomStyle: "solid",
+              borderBottomColor: "#292524",
+            }}
           >
             {/* Avatar + name */}
             <div className="flex items-center gap-2.5">
@@ -71,7 +73,9 @@ export function IncaArcadeCard({
                 className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
                 style={{
                   background: "rgba(255,255,255,0.08)",
-                  border: `2px solid ${primaryColor}`,
+                  borderWidth: 2,
+                  borderStyle: "solid",
+                  borderColor: primaryColor,
                 }}
               >
                 {avatarAsset ? (
@@ -130,7 +134,7 @@ export function IncaArcadeCard({
                   NIVEL
                 </span>
                 <span style={{ ...arcade, fontSize: 10, color: primaryColor }}>
-                  {levelLabel}
+                  {currentLevel}
                 </span>
               </div>
             </div>
@@ -161,7 +165,9 @@ export function IncaArcadeCard({
                 className="p-3.5 rounded-xl mb-3"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  borderLeft: `4px solid ${primaryColor}`,
+                  borderLeftWidth: 4,
+                  borderLeftStyle: "solid",
+                  borderLeftColor: primaryColor,
                 }}
               >
                 <p
@@ -180,7 +186,12 @@ export function IncaArcadeCard({
               {/* Answer block */}
               <div
                 className="rounded-xl overflow-hidden"
-                style={{ background: "#1c1917", border: "2px solid #292524" }}
+                style={{
+                  background: "#1c1917",
+                  borderWidth: 2,
+                  borderStyle: "solid",
+                  borderColor: "#292524",
+                }}
               >
                 {/* Header strip */}
                 <div
@@ -210,13 +221,13 @@ export function IncaArcadeCard({
                       className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
                       style={{ background: "#292524" }}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <Image
                         src={correctOption.image_url}
                         alt={correctOption.name}
-                        width={40}
-                        height={40}
                         className="w-full h-full object-contain"
+                        crossOrigin="anonymous"
+                        width={30}
+                        height={30}
                       />
                     </div>
                   )}
@@ -233,13 +244,15 @@ export function IncaArcadeCard({
                   </p>
                 </div>
 
-                {/* Explanation — truncated for the card */}
+                {/* Explanation */}
                 {featuredQuestion.explanation && (
                   <div
                     className="px-3.5 py-3"
                     style={{
                       background: "#292524",
-                      borderTop: "1px solid #44403c",
+                      borderTopWidth: 1,
+                      borderTopStyle: "solid",
+                      borderTopColor: "#44403c",
                     }}
                   >
                     <p

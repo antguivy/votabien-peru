@@ -1,4 +1,3 @@
-// src/constants/regions-data.ts
 import { GameRegion } from "@/interfaces/game-types";
 
 export interface RegionTheme {
@@ -13,7 +12,7 @@ export interface RegionTheme {
     accent: string;
   };
   minLevel: number;
-  maxLevel: number; // Agregado para saber el rango exacto
+  maxLevel: number;
 }
 
 export const REGIONS_CONFIG: Record<GameRegion, RegionTheme> = {
@@ -75,14 +74,14 @@ export const REGIONS_CONFIG: Record<GameRegion, RegionTheme> = {
   },
 };
 
-// 10 niveles por región
-// Costa:       1 – 10
-// Sierra:     11 – 20
-// Selva:      21 – 30
-// Hanan Pacha: 31+
 export const getRegionByLevel = (levelId: number): RegionTheme => {
   if (levelId >= 31) return REGIONS_CONFIG.hanan_pacha;
   if (levelId >= 21) return REGIONS_CONFIG.selva;
   if (levelId >= 11) return REGIONS_CONFIG.sierra;
   return REGIONS_CONFIG.costa;
 };
+
+export const REGION_START_LEVELS = Object.values(REGIONS_CONFIG)
+  .map((r) => r.minLevel)
+  .filter((lvl) => lvl > 1)
+  .sort((a, b) => a - b); // → [11, 21, 31]

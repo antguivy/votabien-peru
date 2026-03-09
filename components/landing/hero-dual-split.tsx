@@ -2,284 +2,366 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Users, Columns } from "lucide-react";
-// import { PiYoutubeLogoFill } from "react-icons/pi";
-
-// ============= INTERFACES =============
+import { useEffect, useMemo, useState, useRef } from "react";
 
 interface ElectoralProcess {
   election_date?: string;
 }
-
 interface HeroDualSplitProps {
   proceso_electoral: ElectoralProcess;
 }
 
-// ============= UTILIDADES =============
-const calcularDiasRestantes = (fecha: string) => {
-  const hoy = new Date();
-  const fechaObjetivo = new Date(fecha);
-  const diferencia = fechaObjetivo.getTime() - hoy.getTime();
-  return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
-};
-
-const formatFechaPeru = (fecha: string) => {
-  const date = new Date(fecha);
-  return date.toLocaleDateString("es-PE", {
+function calcDias(fecha: string) {
+  return Math.ceil(
+    (new Date(fecha).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+  );
+}
+function formatFecha(fecha: string) {
+  return new Date(fecha).toLocaleDateString("es-PE", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-};
+}
 
-// ============= HOOKS =============
-const useCountdown = (fechaElecciones?: string) => {
-  const [diasRestantes, setDiasRestantes] = useState(() =>
-    fechaElecciones ? calcularDiasRestantes(fechaElecciones) : 0,
+const QUICK_FILTERS = [
+  {
+    tipo: "Presidente",
+    descripcion: "Fórmulas presidenciales · 1 voto",
+    href: "/candidatos?type=PRESIDENTE&limit=30",
+    accent: "#dc2626",
+  },
+  {
+    tipo: "Senadores Nacionales",
+    descripcion: "Lista única nacional · 30 curules",
+    href: "/candidatos?type=SENADOR&limit=30",
+    accent: "#7c3aed",
+  },
+  {
+    tipo: "Senadores Regionales",
+    descripcion: "Lista por Región · 30 curules",
+    href: "/candidatos?type=SENADOR&limit=30&districtType=multiple",
+    accent: "#0284c7",
+  },
+  {
+    tipo: "Diputados",
+    descripcion: "130 escaños · voto regional",
+    href: "/candidatos?type=DIPUTADO&limit=30",
+    accent: "#059669",
+  },
+];
+
+function useCountdown(fechaElecciones?: string) {
+  const [dias, setDias] = useState(() =>
+    fechaElecciones ? calcDias(fechaElecciones) : 0,
   );
-
   useEffect(() => {
     if (!fechaElecciones) return;
-
-    const intervalo = setInterval(
-      () => {
-        setDiasRestantes(calcularDiasRestantes(fechaElecciones));
-      },
-      1000 * 60 * 60 * 24,
+    const t = setInterval(
+      () => setDias(calcDias(fechaElecciones)),
+      1000 * 60 * 60,
     );
-
-    return () => clearInterval(intervalo);
+    return () => clearInterval(t);
   }, [fechaElecciones]);
-
   const fechaFormateada = useMemo(
-    () =>
-      fechaElecciones
-        ? formatFechaPeru(fechaElecciones)
-        : "Fecha no disponible",
+    () => (fechaElecciones ? formatFecha(fechaElecciones) : ""),
     [fechaElecciones],
   );
+  return { dias, fechaFormateada };
+}
 
-  return { diasRestantes, fechaFormateada };
-};
-
-// ============= COMPONENTE PRINCIPAL =============
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(0);
+  const prevRef = useRef(0);
+  useEffect(() => {
+    if (value === 0) return;
+    const start = prevRef.current;
+    const duration = 1600;
+    const startTime = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - startTime) / duration, 1);
+      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+      setDisplayed(Math.round(start + (value - start) * eased));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    prevRef.current = value;
+  }, [value]);
+  return <>{displayed}</>;
+}
 
 export default function HeroDualSplit({
   proceso_electoral,
 }: HeroDualSplitProps) {
-  const { diasRestantes, fechaFormateada } = useCountdown(
+  const { dias, fechaFormateada } = useCountdown(
     proceso_electoral.election_date,
   );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
-    <section className="relative pt-16 w-full flex flex-col bg-background md:h-auto md:max-h-[1200px] overflow-hidden rounded-md border border-border/40">
-      {/* ============= FONDOS ============= */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key="legislativo-bg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="absolute inset-0 z-0 overflow-hidden"
-        >
-          {/* CAMBIO: Eliminado el verde (green-500). Usamos negro neutro para estabilidad. */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 mix-blend-multiply" />
-
-          {/* Imagen izquierda */}
-          <div className="absolute top-0 left-0 w-full h-1/2 md:w-1/2 md:h-full overflow-hidden">
-            <Image
-              src="/images/hero-left.jpg"
-              alt="Congreso actual"
-              fill
-              className="object-cover object-center grayscale-[1] brightness-[0.55] contrast-[1.1] scale-105"
-              priority
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-          </div>
-
-          {/* Imagen derecha */}
-          <div className="absolute bottom-0 left-0 w-full h-1/2 md:top-0 md:left-1/2 md:w-1/2 md:h-full overflow-hidden">
-            <Image
-              src="/images/hero-right.jpg"
-              alt="Nuevo Congreso 2026"
-              fill
-              // CAMBIO: Reduje ligeramente la saturación para que no vibre tanto.
-              className="object-cover object-center saturate-[1.1] brightness-[0.65] contrast-[1.05] scale-105"
-              priority
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
-          </div>
-
-          <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-black/60 via-transparent to-black/60" />
-          {/* CAMBIO: La luz central ahora usa el color brand muy sutilmente en lugar de blanco genérico. */}
-          <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] -translate-x-1/2 -translate-y-1/2 bg-brand/10 blur-3xl rounded-full pointer-events-none" />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ============= HEADER COMPACTO ============= */}
-      <motion.div
-        className="relative z-10 flex flex-col items-center justify-center text-center px-4 py-6 md:py-8 flex-shrink-0"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-2"
-        >
-          {/* CAMBIO: Eliminado el gradiente de texto arcoíris. Ahora es blanco sólido, limpio y profesional. */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-center text-white drop-shadow-2xl">
-            ELECCIONES GENERALES 2026
-          </h1>
-
-          <p className="text-sm md:text-base text-white max-w-2xl mx-auto font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
-            Vota informado: Conoce candidatos a{" "}
-            {/* CAMBIO: Unificados los badges. Se eliminaron warning/info/success. Ahora son neutros y profesionales. */}
-            <span className="text-white/90 font-extrabold bg-brand/40 border border-brand/50 px-1.5 py-0.5 rounded">
-              Presidente
-            </span>
-            ,{" "}
-            <span className="text-white/90 font-extrabold bg-brand/40 border border-brand/50 px-1.5 py-0.5 rounded">
-              Diputados
-            </span>{" "}
-            y{" "}
-            <span className="text-white/90 font-extrabold bg-brand/40 border border-brand/50 px-1.5 py-0.5 rounded">
-              Senadores
-            </span>
-          </p>
-
-          <p className="text-xs md:text-sm text-brand font-bold bg-background/80 dark:text-white/90 border border-accent/10 px-3 py-1 rounded-full inline-block">
-            {fechaFormateada} —{" "}
-            {/* CAMBIO: El dato más importante usa el color de marca (brand) en lugar de warning. */}
-            <span className="font-extrabold">{diasRestantes} días</span>
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* ============= SUBTÍTULO ============= */}
-      <div className="relative z-10 text-center pb-2 md:pb-3 px-4">
-        <h2 className="text-lg md:text-xl font-bold text-white/90">
-          Perú vuelve al Sistema Bicameral
-        </h2>
+    <section className="relative w-full overflow-hidden bg-[#060606]">
+      {/* ── background split ── */}
+      <div className="absolute inset-0 flex">
+        <div className="relative w-1/2 overflow-hidden">
+          <Image
+            src="/images/hero-left.jpg"
+            alt=""
+            fill
+            className="object-cover object-center brightness-[0.18] scale-[1.06]"
+            priority
+            sizes="50vw"
+          />
+          <div
+            className="absolute inset-y-0 right-0 w-48"
+            style={{
+              background: "linear-gradient(to right, transparent, #060606)",
+            }}
+          />
+        </div>
+        <div className="relative w-1/2 overflow-hidden">
+          <Image
+            src="/images/hero-right.jpg"
+            alt=""
+            fill
+            className="object-cover object-center brightness-[0.18] scale-[1.06]"
+            priority
+            sizes="50vw"
+          />
+          <div
+            className="absolute inset-y-0 left-0 w-48"
+            style={{
+              background: "linear-gradient(to left, transparent, #060606)",
+            }}
+          />
+        </div>
       </div>
 
-      {/* ============= CONTENIDO COMPARATIVO ============= */}
-      <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key="legislativo-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex flex-col md:flex-row w-full h-full"
+      {/* top vignette */}
+      <div
+        className="absolute inset-x-0 top-0 h-28 pointer-events-none"
+        style={{
+          background: "linear-gradient(to bottom, #060606cc, transparent)",
+        }}
+      />
+
+      {/* brand glow arc */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, oklch(0.4936 0.165 28.53 / 0.22) 0%, transparent 60%)",
+        }}
+      />
+
+      {/* ── content — fills full viewport height ── */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 min-h-[calc(100svh-64px)] pt-16 pb-8">
+        {/* DATE CHIP */}
+        {fechaFormateada && (
+          <p
+            className="font-bold uppercase mb-3 md:mb-4"
+            style={{
+              color: "rgba(255,255,255,0.55)",
+              fontSize: "clamp(9px, 1vw, 11px)",
+              letterSpacing: "0.3em",
+              textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+            }}
           >
-            {/* ============= PANEL IZQUIERDO - Congreso Actual (Mantenemos neutro/blanco) ============= */}
-            <div className="relative w-full md:w-1/2 flex overflow-hidden group border-r border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+            12 · Abril · 2026
+          </p>
+        )}
 
-              <div className="relative z-10 flex flex-col justify-start w-full text-white p-4 md:p-8 py-6 md:py-10 pb-8 md:pb-12">
-                <div className="md:max-w-md mx-auto md:mr-0 md:ml-auto text-center md:text-right flex flex-col items-center md:items-end">
-                  {/* Icono neutro */}
-                  <div className="w-12 h-12 md:w-14 md:h-14 mb-4 rounded-xl flex items-center justify-center bg-white/10 border border-white/20 backdrop-blur-sm">
-                    <Users className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                  </div>
+        {/* SLOGAN */}
+        <h1
+          className="font-black text-white leading-[1.0] tracking-tight mb-3 md:mb-4 max-w-5xl"
+          style={{
+            fontSize: "clamp(2.6rem, 7.5vw, 5rem)",
+            textShadow:
+              "0 2px 4px rgba(0,0,0,0.95), 0 12px 48px rgba(0,0,0,0.5)",
+          }}
+        >
+          Infórmate,{" "}
+          <span
+            style={{
+              color: "oklch(0.78 0.165 28.53)",
+              textShadow:
+                "0 0 56px oklch(0.4936 0.165 28.53 / 0.65), 0 2px 4px rgba(0,0,0,0.95)",
+            }}
+          >
+            tu voto importa
+          </span>
+        </h1>
 
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1.5">
-                    Congreso 2021-2026
-                  </h3>
-                  {/* Badge neutro */}
-                  <span className="inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-0.5 text-[10px] md:text-xs font-bold text-white/80 mb-3">
-                    SISTEMA UNICAMERAL
+        {/* DESCRIPTOR */}
+        <p
+          className="font-medium max-w-xs md:max-w-md leading-relaxed mb-6 md:mb-8"
+          style={{
+            color: "rgba(255,255,255,0.65)",
+            fontSize: "clamp(13px, 1.5vw, 16px)",
+            textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+          }}
+        >
+          Candidatos, antecedentes, posturas y más.
+          <br />
+          Elecciones Generales Perú 2026
+        </p>
+
+        {/* COUNTDOWN */}
+        <div className="flex items-center gap-4 md:gap-8 mb-8 md:mb-10">
+          <div className="flex flex-col items-center">
+            <span
+              className="font-black tabular-nums leading-[0.9]"
+              style={{
+                fontSize: "clamp(4.5rem, 14vw, 10rem)",
+                color: "oklch(0.78 0.165 28.53)",
+                textShadow:
+                  "0 0 80px oklch(0.4936 0.165 28.53 / 0.5), 0 4px 12px rgba(0,0,0,0.9)",
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: "-0.04em",
+              }}
+            >
+              {mounted ? (
+                <AnimatedNumber value={dias} />
+              ) : (
+                <span className="opacity-15">—</span>
+              )}
+            </span>
+            <span
+              className="font-black uppercase mt-1"
+              style={{
+                color: "rgba(255,255,255,0.38)",
+                fontSize: "clamp(8px, 1vw, 11px)",
+                letterSpacing: "0.4em",
+                textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+              }}
+            >
+              días
+            </span>
+          </div>
+
+          {/* divider vertical */}
+          <div className="flex flex-col items-start gap-2 pb-3">
+            <div
+              className="w-px h-8 md:h-12 self-start"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+            />
+            <span
+              className="font-semibold leading-snug text-left"
+              style={{
+                color: "rgba(255,255,255,0.72)",
+                fontSize: "clamp(12px, 1.4vw, 15px)",
+                textShadow: "0 1px 8px rgba(0,0,0,0.9)",
+              }}
+            >
+              para las
+              <br />
+              elecciones
+            </span>
+          </div>
+        </div>
+
+        {/* FILTER CARDS */}
+        <div className="w-full max-w-2xl md:max-w-3xl">
+          {/* section label */}
+          <div className="flex items-center gap-4 mb-3">
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(255,255,255,0.12)" }}
+            />
+            <span
+              className="font-black uppercase"
+              style={{
+                color: "rgba(255,255,255,0.38)",
+                fontSize: "clamp(7px, 0.85vw, 9px)",
+                letterSpacing: "0.3em",
+              }}
+            >
+              Explora por cargo
+            </span>
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(255,255,255,0.12)" }}
+            />
+          </div>
+
+          {/* 2x2 grid on mobile, 4 cols on md+ */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-2.5">
+            {QUICK_FILTERS.map((f, i) => (
+              <Link
+                key={f.tipo}
+                href={f.href}
+                className="group relative flex flex-col gap-2 p-3 md:p-4 rounded-2xl transition-all duration-250 hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.97] overflow-hidden"
+                style={{
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.13)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                }}
+              >
+                {/* accent top bar */}
+                <div
+                  className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl transition-all duration-250 group-hover:h-1"
+                  style={{ background: f.accent }}
+                />
+
+                {/* hover background glow */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-250 pointer-events-none rounded-2xl"
+                  style={{
+                    background: `radial-gradient(ellipse at 50% 0%, ${f.accent}22 0%, transparent 70%)`,
+                  }}
+                />
+
+                {/* dot indicator */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{
+                      background: f.accent,
+                      boxShadow: `0 0 6px ${f.accent}80`,
+                    }}
+                  />
+                  <span
+                    className="text-[9px] font-bold tabular-nums"
+                    style={{ color: "rgba(255,255,255,0.35)" }}
+                  >
+                    0{i + 1}
                   </span>
-
-                  <div className="w-full max-w-sm mb-4">
-                    <div className="flex items-center justify-between p-2.5 md:p-3 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm">
-                      <span className="text-xs md:text-sm text-white/90">
-                        🏛️ Cámara Única
-                      </span>
-                      <span className="text-xl md:text-2xl font-bold text-white">
-                        130
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* ============= PANEL DERECHO - Nuevo Congreso 2026 (Acento en Brand) ============= */}
-            <div className="relative w-full md:w-1/2 flex overflow-hidden group">
-              {/* CAMBIO: Eliminado el tinte verde (success/10). Usamos un tinte brand muy sutil o negro neutro. */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-brand/5 to-transparent pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col justify-start w-full text-white p-4 md:p-8 py-6 md:py-10 pb-8 md:pb-12">
-                <div className="md:max-w-md mx-auto md:ml-0 md:mr-auto text-center md:text-left flex flex-col items-center md:items-start">
-                  {/* CAMBIO: Icono usa el color brand en lugar de warning */}
-                  <div className="w-12 h-12 md:w-14 md:h-14 mb-4 rounded-xl flex items-center justify-center bg-background/10 border border-white/30 backdrop-blur-sm">
-                    <Columns className="w-6 h-6 md:w-7 md:h-7 text-brand" />
-                  </div>
-
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1.5">
-                    Tu Voto en 2026
-                  </h3>
-                  {/* CAMBIO: Badge usa el color brand */}
-                  <span className="inline-flex items-center bg-background/70 backdrop-blur-sm border border-brand/30 rounded-full px-2.5 py-0.5 text-[10px] md:text-xs font-bold text-foreground mb-3">
-                    SISTEMA BICAMERAL
-                  </span>
-
-                  <div className="w-full max-w-sm space-y-1.5 mb-16">
-                    {/* CAMBIO: Se eliminaron los textos de colores (info, success). Ahora son blancos neutros. */}
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-                      <span className="text-xs md:text-sm text-white/90">
-                        👤 Presidente
-                      </span>
-                      <span className="text-base md:text-lg font-bold text-white">
-                        1
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-                      <span className="text-xs md:text-sm text-white/90">
-                        🏛️ Senadores
-                      </span>
-                      <span className="text-base md:text-lg font-bold text-white">
-                        60
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 backdrop-blur-sm">
-                      <span className="text-xs md:text-sm text-white/90">
-                        🏛️ Diputados
-                      </span>
-                      <span className="text-base md:text-lg font-bold text-white">
-                        130
-                      </span>
-                    </div>
-                    {/* CAMBIO: La caja final de Total usa el color brand para destacar. */}
-                    <div className="flex items-center justify-between p-2.5 md:p-3 rounded-lg bg-brand/10 border border-brand/30 backdrop-blur-sm">
-                      <span className="text-xs md:text-sm text-white font-semibold">
-                        Total
-                      </span>
-                      <span className="text-xl md:text-2xl font-bold text-white">
-                        190
-                      </span>
-                    </div>
-                    {/* CAMBIO: Botón secundario más sutil (glassmorphism) en lugar de blanco sólido vibrante. */}
-                    <Link
-                      href="/candidatos"
-                      className="relative inline-flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 rounded-xl bg-white/10 text-white border border-white/20 text-sm md:text-base font-semibold hover:bg-white/20 transition-colors"
-                    >
-                      Ver Candidatos
-                      <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    </Link>
-                  </div>
+                {/* label */}
+                <div>
+                  <p
+                    className="font-black leading-tight tracking-tight"
+                    style={{
+                      color: "rgba(255,255,255,0.92)",
+                      fontSize: "clamp(12px, 1.6vw, 15px)",
+                    }}
+                  >
+                    {f.tipo}
+                  </p>
+                  <p
+                    className="mt-0.5 leading-tight font-medium"
+                    style={{
+                      color: "rgba(255,255,255,0.50)",
+                      fontSize: "clamp(8px, 0.85vw, 10px)",
+                    }}
+                  >
+                    {f.descripcion}
+                  </p>
                 </div>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+
+                {/* arrow — hover only */}
+                <div
+                  className="absolute bottom-3 right-3.5 font-black text-sm opacity-0 group-hover:opacity-80 transition-all duration-200 translate-x-1.5 group-hover:translate-x-0"
+                  style={{ color: f.accent }}
+                >
+                  →
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

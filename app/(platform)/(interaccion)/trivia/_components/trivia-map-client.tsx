@@ -1,23 +1,28 @@
 "use client";
 
-// CAMBIO: Se agrega markTriviaLevel al completar cada nivel en TriviaGameView.
-// El patrón es: TriviaMapClient pasa onLevelComplete a TriviaGameView,
-// que lo invoca cuando el juego termina con éxito (resultado "passed" / XP ganado).
-
 import { IllustratedNode } from "@/components/game/illustrated-node";
 import { LevelModal } from "@/components/game/level-game";
 import { RegionTransitionModal } from "@/components/game/region-transition-modal";
 import { TriviaGameView } from "./trivia-game-view";
 import { REGION_ASSETS } from "@/constants/game-assets";
-import { getRegionByLevel } from "@/constants/regions-data";
+import {
+  getRegionByLevel,
+  REGION_START_LEVELS,
+} from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
-import { GameLevel, TriviaQuestion } from "@/interfaces/game-types";
+import { GameLevel, GameRegion, TriviaQuestion } from "@/interfaces/game-types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReadiness } from "@/store/readiness-store";
+import { Microscope } from "lucide-react";
 
 const NODE_SPACING = 160;
-const REGION_START_LEVELS = [11, 21, 31];
 const MAP_WIDTH = 390;
+const SCROLL_PADDING_TOP = 100;
+const SCROLL_PADDING_BOTTOM = 200;
+const MAP_MARGIN_TOP = 20;
+
+// TEMPORAL — quitar cuando haya más preguntas
+const MAX_LEVELS = 5;
 
 export default function TriviaMapClient({
   initialQuestions,
@@ -52,11 +57,69 @@ export default function TriviaMapClient({
     return () => ro.disconnect();
   }, []);
 
+  // rawQuestions, highestUnlockedLevel y levelsProgress son las dependencias
+  // reales — getLevels es una función estable de zustand que los consume internamente
   const levels = useMemo(
-    () => getLevels(),
-    [rawQuestions, highestUnlockedLevel, levelsProgress, getLevels],
+    () => getLevels().slice(0, MAX_LEVELS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rawQuestions, highestUnlockedLevel, levelsProgress],
   );
+
   const currentTheme = getRegionByLevel(highestUnlockedLevel);
+
+  // Calcula secciones de fondo por región — cada región ocupa su rango de niveles
+  const regionSections = useMemo(() => {
+    if (!levels.length) return [];
+
+    const getNodeY = (i: number) => i * NODE_SPACING + 100;
+    const mapHeight = levels.length * NODE_SPACING + 200;
+    const totalH = SCROLL_PADDING_TOP + mapHeight + SCROLL_PADDING_BOTTOM;
+
+    // Agrupar índices consecutivos por región
+    type Section = { regionId: GameRegion; startIdx: number; endIdx: number };
+    const sections: Section[] = [];
+    let currentRegionId = levels[0].region as GameRegion;
+    let startIdx = 0;
+
+    for (let i = 0; i < levels.length; i++) {
+      const regionId = levels[i].region as GameRegion;
+      const isLast = i === levels.length - 1;
+
+      if (regionId !== currentRegionId || isLast) {
+        sections.push({
+          regionId: currentRegionId,
+          startIdx,
+          endIdx: regionId !== currentRegionId ? i - 1 : i,
+        });
+        if (regionId !== currentRegionId) {
+          currentRegionId = regionId;
+          startIdx = i;
+          if (isLast) {
+            sections.push({ regionId, startIdx: i, endIdx: i });
+          }
+        }
+      }
+    }
+
+    return sections.map(({ regionId, startIdx, endIdx }, idx) => {
+      const isFirst = idx === 0;
+      const isLast = idx === sections.length - 1;
+
+      // Pixel Y del primer y último nodo de la sección
+      const firstY = SCROLL_PADDING_TOP + MAP_MARGIN_TOP + getNodeY(startIdx);
+      const lastY = SCROLL_PADDING_TOP + MAP_MARGIN_TOP + getNodeY(endIdx);
+
+      const top = isFirst ? 0 : firstY - NODE_SPACING / 2;
+      const bottom = isLast ? totalH : lastY + NODE_SPACING / 2;
+
+      return {
+        regionId,
+        top,
+        height: bottom - top,
+        theme: getRegionByLevel(levels[startIdx].id),
+      };
+    });
+  }, [levels]);
 
   const [selectedLevel, setSelectedLevel] = useState<GameLevel | null>(null);
   const [activeLevelId, setActiveLevelId] = useState<number | null>(null);
@@ -84,10 +147,10 @@ export default function TriviaMapClient({
     return () => clearTimeout(t);
   }, [levels.length, highestUnlockedLevel]);
 
-  // Called by TriviaGameView when the user passes a level
+  // Bug fix: NO cerrar el juego aquí — solo trackear readiness.
+  // El juego se cierra cuando el usuario presiona "Continuar" en ResultsScreen → onExit.
   const handleLevelComplete = () => {
     markTriviaRegion(currentTheme.id);
-    setActiveLevelId(null);
   };
 
   const getNodeX = (i: number) =>
@@ -113,15 +176,12 @@ export default function TriviaMapClient({
   const avatarAsset = REGION_ASSETS[currentTheme.id]?.avatar;
 
   const mapHeight = levels.length * NODE_SPACING + 200;
-  const scrollPaddingTop = 100;
-  const scrollPaddingBottom = 200;
-  const totalScrollHeight = scrollPaddingTop + mapHeight + scrollPaddingBottom;
+  const totalScrollHeight =
+    SCROLL_PADDING_TOP + mapHeight + SCROLL_PADDING_BOTTOM;
 
   return (
-    <div
-      className="relative flex flex-col"
-      style={{ height: "100dvh", overflow: "hidden" }}
-    >
+    <div className="relative flex flex-col h-full overflow-hidden">
+      {/* Color de fondo base — color top de la región actual */}
       <div
         className="absolute inset-0"
         style={{ backgroundColor: currentTheme.colors.backgroundTop }}
@@ -172,27 +232,40 @@ export default function TriviaMapClient({
           ref={containerRef}
           style={{ height: totalScrollHeight, pointerEvents: "none" }}
         >
-          {backgroundAsset && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={backgroundAsset}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ height: totalScrollHeight }}
-            />
-          )}
+          {/* Fondos por sección de región — cada región muestra su propia imagen */}
+          {regionSections.map(({ regionId, top, height, theme }) => {
+            const bg = REGION_ASSETS[regionId]?.background;
+            return (
+              <div
+                key={regionId}
+                className="absolute inset-x-0 overflow-hidden"
+                style={{ top, height }}
+              >
+                {bg && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={bg}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                {/* Gradiente sutil por región — más liviano que antes */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(to bottom, ${theme.colors.backgroundTop}44, ${theme.colors.backgroundBottom}77)`,
+                  }}
+                />
+              </div>
+            );
+          })}
+
+          {/* Capa de oscurecimiento mínima — solo para legibilidad de los nodos */}
           <div
             className="absolute inset-0"
             style={{
               height: totalScrollHeight,
-              background: `linear-gradient(to bottom, ${currentTheme.colors.backgroundTop}99, ${currentTheme.colors.backgroundBottom}CC)`,
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              height: totalScrollHeight,
-              backgroundColor: "rgba(0,0,0,0.12)",
+              backgroundColor: "rgba(0,0,0,0.08)",
             }}
           />
         </div>
@@ -200,12 +273,16 @@ export default function TriviaMapClient({
         <div
           style={{
             position: "relative",
-            paddingTop: scrollPaddingTop,
-            paddingBottom: scrollPaddingBottom,
+            paddingTop: SCROLL_PADDING_TOP,
+            paddingBottom: SCROLL_PADDING_BOTTOM,
           }}
         >
           <div
-            style={{ position: "relative", height: mapHeight, marginTop: 20 }}
+            style={{
+              position: "relative",
+              height: mapHeight,
+              marginTop: MAP_MARGIN_TOP,
+            }}
           >
             {/* SVG paths */}
             <svg
@@ -254,25 +331,53 @@ export default function TriviaMapClient({
             </svg>
 
             {/* Nodes */}
-            {levels.map((level, i) => (
+            {levels.map((level, i) => {
+              const levelRegionAssets =
+                REGION_ASSETS[level.region as GameRegion];
+              return (
+                <div
+                  key={level.id}
+                  style={{
+                    position: "absolute",
+                    left: getNodeX(i) - 60,
+                    top: getNodeY(i) - 40,
+                  }}
+                >
+                  <IllustratedNode
+                    level={level}
+                    index={i}
+                    onPress={setSelectedLevel}
+                    isCurrent={level.id === highestUnlockedLevel}
+                    avatarSrc={levelRegionAssets?.avatar ?? null}
+                    avatarEmojiFallback={getRegionByLevel(level.id).avatarEmoji}
+                  />
+                </div>
+              );
+            })}
+            {/* TEMPORAL — Coming soon node */}
+            {levels.length > 0 && (
               <div
-                key={level.id}
                 style={{
                   position: "absolute",
-                  left: getNodeX(i) - 60,
-                  top: getNodeY(i) - 40,
+                  left: getNodeX(levels.length) - 70,
+                  top: getNodeY(levels.length) - 40,
                 }}
               >
-                <IllustratedNode
-                  level={level}
-                  index={i}
-                  onPress={setSelectedLevel}
-                  isCurrent={level.id === highestUnlockedLevel}
-                  avatarSrc={avatarAsset ?? null}
-                  avatarEmojiFallback={currentTheme.avatarEmoji}
-                />
+                <div className="flex flex-col items-center gap-2 opacity-80">
+                  <div className="w-[60px] h-[60px] rounded-full bg-card border-2 border-dashed border-amber-400 flex items-center justify-center shadow-md">
+                    <Microscope size={30} className="text-amber-600" />
+                  </div>
+                  <div className="bg-card/90 border border-amber-400/40 rounded-xl px-3 py-2 text-center max-w-[140px] shadow">
+                    <p className="text-xs font-bold text-amber-600">
+                      ¡Más niveles pronto!
+                    </p>
+                    <p className="text-[10px] text-foreground/60 mt-0.5">
+                      Investigando más fuentes...
+                    </p>
+                  </div>
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -289,7 +394,7 @@ export default function TriviaMapClient({
         }}
       />
 
-      {/* Game view — pasa onComplete para trackear readiness */}
+      {/* Game view */}
       {activeLevelId !== null && (
         <TriviaGameView
           levelId={activeLevelId}

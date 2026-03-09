@@ -1,10 +1,10 @@
-// store/game-store.ts
-// Web version: AsyncStorage → localStorage via zustand/middleware's default storage.
-
 "use client";
 
 import { getRegionByLevel } from "@/constants/regions-data";
-import { hydrateLevelsWithQuestions } from "@/lib/level-hydrator";
+import {
+  hydrateLevelsWithQuestions,
+  QUESTIONS_PER_LEVEL,
+} from "@/lib/level-hydrator";
 import {
   GameLevel,
   GameRegion,
@@ -68,9 +68,14 @@ export const useGameStore = create<GameState>()(
             ...state.levelsProgress,
             [levelId]: { stars: newStars, status: "completed" as const },
           };
+
+          // Tope: no superar el último nivel disponible con las preguntas actuales
+          const totalLevels = Math.floor(
+            state.rawQuestions.length / QUESTIONS_PER_LEVEL,
+          );
           const newHighest =
             levelId === state.highestUnlockedLevel
-              ? state.highestUnlockedLevel + 1
+              ? Math.min(state.highestUnlockedLevel + 1, totalLevels)
               : state.highestUnlockedLevel;
 
           return {
@@ -90,10 +95,21 @@ export const useGameStore = create<GameState>()(
         }),
     }),
     {
-      name: "votabien-game-storage-v3",
-      // Default storage is localStorage in the browser — no AsyncStorage needed
+      name: "votabien-game-storage",
+      version: 4, // bump de versión — resetea progreso de usuarios con storage viejo
+      migrate: (persistedState: unknown, fromVersion: number) => {
+        // Versiones anteriores usaban el nombre "votabien-game-storage-v3"
+        // por lo que este store arrancará limpio para todos — comportamiento correcto
+        if (fromVersion < 4) {
+          return {
+            levelsProgress: {},
+            userXp: 0,
+            highestUnlockedLevel: 1,
+          };
+        }
+        return persistedState;
+      },
       storage: createJSONStorage(() => {
-        // Safe SSR guard: Next.js runs some code on the server where localStorage doesn't exist
         if (typeof window === "undefined") {
           return {
             getItem: () => null,
@@ -107,7 +123,6 @@ export const useGameStore = create<GameState>()(
         levelsProgress: state.levelsProgress,
         userXp: state.userXp,
         highestUnlockedLevel: state.highestUnlockedLevel,
-        // rawQuestions NOT persisted — always fetched fresh from API
       }),
     },
   ),

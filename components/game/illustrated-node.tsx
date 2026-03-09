@@ -1,13 +1,11 @@
 "use client";
 
-// components/game/IllustratedNode.tsx
-
 import { GameLevel } from "@/interfaces/game-types";
 import { Crown, Lock, Star, Swords } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-// ── Color palettes (same as RN version) ───────────────────────────────────
+// ── Color palettes ────────────────────────────────────────────────────────
 const COLORS = {
   costa: {
     normal: ["#f59e0b", "#ea580c", "#0891b2"],
@@ -43,13 +41,6 @@ const COLORS = {
   },
 } as const;
 
-const EMOJIS = {
-  costa: ["🌊", "🐚", "☀️"],
-  sierra: ["⛰️", "🌿", "🦙"],
-  selva: ["🌿", "🐊", "💧"],
-  hanan_pacha: ["⭐", "🌙", "🦅"],
-} as const;
-
 function regionOf(id: number): keyof typeof COLORS {
   if (id >= 31) return "hanan_pacha";
   if (id >= 21) return "selva";
@@ -63,7 +54,7 @@ interface IllustratedNodeProps {
   onPress: (level: GameLevel) => void;
   index: number;
   isCurrent: boolean;
-  avatarSrc?: string | null; // web: string URL from REGION_ASSETS
+  avatarSrc?: string | null;
   avatarEmojiFallback?: string;
   animationTrigger?: "bounce" | "shake" | null;
 }
@@ -83,18 +74,20 @@ export function IllustratedNode({
   const v = level.id % 3;
 
   const bg = isLocked ? pal.locked : isBoss ? pal.boss : pal.normal[v];
-  const border = isLocked
+  const borderColor = isLocked
     ? pal.lockedBorder
     : isBoss
       ? pal.bossBorder
       : pal.border[v];
   const size = isBoss ? 100 : 80;
 
+  const borderWidth = isBoss ? 4 : 3;
+  const borderBottomWidth = isBoss ? 8 : 5;
+
   // ── Animation state ────────────────────────────────────────────────────
   const [animClass, setAnimClass] = useState("");
   const isCurrentPrev = useRef(false);
 
-  // Bounce in when this node becomes current
   useEffect(() => {
     if (isCurrent && !isCurrentPrev.current) {
       setAnimClass("node-bounce-in");
@@ -108,7 +101,6 @@ export function IllustratedNode({
     }
   }, [isCurrent]);
 
-  // External animation trigger from parent (correct/wrong answer)
   useEffect(() => {
     if (!animationTrigger) return;
     const cls = animationTrigger === "bounce" ? "node-bounce-ok" : "node-shake";
@@ -142,12 +134,14 @@ export function IllustratedNode({
             AQUÍ
           </div>
           <div
-            className="flex items-center justify-center overflow-hidden border-[3px] shadow-lg"
+            className="flex items-center justify-center overflow-hidden shadow-lg"
             style={{
               width: 60,
               height: 60,
               borderRadius: 30,
               backgroundColor: "#fff",
+              borderWidth: 3,
+              borderStyle: "solid",
               borderColor: bg,
             }}
           >
@@ -178,8 +172,14 @@ export function IllustratedNode({
             height: size,
             borderRadius: size / 2,
             backgroundColor: bg,
-            border: `${isBoss ? 4 : 3}px solid ${border}`,
-            borderBottomWidth: isBoss ? 8 : 5,
+            borderTopWidth: borderWidth,
+            borderLeftWidth: borderWidth,
+            borderRightWidth: borderWidth,
+            borderBottomWidth: borderBottomWidth,
+            borderStyle: "solid",
+            borderTopColor: borderColor,
+            borderLeftColor: borderColor,
+            borderRightColor: borderColor,
             borderBottomColor: "rgba(0,0,0,0.25)",
             boxShadow: isCurrent
               ? `0 0 0 4px ${bg}40, 0 4px 12px ${bg}60`
@@ -189,7 +189,7 @@ export function IllustratedNode({
         >
           {/* Shine */}
           <div
-            className="absolute"
+            className="absolute pointer-events-none"
             style={{
               top: 5,
               left: "22%",
@@ -197,7 +197,6 @@ export function IllustratedNode({
               height: "22%",
               borderRadius: size / 2,
               background: "rgba(255,255,255,0.35)",
-              pointerEvents: "none",
             }}
           />
 
@@ -235,7 +234,7 @@ export function IllustratedNode({
           {/* Stars */}
           {!isLocked && (
             <div
-              className="absolute flex gap-0.5 items-center border"
+              className="absolute flex gap-0.5 items-center"
               style={{
                 bottom: -13,
                 backgroundColor: "#fff",
@@ -244,6 +243,8 @@ export function IllustratedNode({
                 paddingRight: 6,
                 paddingTop: 3,
                 paddingBottom: 3,
+                borderWidth: 1,
+                borderStyle: "solid",
                 borderColor: "#f3f4f6",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
               }}
@@ -260,24 +261,6 @@ export function IllustratedNode({
           )}
         </button>
       </div>
-
-      {/* ── Level title ── */}
-      {/* {!isLocked && (
-        <div
-          className="mt-4 px-2 py-0.5 rounded-lg text-center"
-          style={{
-            backgroundColor: "rgba(255,255,255,0.92)",
-            maxWidth: 110,
-          }}
-        >
-          <span
-            className="font-bold text-center"
-            style={{ fontSize: 9, color: "#374151", lineHeight: 1.2 }}
-          >
-            {isBoss ? "⚔️ JEFE" : level.title}
-          </span>
-        </div>
-      )} */}
     </div>
   );
 }

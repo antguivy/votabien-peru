@@ -10,7 +10,6 @@ import {
   Users, // Equipo
   Target, // Misión y Visión — objetivo/meta
   Mail, // Contacto
-  SlidersHorizontal, // Filtrar — sliders de ajuste
   Menu, // Menú mobile
   // Admin
   ScrollText, // Legisladores — actas/leyes

@@ -18,8 +18,6 @@ export const questionsService = {
     const response = await apiClient<QuestionsResponse>(
       "/api/v1/triviagame/questions",
     );
-    // console.log("response_1", response.questions);
-    // console.log("response_2", response.questions[1].options);
 
     return addLettersToOptions(response.questions);
   },

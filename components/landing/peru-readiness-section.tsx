@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2, ArrowRight, Zap, CircleDashed } from "lucide-react";
+import {
+  ArrowRight,
+  Heart,
+  HelpCircle,
+  LucideIcon,
+  Scale,
+  Vote,
+  Zap,
+} from "lucide-react";
 import {
   ReadinessTool,
   THRESHOLDS,
@@ -14,45 +22,103 @@ const TOOL_CONFIG: Record<
   {
     label: string;
     sublabel: string;
+    detail: string;
     href: string;
     color: string;
-    unit: string;
+    icon: LucideIcon;
   }
 > = {
   match: {
-    // ← alineado con el store
     label: "Mi Candidato",
     sublabel: "Descubre tu candidato ideal",
+    detail: "Test de afinidad política",
     href: "/match",
     color: "#2563eb",
-    unit: "búsquedas",
+    icon: Heart,
   },
   comparador: {
     label: "Comparador",
-    sublabel: "Analiza diferencias entre fórmulas presidenciales",
+    sublabel: "Analiza fórmulas presidenciales",
+    detail: "Diferencias lado a lado",
     href: "/comparador",
     color: "#7c3aed",
-    unit: "comparaciones",
+    icon: Scale,
   },
   trivia: {
     label: "Trivia Electoral",
-    sublabel: "Conoce propuestas, historia, polémico, corrupción",
+    sublabel: "Pon a prueba lo que sabes",
+    detail: "Propuestas, polémicas y más",
     href: "/trivia",
     color: "#d97706",
-    unit: "regiones",
+    icon: HelpCircle,
   },
   simulador: {
     label: "Simulador de Voto",
-    sublabel: "Practica antes del día de votación",
+    sublabel: "Practica antes del día",
+    detail: "Como en la cabina real",
     href: "/simulador",
     color: "#059669",
-    unit: "simulaciones",
+    icon: Vote,
   },
 };
 
 const TOOLS: ReadinessTool[] = ["match", "comparador", "trivia", "simulador"];
 
-function ToolRow({
+// Ring SVG animado
+function ProgressRing({ count, mounted }: { count: number; mounted: boolean }) {
+  const safe = mounted ? count : 0;
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * (safe / 4);
+  const done = safe === 4;
+  const color = done ? "#f59e0b" : "oklch(0.4936 0.165 28.53)";
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: 68, height: 68 }}>
+      <svg
+        width="68"
+        height="68"
+        viewBox="0 0 68 68"
+        style={{ transform: "rotate(-90deg)" }}
+      >
+        <circle
+          cx="34"
+          cy="34"
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          className="text-muted"
+          strokeWidth="4"
+        />
+        <circle
+          cx="34"
+          cy="34"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circ}`}
+          style={{
+            transition: "stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)",
+            filter: `drop-shadow(0 0 4px ${color}80)`,
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span
+          className="font-black text-base leading-none"
+          style={{ color: done ? "#f59e0b" : "var(--foreground)" }}
+        >
+          {safe}
+        </span>
+        <span className="text-[8px] text-muted-foreground font-bold">/4</span>
+      </div>
+    </div>
+  );
+}
+
+function ToolCard({
   tool,
   raw,
   pct,
@@ -67,126 +133,91 @@ function ToolRow({
 }) {
   const cfg = TOOL_CONFIG[tool];
   const max = THRESHOLDS[tool];
-  const [width, setWidth] = useState(0);
+  const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setWidth(mounted ? pct : 0), 100);
+    const t = setTimeout(() => setBarWidth(mounted ? pct : 0), 150);
     return () => clearTimeout(t);
   }, [pct, mounted]);
 
   return (
     <Link
       href={cfg.href}
-      className="group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 hover:shadow-sm active:scale-[0.99]"
+      className="group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 hover:shadow-md hover:-translate-y-px active:scale-[0.99] overflow-hidden"
       style={
         done
-          ? { backgroundColor: `${cfg.color}0d`, borderColor: `${cfg.color}40` }
-          : {
-              borderColor: "var(--color-border)",
-              backgroundColor: "var(--color-card)",
-            }
+          ? { backgroundColor: `${cfg.color}0c`, borderColor: `${cfg.color}35` }
+          : { borderColor: "var(--border)", backgroundColor: "var(--card)" }
       }
     >
-      {/* Color accent bar */}
+      {/* left color bar */}
       <div
-        className="w-1 self-stretch rounded-full flex-shrink-0"
-        style={{ backgroundColor: done ? cfg.color : "var(--color-border)" }}
+        className="absolute top-0 left-0 w-[3px] h-full rounded-l-2xl"
+        style={{ background: done ? cfg.color : "var(--border)" }}
       />
 
-      {/* Content */}
+      {/* icon badge — icono pintado con su color, bg tono más bajo */}
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110"
+        style={{
+          background: `${cfg.color}10`,
+          border: `1px solid ${cfg.color}20`,
+        }}
+      >
+        <cfg.icon
+          className="size-5"
+          style={{
+            color: cfg.color,
+            filter: done ? `drop-shadow(0 0 5px ${cfg.color}70)` : undefined,
+          }}
+        />
+      </div>
+
+      {/* text + bar */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
           <p
-            className="text-sm font-bold"
-            style={{ color: done ? cfg.color : "var(--color-foreground)" }}
+            className="text-sm font-black leading-tight"
+            style={{ color: done ? cfg.color : "var(--foreground)" }}
           >
             {cfg.label}
           </p>
-
           {done ? (
             <span
-              className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full"
+              className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
               style={{ color: cfg.color, backgroundColor: `${cfg.color}18` }}
             >
-              <Zap size={9} fill="currentColor" /> Completado
+              <Zap size={9} fill="currentColor" /> Listo
             </span>
           ) : raw > 0 ? (
-            <span className="text-[11px] font-bold tabular-nums text-muted-foreground">
-              {raw} / {max} {cfg.unit}
+            <span className="text-[10px] font-bold tabular-nums text-muted-foreground flex-shrink-0">
+              {raw}/{max}
             </span>
           ) : (
             <ArrowRight
-              size={14}
-              className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+              size={13}
+              className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
             />
           )}
         </div>
 
-        {/* Progress track */}
-        <div
-          className="h-1.5 w-full rounded-full overflow-hidden"
-          style={{ backgroundColor: "var(--color-muted)" }}
-        >
+        <p className="text-muted-foreground text-[11px] mb-2 leading-tight">
+          {done ? cfg.detail : cfg.sublabel}
+        </p>
+
+        {/* progress bar */}
+        <div className="h-1 w-full rounded-full overflow-hidden bg-muted">
           <div
             className="h-full rounded-full transition-all duration-700 ease-out"
             style={{
-              width: `${width}%`,
-              backgroundColor: cfg.color,
-              boxShadow: done ? `0 0 6px ${cfg.color}55` : undefined,
+              width: `${barWidth}%`,
+              background: cfg.color,
+              boxShadow: done ? `0 0 8px ${cfg.color}55` : "none",
             }}
           />
         </div>
-
-        {!done && raw === 0 && (
-          <p className="text-xs text-muted-foreground mt-1.5">{cfg.sublabel}</p>
-        )}
       </div>
     </Link>
-  );
-}
-
-function ProgressRing({ count, mounted }: { count: number; mounted: boolean }) {
-  const safeCount = mounted ? count : 0;
-  const r = 20;
-  const circ = 2 * Math.PI * r;
-  const dash = circ * (safeCount / 4);
-  const isComplete = safeCount === 4;
-
-  return (
-    <div className="relative flex-shrink-0">
-      <svg width="56" height="56" viewBox="0 0 56 56">
-        <circle
-          cx="28"
-          cy="28"
-          r={r}
-          fill="none"
-          stroke="var(--color-muted)"
-          strokeWidth="4"
-        />
-        <circle
-          cx="28"
-          cy="28"
-          r={r}
-          fill="none"
-          stroke={isComplete ? "#f59e0b" : "var(--color-primary)"}
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`}
-          strokeDashoffset={circ * 0.25}
-          style={{
-            transition: "stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)",
-          }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span
-          className="text-[13px] font-black"
-          style={{ color: isComplete ? "#f59e0b" : "var(--color-foreground)" }}
-        >
-          {safeCount}/4
-        </span>
-      </div>
-    </div>
   );
 }
 
@@ -194,42 +225,39 @@ export default function PeruReadinessSection() {
   const { raw, progress, isReady, completedCount, isFullyReady } =
     useReadiness();
   const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const safeCount = mounted ? completedCount : 0;
+  const safe = mounted ? completedCount : 0;
+  const allDone = mounted && isFullyReady;
 
   return (
-    <section className="w-full py-12 px-4">
+    <section className="w-full py-14 px-4">
       <div className="max-w-lg mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <ProgressRing count={safeCount} mounted={mounted} />
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
-              Elecciones Perú 2026
-            </p>
-            <h2 className="text-xl font-black text-foreground leading-tight">
-              {mounted && isFullyReady
-                ? "¡Listo para votar!"
-                : safeCount > 0
+        {/* header */}
+        <div className="flex items-center gap-5 mb-8">
+          <ProgressRing count={safe} mounted={mounted} />
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-black text-foreground leading-tight">
+              {allDone
+                ? "¡Estás listo para votar!"
+                : safe > 0
                   ? "Sigue preparándote"
-                  : "¿Qué tan listo estás para votar?"}
+                  : "¿Qué tan listo estás?"}
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {safeCount === 0
-                ? "Completa las 4 herramientas para tomar la mejor decisión"
-                : `${safeCount} de 4 herramientas completadas`}
+            <p className="text-xs text-muted-foreground mt-1 leading-tight">
+              {safe === 0
+                ? "Usa las 4 herramientas antes del 12 de abril"
+                : safe < 4
+                  ? `${4 - safe} ${4 - safe === 1 ? "herramienta" : "herramientas"} más para completar tu preparación`
+                  : "Has usado todas las herramientas — vota con confianza"}
             </p>
           </div>
         </div>
 
-        {/* Tool rows */}
-        <div className="flex flex-col gap-2">
+        {/* grid de tarjetas */}
+        <div className="flex flex-col gap-2.5">
           {TOOLS.map((tool) => (
-            <ToolRow
+            <ToolCard
               key={tool}
               tool={tool}
               raw={mounted ? raw[tool] : 0}
@@ -239,6 +267,29 @@ export default function PeruReadinessSection() {
             />
           ))}
         </div>
+
+        {/* footer motivacional */}
+        {!allDone && (
+          <p className="text-center text-[11px] text-muted-foreground mt-6 leading-relaxed">
+            Un voto informado es la mejor defensa contra la demagogia.
+          </p>
+        )}
+        {allDone && (
+          <div
+            className="mt-6 p-4 rounded-2xl text-center"
+            style={{
+              background: "oklch(0.4936 0.165 28.53 / 0.08)",
+              border: "1px solid oklch(0.4936 0.165 28.53 / 0.2)",
+            }}
+          >
+            <p
+              className="font-black text-sm"
+              style={{ color: "oklch(0.4936 0.165 28.53)" }}
+            >
+              🇵🇪 Tu voto informado hace la diferencia
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

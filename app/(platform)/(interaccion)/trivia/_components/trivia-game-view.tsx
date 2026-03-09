@@ -1,7 +1,5 @@
 "use client";
 
-// trivia/_components/trivia-game-view.tsx
-
 import { getRegionByLevel } from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
 import { TriviaOption, TriviaQuestion } from "@/interfaces/game-types";
@@ -10,12 +8,16 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
+  Play,
   Share2,
   X,
   Zap,
 } from "lucide-react";
 import { IncaArcadeCard } from "@/components/game/inca-arcade-card";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { VideoDialog } from "@/components/video-dialog";
+import { cn } from "@/lib/utils";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const SECONDS_PER_QUESTION = 15;
@@ -37,18 +39,17 @@ function scoreForAnswer(timeLeft: number, correct: boolean): number {
   return 100 + Math.round((timeLeft / SECONDS_PER_QUESTION) * 100);
 }
 
-// ── Timer bar ─────────────────────────────────────────────────────────────
 function TimerBar({ timeLeft, total }: { timeLeft: number; total: number }) {
   const pct = Math.max(0, (timeLeft / total) * 100);
   const color = pct > 60 ? "#22c55e" : pct > 30 ? "#f97316" : "#ef4444";
   return (
-    <div className="h-2.5 w-full bg-black/20 rounded-full overflow-hidden">
+    <div className="h-2 w-full bg-black/25 rounded-full overflow-hidden">
       <div
         className="h-full rounded-full transition-all duration-1000 ease-linear"
         style={{
           width: `${pct}%`,
           backgroundColor: color,
-          boxShadow: `0 0 6px ${color}99`,
+          boxShadow: `0 0 8px ${color}CC`,
         }}
       />
     </div>
@@ -122,28 +123,27 @@ function OptionCard({
       type="button"
       disabled={revealed}
       onClick={() => onSelect(option.option_id)}
-      className={`relative flex flex-row items-center gap-3 px-3 py-2.5 rounded-2xl border-2 transition-all duration-200 select-none text-left
+      className={`relative flex flex-row items-center gap-2.5 px-2.5 py-2 rounded-2xl border-2 transition-all duration-200 select-none text-left
         ${container}
-        ${!revealed ? "active:scale-[0.97] hover:bg-white hover:border-white/70 cursor-pointer shadow-sm" : "cursor-default"}
+        ${!revealed ? "active:scale-[0.97] hover:bg-white hover:border-white/70 cursor-pointer shadow-md" : "cursor-default"}
       `}
     >
       {badge}
       <div
-        className={`w-12 h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 transition-all ${photoRing}`}
+        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 transition-all ${photoRing}`}
       >
         {option.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={option.image_url}
             alt={option.name}
             className="w-full h-full object-contain"
           />
         ) : (
-          <span className="text-2xl">👤</span>
+          <span className="text-xl">👤</span>
         )}
       </div>
       <p
-        className={`text-[11px] font-bold leading-tight uppercase tracking-wide line-clamp-3 flex-1 ${nameClass}`}
+        className={`text-[10px] sm:text-[11px] font-bold leading-tight uppercase tracking-wide line-clamp-3 flex-1 ${nameClass}`}
       >
         {option.name}
       </p>
@@ -326,6 +326,43 @@ function ResultsScreen({
   );
 }
 
+// ------
+function VideoSourceLink({ url }: { url: string }) {
+  const isVideo =
+    url.includes("youtube.com") ||
+    url.includes("youtu.be") ||
+    url.includes("tiktok.com");
+
+  if (isVideo) {
+    return (
+      <VideoDialog
+        url={url}
+        trigger={
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:text-primary/80 transition-colors"
+          >
+            <Play size={13} className="fill-primary" />
+            Ver video relacionado
+          </button>
+        }
+      />
+    );
+  }
+
+  return (
+    <Link
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-muted-foreground/40"
+    >
+      Ver fuente de la noticia
+      <ExternalLink size={12} />
+    </Link>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────
 interface TriviaGameViewProps {
   levelId: number;
@@ -459,7 +496,12 @@ export function TriviaGameView({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col"
+      className={cn(
+        // Mobile — full screen
+        "fixed inset-0 z-[60] flex flex-col",
+        // Desktop — panel centrado respetando navbar
+        "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden",
+      )}
       style={{
         background: `linear-gradient(160deg, ${theme.colors.backgroundTop} 0%, ${theme.colors.backgroundBottom} 100%)`,
       }}
@@ -480,7 +522,7 @@ export function TriviaGameView({
         <div className="flex flex-col h-full">
           {/* ── Header ── */}
           <div
-            className="flex-shrink-0 px-4 flex flex-col gap-2"
+            className="flex-shrink-0 px-3 sm:px-4 flex flex-col gap-2"
             style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top))" }}
           >
             <div className="flex items-center justify-between">
@@ -488,11 +530,14 @@ export function TriviaGameView({
                 <button
                   type="button"
                   onClick={onExit}
-                  className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 active:scale-90 transition-all"
+                  className="w-8 h-8 rounded-full bg-black/25 backdrop-blur-sm flex items-center justify-center hover:bg-black/35 active:scale-90 transition-all"
                 >
-                  <X size={16} color="rgba(255,255,255,0.9)" />
+                  <X size={15} color="rgba(255,255,255,0.95)" />
                 </button>
-                <span className="text-white/85 text-xs font-black uppercase tracking-wider">
+                <span
+                  className="text-white text-xs font-black uppercase tracking-wider"
+                  style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
+                >
                   {currentIdx + 1} / {questions.length}
                 </span>
                 {streak >= 2 && (
@@ -505,10 +550,16 @@ export function TriviaGameView({
                 )}
               </div>
               <div className="text-right">
-                <p className="text-white/50 text-[9px] font-black uppercase tracking-widest">
-                  Score
+                <p
+                  className="text-white/60 text-[9px] font-black uppercase tracking-widest"
+                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}
+                >
+                  Puntos
                 </p>
-                <p className="text-white font-black text-lg leading-none tabular-nums">
+                <p
+                  className="text-white font-black text-lg leading-none tabular-nums"
+                  style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
+                >
                   {score}
                 </p>
               </div>
@@ -518,15 +569,18 @@ export function TriviaGameView({
 
           {/* ── Scrollable body ── */}
           <div
-            className="flex-1 overflow-y-auto px-4 pt-3 pb-2 flex flex-col gap-3"
+            className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 pb-2 flex flex-col gap-2.5 sm:gap-3"
             style={{ scrollbarWidth: "none" }}
           >
             {/* Question card */}
-            <div className="bg-white/12 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex-shrink-0">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/25 text-white/95 text-[9px] font-black uppercase tracking-widest mb-2">
+            <div className="bg-black/25 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/15 flex-shrink-0 shadow-lg">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white/90 text-[9px] font-black uppercase tracking-widest mb-2">
                 {question?.category}
               </span>
-              <p className="text-white font-semibold text-[15px] leading-snug text-center">
+              <p
+                className="text-white font-semibold text-sm sm:text-[15px] leading-snug text-center"
+                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
+              >
                 ❝{question?.quote}❞
               </p>
             </div>
@@ -549,12 +603,12 @@ export function TriviaGameView({
 
             {/* Feedback panel */}
             {revealed && (
-              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg animate-in slide-in-from-bottom-3 duration-200 flex-shrink-0">
+              <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/10 animate-in slide-in-from-bottom-3 duration-200 flex-shrink-0">
                 <div
                   className="h-1 w-full"
                   style={{ backgroundColor: feedbackColor }}
                 />
-                <div className="p-4 flex flex-col gap-3">
+                <div className="p-3.5 sm:p-4 flex flex-col gap-3">
                   <div className="flex items-center gap-2">
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
@@ -599,7 +653,7 @@ export function TriviaGameView({
                   </div>
 
                   {question?.explanation && (
-                    <div className="bg-muted/60 rounded-xl p-3">
+                    <div className="bg-muted/70 rounded-xl p-3">
                       <div className="flex items-center gap-1.5 mb-1.5">
                         <BookOpen size={11} className="text-muted-foreground" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
@@ -611,27 +665,19 @@ export function TriviaGameView({
                   )}
 
                   {question?.source_url && (
-                    <a
-                      href={question.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-muted-foreground/40"
-                    >
-                      Ver fuente de la noticia
-                      <ExternalLink size={12} />
-                    </a>
+                    <VideoSourceLink url={question.source_url} />
                   )}
                 </div>
               </div>
             )}
 
-            <div className="flex-shrink-0 h-2" />
+            <div className="flex-shrink-0 h-1" />
           </div>
 
           {/* ── Sticky next button ── */}
           {revealed && (
             <div
-              className="flex-shrink-0 px-4 pt-2 border-t border-white/10 bg-black/10 backdrop-blur-sm animate-in slide-in-from-bottom-1 duration-150"
+              className="flex-shrink-0 px-3 sm:px-4 pt-2 border-t border-white/10 bg-black/15 backdrop-blur-md animate-in slide-in-from-bottom-1 duration-150"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
               }}
@@ -639,8 +685,11 @@ export function TriviaGameView({
               <button
                 type="button"
                 onClick={handleNext}
-                className="w-full py-3.5 rounded-2xl font-extrabold text-white text-sm uppercase tracking-widest shadow-md transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{ backgroundColor: theme.colors.primary }}
+                className="w-full py-3.5 rounded-2xl font-extrabold text-white text-sm uppercase tracking-widest shadow-lg transition-all hover:opacity-90 active:scale-[0.98]"
+                style={{
+                  backgroundColor: theme.colors.primary,
+                  textShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                }}
               >
                 {isLastQ ? "Ver resultados" : "Siguiente pregunta"}
               </button>
