@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
     "/privacidad",
     "/terminos",
     "/api/stats",
+    "/api/proxy-image",
     "/match",
     "/trivia",
     "/simulador",

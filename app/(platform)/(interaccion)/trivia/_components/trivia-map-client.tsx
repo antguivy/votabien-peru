@@ -19,7 +19,7 @@ const NODE_SPACING = 160;
 const MAP_WIDTH = 390;
 const SCROLL_PADDING_TOP = 100;
 const SCROLL_PADDING_BOTTOM = 200;
-const MAP_MARGIN_TOP = 20;
+const MAP_MARGIN_TOP = 0;
 
 // TEMPORAL — quitar cuando haya más preguntas
 const MAX_LEVELS = 5;
@@ -180,7 +180,7 @@ export default function TriviaMapClient({
     SCROLL_PADDING_TOP + mapHeight + SCROLL_PADDING_BOTTOM;
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden">
+    <div className="relative flex flex-col h-[100dvh] lg:h-[calc(100dvh-56px)] overflow-hidden">
       {/* Color de fondo base — color top de la región actual */}
       <div
         className="absolute inset-0"
@@ -224,7 +224,7 @@ export default function TriviaMapClient({
       {/* Scrollable map */}
       <div
         ref={scrollRef}
-        className="absolute inset-0 overflow-y-auto overflow-x-hidden"
+        className="absolute inset-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         <div

@@ -1,4 +1,3 @@
-// components/ui/video-dialog.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -13,24 +12,66 @@ function detectPlatform(url: string): Platform {
   return "unknown";
 }
 
+// NUEVO: Función para extraer y convertir el tiempo de YouTube a segundos
+function parseYouTubeTime(t: string | null): string | null {
+  if (!t) return null;
+  // Si es solo un número (Ej: "510")
+  if (/^\d+$/.test(t)) return t;
+  // Si tiene una 's' al final (Ej: "510s")
+  if (/^\d+s$/.test(t)) return t.replace("s", "");
+
+  // Si tiene formato de horas/minutos (Ej: "1h2m30s")
+  let totalSeconds = 0;
+  const hMatch = t.match(/(\d+)h/);
+  const mMatch = t.match(/(\d+)m/);
+  const sMatch = t.match(/(\d+)s/);
+
+  if (hMatch) totalSeconds += parseInt(hMatch[1], 10) * 3600;
+  if (mMatch) totalSeconds += parseInt(mMatch[1], 10) * 60;
+  if (sMatch) totalSeconds += parseInt(sMatch[1], 10);
+
+  return totalSeconds > 0 ? totalSeconds.toString() : null;
+}
+
 function buildEmbedUrl(url: string, platform: Platform): string | null {
   if (platform === "youtube" || platform === "youtube_short") {
     const match = url.match(
       /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
     );
     if (!match) return null;
+
+    // Buscar si hay un parámetro de tiempo (t=...)
+    let startParam = null;
+    try {
+      const urlObj = new URL(url);
+      const t = urlObj.searchParams.get("t");
+      startParam = parseYouTubeTime(t);
+    } catch (e) {
+      // Fallback por si la URL falla al parsearse
+      const tMatch = url.match(/[?&]t=([^&]+)/);
+      if (tMatch) startParam = parseYouTubeTime(tMatch[1]);
+    }
+
     const params = new URLSearchParams({
       autoplay: "1",
       rel: "0",
       modestbranding: "1",
+      playsinline: "1", // Ayuda en móviles para que no salte a pantalla completa forzada
     });
+
+    // Si encontramos un tiempo de inicio, se lo pasamos al iframe
+    if (startParam) {
+      params.append("start", startParam);
+    }
+
     return `https://www.youtube.com/embed/${match[1]}?${params}`;
   }
 
   if (platform === "tiktok") {
     const match = url.match(/video\/(\d+)/);
     if (!match) return null;
-    return `https://www.tiktok.com/player/v1/${match[1]}?autoplay=1`;
+    // Añadimos playsinline=1 para intentar forzar la lectura de metadata en móviles
+    return `https://www.tiktok.com/player/v1/${match[1]}?autoplay=1&playsinline=1`;
   }
 
   return null;
@@ -38,7 +79,7 @@ function buildEmbedUrl(url: string, platform: Platform): string | null {
 
 interface VideoDialogProps {
   url: string;
-  trigger?: React.ReactNode; // custom trigger — si no se pasa, usa el default
+  trigger?: React.ReactNode;
 }
 
 export function VideoDialog({ url, trigger }: VideoDialogProps) {
@@ -46,7 +87,6 @@ export function VideoDialog({ url, trigger }: VideoDialogProps) {
   const platform = detectPlatform(url);
   const embedUrl = buildEmbedUrl(url, platform);
 
-  // No renderizar si no es un video soportado
   if (platform === "unknown" || !embedUrl) return null;
 
   return (
@@ -122,17 +162,19 @@ function VideoModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-2 animate-in fade-in duration-200 ${isShort ? "md:p-12" : ""}`}
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
 
       <div
-        className="relative animate-in zoom-in-95 duration-300 flex flex-col gap-2"
-        style={{ width: isShort ? "min(360px, 85vw)" : "min(900px, 95vw)" }}
+        className="relative animate-in zoom-in-95 duration-300 flex flex-col gap-2 w-full mx-auto"
+        style={{
+          width: isShort ? "90%" : "100%",
+          maxWidth: isShort ? "420px" : "1024px",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Botón siempre visible encima del video */}
         <button
           onClick={onClose}
           className="self-end flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-bold transition-all backdrop-blur-sm"
@@ -142,7 +184,6 @@ function VideoModal({
           Cerrar
         </button>
 
-        {/* Video */}
         <div
           className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl"
           style={{ paddingTop: isShort ? "177.78%" : "56.25%" }}
@@ -151,7 +192,7 @@ function VideoModal({
             ref={iframeRef}
             className="absolute inset-0 w-full h-full"
             src={embedUrl}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
           />
         </div>

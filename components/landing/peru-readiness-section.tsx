@@ -172,13 +172,13 @@ function ToolCard({
 
       {/* left color bar */}
       <div
-        className="absolute top-0 left-0 w-[3px] h-full rounded-l-2xl z-20"
+        className="absolute top-0 left-0 w-[3px] h-full rounded-l-2xl z-10"
         style={{ background: done ? cfg.color : "var(--border)" }}
       />
 
       {/* icon badge */}
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110 z-20"
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110 z-10"
         style={{
           background: `${cfg.color}10`,
           border: `1px solid ${cfg.color}20`,
@@ -194,7 +194,7 @@ function ToolCard({
       </div>
 
       {/* text + bar */}
-      <div className="flex-1 min-w-0 z-20">
+      <div className="flex-1 min-w-0 z-10">
         <div className="flex items-center justify-between gap-2 mb-1">
           {/* label + inline static badge */}
           <div className="flex items-center gap-2 min-w-0">
@@ -272,7 +272,7 @@ export default function PeruReadinessSection() {
   const allDone = mounted && isFullyReady;
 
   return (
-    <section className="w-full py-14 px-4">
+    <section className="w-full mt-10 space-y-10 px-4">
       <div className="max-w-lg mx-auto">
         {/* header */}
         <div className="flex items-center gap-5 mb-8">
@@ -309,12 +309,6 @@ export default function PeruReadinessSection() {
           ))}
         </div>
 
-        {/* footer motivacional */}
-        {!allDone && (
-          <p className="text-center text-[11px] text-muted-foreground mt-6 leading-relaxed">
-            Un voto informado es la mejor defensa contra la demagogia.
-          </p>
-        )}
         {allDone && (
           <div
             className="mt-6 p-4 rounded-2xl text-center"

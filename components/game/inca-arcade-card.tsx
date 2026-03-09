@@ -3,7 +3,6 @@
 import { REGION_ASSETS } from "@/constants/game-assets";
 import { RegionTheme } from "@/constants/regions-data";
 import { TriviaQuestion } from "@/interfaces/game-types";
-import { Check } from "lucide-react";
 import Image from "next/image";
 
 interface IncaArcadeCardProps {
@@ -198,7 +197,18 @@ export function IncaArcadeCard({
                   className="flex items-center justify-center gap-1.5 py-2 px-3"
                   style={{ background: primaryColor }}
                 >
-                  <Check size={13} color="#000" strokeWidth={3} />
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#000"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
                   <span
                     style={{
                       ...arcade,
@@ -222,10 +232,10 @@ export function IncaArcadeCard({
                       style={{ background: "#292524" }}
                     >
                       <img
-                        src={correctOption.image_url}
+                        src={`/api/proxy-image?url=${encodeURIComponent(correctOption.image_url)}`}
                         alt={correctOption.name}
-                        crossOrigin="anonymous"
                         className="w-full h-full object-contain"
+                        crossOrigin="anonymous"
                       />
                     </div>
                   )}

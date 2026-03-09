@@ -27,7 +27,7 @@ function formatFecha(fecha: string) {
 const QUICK_FILTERS = [
   {
     tipo: "Presidente",
-    descripcion: "Fórmulas presidenciales · 1 voto",
+    descripcion: "",
     href: "/candidatos?type=PRESIDENTE&limit=30",
     accent: "#dc2626",
   },
@@ -155,14 +155,13 @@ export default function HeroDualSplit({
       />
 
       {/* ── content — fills full viewport height ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 min-h-[calc(100svh-64px)] pt-16 pb-8">
+      <div className="relative z-10 flex flex-col items-center justify-center text-md text-center px-4 min-h-[calc(100svh-64px)] pt-16 pb-8">
         {/* DATE CHIP */}
         {fechaFormateada && (
           <p
             className="font-bold uppercase mb-3 md:mb-4"
             style={{
               color: "rgba(255,255,255,0.55)",
-              fontSize: "clamp(9px, 1vw, 11px)",
               letterSpacing: "0.3em",
               textShadow: "0 1px 4px rgba(0,0,0,0.9)",
             }}
@@ -182,8 +181,8 @@ export default function HeroDualSplit({
         >
           Infórmate,{" "}
           <span
+            className="text-brand"
             style={{
-              color: "oklch(0.78 0.165 28.53)",
               textShadow:
                 "0 0 56px oklch(0.4936 0.165 28.53 / 0.65), 0 2px 4px rgba(0,0,0,0.95)",
             }}
@@ -210,10 +209,9 @@ export default function HeroDualSplit({
         <div className="flex items-center gap-4 md:gap-8 mb-8 md:mb-10">
           <div className="flex flex-col items-center">
             <span
-              className="font-black tabular-nums leading-[0.9]"
+              className="text-brand font-black tabular-nums leading-[0.9]"
               style={{
                 fontSize: "clamp(4.5rem, 14vw, 10rem)",
-                color: "oklch(0.78 0.165 28.53)",
                 textShadow:
                   "0 0 80px oklch(0.4936 0.165 28.53 / 0.5), 0 4px 12px rgba(0,0,0,0.9)",
                 fontVariantNumeric: "tabular-nums",
@@ -269,10 +267,9 @@ export default function HeroDualSplit({
               style={{ background: "rgba(255,255,255,0.12)" }}
             />
             <span
-              className="font-black uppercase"
+              className="font-black text-sm uppercase"
               style={{
                 color: "rgba(255,255,255,0.38)",
-                fontSize: "clamp(7px, 0.85vw, 9px)",
                 letterSpacing: "0.3em",
               }}
             >
@@ -322,7 +319,7 @@ export default function HeroDualSplit({
                     }}
                   />
                   <span
-                    className="text-[9px] font-bold tabular-nums"
+                    className="text-xs font-bold tabular-nums"
                     style={{ color: "rgba(255,255,255,0.35)" }}
                   >
                     0{i + 1}
@@ -341,10 +338,9 @@ export default function HeroDualSplit({
                     {f.tipo}
                   </p>
                   <p
-                    className="mt-0.5 leading-tight font-medium"
+                    className="mt-0.5 text-xs leading-tight font-medium"
                     style={{
                       color: "rgba(255,255,255,0.50)",
-                      fontSize: "clamp(8px, 0.85vw, 10px)",
                     }}
                   >
                     {f.descripcion}

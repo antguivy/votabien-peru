@@ -5,6 +5,7 @@ import { useGameStore } from "@/store/game-store";
 import { TriviaOption, TriviaQuestion } from "@/interfaces/game-types";
 import {
   BookOpen,
+  Check,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -18,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { VideoDialog } from "@/components/video-dialog";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const SECONDS_PER_QUESTION = 15;
@@ -209,10 +211,6 @@ function ResultsScreen({
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
 
-  // NUEVO: Estados para manejar la pre-generación del archivo
-  const [shareFile, setShareFile] = useState<File | null>(null);
-  const [isPreparingFile, setIsPreparingFile] = useState(true);
-
   const isPerfect = stars === 3;
 
   // Pick a "featured" question — prefer one with an image
@@ -226,75 +224,42 @@ function ResultsScreen({
     typeof navigator !== "undefined" &&
     /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
-  // NUEVO: Efecto que pre-genera la imagen en segundo plano al cargar la pantalla
-  useEffect(() => {
-    if (!isPerfect) return; // Solo la generamos si sacó puntaje perfecto
-    let mounted = true;
-
-    const generateImageInBackground = async () => {
-      if (!cardRef.current) return;
-      try {
-        // Le damos un pequeño respiro (500ms) al DOM para que cargue fuentes e imágenes base
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        if (!mounted) return;
-
-        const { toPng } = await import("html-to-image");
-
-        const dataUrl = await toPng(cardRef.current, {
-          pixelRatio: 2,
-          backgroundColor: "#1c1917",
-          filter: (node) => {
-            if (node.tagName === "LINK" || node.tagName === "STYLE")
-              return false;
-            return true;
-          },
-        });
-
-        const res = await fetch(dataUrl);
-        const blob = await res.blob();
-        const file = new File([blob], "votabien-resultado.png", {
-          type: "image/png",
-        });
-
-        if (mounted) {
-          setShareFile(file);
-          setIsPreparingFile(false);
-        }
-      } catch (err) {
-        console.error("Error pre-generando imagen:", err);
-        if (mounted) setIsPreparingFile(false); // Liberamos el botón aunque falle
-      }
-    };
-
-    generateImageInBackground();
-
-    return () => {
-      mounted = false; // Cleanup si el usuario sale rápido
-    };
-  }, [isPerfect]);
-
   const handleShare = async () => {
+    if (!cardRef.current) return;
     setSharing(true);
+
     try {
-      if (isMobile) {
-        // COMPARTIR EN MÓVIL (Inmediato, ya no bloquea el menú nativo)
-        if (shareFile && navigator.canShare?.({ files: [shareFile] })) {
-          await navigator.share({
-            files: [shareFile],
-            title: "¡Completé un nivel en VotaBien Perú!",
-            text: `Obtuve ${score} puntos. ¿Sabes más que yo sobre política peruana? 🇵🇪`,
-          });
-        } else if (navigator.share) {
-          // Fallback: Si falló la generación de la imagen por algún motivo, igual compartimos el texto
-          await navigator.share({
-            title: "¡Completé un nivel en VotaBien Perú!",
-            text: `Obtuve ${score} puntos. ¿Sabes más que yo sobre política peruana? 🇵🇪 \nJuega en votabienperu.com`,
-          });
-        }
+      // 1. Volvemos a importar html-to-image
+      const { toPng } = await import("html-to-image");
+
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 2,
+        backgroundColor: "#1c1917",
+        // 2. Restauramos el filtro mágico
+        filter: (node) => {
+          // Excluir elementos <link> y <style> del documento principal
+          // Esto evita que lea el CSS global donde están los colores no soportados
+          if (node.tagName === "LINK" || node.tagName === "STYLE") return false;
+          return true;
+        },
+      });
+
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "votabien-resultado.png", {
+        type: "image/png",
+      });
+
+      const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+
+      if (isMobile && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "¡Completé un nivel en VotaBien Perú!",
+          text: `Obtuve ${score} puntos. ¿Sabes más que yo sobre política peruana? 🇵🇪`,
+        });
       } else {
-        // DESCARGA EN DESKTOP
-        if (!shareFile) return;
-        const url = URL.createObjectURL(shareFile);
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = "votabien-resultado.png";
@@ -303,7 +268,6 @@ function ResultsScreen({
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
-        // AbortError es cuando el usuario cierra el modal nativo sin compartir (canceló)
         console.error("Share error:", err);
       }
     } finally {
@@ -316,43 +280,39 @@ function ResultsScreen({
       className="flex flex-col h-full overflow-y-auto px-5 py-6 gap-5 animate-in fade-in duration-300"
       style={{ scrollbarWidth: "none" }}
     >
-      {/* Arcade share card — only on perfect score */}
-      {isPerfect && (
-        <div className="flex flex-col gap-3 flex-shrink-0">
-          <div
-            style={{ width: "100%", display: "flex", justifyContent: "center" }}
-          >
-            {/* El div se sigue renderizando para tomarle la foto */}
-            <div ref={cardRef} style={{ width: 360 }}>
-              <IncaArcadeCard
-                score={score}
-                stars={stars}
-                currentLevel={levelId}
-                regionTheme={getRegionByLevel(levelId)}
-                featuredQuestion={featuredQuestion}
-              />
-            </div>
+      {/* Arcade share card — always visible, share button disabled if not perfect */}
+      <div className="flex flex-col gap-3 flex-shrink-0">
+        <div
+          style={{ width: "100%", display: "flex", justifyContent: "center" }}
+        >
+          <div ref={cardRef} style={{ width: 360 }}>
+            <IncaArcadeCard
+              score={score}
+              stars={stars}
+              currentLevel={levelId}
+              regionTheme={getRegionByLevel(levelId)}
+              featuredQuestion={featuredQuestion}
+            />
           </div>
-
-          <button
-            type="button"
-            onClick={handleShare}
-            // Deshabilitamos el botón mientras se crea la imagen en el background
-            disabled={sharing || isPreparingFile}
-            className="w-auto py-3.5 rounded-2xl font-extrabold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
-            style={{ backgroundColor: "#fbbf24", color: "#000" }}
-          >
-            <Share2 size={16} />
-            {isPreparingFile
-              ? "Preparando tarjeta..."
-              : sharing
-                ? "Abriendo..."
-                : isMobile
-                  ? "Compartir resultado"
-                  : "Descargar imagen"}
-          </button>
         </div>
-      )}
+
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={!isPerfect || sharing}
+          className="w-auto py-3.5 rounded-2xl font-extrabold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ backgroundColor: "#fbbf24", color: "#000" }}
+        >
+          <Share2 size={16} />
+          {!isPerfect
+            ? "Solo disponible con puntaje perfecto"
+            : sharing
+              ? "Preparando tarjeta..."
+              : isMobile
+                ? "Compartir resultado"
+                : "Descargar imagen"}
+        </button>
+      </div>
 
       {/* Continue / back button */}
       <button
@@ -381,13 +341,10 @@ function VideoSourceLink({ url }: { url: string }) {
       <VideoDialog
         url={url}
         trigger={
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:text-primary/80 transition-colors"
-          >
-            <Play size={13} className="fill-primary" />
-            Ver video relacionado
-          </button>
+          <Button type="button" className="relative group overflow-visible">
+            <Play size={13} className="fill-primary animate-bounce" />
+            Ver video
+          </Button>
         }
       />
     );
@@ -652,47 +609,32 @@ export function TriviaGameView({
                   style={{ backgroundColor: feedbackColor }}
                 />
                 <div className="p-3.5 sm:p-4 flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: feedbackColor }}
-                    >
-                      {isTimeout ? (
-                        <span className="text-white text-sm font-black">!</span>
-                      ) : isCorrectAns ? (
-                        <svg
-                          viewBox="0 0 12 12"
-                          className="w-4 h-4"
-                          fill="none"
-                        >
-                          <path
-                            d="M2 6l3 3 5-5"
-                            stroke="white"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          viewBox="0 0 12 12"
-                          className="w-4 h-4"
-                          fill="none"
-                        >
-                          <path
-                            d="M3 3l6 6M9 3l-6 6"
-                            stroke="white"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      )}
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
+                        style={{ backgroundColor: feedbackColor }}
+                      >
+                        {isTimeout ? (
+                          <span className="text-white text-sm font-black">
+                            !
+                          </span>
+                        ) : isCorrectAns ? (
+                          <Check className="text-white size-5" />
+                        ) : (
+                          <X className="text-white size-5" />
+                        )}
+                      </div>
+                      <span
+                        className={`font-black text-base ${feedbackTextClass}`}
+                      >
+                        {feedbackLabel}
+                      </span>
                     </div>
-                    <span
-                      className={`font-black text-base ${feedbackTextClass}`}
-                    >
-                      {feedbackLabel}
-                    </span>
+
+                    {question?.source_url && (
+                      <VideoSourceLink url={question.source_url} />
+                    )}
                   </div>
 
                   {question?.explanation && (
@@ -705,10 +647,6 @@ export function TriviaGameView({
                       </div>
                       <Explanation text={question.explanation} />
                     </div>
-                  )}
-
-                  {question?.source_url && (
-                    <VideoSourceLink url={question.source_url} />
                   )}
                 </div>
               </div>
