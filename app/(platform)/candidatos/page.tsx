@@ -135,6 +135,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-0">
         <Suspense fallback={<CandidatosListSkeleton />}>
           <CandidatosStream
+            key={`${params.type ?? "PRESIDENTE"}-${params.search ?? ""}-${partiesArray.join(",")}-${districtsArray.join(",")}-${params.districtType ?? ""}`}
             candidaturasPromise={candidaturasPromise}
             distritos={distritos}
             parties={parties.items}
