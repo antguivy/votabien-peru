@@ -15,7 +15,7 @@ interface IncaArcadeCardProps {
 
 export function IncaArcadeCard({
   score,
-  stars,
+  stars, 
   currentLevel,
   regionTheme,
   featuredQuestion,
