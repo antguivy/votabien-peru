@@ -80,7 +80,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   const didInitialSave = useRef(false);
 
   const activeCategories = useMemo(
-    () => CATEGORY_ORDER.filter((cat) => (results.data[cat]?.length ?? 0) > 0),
+    () => CATEGORY_ORDER.filter((cat) => results.data[cat] !== undefined),
     [results],
   );
 
@@ -355,6 +355,69 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
   // ── SWIPE VIEW ─────────────────────────────────────────────────────────────
   const config = CATEGORY_CONFIG[currentCategory];
   const progress = ((categoryIndex + 1) / activeCategories.length) * 100;
+
+  // ── EMPTY CATEGORY VIEW ────────────────────────────────────────────────────
+  if (currentCandidates.length === 0) {
+    const isLast = categoryIndex === activeCategories.length - 1;
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        {/* Header igual que el swipe view para consistencia */}
+        <div className="pb-2 shrink-0">
+          <div className="flex items-center gap-3 mb-3">
+            <p className="text-muted-foreground text-xs font-medium">
+              Paso {categoryIndex + 1} de {activeCategories.length}
+            </p>
+            <p className="text-foreground font-black text-lg leading-tight tracking-tight">
+              {config.title}
+            </p>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, background: config.color }}
+            />
+          </div>
+        </div>
+
+        {/* Empty state */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{
+              background: config.bg,
+              border: `1.5px solid ${config.border}`,
+            }}
+          >
+            <XIcon size={28} style={{ color: config.color }} />
+          </div>
+          <div className="text-center">
+            <p className="text-foreground font-bold text-base">
+              Sin coincidencias en {config.title}
+            </p>
+            <p className="text-muted-foreground text-sm mt-1.5 leading-relaxed">
+              Ningún candidato a {config.title.toLowerCase()} coincide con tus
+              respuestas. Puedes continuar con la siguiente categoría.
+            </p>
+          </div>
+        </div>
+
+        {/* Botón continuar */}
+        <div className="pt-1 pb-2 shrink-0">
+          <button
+            type="button"
+            onClick={goToNextCategory}
+            className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold text-white transition-colors"
+            style={{ backgroundColor: config.color }}
+          >
+            <SkipForward size={18} />
+            {isLast
+              ? "Ver resultados"
+              : `Continuar con ${CATEGORY_CONFIG[activeCategories[categoryIndex + 1]]?.title ?? "siguiente"}`}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

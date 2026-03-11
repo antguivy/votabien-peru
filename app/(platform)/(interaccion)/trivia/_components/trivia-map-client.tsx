@@ -121,6 +121,17 @@ export default function TriviaMapClient({
     });
   }, [levels]);
 
+  // Hint de primera visita — solo si nunca han jugado
+  const [showHint, setShowHint] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem("votabien_hint_dismissed");
+  });
+
+  const dismissHint = () => {
+    localStorage.setItem("votabien_hint_dismissed", "1");
+    setShowHint(false);
+  };
+
   const [selectedLevel, setSelectedLevel] = useState<GameLevel | null>(null);
   const [activeLevelId, setActiveLevelId] = useState<number | null>(null);
   const [showRegionTransition, setShowRegionTransition] = useState(false);
@@ -346,7 +357,10 @@ export default function TriviaMapClient({
                   <IllustratedNode
                     level={level}
                     index={i}
-                    onPress={setSelectedLevel}
+                    onPress={(level) => {
+                      if (showHint) dismissHint();
+                      setSelectedLevel(level);
+                    }}
                     isCurrent={level.id === highestUnlockedLevel}
                     avatarSrc={levelRegionAssets?.avatar ?? null}
                     avatarEmojiFallback={getRegionByLevel(level.id).avatarEmoji}
@@ -354,6 +368,50 @@ export default function TriviaMapClient({
                 </div>
               );
             })}
+            {/* ── First-time hint ── */}
+            {showHint &&
+              levels.length > 0 &&
+              highestUnlockedLevel === 1 &&
+              (() => {
+                const hintX = getNodeX(0);
+                const hintY = getNodeY(0);
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: hintX + 50,
+                      top: hintY - 30,
+                      zIndex: 20,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {/* Flecha + label */}
+                    <div className="flex items-center gap-1.5 animate-bounce">
+                      {/* Flecha SVG apuntando a la izquierda */}
+                      <svg
+                        width="28"
+                        height="20"
+                        viewBox="0 0 28 20"
+                        fill="none"
+                      >
+                        <path
+                          d="M27 10 L6 10 M6 10 L14 3 M6 10 L14 17"
+                          stroke="#fbbf24"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div
+                        className="bg-amber-400 text-black text-[11px] font-black uppercase tracking-wide px-3 py-1.5 rounded-full shadow-lg"
+                        style={{ whiteSpace: "nowrap" }}
+                      >
+                        ¡Empieza aquí!
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             {/* TEMPORAL — Coming soon node */}
             {levels.length > 0 && (
               <div

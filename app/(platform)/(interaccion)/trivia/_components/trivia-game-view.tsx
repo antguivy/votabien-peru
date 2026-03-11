@@ -235,7 +235,7 @@ function ResultsScreen({
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: "#1c1917",
-        // 2. Restauramos el filtro mágico
+        // 2. Restauramos el filtro
         filter: (node) => {
           // Excluir elementos <link> y <style> del documento principal
           // Esto evita que lea el CSS global donde están los colores no soportados
@@ -498,7 +498,7 @@ export function TriviaGameView({
     <div
       className={cn(
         // Mobile — full screen
-        "fixed inset-0 z-[60] flex flex-col",
+        "fixed inset-0 z-20 flex flex-col",
         // Desktop — panel centrado respetando navbar
         "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden",
       )}

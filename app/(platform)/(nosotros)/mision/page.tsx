@@ -3,9 +3,6 @@ import Image from "next/image";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
-// Cuando tengas las imágenes, pásalas como prop imageSrc
-// Por ahora el componente usa un fondo decorativo CSS que se ve bien solo
-
 export default function MissionPage() {
   return (
     <ContentPlatformLayout>
@@ -22,8 +19,8 @@ export default function MissionPage() {
             </span>
             <h2 className="text-2xl md:text-4xl font-serif italic text-white leading-snug mb-8 text-balance drop-shadow-md">
               No queremos un país donde la desinformación decida el rumbo.
-              Queremos electores que conozcan a quién votan, qué hicieron y qué
-              proponen.
+              Queremos electores que conozcan por quién votan, qué hicieron y
+              qué proponen.
             </h2>
             <div className="flex items-center justify-center gap-3">
               <div className="h-px w-8 bg-brand" />
@@ -131,8 +128,6 @@ export default function MissionPage() {
   );
 }
 
-// ── Componente de sección con fondo decorativo CSS
-// Cuando tengas imágenes, agrega la prop imageSrc y descomentar el bloque de Image
 function SectionWithBackground({
   imageSrc,
   variant = "cool",
@@ -159,7 +154,7 @@ function SectionWithBackground({
         <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.16_0.04_20)] via-transparent to-[oklch(0.10_0.02_240)] opacity-80" />
       )}
 
-      {/* ── Imagen opcional (cuando la tengas, pasa imageSrc) ── */}
+      {/* ── Imagen opcional ── */}
       {imageSrc && (
         <>
           <Image

@@ -86,6 +86,7 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
     id: 4,
     question: "¿Quieres que tu candidato sea un congresista reelegido?",
     icon: "RefreshCw",
+    description: "AZplica a senadores y diputados",
     options: [
       {
         label: "No — quiero una cara nueva",
@@ -96,14 +97,14 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
       {
         label: "Sí — que tenga experiencia legislativa",
         description: "Ya conoce cómo funciona el Congreso",
-        value: true,
-        paramKey: "is_incumbent",
-      },
-      {
-        label: "No tengo preferencia",
         value: undefined,
         paramKey: "is_incumbent",
       },
+      // {
+      //   label: "No tengo preferencia",
+      //   value: undefined,
+      //   paramKey: "is_incumbent",
+      // },
     ],
   },
   {
