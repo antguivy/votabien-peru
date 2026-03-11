@@ -21,8 +21,8 @@ const SCROLL_PADDING_TOP = 100;
 const SCROLL_PADDING_BOTTOM = 200;
 const MAP_MARGIN_TOP = 0;
 
-// TEMPORAL — quitar cuando haya más preguntas
-const MAX_LEVELS = 5;
+// TEMPORAL
+const MAX_LEVELS = 9;
 
 export default function TriviaMapClient({
   initialQuestions,
