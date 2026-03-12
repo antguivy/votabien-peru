@@ -498,7 +498,7 @@ export function TriviaGameView({
     <div
       className={cn(
         // Mobile — full screen
-        "fixed inset-0 z-20 flex flex-col",
+        "fixed inset-0 z-[40] flex flex-col",
         // Desktop — panel centrado respetando navbar
         "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden",
       )}
