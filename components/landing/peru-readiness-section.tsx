@@ -48,14 +48,18 @@ const TOOL_CONFIG: Record<
     icon: Scale,
   },
   trivia: {
-    label: "Trivia Electoral",
+    label: "Trivia",
     sublabel: "Pon a prueba lo que sabes",
     detail: "Propuestas, polémicas y más",
     href: "/trivia",
     color: "#d97706",
     icon: HelpCircle,
     // active: true hace que parpadee toda la tarjeta
-    badge: { text: "NUEVO", color: "#d97706", active: true },
+    badge: {
+      text: "NUEVOS NIVELES HASTA EL 14",
+      color: "#d97706",
+      active: true,
+    },
   },
   simulador: {
     label: "Simulador de Voto",

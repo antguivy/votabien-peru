@@ -22,7 +22,7 @@ const SCROLL_PADDING_BOTTOM = 200;
 const MAP_MARGIN_TOP = 0;
 
 // TEMPORAL
-const MAX_LEVELS = 9;
+const MAX_LEVELS = 14;
 
 export default function TriviaMapClient({
   initialQuestions,
