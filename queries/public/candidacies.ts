@@ -1,6 +1,10 @@
 "use server";
 
-import { CandidateCard, CandidatePresidentials } from "@/interfaces/candidate";
+import {
+  CandidateCard,
+  CandidateDetail,
+  CandidatePresidentials,
+} from "@/interfaces/candidate";
 import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import { createClient } from "@/lib/supabase/server";
 import { QueryData } from "@supabase/supabase-js";
@@ -259,4 +263,41 @@ export async function getPrincipalCandidates(
       profession: null,
     },
   }));
+}
+
+export async function getCandidateById(
+  candidateId: string,
+): Promise<CandidateDetail | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("candidate")
+    .select(
+      `
+      *,
+      person:person_id!inner(
+        *,
+        backgrounds:background(*)
+      ),
+      political_party:political_party_id!inner(
+        id, name, acronym, logo_url, color_hex, active, foundation_date
+      ),
+      electoral_district:electoral_district_id(
+        id, name, code, is_national, active
+      ),
+      electoral_process:electoral_process_id(*)
+      `,
+    )
+    .eq("id", candidateId)
+    .eq("active", true)
+    .single();
+
+  if (error) {
+    console.error("Error fetching candidate detail:", error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  return data as unknown as CandidateDetail;
 }

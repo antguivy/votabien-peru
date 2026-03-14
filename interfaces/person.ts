@@ -133,6 +133,7 @@ export interface PersonBase {
   popular_election: PoliticalRole[];
   incomes: Incomes[];
   assets: Assets[];
+  updated_at: string;
 }
 
 export interface PersonWithActivePeriod extends PersonBase {

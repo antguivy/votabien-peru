@@ -55,7 +55,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
 
   return (
     <Link
-      href={`/candidatos/${person.id}`}
+      href={`/candidatos/${candidato.id}`}
       className="group relative flex flex-col h-full select-none"
     >
       <div

@@ -45,7 +45,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { updatePersonBackgrounds } from "../_lib/actions";
+import {
+  fetchAntecedentesFromJNE,
+  updatePersonBackgrounds,
+} from "../_lib/actions";
 import {
   BackgroundBase,
   BackgroundType,
@@ -209,6 +212,8 @@ interface BackgroundsFormDialogProps {
   personId: string;
   personName: string;
   initialData: BackgroundBase[];
+  partyNumberRop?: string;
+  dni?: string;
 }
 
 export function BackgroundsFormDialog({
@@ -217,6 +222,8 @@ export function BackgroundsFormDialog({
   personId,
   personName,
   initialData,
+  partyNumberRop,
+  dni,
 }: BackgroundsFormDialogProps) {
   const router = useRouter();
   const [items, setItems] = useState<BackgroundBase[]>(initialData || []);
@@ -228,6 +235,9 @@ export function BackgroundsFormDialog({
   );
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
+  const [isFetchingJNE, setIsFetchingJNE] = useState(false);
+  const [jneMode, setJneMode] = useState<"classic" | "consolidated">("classic");
+
   useEffect(() => {
     if (open) {
       setItems(initialData || []);
@@ -237,6 +247,52 @@ export function BackgroundsFormDialog({
     }
   }, [open, initialData]);
 
+  const handleFetchFromJNE = async () => {
+    if (!partyNumberRop || !dni) {
+      toast.error("Faltan datos del candidato (ROP o DNI)");
+      return;
+    }
+
+    setIsFetchingJNE(true);
+    toast.loading("Consultando JNE...", { id: "jne-fetch" });
+
+    try {
+      const result = await fetchAntecedentesFromJNE(
+        jneMode,
+        partyNumberRop,
+        dni,
+      );
+
+      if (!result.success || !result.data) {
+        toast.error("Error al consultar JNE", {
+          id: "jne-fetch",
+          description: result.error,
+        });
+        return;
+      }
+
+      if (result.data.length === 0) {
+        toast.info("Sin antecedentes en JNE", {
+          id: "jne-fetch",
+          description: "Este candidato no registra sentencias penales.",
+        });
+        return;
+      }
+
+      // Evitar duplicados por id
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((i) => i.id));
+        const newItems = result.data!.filter((i) => !existingIds.has(i.id));
+        return [...prev, ...newItems];
+      });
+
+      toast.success(`${result.total} sentencias importadas del JNE`, {
+        id: "jne-fetch",
+      });
+    } finally {
+      setIsFetchingJNE(false);
+    }
+  };
   const handleSave = async () => {
     setIsSubmitting(true);
 
@@ -318,6 +374,47 @@ export function BackgroundsFormDialog({
             <Badge variant="secondary" className="font-mono">
               {items.length} Reg
             </Badge>
+            {/* Botón JNE - solo si tiene ROP y DNI */}
+            {partyNumberRop && dni && viewMode === "list" && (
+              <div className="flex items-center gap-1 border rounded-md overflow-hidden">
+                {/* Toggle classic / consolidated */}
+                <Tabs
+                  value={jneMode}
+                  onValueChange={(v) =>
+                    setJneMode(v as "classic" | "consolidated")
+                  }
+                >
+                  <TabsList className="h-8 rounded-none border-0 bg-muted/30 gap-0">
+                    <TabsTrigger
+                      value="consolidated"
+                      className="text-[10px] h-7 px-2 rounded-none"
+                    >
+                      New
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="classic"
+                      className="text-[10px] h-7 px-2 rounded-none"
+                    >
+                      Classic
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFetchFromJNE}
+                  disabled={isFetchingJNE}
+                  className="h-8 rounded-none border-0 border-l text-xs gap-1.5"
+                >
+                  {isFetchingJNE ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Import className="w-3 h-3" />
+                  )}
+                  Traer del JNE
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

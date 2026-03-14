@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { PersonDetailCandidate } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
+import { CandidateDetail } from "@/interfaces/candidate";
 
 // Helper para formatear moneda
 const formatCurrency = (amount: string | number) => {
@@ -42,14 +43,14 @@ const formatCurrency = (amount: string | number) => {
 };
 
 export default function DetailCandidato({
-  persona,
+  candidate,
   shareUrl,
 }: {
-  persona: PersonDetailCandidate;
+  candidate: CandidateDetail;
   shareUrl: string;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
-  const candidate = persona.active_candidacy;
+  const persona = candidate.person;
 
   // Lógica para sticky nav
   useEffect(() => {
@@ -197,13 +198,26 @@ export default function DetailCandidato({
                     <span>Nacimiento: {persona.place_of_birth}</span>
                   </div>
                 )}
+                {persona.updated_at && (
+                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span className="text-xs">
+                      Actualizado:{" "}
+                      {new Intl.DateTimeFormat("es-PE", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      }).format(new Date(persona.updated_at))}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <ShareButton
               title={`${persona.name} ${persona.lastname}`}
               url={shareUrl}
               text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
-              trackingId={persona.active_candidacy.id}
+              trackingId={candidate.id}
               trackingType="candidato"
             />
           </div>
@@ -218,13 +232,13 @@ export default function DetailCandidato({
             <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-destructive text-lg">
-                Atención: Antecedentes Registrados
+                Atención: Tiene Ancetecedentes
               </h3>
               <p className="text-sm text-foreground/80 mt-1">
-                El candidato ha declarado{" "}
+                Se encontró{" "}
                 <strong>{persona.backgrounds.length} antecedentes</strong>{" "}
-                (penales, civiles o laborales) en su hoja de vida ante el JNE.
-                Revisa la pestaña “Legal” para más detalles.
+                (penales, civiles o laborales) de acuerdo a nuestra
+                investigación. Revisa la pestaña “Legal” para más detalles.
               </p>
             </div>
           </div>
@@ -557,41 +571,86 @@ export default function DetailCandidato({
           <TabsContent value="legal" className="animate-in fade-in-50">
             <div className="grid gap-4 max-w-3xl mx-auto">
               {persona.backgrounds.length > 0 ? (
-                persona.backgrounds.map((bg, i) => (
-                  <Card
-                    key={i}
-                    className="pt-0 border-l-4 border-l-destructive overflow-hidden"
-                  >
-                    <div className="bg-destructive/10 py-2 px-4 flex justify-between items-center">
-                      <span className="text-xs font-bold text-destructive uppercase tracking-wider">
-                        {bg.type}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground bg-background/50 px-2 py-0.5 rounded">
-                        Expediente declarado
-                      </span>
-                    </div>
-                    <CardContent className="pt-4">
-                      <h4 className="font-bold text-lg mb-2 text-foreground">
-                        {bg.title}
-                      </h4>
-                      <div className="bg-muted/30 p-4 rounded-lg border text-sm text-foreground/80 leading-relaxed">
-                        {bg.summary}
-                      </div>
-                      <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                        {bg.sanction && (
-                          <span className="text-destructive font-semibold flex items-center gap-1.5 bg-destructive/5 px-2 py-1 rounded">
-                            <Gavel className="w-4 h-4" /> Sanción: {bg.sanction}
+                persona.backgrounds.map((bg, i) => {
+                  const isJNE = bg.source?.toUpperCase() === "JNE";
+                  return (
+                    <Card
+                      key={i}
+                      className="pt-0 border-l-4 border-l-destructive overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="bg-destructive/10 py-2 px-4 flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-destructive uppercase tracking-wider">
+                            {bg.type}
+                          </span>
+                          {bg.publication_date && (
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Intl.DateTimeFormat("es-PE", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              }).format(new Date(bg.publication_date))}
+                            </span>
+                          )}
+                        </div>
+                        {isJNE && (
+                          <span className="text-[10px] text-muted-foreground bg-background/50 px-2 py-0.5 rounded shrink-0">
+                            Expediente declarado
                           </span>
                         )}
-                        {bg.status && (
-                          <Badge variant="outline" className="h-7 px-3">
-                            Estado: {bg.status.replace(/_/g, " ")}
-                          </Badge>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
+
+                      <CardContent className="pt-4 space-y-4">
+                        {/* Título */}
+                        <h4 className="font-bold text-lg text-foreground leading-tight">
+                          {bg.title}
+                        </h4>
+
+                        {/* Resumen */}
+                        <div className="bg-muted/30 p-4 rounded-lg border text-sm text-foreground/80 leading-relaxed">
+                          {bg.summary}
+                        </div>
+
+                        {/* Badges: sanción + estado */}
+                        <div className="flex flex-wrap gap-3 text-sm">
+                          {bg.sanction && (
+                            <span className="text-destructive font-semibold flex items-center gap-1.5 bg-destructive/5 px-2 py-1 rounded">
+                              <Gavel className="w-4 h-4" />
+                              Sanción: {bg.sanction}
+                            </span>
+                          )}
+                          {bg.status && (
+                            <Badge variant="outline" className="h-7 px-3">
+                              {bg.status.replace(/_/g, " ")}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Footer: fuente */}
+                        <div className="pt-2 border-t flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            Fuente:{" "}
+                            <span className="font-semibold text-foreground">
+                              {bg.source}
+                            </span>
+                          </span>
+                          {bg.source_url && (
+                            <Link
+                              href={bg.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium shrink-0"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              {isJNE ? "Ver en JNE" : "Ver fuente original"}
+                            </Link>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               ) : (
                 <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed">
                   <CheckCircle2 className="w-16 h-16 text-gray-500 mx-auto mb-4 opacity-50" />
@@ -599,7 +658,7 @@ export default function DetailCandidato({
                     No se ha encontrado información
                   </h3>
                   <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-                    No hay investigaciones realizadas por medios periodísticos
+                    No hay investigaciones registradas por medios periodísticos
                     y/o de investigación.
                   </p>
                 </div>

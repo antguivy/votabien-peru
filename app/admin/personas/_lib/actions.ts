@@ -9,7 +9,11 @@ import {
   CreatePersonRequest,
   UpdatePersonRequest,
 } from "@/interfaces/person";
-import { BackgroundBase, BackgroundStatus } from "@/interfaces/background";
+import {
+  BackgroundBase,
+  BackgroundStatus,
+  BackgroundType,
+} from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
@@ -395,5 +399,65 @@ export async function fetchCandidateFromJNE(
       success: false,
       error: extractErrorMessage(error),
     };
+  }
+}
+
+export async function fetchAntecedentesFromJNE(
+  jne_mode: string,
+  party_number_rop: string,
+  dni: string,
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { success: false, error: "No autorizado - Debes iniciar sesión" };
+    }
+
+    if (!party_number_rop || !dni) {
+      return { success: false, error: "Faltan parámetros ROP o DNI" };
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/votoinformado/get-antecedentes`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ jne_mode, party_number_rop, dni }),
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: errorText };
+    }
+
+    const data = await response.json();
+
+    // Mapear al formato BackgroundBase que espera el frontend
+    const antecedentes: BackgroundBase[] = (data.antecedentes || []).map(
+      (item: Record<string, string | null>) => ({
+        id: item.id || `new_${crypto.randomUUID()}`,
+        type: item.type as BackgroundType,
+        status: item.status as BackgroundStatus,
+        publication_date: item.publication_date || null,
+        title: item.title || "Sentencia penal",
+        summary: item.summary || "",
+        sanction: item.sanction || null,
+        source: item.source,
+        source_url: item.source_url,
+      }),
+    );
+
+    return { success: true, data: antecedentes, total: data.total };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
   }
 }

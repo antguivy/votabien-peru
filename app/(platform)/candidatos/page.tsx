@@ -1,4 +1,3 @@
-import CandidatosList from "@/components/politics/candidatos-list";
 import Link from "next/link";
 import StickyElectoralBanner from "@/components/sticky-banner";
 import { getCandidatesCards } from "@/queries/public/candidacies";

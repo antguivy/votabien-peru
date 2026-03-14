@@ -94,6 +94,8 @@ export function PersonTable({ promises }: PersonTableProps) {
           personId={rowAction.row.original.id}
           personName={rowAction.row.original.fullname}
           initialData={rowAction.row.original.backgrounds ?? []}
+          partyNumberRop={rowAction.row.original.party_number_rop ?? ""}
+          dni={rowAction.row.original.dni ?? ""}
         />
       )}
     </>
