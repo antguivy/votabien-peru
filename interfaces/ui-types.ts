@@ -10,7 +10,6 @@ export interface SearchableEntity {
   fullname: string;
   image_url: string | null;
   image_candidate_url: string | null;
-  dni: string | null;
   group_name: string;
   group_color: string | null;
   group_image?: string | null;

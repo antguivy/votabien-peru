@@ -1431,7 +1431,8 @@ export type Database = {
         | "VICEPRESIDENTE_1"
         | "SENADOR"
         | "DIPUTADO"
-        | "VICEPRESIDENTE_2";
+        | "VICEPRESIDENTE_2"
+        | "PARLAMENTO_ANDINO";
       chambertype: "CONGRESO" | "SENADO" | "DIPUTADOS";
       endoftermreason:
         | "RENUNCIA"
@@ -1659,6 +1660,7 @@ export const Constants = {
         "SENADOR",
         "DIPUTADO",
         "VICEPRESIDENTE_2",
+        "PARLAMENTO_ANDINO",
       ],
       chambertype: ["CONGRESO", "SENADO", "DIPUTADOS"],
       endoftermreason: [

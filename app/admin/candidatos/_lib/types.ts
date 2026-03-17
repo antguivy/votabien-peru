@@ -1,12 +1,12 @@
-import { AdminCandidate } from "@/interfaces/candidate";
+import {
+  AdminCandidate,
+  CandidacyStatus,
+  CandidacyType,
+} from "@/interfaces/candidate";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
 import { PersonBase } from "@/interfaces/person";
-import {
-  CandidacyStatus,
-  CandidacyType,
-  ElectoralProcess,
-} from "@/interfaces/politics";
+import { ElectoralProcess } from "@/interfaces/politics";
 
 // Legislator
 export interface CandidateResponse {

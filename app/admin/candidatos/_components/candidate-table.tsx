@@ -8,7 +8,6 @@ import { toSentenceCase } from "@/lib/utils";
 import { getColumns } from "./candidate-table-columns";
 import type { DataTableFilterField, DataTableRowAction } from "@/lib/types";
 import { CandidatesTableToolbarActions } from "./candidate-table-toolbar-actions";
-import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import {
   PaginatedCandidatesResponse,
   PartyCounts,
@@ -16,7 +15,11 @@ import {
   TypeCounts,
 } from "../_lib/types";
 import { CandidatesTableFloatingBar } from "./candidate-table-floating-bar";
-import { AdminCandidate } from "@/interfaces/candidate";
+import {
+  AdminCandidate,
+  CandidacyStatus,
+  CandidacyType,
+} from "@/interfaces/candidate";
 import { CandidateFormDialog } from "./candidate-form-dialog";
 
 interface CandidatesTableProps {

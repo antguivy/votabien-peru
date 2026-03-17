@@ -1,5 +1,5 @@
-import { BackgroundBase } from "./background";
-import { CandidateToPerson } from "./candidate";
+import { BackgroundBase, BackgroundStatus } from "./background";
+import { CandidacyStatus, CandidateToPerson } from "./candidate";
 import { LegislatorDetail } from "./legislator";
 
 export interface BiographyDetail {
@@ -170,4 +170,19 @@ export type UpdatePersonRequest = Omit<AdminPerson, "created_at"> & {
 
 export interface PersonWithBackground extends PersonBase {
   backgrounds: BackgroundBase[];
+}
+
+export interface PersonBackgroundToCard {
+  id: string;
+  fullname: string;
+  image_url: string | null;
+  image_candidate_url: string | null;
+  profession: string | null;
+  is_incumbent: boolean;
+  education_level: number | null;
+  secondary_school: boolean | null;
+  incomes: Record<string, unknown> | null;
+  assets: Record<string, unknown> | null;
+  work_experience: unknown[] | null;
+  backgrounds: { status: BackgroundStatus }[];
 }

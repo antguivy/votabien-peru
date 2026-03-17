@@ -9,30 +9,6 @@ export enum ChamberType {
   DIPUTADOS = "DIPUTADOS",
 }
 
-export enum CandidacyType {
-  PRESIDENTE = "PRESIDENTE",
-  VICEPRESIDENTE_1 = "VICEPRESIDENTE_1",
-  VICEPRESIDENTE_2 = "VICEPRESIDENTE_2",
-  SENADOR = "SENADOR",
-  DIPUTADO = "DIPUTADO",
-}
-
-export const typeOptions = [
-  { value: "PRESIDENTE", label: "Presidente" },
-  { value: "VICEPRESIDENTE", label: "Vicepresidente" },
-  { value: "SENADOR", label: "Senador" },
-  { value: "DIPUTADO", label: "Diputado" },
-];
-
-export enum CandidacyStatus {
-  SOLICITUD_INSCRIPCION = "SOLICITUD_INSCRIPCION", // Paso 1: Presentan la lista
-  INSCRITO = "INSCRITO", // Paso 2: El JNE la acepta formalmente (Ya sale en la web oficial)
-  TACHADO = "TACHADO", // Alguien se quejó y lo sacaron
-  EXCLUIDO = "EXCLUIDO", // El JNE lo sacó por mentir en hoja de vida o dádivas
-  IMPROCEDENTE = "IMPROCEDENTE", // No cumplió requisitos de forma
-  RENUNCIA = "RENUNCIA", // El candidato se bajó
-  APELACION = "APELACION", // Está peleando su exclusión
-}
 export enum LegislatorCondition {
   EN_EJERCICIO = "EN_EJERCICIO",
   FALLECIDO = "FALLECIDO",
@@ -146,18 +122,6 @@ export interface FiltersPerson {
   search?: string;
   skip?: number;
   limit?: number;
-  [key: string]: unknown;
-}
-
-export interface FiltersCandidates {
-  electoral_process_id?: string;
-  type?: CandidacyType | string;
-  parties?: string[] | string;
-  districts?: string[] | string;
-  search?: string;
-  skip?: number;
-  limit?: number;
-  districtType?: "unico" | "multiple";
   [key: string]: unknown;
 }
 

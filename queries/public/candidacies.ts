@@ -1,25 +1,30 @@
 "use server";
 
+import { BackgroundStatus } from "@/interfaces/background";
 import {
+  CandidacyStatus,
+  CandidacyType,
   CandidateCard,
   CandidateDetail,
   CandidatePresidentials,
 } from "@/interfaces/candidate";
-import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import { createClient } from "@/lib/supabase/server";
 import { QueryData } from "@supabase/supabase-js";
 
 interface GetCandidatesParams {
   ids?: string[];
   electoral_process_id?: string;
-  type?: CandidacyType | string;
+  /**
+   * Valores posibles: PRESIDENTE | SENADOR_NACIONAL | SENADOR_REGIONAL
+   *                   | DIPUTADO | PARLAMENTO_ANDINO
+   */
+  type?: string;
   districts?: string[];
   parties?: string[];
   search?: string;
   page?: number;
   pageSize?: number;
   limit?: number;
-  districtType?: "unico" | "multiple";
 }
 
 // ─────────────────────────────────────────────
@@ -52,8 +57,7 @@ export async function getCandidatesCards({
   search,
   ids,
   page = 1,
-  pageSize = 20,
-  districtType,
+  pageSize = 40,
 }: GetCandidatesParams): Promise<CandidateCard[]> {
   const supabase = await createClient();
 
@@ -67,8 +71,15 @@ export async function getCandidatesCards({
     status,
     active,
     person:person_id!inner (
-      id, fullname, name, lastname, dni, image_url, image_candidate_url,
-      profession
+      id, fullname, name, lastname, image_url, image_candidate_url,
+      profession,
+      is_incumbent,
+      education_level,
+      secondary_school,
+      incomes,
+      assets,
+      work_experience,
+      backgrounds: background(status)
     ),
     political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
@@ -121,29 +132,47 @@ export async function getCandidatesCards({
     query = query.in("id", ids);
   }
 
-  // ── Filtros de tipo y distrito ──
-  if (!hasSearch) {
-    if (type === "PRESIDENTE") {
-      query = query.eq("type", "PRESIDENTE");
-      query = query.eq("electoral_district.is_national", true);
-    } else if (type === "VICEPRESIDENTE") {
-      query = query.in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"]);
-      query = query.eq("electoral_district.is_national", true);
-    } else if (type === "SENADOR") {
-      query = query.eq("type", "SENADOR");
-      if (districtType === "multiple") {
-        query = query.eq("electoral_district.is_national", false);
+  // ── Filtros de tipo → mapeo UI → DB ──
+  if (!hasSearch && type) {
+    switch (type) {
+      case "PRESIDENTE":
+        query = query
+          .eq("type", "PRESIDENTE")
+          .eq("electoral_district.is_national", true);
+        break;
+
+      case "SENADOR_NACIONAL":
+        query = query
+          .eq("type", "SENADOR")
+          .eq("electoral_district.is_national", true);
+        break;
+
+      case "SENADOR_REGIONAL":
+        query = query
+          .eq("type", "SENADOR")
+          .eq("electoral_district.is_national", false);
         if (districts && districts.length > 0) {
           query = query.in("electoral_district.name", districts);
         }
-      } else {
-        query = query.eq("electoral_district.is_national", true);
-      }
-    } else if (type === "DIPUTADO") {
-      query = query.eq("type", "DIPUTADO");
-      if (districts && districts.length > 0) {
-        query = query.in("electoral_district.name", districts);
-      }
+        break;
+
+      case "DIPUTADO":
+        query = query.eq("type", "DIPUTADO");
+        if (districts && districts.length > 0) {
+          query = query.in("electoral_district.name", districts);
+        }
+        break;
+
+      case "PARLAMENTO_ANDINO":
+        query = query
+          .eq("type", "PARLAMENTO_ANDINO")
+          .eq("electoral_district.is_national", true);
+        break;
+
+      default:
+        // fallback: filtrar por el valor directo
+        query = query.eq("type", "PRESIDENTE");
+        break;
     }
   }
 
@@ -192,23 +221,34 @@ export async function getCandidatesCards({
       type: candidate.type as CandidacyType,
       list_number: candidate.list_number,
       status: candidate.status as CandidacyStatus,
+
       person: {
-        id: candidate.person.id,
-        fullname: candidate.person.fullname,
-        dni: candidate.person.dni,
-        image_url: candidate.person.image_url,
-        image_candidate_url: candidate.person.image_candidate_url,
-        profession: candidate.person.profession,
+        id: p.id,
+        fullname: p.fullname,
+        image_url: p.image_url,
+        image_candidate_url: p.image_candidate_url,
+        profession: p.profession,
+
+        // ── Nuevo ──
+        is_incumbent: (p.is_incumbent as boolean) ?? false,
+        education_level: (p.education_level as number | null) ?? null,
+        secondary_school: (p.secondary_school as boolean | null) ?? null,
+        incomes: (p.incomes as Record<string, unknown> | null) ?? null,
+        assets: (p.assets as Record<string, unknown> | null) ?? null,
+        work_experience: (p.work_experience as unknown[] | null) ?? null,
+        backgrounds: (p.backgrounds as { status: BackgroundStatus }[]) ?? null,
       },
+
       political_party: {
         id: candidate.political_party?.id,
         name: candidate.political_party?.name,
-        acronym: candidate.political_party?.acronym,
+        acronym: candidate.political_party?.acronym ?? null,
         logo_url: candidate.political_party?.logo_url ?? null,
-        color_hex: candidate.political_party?.color_hex,
+        color_hex: candidate.political_party?.color_hex ?? null,
         active: candidate.political_party?.active,
         foundation_date: candidate.political_party?.foundation_date ?? null,
       },
+
       electoral_district: candidate.electoral_district
         ? {
             id: candidate.electoral_district.id,
@@ -218,14 +258,11 @@ export async function getCandidatesCards({
             active: candidate.electoral_district.active,
           }
         : null,
+
       has_metrics: false,
     };
   });
 
-  // ── Shuffle aleatorio para PRESIDENTE ──
-  // Se aplica solo cuando no hay búsqueda activa y el tipo es PRESIDENTE.
-  // Cada visita/recarga muestra un orden diferente — ningún partido
-  // tiene ventaja por aparecer siempre primero.
   return results;
 }
 

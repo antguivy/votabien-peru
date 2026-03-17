@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { CandidacyType } from "@/interfaces/politics";
 import { createId } from "@paralleldrive/cuid2";
 import {
   type Database,
@@ -12,6 +11,7 @@ import {
 } from "@/interfaces/supabase";
 import { BulkUpdateCandidatesRequest } from "./types";
 import {
+  CandidacyType,
   CreateCandidatePeriodRequest,
   UpdateCandidatePeriodRequest,
 } from "@/interfaces/candidate";

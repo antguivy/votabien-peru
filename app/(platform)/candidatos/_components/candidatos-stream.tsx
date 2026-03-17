@@ -1,8 +1,7 @@
 import CandidatosList from "@/components/politics/candidatos-list";
-import { CandidateCard } from "@/interfaces/candidate";
+import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { PoliticalPartyListPaginated } from "@/interfaces/political-party";
-import { FiltersCandidates } from "@/interfaces/politics";
 
 interface Props {
   candidaturasPromise: Promise<CandidateCard[]>;

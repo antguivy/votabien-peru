@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CandidacyType, CandidacyStatus } from "@/interfaces/politics";
 import { createCandidatePeriod, updateCandidatePeriod } from "../_lib/actions";
 import { toast } from "sonner";
 import { Loader2, Info, User, Search, Trash2 } from "lucide-react";
@@ -36,7 +35,11 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from "@/components/ui/credenza";
-import { AdminCandidate } from "@/interfaces/candidate";
+import {
+  AdminCandidate,
+  CandidacyStatus,
+  CandidacyType,
+} from "@/interfaces/candidate";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { AdminCandidateContext } from "@/components/context/admin-candidate";
 import { Badge } from "@/components/ui/badge";

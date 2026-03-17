@@ -6,7 +6,6 @@ import {
   FormulaComparison,
   FormulaMember,
 } from "@/interfaces/comparator";
-import { CandidacyType } from "@/interfaces/politics";
 import { toJsonArray } from "@/lib/utils/text";
 import {
   Assets,
@@ -21,6 +20,7 @@ import {
   WorkExperience,
 } from "@/interfaces/person";
 import { BackgroundBase } from "@/interfaces/background";
+import { CandidacyType } from "@/interfaces/candidate";
 
 const FORMULA_TYPES = [
   CandidacyType.PRESIDENTE,

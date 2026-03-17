@@ -43,7 +43,7 @@ const TOOL_CONFIG: Record<
 > = {
   match: {
     label: "Descubre tu candidato",
-    sublabel: "Descubre tu afinidad política",
+    sublabel: "Encuentra tu afinidad política",
     detail: "Test completado",
     href: "/match",
     colorClass: "text-blue-500",

@@ -173,7 +173,7 @@ export default function Footer() {
               {[
                 {
                   href: "/match",
-                  label: "Match",
+                  label: "Mi Candidato",
                   icon: <Heart className="w-3 h-3" />,
                   color: "brand",
                 },

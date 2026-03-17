@@ -7,7 +7,6 @@ export function adaptCandidateFromSearch(
 ): SearchableEntity {
   return {
     id: cand.id, // candidate.id — usado en URL, no PII
-    dni: cand.person.dni, // guardado internamente pero NO en URL
     fullname: cand.person.fullname,
     image_url: cand.person.image_url,
     image_candidate_url: cand.person.image_candidate_url,
@@ -34,7 +33,6 @@ export function extractEntitiesFromComparison(
     )
     .map((item) => ({
       id: item.president_id,
-      dni: item.data!.president.person.dni,
       fullname: item.president_name ?? "",
       image_url: item.data!.president.person.image_url,
       image_candidate_url: item.data!.president.person.image_candidate_url,

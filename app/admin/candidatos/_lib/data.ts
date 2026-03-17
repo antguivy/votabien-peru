@@ -4,7 +4,6 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { type Tables } from "@/interfaces/supabase";
-import { CandidacyStatus, CandidacyType } from "@/interfaces/politics";
 import { GetCandidateSchema } from "./validation";
 import {
   PaginatedCandidatesResponse,
@@ -12,7 +11,11 @@ import {
   StatusCounts,
   TypeCounts,
 } from "./types";
-import { AdminCandidate } from "@/interfaces/candidate";
+import {
+  AdminCandidate,
+  CandidacyStatus,
+  CandidacyType,
+} from "@/interfaces/candidate";
 
 type PersonRow = Tables<"person">;
 type PartyRow = Tables<"politicalparty">;

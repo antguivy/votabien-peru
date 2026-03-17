@@ -4,7 +4,6 @@ import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getHitos } from "@/queries/public/hito";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
-import CandidatosNav from "@/components/landing/candidatos-nav";
 
 export default async function VotaBienPage() {
   try {
@@ -18,7 +17,6 @@ export default async function VotaBienPage() {
         {/* 1 — Hero: gancho emocional + countdown + quick filters */}
         <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
 
-        <CandidatosNav />
         {/* 2 — Herramientas: qué puede hacer el usuario */}
         {/* <PeruReadinessSection /> */}
 

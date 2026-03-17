@@ -6,7 +6,7 @@ import { adaptCandidateFromSearch } from "./helpers";
 import { ComparisonResponse } from "@/interfaces/comparator";
 import { getCandidatesCards } from "@/queries/public/candidacies";
 import { getPresidentialFormulasComparison } from "@/queries/public/compare";
-import { CandidacyType } from "@/interfaces/politics";
+import { CandidacyType } from "@/interfaces/candidate";
 
 export async function getEntitiesByIds(
   ids: string[],

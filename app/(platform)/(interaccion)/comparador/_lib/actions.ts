@@ -2,9 +2,10 @@
 
 import { SearchableEntity } from "@/interfaces/ui-types";
 import { adaptCandidateFromSearch } from "./helpers";
-import { CandidacyType, ElectoralProcess } from "@/interfaces/politics";
+import { ElectoralProcess } from "@/interfaces/politics";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { getCandidatesCards } from "@/queries/public/candidacies";
+import { CandidacyType } from "@/interfaces/candidate";
 
 interface SearchExtras {
   parties?: string[];

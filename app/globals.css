@@ -131,7 +131,7 @@
     --background: oklch(0.12 0.02 20); /* Azul muy oscuro, profesional */
     --foreground: oklch(0.95 0.003 240); /* Blanco roto */
 
-    --card: oklch(0.23 0.012 240); /* Tarjetas ligeramente elevadas */
+    --card: oklch(0.23 0.02 240); /* Tarjetas ligeramente elevadas */
     --card-foreground: oklch(0.95 0.003 240);
 
     --popover: oklch(0.16 0.01 240);
