@@ -25,6 +25,7 @@ interface GetCandidatesParams {
   page?: number;
   pageSize?: number;
   limit?: number;
+  alerts?: string[];
 }
 
 // ─────────────────────────────────────────────
@@ -58,6 +59,7 @@ export async function getCandidatesCards({
   ids,
   page = 1,
   pageSize = 40,
+  alerts,
 }: GetCandidatesParams): Promise<CandidateCard[]> {
   const supabase = await createClient();
 
@@ -71,7 +73,7 @@ export async function getCandidatesCards({
     status,
     active,
     person:person_id!inner (
-      id, fullname, name, lastname, image_url, image_candidate_url,
+      id, name, lastname, fullname, image_url, image_candidate_url,
       profession,
       is_incumbent,
       education_level,
@@ -79,6 +81,9 @@ export async function getCandidatesCards({
       incomes,
       assets,
       work_experience,
+      has_penal_sentence,
+      has_criminal_record,
+      sanction_status,
       backgrounds: background(status)
     ),
     political_party:political_party_id!inner (
@@ -114,8 +119,8 @@ export async function getCandidatesCards({
   const PRESIDENTE_MAX = 40; // ~3x partidos posibles, margen seguro
   const isPresidente = !hasSearch && type === "PRESIDENTE";
 
-  const from = isPresidente ? 0 : (page - 1) * pageSize;
-  const to = isPresidente ? PRESIDENTE_MAX - 1 : from + pageSize - 1;
+  const from = isPresidente || hasSearch ? 0 : (page - 1) * pageSize;
+  const to = isPresidente || hasSearch ? 99 : from + pageSize - 1;
 
   let query = queryBuilder.range(from, to);
 
@@ -178,31 +183,77 @@ export async function getCandidatesCards({
 
   // Filtro de partido — siempre activo
   if (parties && parties.length > 0) {
-    query = query.in("political_party.name", parties);
+    query = query.in("political_party.id", parties);
   }
 
   // ── Búsqueda multi-palabra ──
   if (hasSearch) {
+    // Query separada sobre person — sin foreignTable
+    let personQuery = supabase.from("person").select("id");
+
     for (const word of searchWords) {
       const normalized = normalizeSearchTerm(word);
-      query = query.or(
-        [
-          `fullname.ilike.%${normalized}%`,
-          `name.ilike.%${normalized}%`,
-          `lastname.ilike.%${normalized}%`,
-          `dni.ilike.%${normalized}%`,
-        ].join(","),
-        { foreignTable: "person" },
+      // Múltiples .or() en la misma tabla = AND entre palabras
+      personQuery = personQuery.or(
+        `name.ilike.%${normalized}%,lastname.ilike.%${normalized}%`,
+      );
+    }
+
+    const { data: persons, error: personError } = await personQuery;
+
+    if (personError || !persons?.length) return [];
+
+    // Filtrar candidates por los IDs resueltos
+    query = query.in(
+      "person_id",
+      persons.map((p) => p.id),
+    );
+  }
+
+  if (alerts && alerts.length > 0) {
+    const sanctionStatuses = alerts.filter(
+      (a) => a === "CON_SANCION" || a === "EN_INVESTIGACION",
+    );
+    const excludeIncumbent = alerts.includes("IS_INCUMBENT");
+
+    // Obtener IDs de personas a EXCLUIR
+    let excludeQuery = supabase.from("person").select("id");
+
+    if (sanctionStatuses.length > 0 && excludeIncumbent) {
+      excludeQuery = excludeQuery.or(
+        `sanction_status.in.(${sanctionStatuses.join(",")}),is_incumbent.eq.true`,
+      );
+    } else if (sanctionStatuses.length > 0) {
+      excludeQuery = excludeQuery.in("sanction_status", sanctionStatuses);
+    } else if (excludeIncumbent) {
+      excludeQuery = excludeQuery.eq("is_incumbent", true);
+    }
+
+    const { data: excludedPersons } = await excludeQuery;
+
+    if (excludedPersons && excludedPersons.length > 0) {
+      // NOT IN — excluir esos person_ids del resultado
+      query = query.not(
+        "person_id",
+        "in",
+        `(${excludedPersons.map((p) => p.id).join(",")})`,
       );
     }
   }
 
   query = query.eq("active", true);
-
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching candidates:", error);
+    // Supabase lanza este error cuando el offset supera el total de resultados
+    // No es un error real — significa que no hay más páginas
+    if (
+      error.message?.includes("PGRST103") ||
+      error.code === "PGRST103" ||
+      error.message?.startsWith('{"')
+    ) {
+      return [];
+    }
     throw new Error("Error al obtener candidatos");
   }
 
@@ -236,6 +287,9 @@ export async function getCandidatesCards({
         incomes: (p.incomes as Record<string, unknown> | null) ?? null,
         assets: (p.assets as Record<string, unknown> | null) ?? null,
         work_experience: (p.work_experience as unknown[] | null) ?? null,
+        has_criminal_record: (p.has_criminal_record as boolean) ?? false,
+        has_penal_sentence: (p.has_penal_sentence as boolean) ?? false,
+        sanction_status: (p.sanction_status as string | null) ?? null,
         backgrounds: (p.backgrounds as { status: BackgroundStatus }[]) ?? null,
       },
 

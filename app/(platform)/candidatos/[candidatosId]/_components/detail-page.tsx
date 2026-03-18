@@ -24,7 +24,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { PersonDetailCandidate } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
 import { CandidateDetail } from "@/interfaces/candidate";
@@ -198,7 +197,7 @@ export default function DetailCandidato({
                     <span>Nacimiento: {persona.place_of_birth}</span>
                   </div>
                 )}
-                {persona.updated_at && (
+                {/* {persona.updated_at && (
                   <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span className="text-xs">
@@ -210,7 +209,7 @@ export default function DetailCandidato({
                       }).format(new Date(persona.updated_at))}
                     </span>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
             <ShareButton
@@ -382,7 +381,7 @@ export default function DetailCandidato({
                       persona.work_experience.map((exp, i) => (
                         <div key={i} className="relative pl-6 pb-1">
                           <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full bg-purple-400" />
-                          <div className="absolute left-[3px] top-3.5 bottom-[-20px] w-0.5 bg-border last:hidden" />
+                          <div className="absolute left-[3px] top-3.5 bottom-[-15px] w-0.5 bg-border last:hidden" />
 
                           <h4 className="font-bold text-sm text-foreground">
                             {exp.position}
@@ -390,9 +389,12 @@ export default function DetailCandidato({
                           <p className="text-sm text-muted-foreground font-medium">
                             {exp.organization}
                           </p>
-                          <span className="inline-block mt-1 text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                          <Badge
+                            variant="outline"
+                            className="mt-1 text-[10px] h-5"
+                          >
                             {exp.period}
-                          </span>
+                          </Badge>
                         </div>
                       ))
                     ) : (
@@ -441,11 +443,9 @@ export default function DetailCandidato({
                                         {edu.graduate_school}
                                       </p>
                                     </div>
-                                    {edu.concluded === "SI" ? (
-                                      <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                                    ) : (
-                                      <span className="text-[10px] bg-muted px-1 rounded">
-                                        En curso
+                                    {edu.concluded === "NO" && (
+                                      <span className="text-[10px] bg-destructive/10 text-destructive p-1 rounded-md">
+                                        {"INCONCLUSO"}
                                       </span>
                                     )}
                                   </div>
@@ -487,7 +487,7 @@ export default function DetailCandidato({
                                     {edu.concluded === "SI" ? (
                                       <div className="w-2 h-2 rounded-full bg-blue-500" />
                                     ) : (
-                                      <div className="w-2 h-2 rounded-full border border-blue-500" />
+                                      <div className="w-2 h-2 rounded-full border border-destructive" />
                                     )}
                                   </div>
                                   <div>
@@ -497,9 +497,16 @@ export default function DetailCandidato({
                                     <p className="text-xs text-muted-foreground">
                                       {edu.university}
                                     </p>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {edu.year_of_completion}
-                                    </span>
+                                    {edu.year_of_completion && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {edu.year_of_completion}
+                                      </span>
+                                    )}
+                                    {edu.concluded === "NO" && (
+                                      <span className="text-[10px] bg-destructive/15 text-destructive p-1 rounded-md">
+                                        {"INCONCLUSO"}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -529,8 +536,8 @@ export default function DetailCandidato({
                                       {edu.graduate_school}
                                     </p>
                                     {edu.concluded === "NO" && (
-                                      <span className="text-[10px] text-orange-600 bg-orange-50 px-1 rounded">
-                                        Inconcluso
+                                      <span className="text-[10px] bg-destructive/15 text-destructive p-1 rounded-md">
+                                        {"INCONCLUSO"}
                                       </span>
                                     )}
                                   </div>

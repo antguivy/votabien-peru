@@ -8,6 +8,8 @@ import { getPartidosList } from "@/queries/public/parties";
 import { Suspense } from "react";
 import { CandidatosStream } from "@/app/(platform)/candidatos/_components/candidatos-stream";
 import { CandidatosListSkeleton } from "./_components/candidatos-list-skeleton";
+import { TypeBar } from "@/components/politics/type-bar";
+import { NewFilterPanel } from "@/components/ui/filter-panel-candidates";
 
 // ─────────────────────────────────────────────
 // SearchParams — districtType eliminado,
@@ -22,12 +24,13 @@ interface PageProps {
     type?: string;
     parties?: string | string[];
     districts?: string | string[];
+    alerts?: string | string[];
   }>;
 }
 
 const CandidatosPage = async ({ searchParams }: PageProps) => {
   const params = await searchParams;
-  const limit = 30;
+  const limit = 40;
 
   // Normalizar parties → string[]
   let partiesArray: string[] = [];
@@ -55,12 +58,25 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     }
   }
 
+  let alertsArray: string[] = [];
+  if (params.alerts) {
+    if (typeof params.alerts === "string") {
+      alertsArray = params.alerts
+        .split(",")
+        .map((a) => a.trim())
+        .filter(Boolean);
+    } else if (Array.isArray(params.alerts)) {
+      alertsArray = params.alerts;
+    }
+  }
+
   // Filtros para el componente cliente
   const currentParams = {
     search: params.search || "",
     type: params.type || "PRESIDENTE",
     parties: partiesArray,
     districts: districtsArray,
+    alerts: alertsArray,
   };
 
   // ── Proceso electoral activo ──
@@ -113,6 +129,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     type: params.type || "PRESIDENTE",
     parties: partiesArray.length > 0 ? partiesArray : undefined,
     districts: districtsArray.length > 0 ? districtsArray : undefined,
+    alerts: alertsArray.length > 0 ? alertsArray : undefined,
     skip: 0,
     limit,
   };
@@ -146,9 +163,21 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
         electionDate={fechaFormateada}
         daysRemaining={diasRestantes}
       />
-      <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-0">
+      <section className="px-4 md:px-0 pt-4 container mx-auto pb-20 lg:pb-0">
+        <div className="sticky top-0 z-30 space-y-2 mb-4 bg-background border border-brand/20 rounded-2xl p-2">
+          <TypeBar currentType={currentParams.type} />
+          <NewFilterPanel
+            currentType={currentParams.type}
+            currentSearch={currentParams.search}
+            currentParty={currentParams.parties[0] ?? ""}
+            currentDistrict={currentParams.districts[0] ?? ""}
+            currentAlerts={currentParams.alerts}
+            distritos={distritos}
+            parties={partiesData.items}
+          />
+        </div>
         <Suspense
-          key={`${currentParams.type}-${currentParams.search}-${partiesArray.join(",")}-${districtsArray.join(",")}`}
+          key={`${currentParams.type}-${currentParams.search}-${partiesArray.join(",")}-${districtsArray.join(",")}-${alertsArray.join(",")}`}
           fallback={<CandidatosListSkeleton />}
         >
           <CandidatosStream

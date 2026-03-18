@@ -866,6 +866,7 @@ export type Database = {
           fullname: string;
           gender: string | null;
           has_criminal_record: boolean;
+          has_penal_sentence: boolean;
           id: string;
           image_candidate_url: string | null;
           image_url: string | null;
@@ -901,6 +902,7 @@ export type Database = {
           fullname: string;
           gender?: string | null;
           has_criminal_record?: boolean;
+          has_penal_sentence?: boolean;
           id: string;
           image_candidate_url?: string | null;
           image_url?: string | null;
@@ -936,6 +938,7 @@ export type Database = {
           fullname?: string;
           gender?: string | null;
           has_criminal_record?: boolean;
+          has_penal_sentence?: boolean;
           id?: string;
           image_candidate_url?: string | null;
           image_url?: string | null;

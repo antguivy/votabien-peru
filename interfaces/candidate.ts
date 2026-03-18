@@ -37,12 +37,40 @@ export type FilterCandidacyType =
   | "PARLAMENTO_ANDINO";
 
 // Opciones para el TypeBar — etiquetas legibles
-export const typeOptions: { value: FilterCandidacyType; label: string }[] = [
-  { value: "PRESIDENTE", label: "Presidente" },
-  { value: "SENADOR_NACIONAL", label: "Senador Nacional" },
-  { value: "SENADOR_REGIONAL", label: "Senador Regional" },
-  { value: "DIPUTADO", label: "Diputado" },
-  { value: "PARLAMENTO_ANDINO", label: "Parlamento Andino" },
+export const typeOptions: {
+  value: FilterCandidacyType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "PRESIDENTE",
+    label: "Presidente",
+    description: "",
+  },
+  {
+    value: "SENADOR_NACIONAL",
+    label: "Senador Nacional",
+    description:
+      "Se eligen 30. Representan a todo el Perú. Revisan las leyes que proponen los diputados y deciden si se aprueban o no.",
+  },
+  {
+    value: "SENADOR_REGIONAL",
+    label: "Senador Regional",
+    description:
+      "Se eligen 30. Representan a tu región. Revisan las leyes y defienden las necesidades de su zona.",
+  },
+  {
+    value: "DIPUTADO",
+    label: "Diputado",
+    description:
+      "Se eligen 130. Representan a tu región. Proponen y debaten la mayoría de leyes.",
+  },
+  {
+    value: "PARLAMENTO_ANDINO",
+    label: "Parlamento Andino",
+    description:
+      "Se eligen 5. Representan al Perú ante otros países andinos. Trabajan en acuerdos sobre temas como comercio, migración y medio ambiente.",
+  },
 ];
 
 export interface FiltersCandidates {
@@ -50,6 +78,7 @@ export interface FiltersCandidates {
   type: string; // FilterCandidacyType en práctica
   parties: string[]; // 0 ó 1 elemento (single select)
   districts: string[]; // 0 ó 1 elemento (single select)
+  alerts: string[]; // "CON_SANCION" | "EN_INVESTIGACION" | "IS_INCUMBENT"
 }
 
 export interface AllianceBase {

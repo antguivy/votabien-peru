@@ -25,8 +25,6 @@ export async function CandidatosStream({
   return (
     <CandidatosList
       candidaturas={candidaturas}
-      distritos={distritos}
-      parties={parties}
       procesoId={procesoId}
       currentFilters={currentFilters}
     />

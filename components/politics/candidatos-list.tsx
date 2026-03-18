@@ -19,6 +19,7 @@ import { getTextColor } from "@/lib/utils/color-utils";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { PoliticalPartyListPaginated } from "@/interfaces/political-party";
 import { shuffleArray } from "@/lib/utils/arrays";
+import { Badge } from "../ui/badge";
 
 // ─────────────────────────────────────────────
 // Config visual por tipo de candidato
@@ -49,7 +50,7 @@ const TYPE_CONFIG: Record<
     ring: "group-hover:ring-teal-400/30",
   },
   DEFAULT: {
-    label: "CANDIDATO",
+    label: "VICEPRESIDENTE",
     bgBadge: "bg-muted text-muted-foreground backdrop-blur-sm",
     ring: "group-hover:ring-border",
   },
@@ -98,10 +99,11 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const dynamicTextColorClass = getTextColor(partyColorHex);
 
   // ── Datos derivados ──
-  const hasConviction =
-    person.backgrounds?.some((b) => b.status === "SENTENCIADO") ?? false;
-  const isUnderInvestigation =
-    person.backgrounds?.some((b) => b.status === "EN_INVESTIGACION") ?? false;
+  const hasConviction = person.sanction_status === "CON_SANCION";
+  const isUnderInvestigation = person.backgrounds.find(
+    (p) => p.status === "EN_INVESTIGACION",
+  );
+  const isPenal = person.has_penal_sentence;
 
   const incomes = person.incomes as Record<string, unknown> | null;
   const assets = person.assets as Record<string, unknown> | null;
@@ -115,6 +117,8 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
     if (person.education_level === 3) return "Estudio Universitario/Postgrado";
     if (person.education_level === 2) return "Estudio Universitario";
     if (person.secondary_school === false) return "Sin secundaria";
+    if (person.secondary_school === true) return "Secundaria completa";
+
     return null;
   })();
 
@@ -201,44 +205,32 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
               </div>
 
               {/* Badge de tipo de candidato */}
-              <span
-                className={cn(
-                  "px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-widest uppercase",
-                  config.bgBadge,
-                )}
-              >
-                {config.label}
-              </span>
+              <Badge className={cn(config.bgBadge)}>{config.label}</Badge>
             </div>
           </div>
 
           {/* ── Fila 2: nombre + flecha ── */}
-          <div className="flex items-start justify-between gap-1.5">
-            <h3 className="font-bebas text-[18px] sm:text-[20px] leading-tight tracking-wide text-card-foreground group-hover:text-primary transition-colors line-clamp-2 flex-1">
-              {person.fullname.toUpperCase()}
-            </h3>
-            <ArrowUpRight
-              className={cn(
-                "w-4 h-4 flex-shrink-0 mt-0.5",
-                "text-muted-foreground/30 transition-all duration-200",
-                "group-hover:text-primary group-hover:translate-x-px group-hover:-translate-y-px",
-              )}
-            />
-          </div>
+          <h3 className="font-bebas text-[16px] sm:text-[18px] leading-tight tracking-wide text-card-foreground group-hover:text-primary transition-colors line-clamp-3 flex-1">
+            {person.fullname}
+          </h3>
 
           {/* ── Fila 3: meta chips (educación + experiencia) ── */}
           {hasMeta && (
             <div className="flex flex-wrap gap-1.5">
-              {educationLabel && (
+              {educationLabel === "Sin secundaria" ? (
+                <AlertBadge variant="amber">{educationLabel}</AlertBadge>
+              ) : (
                 <span className="inline-flex items-center text-[11px] font-semibold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-md">
                   {educationLabel}
                 </span>
               )}
-              {workCount > 0 && (
+              {workCount > 0 ? (
                 <span className="inline-flex items-center text-[11px] font-semibold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-md">
                   {workCount}{" "}
                   {workCount === 1 ? "puesto de trabajo" : "puestos de trabajo"}
                 </span>
+              ) : (
+                <AlertBadge variant="amber">Sin experiencia laboral</AlertBadge>
               )}
             </div>
           )}
@@ -252,7 +244,9 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                   <AlertBadge variant="blue">Congresista Actual</AlertBadge>
                 )}
                 {hasConviction && (
-                  <AlertBadge variant="red">Sentenciado</AlertBadge>
+                  <AlertBadge variant="red">
+                    {isPenal ? "Sentenciado" : "Sancionado"}
+                  </AlertBadge>
                 )}
                 {isUnderInvestigation && (
                   <AlertBadge variant="amber">Investigado</AlertBadge>
@@ -385,14 +379,12 @@ const DistrictHintBanner = ({
 
 interface CandidatosListProps {
   candidaturas: CandidateCard[];
-  distritos: ElectoralDistrictBase[];
-  parties: PoliticalPartyListPaginated["items"];
   procesoId: string;
   currentFilters: FiltersCandidates;
   infiniteScroll?: boolean;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 40;
 
 // ─────────────────────────────────────────────
 // Componente principal
@@ -400,8 +392,6 @@ const PAGE_SIZE = 20;
 
 const CandidatosList = ({
   candidaturas: initialCandidaturas,
-  distritos,
-  parties,
   procesoId,
   currentFilters,
   infiniteScroll = true,
@@ -417,7 +407,8 @@ const CandidatosList = ({
   // ── Refs para evitar stale closures en el observer ──
   // pageRef: página ya cargada — la siguiente será pageRef.current + 1
   // Arranca en 1 porque el servidor ya entregó la "página 1"
-  const pageRef = useRef(1);
+  // const pageRef = useRef(1);
+  const pageRef = useRef(Math.ceil(initialCandidaturas.length / PAGE_SIZE));
   // loadingRef: espejo síncrono de `loading` para que el observer
   // no dispare mientras ya hay una petición en vuelo
   const loadingRef = useRef(false);
@@ -445,6 +436,7 @@ const CandidatosList = ({
   // se re-registre en cada carga (evita el doble-disparo).
   const loadMore = useCallback(async () => {
     if (!infiniteScroll || loadingRef.current || !hasMoreRef.current) return;
+    if (currentFilters.search?.trim()) return;
 
     loadingRef.current = true;
     setLoading(true);
@@ -463,6 +455,9 @@ const CandidatosList = ({
           : undefined,
         districts: currentFilters.districts?.length
           ? currentFilters.districts
+          : undefined,
+        alerts: currentFilters.alerts?.length
+          ? currentFilters.alerts
           : undefined,
       });
 
@@ -544,7 +539,7 @@ const CandidatosList = ({
 
   return (
     <div className="w-full">
-      {infiniteScroll && (
+      {/* {infiniteScroll && (
         <div
           className={cn(
             "sticky top-0 z-30 space-y-2 mb-4",
@@ -553,10 +548,8 @@ const CandidatosList = ({
             "rounded-2xl p-2",
           )}
         >
-          {/* TypeBar — siempre visible */}
           <TypeBar currentType={currentFilters.type} />
 
-          {/* NewFilterPanel */}
           <NewFilterPanel
             currentType={currentFilters.type}
             currentSearch={currentFilters.search}
@@ -566,7 +559,7 @@ const CandidatosList = ({
             parties={parties}
           />
         </div>
-      )}
+      )} */}
 
       {/* Grid de cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-4 font-manrope">

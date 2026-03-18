@@ -184,5 +184,8 @@ export interface PersonBackgroundToCard {
   incomes: Record<string, unknown> | null;
   assets: Record<string, unknown> | null;
   work_experience: unknown[] | null;
+  sanction_status: string | null;
+  has_criminal_record: boolean;
+  has_penal_sentence: boolean;
   backgrounds: { status: BackgroundStatus }[];
 }

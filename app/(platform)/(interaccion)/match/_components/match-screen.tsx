@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  X,
 } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -19,6 +20,7 @@ import { ResultsFlow } from "@/components/match/results-flow";
 import { SavedResultsView } from "@/components/match/saved-results";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { useSavedResults } from "@/store/saved-match-results";
+import { Button } from "@/components/ui/button";
 
 type View = "home" | "saved";
 
@@ -249,11 +251,12 @@ export default function MatchScreen({
   // ── Questions ──────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col min-h-0 max-w-lg mx-auto w-full">
-      <div className="px-6 pt-6 pb-2 shrink-0">
+      <div className=" pb-2 shrink-0">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-muted-foreground text-sm font-medium">
-            Pregunta {step} de {MATCH_QUESTIONS.length}
-          </span>
+          <Button type="button" onClick={resetMatch}>
+            <X size={16} />
+            <span className="text-sm font-medium">Salir</span>
+          </Button>
           <span className="text-primary text-sm font-bold">
             {Math.round((step / MATCH_QUESTIONS.length) * 100)}%
           </span>
@@ -264,24 +267,26 @@ export default function MatchScreen({
             style={{ width: `${(step / MATCH_QUESTIONS.length) * 100}%` }}
           />
         </div>
+        <p className="text-muted-foreground text-sm font-medium mt-2">
+          Pregunta {step} de {MATCH_QUESTIONS.length}
+        </p>
       </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto">
         <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
       </div>
-
       {step > 1 && (
         <div className="px-6 shrink-0">
-          <button
+          <Button
             type="button"
+            variant={"outline"}
             onClick={prevStep}
-            className="w-full py-3 flex items-center justify-center gap-2 hover:opacity-70 transition-opacity"
+            className="w-full"
           >
             <ChevronLeft size={20} className="text-muted-foreground" />
             <span className="text-muted-foreground font-medium text-base">
               Pregunta anterior
             </span>
-          </button>
+          </Button>
         </div>
       )}
       {step === 1 && <div className="pb-20 shrink-0" />}

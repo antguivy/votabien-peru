@@ -44,6 +44,7 @@ interface NewFilterPanelProps {
   currentDistrict: string;
   distritos: ElectoralDistrictBase[];
   parties: PoliticalPartyBase[];
+  currentAlerts: string[];
 }
 
 const REGION_TYPES = ["SENADOR_REGIONAL", "DIPUTADO"];
@@ -91,7 +92,7 @@ function PartyList({
         return (
           <button
             key={party.id}
-            onClick={() => onSelect(isSelected ? "" : party.name)}
+            onClick={() => onSelect(isSelected ? "" : party.id)}
             className={cn(
               "relative flex flex-col items-center gap-2 w-full p-3 rounded-xl",
               "border-2 transition-all duration-150 active:scale-[0.97] outline-none",
@@ -272,6 +273,24 @@ function SearchBar({
   );
 }
 
+const ALERT_OPTIONS = [
+  { value: "CON_SANCION", label: "Sentenciados", color: "red" },
+  { value: "EN_INVESTIGACION", label: "Investigados", color: "amber" },
+  { value: "IS_INCUMBENT", label: "Congresistas actuales", color: "blue" },
+] as const;
+
+const colorMap = {
+  red: { active: "bg-red-500/10 border-red-400/40 text-red-600", inactive: "" },
+  amber: {
+    active: "bg-amber-500/10 border-amber-400/40 text-amber-600",
+    inactive: "",
+  },
+  blue: {
+    active: "bg-blue-500/10 border-blue-400/40 text-blue-600",
+    inactive: "",
+  },
+};
+
 // ─────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────
@@ -283,6 +302,7 @@ export function NewFilterPanel({
   currentDistrict,
   distritos,
   parties,
+  currentAlerts,
 }: NewFilterPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -292,6 +312,7 @@ export function NewFilterPanel({
     currentSearch ? 1 : 0,
     currentParty ? 1 : 0,
     currentDistrict && showRegion ? 1 : 0,
+    currentAlerts.length > 0 ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
 
   // ── Search desktop ──
@@ -323,8 +344,15 @@ export function NewFilterPanel({
       setPendingSearch(currentSearch);
       setPendingParty(currentParty);
       setPendingDistrict(currentDistrict);
+      setPendingAlerts(currentAlerts);
     }
-  }, [isDrawerOpen, currentSearch, currentParty, currentDistrict]);
+  }, [
+    isDrawerOpen,
+    currentSearch,
+    currentParty,
+    currentDistrict,
+    currentAlerts,
+  ]);
 
   useEffect(() => {
     const handleToggle = () =>
@@ -351,12 +379,13 @@ export function NewFilterPanel({
   // ─────────────────────────────────────────────
 
   const buildUrl = useCallback(
-    (search: string, party: string, district: string) => {
+    (search: string, party: string, district: string, alerts: string[]) => {
       const params = new URLSearchParams();
       params.set("type", currentType);
       if (search) params.set("search", search);
       if (party) params.set("parties", party);
       if (district && showRegion) params.set("districts", district);
+      if (alerts.length > 0) params.set("alerts", alerts.join(","));
       return `${pathname}?${params.toString()}`;
     },
     [currentType, pathname, showRegion],
@@ -368,31 +397,47 @@ export function NewFilterPanel({
 
   const commitSearch = useCallback(
     (value: string) => {
-      router.push(buildUrl(value, currentParty, currentDistrict));
+      router.replace(
+        buildUrl(value, currentParty, currentDistrict, currentAlerts),
+        {
+          scroll: false,
+        },
+      );
     },
-    [router, buildUrl, currentParty, currentDistrict],
+    [router, buildUrl, currentParty, currentDistrict, currentAlerts],
   );
 
   const setParty = useCallback(
     (name: string) => {
-      router.push(buildUrl(currentSearch, name, currentDistrict));
+      router.replace(
+        buildUrl(currentSearch, name, currentDistrict, currentAlerts),
+        {
+          scroll: false,
+        },
+      );
       setOpenCredenza(null);
       setDesktopSearch("");
     },
-    [router, buildUrl, currentSearch, currentDistrict],
+    [router, buildUrl, currentSearch, currentDistrict, currentAlerts],
   );
 
   const setDistrict = useCallback(
     (name: string) => {
-      router.push(buildUrl(currentSearch, currentParty, name));
+      router.replace(
+        buildUrl(currentSearch, currentParty, name, currentAlerts),
+        {
+          scroll: false,
+        },
+      );
+
       setOpenCredenza(null);
       setDesktopSearch("");
     },
-    [router, buildUrl, currentSearch, currentParty],
+    [router, buildUrl, currentSearch, currentParty, currentAlerts],
   );
 
   const clearAll = useCallback(() => {
-    router.push(buildUrl("", "", ""));
+    router.replace(buildUrl("", "", "", []), { scroll: false });
     setLocalSearch("");
   }, [router, buildUrl]);
 
@@ -400,15 +445,57 @@ export function NewFilterPanel({
   // Mobile handlers
   // ─────────────────────────────────────────────
 
+  const [pendingAlerts, setPendingAlerts] = useState<string[]>(currentAlerts);
+
+  // 2. Separar handler desktop (URL inmediata) vs mobile (estado pendiente)
+  const toggleAlertDesktop = useCallback(
+    (value: string) => {
+      const next = currentAlerts.includes(value)
+        ? currentAlerts.filter((a) => a !== value)
+        : [...currentAlerts, value];
+      router.replace(
+        buildUrl(currentSearch, currentParty, currentDistrict, next),
+        { scroll: false },
+      );
+    },
+    [
+      router,
+      buildUrl,
+      currentAlerts,
+      currentSearch,
+      currentParty,
+      currentDistrict,
+    ],
+  );
+
+  const toggleAlertMobile = useCallback((value: string) => {
+    setPendingAlerts((prev) =>
+      prev.includes(value) ? prev.filter((a) => a !== value) : [...prev, value],
+    );
+  }, []);
+
   const applyMobile = useCallback(() => {
-    router.push(buildUrl(pendingSearch, pendingParty, pendingDistrict));
+    router.replace(
+      buildUrl(pendingSearch, pendingParty, pendingDistrict, pendingAlerts),
+      {
+        scroll: false,
+      },
+    );
     setIsDrawerOpen(false);
-  }, [router, buildUrl, pendingSearch, pendingParty, pendingDistrict]);
+  }, [
+    router,
+    buildUrl,
+    pendingSearch,
+    pendingParty,
+    pendingDistrict,
+    pendingAlerts,
+  ]);
 
   const clearMobile = useCallback(() => {
     setPendingSearch("");
     setPendingParty("");
     setPendingDistrict("");
+    setPendingAlerts([]);
   }, []);
 
   const pendingCount = [
@@ -419,10 +506,10 @@ export function NewFilterPanel({
 
   // Partido seleccionado actualmente (para mostrar logo en trigger)
   const selectedPartyData = currentParty
-    ? parties.find((p) => p.name === currentParty)
+    ? parties.find((p) => p.id === currentParty)
     : null;
   const pendingPartyData = pendingParty
-    ? parties.find((p) => p.name === pendingParty)
+    ? parties.find((p) => p.id === pendingParty)
     : null;
 
   // ─────────────────────────────────────────────
@@ -544,6 +631,26 @@ export function NewFilterPanel({
           </div>
         </div>
 
+        {ALERT_OPTIONS.map((opt) => {
+          const isActive = currentAlerts.includes(opt.value); // o currentAlerts en desktop
+          const colors = colorMap[opt.color];
+          return (
+            <button
+              key={opt.value}
+              onClick={() => toggleAlertDesktop(opt.value)}
+              className={cn(
+                "flex items-center justify-between px-3 py-1.5 rounded-xl border-2",
+                "text-sm font-medium transition-all active:scale-[0.99]",
+                isActive
+                  ? colors.active
+                  : "border-border/50 text-foreground hover:border-border bg-card",
+              )}
+            >
+              <span>{opt.label}</span>
+              {isActive && <X className="ml-4 w-4 h-4 flex-shrink-0" />}
+            </button>
+          );
+        })}
         {/* Región — Credenza */}
         {showRegion && (
           <Credenza
@@ -636,7 +743,7 @@ export function NewFilterPanel({
               <span>
                 {currentParty ? (
                   <span className="max-w-[110px] truncate font-semibold">
-                    {selectedPartyData?.acronym ?? currentParty}
+                    {selectedPartyData?.acronym ?? selectedPartyData?.name}
                   </span>
                 ) : (
                   "Partido"
@@ -870,6 +977,33 @@ export function NewFilterPanel({
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
               </button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold text-brand uppercase tracking-widest px-1">
+                ¿A quiénes prefieres excluir?
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {ALERT_OPTIONS.map((opt) => {
+                  const isActive = pendingAlerts.includes(opt.value); // o currentAlerts en desktop
+                  const colors = colorMap[opt.color];
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => toggleAlertMobile(opt.value)}
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2.5 rounded-xl border-2",
+                        "text-sm font-medium transition-all active:scale-[0.99]",
+                        isActive
+                          ? colors.active
+                          : "border-border/50 text-foreground hover:border-border bg-card",
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      {isActive && <X className="w-4 h-4 flex-shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
