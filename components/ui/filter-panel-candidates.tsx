@@ -274,21 +274,21 @@ function SearchBar({
 }
 
 const ALERT_OPTIONS = [
-  { value: "CON_SANCION", label: "Sentenciados", color: "red" },
+  {
+    value: "HAS_PENAL_SENTENCE",
+    label: "Sentenciados",
+    color: "red",
+  },
+  { value: "HAS_SANCTION", label: "Sancionados", color: "orange" },
   { value: "EN_INVESTIGACION", label: "Investigados", color: "amber" },
   { value: "IS_INCUMBENT", label: "Congresistas actuales", color: "blue" },
 ] as const;
 
 const colorMap = {
-  red: { active: "bg-red-500/10 border-red-400/40 text-red-600", inactive: "" },
-  amber: {
-    active: "bg-amber-500/10 border-amber-400/40 text-amber-600",
-    inactive: "",
-  },
-  blue: {
-    active: "bg-blue-500/10 border-blue-400/40 text-blue-600",
-    inactive: "",
-  },
+  red: { active: "bg-red-500/10 border-red-400/40 text-red-600" },
+  orange: { active: "bg-orange-500/10 border-orange-400/40 text-orange-600" },
+  amber: { active: "bg-amber-500/10 border-amber-400/40 text-amber-600" },
+  blue: { active: "bg-blue-500/10 border-blue-400/40 text-blue-600" },
 };
 
 // ─────────────────────────────────────────────

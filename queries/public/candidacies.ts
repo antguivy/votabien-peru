@@ -82,8 +82,8 @@ export async function getCandidatesCards({
       assets,
       work_experience,
       has_penal_sentence,
-      has_criminal_record,
-      sanction_status,
+      is_under_investigation,
+      has_sanction,
       backgrounds: background(status)
     ),
     political_party:political_party_id!inner (
@@ -211,33 +211,30 @@ export async function getCandidatesCards({
   }
 
   if (alerts && alerts.length > 0) {
-    const sanctionStatuses = alerts.filter(
-      (a) => a === "CON_SANCION" || a === "EN_INVESTIGACION",
-    );
-    const excludeIncumbent = alerts.includes("IS_INCUMBENT");
+    const conditions: string[] = [];
 
-    // Obtener IDs de personas a EXCLUIR
-    let excludeQuery = supabase.from("person").select("id");
+    if (alerts.includes("HAS_PENAL_SENTENCE"))
+      conditions.push("has_penal_sentence.eq.true");
+    if (alerts.includes("HAS_SANCTION"))
+      conditions.push("has_sanction.eq.true");
+    if (alerts.includes("EN_INVESTIGACION"))
+      conditions.push("is_under_investigation.eq.true");
+    if (alerts.includes("IS_INCUMBENT"))
+      conditions.push("is_incumbent.eq.true");
 
-    if (sanctionStatuses.length > 0 && excludeIncumbent) {
-      excludeQuery = excludeQuery.or(
-        `sanction_status.in.(${sanctionStatuses.join(",")}),is_incumbent.eq.true`,
-      );
-    } else if (sanctionStatuses.length > 0) {
-      excludeQuery = excludeQuery.in("sanction_status", sanctionStatuses);
-    } else if (excludeIncumbent) {
-      excludeQuery = excludeQuery.eq("is_incumbent", true);
-    }
+    if (conditions.length > 0) {
+      const { data: excludedPersons } = await supabase
+        .from("person")
+        .select("id")
+        .or(conditions.join(","));
 
-    const { data: excludedPersons } = await excludeQuery;
-
-    if (excludedPersons && excludedPersons.length > 0) {
-      // NOT IN — excluir esos person_ids del resultado
-      query = query.not(
-        "person_id",
-        "in",
-        `(${excludedPersons.map((p) => p.id).join(",")})`,
-      );
+      if (excludedPersons && excludedPersons.length > 0) {
+        query = query.not(
+          "person_id",
+          "in",
+          `(${excludedPersons.map((p) => p.id).join(",")})`,
+        );
+      }
     }
   }
 
@@ -287,9 +284,9 @@ export async function getCandidatesCards({
         incomes: (p.incomes as Record<string, unknown> | null) ?? null,
         assets: (p.assets as Record<string, unknown> | null) ?? null,
         work_experience: (p.work_experience as unknown[] | null) ?? null,
-        has_criminal_record: (p.has_criminal_record as boolean) ?? false,
         has_penal_sentence: (p.has_penal_sentence as boolean) ?? false,
-        sanction_status: (p.sanction_status as string | null) ?? null,
+        is_under_investigation: (p.is_under_investigation as boolean) ?? false,
+        has_sanction: (p.has_sanction as boolean) ?? false,
         backgrounds: (p.backgrounds as { status: BackgroundStatus }[]) ?? null,
       },
 

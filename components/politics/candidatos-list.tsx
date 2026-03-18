@@ -99,10 +99,8 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const dynamicTextColorClass = getTextColor(partyColorHex);
 
   // ── Datos derivados ──
-  const hasConviction = person.sanction_status === "CON_SANCION";
-  const isUnderInvestigation = person.backgrounds.find(
-    (p) => p.status === "EN_INVESTIGACION",
-  );
+  const hasConviction = person.has_sanction;
+  const isUnderInvestigation = person.is_under_investigation;
   const isPenal = person.has_penal_sentence;
 
   const incomes = person.incomes as Record<string, unknown> | null;
