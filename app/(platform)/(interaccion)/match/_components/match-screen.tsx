@@ -276,7 +276,7 @@ export default function MatchScreen({
         <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
       </div>
       {step > 1 && (
-        <div className="px-6 pb-4 shrink-0">
+        <div className="px-6 pt-2 lg:mb-4 shrink-0">
           <Button
             type="button"
             variant={"outline"}

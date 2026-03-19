@@ -26,6 +26,8 @@ export interface MatchResponse {
   };
 }
 
+export type RnasFilter = "exclude_sanctioned" | "moderate";
+
 export interface MatchFormParams {
   electoral_district_id: string;
   excluded_party_ids?: string[];
@@ -40,6 +42,7 @@ export interface MatchFormParams {
   has_political_roles?: boolean;
   born_in_district?: boolean;
   reinfo_clean?: boolean;
+  rnas_filter?: RnasFilter;
 }
 
 export type QuestionOptionValue =

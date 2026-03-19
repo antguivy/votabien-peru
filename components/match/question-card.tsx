@@ -56,7 +56,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-300">
       {/* Icon + Question */}
       <div>
         <h2 className="text-2xl font-black text-foreground leading-tight">
@@ -79,7 +79,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
               type="button"
               onClick={() => handlePress(opt, index)}
               disabled={selectedIndex !== null}
-              className={`border-2 p-4 rounded-2xl flex items-center text-left transition-all duration-150 cursor-pointer w-full ${
+              className={`border-2 p-3 rounded-2xl flex items-center text-left transition-all duration-150 cursor-pointer w-full ${
                 isSelected
                   ? "bg-primary/10 border-primary scale-[0.98]"
                   : "bg-card border-border hover:border-primary/40 active:scale-[0.98]"

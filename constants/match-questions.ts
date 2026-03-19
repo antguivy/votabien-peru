@@ -4,6 +4,7 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   {
     id: 1,
     question: "¿Qué edad debería tener tu candidato ideal?",
+    description: "Aplica solo a Senadores, Diputados y Parlamento",
     icon: "Calendar",
     options: [
       {
@@ -210,9 +211,34 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   },
   {
     id: 9,
+    question:
+      "¿Preferirías que los candidatos abogados tengan una trayectoria profesional limpia?",
+    icon: "ShieldAlert",
+    description:
+      "Algunos candidatos abogados figuran en el RNAS (Registro Nacional de Abogados Sancionados). Si el candidato no es abogado, esta preferencia no lo afecta.",
+    options: [
+      {
+        label: "Sí — prefiero que no tenga ninguna sanción vigente",
+        value: "exclude_sanctioned",
+        paramKey: "rnas_filter",
+      },
+      {
+        label: "Solo si fue expulsado — una suspensión no me preocupa",
+        value: "moderate",
+        paramKey: "rnas_filter",
+      },
+      {
+        label: "Me es indiferente",
+        value: undefined,
+        paramKey: "rnas_filter",
+      },
+    ],
+  },
+  {
+    id: 10,
     question: "¿Tu candidato debe ser de la región que representa?",
     icon: "MapPin",
-    description: "Aplica a senadores regionales y diputados",
+    description: "Aplica solo a senadores regionales y diputados",
     options: [
       {
         label: "Sí — debe haber nacido en la región",

@@ -885,6 +885,7 @@ export type Database = {
           postgraduate_education: Json;
           profession: string | null;
           reinfo_status: string | null;
+          rnas_sanctions: Json[];
           secondary_school: boolean | null;
           technical_education: Json | null;
           tiktok_url: string | null;
@@ -923,6 +924,7 @@ export type Database = {
           postgraduate_education?: Json;
           profession?: string | null;
           reinfo_status?: string | null;
+          rnas_sanctions?: Json[];
           secondary_school?: boolean | null;
           technical_education?: Json | null;
           tiktok_url?: string | null;
@@ -961,6 +963,7 @@ export type Database = {
           postgraduate_education?: Json;
           profession?: string | null;
           reinfo_status?: string | null;
+          rnas_sanctions?: Json[];
           secondary_school?: boolean | null;
           technical_education?: Json | null;
           tiktok_url?: string | null;
