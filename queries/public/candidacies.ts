@@ -272,6 +272,7 @@ export async function getCandidatesCards({
         incomes: (p.incomes as Record<string, unknown> | null) ?? null,
         assets: (p.assets as Record<string, unknown> | null) ?? null,
         work_experience: (p.work_experience as unknown[] | null) ?? null,
+        has_criminal_record: (p.has_criminal_record as boolean) ?? false,
         has_penal_sentence: (p.has_penal_sentence as boolean) ?? false,
         is_under_investigation: (p.is_under_investigation as boolean) ?? false,
         has_sanction: (p.has_sanction as boolean) ?? false,
