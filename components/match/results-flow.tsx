@@ -23,6 +23,7 @@ const CATEGORY_ORDER: CategoryType[] = [
   "senador_nacional",
   "senador_regional",
   "diputado_regional",
+  "parlamento_andino",
 ];
 
 const CATEGORY_CONFIG: Record<
@@ -61,6 +62,13 @@ const CATEGORY_CONFIG: Record<
     color: "#b91c1c",
     bg: "rgba(185,28,28,0.08)",
     border: "rgba(185,28,28,0.25)",
+    description: "Desliza o usa los botones para elegir",
+  },
+  parlamento_andino: {
+    title: "Parlamento Andino",
+    color: "#0f766e",
+    bg: "rgba(15,118,110,0.08)",
+    border: "rgba(15,118,110,0.25)",
     description: "Desliza o usa los botones para elegir",
   },
 };

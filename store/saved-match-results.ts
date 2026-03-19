@@ -6,7 +6,8 @@ export type CategoryType =
   | "presidente"
   | "senador_nacional"
   | "senador_regional"
-  | "diputado_regional";
+  | "diputado_regional"
+  | "parlamento_andino";
 
 export interface SavedMatchResult {
   id: string;

@@ -117,43 +117,44 @@ export default function MatchScreen({
         className="flex-1 overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
       >
-        {/* Saved results banner */}
-        {savedResults.length > 0 && (
-          <button
-            type="button"
-            onClick={handleGoToSaved}
-            className="w-full flex items-center gap-3 bg-primary/8 border border-primary/25 rounded-2xl px-4 py-3 mb-5 hover:bg-primary/12 transition-colors group text-left"
-          >
-            <div className="bg-primary/15 rounded-xl w-9 h-9 flex items-center justify-center shrink-0">
-              <Bookmark size={16} className="text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-primary font-bold text-sm">
-                {savedResults.length === 1
-                  ? "Tienes 1 lista guardada"
-                  : `Tienes ${savedResults.length} listas guardadas`}
-              </p>
-              <p className="text-primary/70 text-xs mt-0.5">
-                Toca para verlas o compartirlas
-              </p>
-            </div>
-            <ChevronRight
-              size={16}
-              className="text-primary/60 group-hover:translate-x-0.5 transition-transform shrink-0"
-            />
-          </button>
-        )}
-
         {/* Hero */}
         <div className="pb-5">
           <h1 className="text-3xl font-black text-foreground tracking-tight leading-tight">
             ¿Por quién podrías votar?
           </h1>
-          <div className="h-1.5 w-24 bg-primary rounded-full mt-4" />
-          <p className="text-muted-foreground text-lg leading-7 mt-5">
-            Responde 9 preguntas sobre lo que te importa y te mostramos qué
-            candidatos coinciden contigo.
-          </p>
+          <div className="h-1.5 w-24 bg-primary rounded-full mb-4" />
+          {savedResults.length > 0 ? (
+            <button
+              type="button"
+              onClick={handleGoToSaved}
+              className="w-full flex items-center gap-3 bg-primary/8 border border-primary/25 rounded-2xl px-4 py-3 hover:bg-primary/12 transition-colors group text-left"
+            >
+              <div className="bg-primary/15 rounded-xl w-9 h-9 flex items-center justify-center shrink-0">
+                <Bookmark size={16} className="text-primary" />
+              </div>
+
+              {/* Saved results banner */}
+              <div className="flex-1 min-w-0">
+                <p className="text-primary font-bold text-sm">
+                  {savedResults.length === 1
+                    ? "Tienes 1 lista guardada"
+                    : `Tienes ${savedResults.length} listas guardadas`}
+                </p>
+                <p className="text-primary/70 text-xs mt-0.5">
+                  Toca para verlas o compartirlas
+                </p>
+              </div>
+              <ChevronRight
+                size={16}
+                className="text-primary/60 group-hover:translate-x-0.5 transition-transform shrink-0"
+              />
+            </button>
+          ) : (
+            <p className="text-muted-foreground text-lg leading-7 mt-5">
+              Responde 9 preguntas sobre lo que te importa y te mostramos qué
+              candidatos coinciden contigo.
+            </p>
+          )}
         </div>
 
         {/* How it works */}
@@ -275,7 +276,7 @@ export default function MatchScreen({
         <QuestionCard question={currentQuestion} onAnswer={handleAnswer} />
       </div>
       {step > 1 && (
-        <div className="px-6 shrink-0">
+        <div className="px-6 pb-4 shrink-0">
           <Button
             type="button"
             variant={"outline"}

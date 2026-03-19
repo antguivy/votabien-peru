@@ -43,8 +43,14 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
         paramKey: "legal_record_preference",
       },
       {
+        label: "Sin condenas penales",
+        description: "Sanciones administrativas o éticas son aceptables",
+        value: "NO_PENAL",
+        paramKey: "legal_record_preference",
+      },
+      {
         label: "Puede tener investigaciones en curso",
-        description: "Sin sentencias firmes",
+        description: "Sin sentencias ni sanciones firmes",
         value: "INVESTIGATION_OK",
         paramKey: "legal_record_preference",
       },
@@ -86,7 +92,7 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
     id: 4,
     question: "¿Quieres que tu candidato sea un congresista reelegido?",
     icon: "RefreshCw",
-    description: "AZplica a senadores y diputados",
+    // description: "Aplica a senadores diputados",
     options: [
       {
         label: "No — quiero una cara nueva",
@@ -95,8 +101,8 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
         paramKey: "is_incumbent",
       },
       {
-        label: "Sí — que tenga experiencia legislativa",
-        description: "Ya conoce cómo funciona el Congreso",
+        label: "Me es indiferente",
+        description: "Puede ser nuevo o con experiencia en el Congreso",
         value: undefined,
         paramKey: "is_incumbent",
       },
@@ -109,23 +115,26 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   },
   {
     id: 5,
-    question: "¿Debe haber declarado su situación económica?",
+    question:
+      "¿Qué tan importante es para ti que declare sus ingresos y bienes?",
     icon: "DollarSign",
-    description: "Basado en su declaración jurada de ingresos y patrimonio",
+    description: "Información que el candidato ha reportado en su hoja de vida",
     options: [
       {
-        label: "Sí — ingresos y bienes declarados",
-        description: "Que haya registrado ambos ante las autoridades",
+        label: "Muy importante — ingresos y bienes declarados",
+        description: "Ha informado cuánto gana y qué propiedades tiene",
         value: "BOTH",
         paramKey: "financial_transparency",
       },
       {
-        label: "Al menos que declare sus ingresos",
+        label: "Algo importante — al menos sus ingresos",
+        description: "Ha informado cuánto gana, pero no sus bienes",
         value: "INCOME_ONLY",
         paramKey: "financial_transparency",
       },
       {
-        label: "No tengo preferencia",
+        label: "Me es indiferente",
+        description: "No es un factor importante para mí",
         value: undefined,
         paramKey: "financial_transparency",
       },
@@ -157,23 +166,23 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   },
   {
     id: 7,
-    question: "¿Debe haber ganado alguna elección antes?",
+    question: "¿Quieres que haya sido elegido antes por voto popular?",
     icon: "Vote",
     description:
-      "Como alcalde, regidor, congresista u otro cargo electo — aplica a senadores y diputados",
+      "Por ejemplo: alcalde, regidor, congresista u otro cargo — aplica a senadores, diputados y parlamento",
     options: [
       {
-        label: "Sí — que ya haya sido elegido por voto popular",
+        label: "Sí — que ya haya sido elegido",
         value: true,
         paramKey: "has_electoral_experience",
       },
       {
-        label: "No — prefiero alguien sin ese historial",
+        label: "No — prefiero alguien sin experiencia electoral",
         value: false,
         paramKey: "has_electoral_experience",
       },
       {
-        label: "No tengo preferencia",
+        label: "Me es indiferente",
         value: undefined,
         paramKey: "has_electoral_experience",
       },
@@ -181,25 +190,21 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   },
   {
     id: 8,
-    question: "¿Ha tenido un cargo directivo dentro de un partido?",
-    icon: "Users",
+    question:
+      "¿El candidato debería estar libre de vínculos con la minería informal?",
+    icon: "HardHat",
     description:
-      "Como secretario general, presidente de partido u otros — aplica a senadores y diputados",
+      "El REINFO (Registro Integral de Formalización Minera) identifica a pequeños mineros y mineros artesanales en proceso de formalización. Un legislador registrado podría tener conflicto de interés en leyes mineras.",
     options: [
       {
-        label: "Sí — que conozca los partidos por dentro",
+        label: "Sí — prefiero que NO esté inscrito en REINFO",
         value: true,
-        paramKey: "has_political_roles",
+        paramKey: "reinfo_clean",
       },
       {
-        label: "No — prefiero que no venga de la cúpula partidaria",
-        value: false,
-        paramKey: "has_political_roles",
-      },
-      {
-        label: "No tengo preferencia",
+        label: "Me es indiferente",
         value: undefined,
-        paramKey: "has_political_roles",
+        paramKey: "reinfo_clean",
       },
     ],
   },

@@ -1,23 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Users,
-  Star,
-  MapPinned,
-  SlidersHorizontal,
-} from "lucide-react";
-import { TypeBar } from "@/components/politics/type-bar";
-import { NewFilterPanel } from "@/components/ui/filter-panel-candidates";
+import { Users, Star, MapPinned } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
 import { getCandidatesCards } from "@/queries/public/candidacies";
 import { getTextColor } from "@/lib/utils/color-utils";
-import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
-import { PoliticalPartyListPaginated } from "@/interfaces/political-party";
 import { shuffleArray } from "@/lib/utils/arrays";
 import { Badge } from "../ui/badge";
 
@@ -99,11 +89,11 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const dynamicTextColorClass = getTextColor(partyColorHex);
 
   // ── Datos derivados ──
-  const hasConviction = person.sanction_status === "CON_SANCION";
-  const isUnderInvestigation = person.backgrounds.find(
-    (p) => p.status === "EN_INVESTIGACION",
-  );
+  const hasConviction = person.has_sanction;
+  const isUnderInvestigation = person.is_under_investigation;
   const isPenal = person.has_penal_sentence;
+  const hasArchivedRecord =
+    person.has_criminal_record && !hasConviction && !isUnderInvestigation;
 
   const incomes = person.incomes as Record<string, unknown> | null;
   const assets = person.assets as Record<string, unknown> | null;
@@ -122,12 +112,17 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
     return null;
   })();
 
+  // -- Reinfo --
+  const reinfoStatus = person.reinfo_status as string | null;
+
   const hasAlerts =
     person.is_incumbent ||
     hasConviction ||
     isUnderInvestigation ||
+    hasArchivedRecord ||
     !declaredIncome ||
-    !declaredAssets;
+    !declaredAssets ||
+    reinfoStatus;
 
   const hasMeta = !!educationLabel || workCount > 0;
 
@@ -251,11 +246,23 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                 {isUnderInvestigation && (
                   <AlertBadge variant="amber">Investigado</AlertBadge>
                 )}
+                {hasArchivedRecord && (
+                  <AlertBadge variant="orange">Con antecedentes</AlertBadge>
+                )}
                 {!declaredIncome && (
                   <AlertBadge variant="orange">No declaró ingresos</AlertBadge>
                 )}
                 {!declaredAssets && (
                   <AlertBadge variant="orange">No declaró bienes</AlertBadge>
+                )}
+                {reinfoStatus === "Excluido" && (
+                  <AlertBadge variant="red">REINFO Excluido</AlertBadge>
+                )}
+                {reinfoStatus === "Suspendido" && (
+                  <AlertBadge variant="amber">REINFO Suspendido</AlertBadge>
+                )}
+                {reinfoStatus === "Vigente" && (
+                  <AlertBadge variant="blue">REINFO Vigente</AlertBadge>
                 )}
               </div>
             </>

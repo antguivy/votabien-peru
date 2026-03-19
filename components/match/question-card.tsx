@@ -56,7 +56,7 @@ export const QuestionCard = ({ question, onAnswer }: Props) => {
   };
 
   return (
-    <div className="py-4 flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-300">
       {/* Icon + Question */}
       <div>
         <h2 className="text-2xl font-black text-foreground leading-tight">

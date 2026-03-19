@@ -291,10 +291,8 @@ export async function updatePersonBackgrounds(
 
   try {
     const upsertData = backgrounds.map((item) => {
-      const isNew = item.id.startsWith("new_");
-      const realId = isNew ? crypto.randomUUID() : item.id;
       return {
-        id: realId,
+        id: createId(),
         person_id: personId,
         type: item.type,
         status: item.status as BackgroundStatus,

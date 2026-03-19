@@ -133,6 +133,7 @@ export interface PersonBase {
   popular_election: PoliticalRole[];
   incomes: Incomes[];
   assets: Assets[];
+  reinfo_status: string | null;
   updated_at: string;
 }
 
@@ -184,8 +185,10 @@ export interface PersonBackgroundToCard {
   incomes: Record<string, unknown> | null;
   assets: Record<string, unknown> | null;
   work_experience: unknown[] | null;
-  sanction_status: string | null;
   has_criminal_record: boolean;
   has_penal_sentence: boolean;
-  backgrounds: { status: BackgroundStatus }[];
+  is_under_investigation: boolean;
+  has_sanction: boolean;
+  reinfo_status: string | null;
+  // backgrounds: { status: BackgroundStatus }[];
 }

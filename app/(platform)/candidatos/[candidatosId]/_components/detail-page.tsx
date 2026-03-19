@@ -197,6 +197,30 @@ export default function DetailCandidato({
                     <span>Nacimiento: {persona.place_of_birth}</span>
                   </div>
                 )}
+                {persona.reinfo_status && (
+                  <div
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold",
+                      persona.reinfo_status === "Vigente" &&
+                        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+                      persona.reinfo_status === "Suspendido" &&
+                        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+                      persona.reinfo_status === "Excluido" &&
+                        "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+                    )}
+                  >
+                    {persona.reinfo_status === "Vigente" && (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    {persona.reinfo_status === "Suspendido" && (
+                      <AlertTriangle className="w-4 h-4" />
+                    )}
+                    {persona.reinfo_status === "Excluido" && (
+                      <AlertTriangle className="w-4 h-4" />
+                    )}
+                    <span>REINFO: {persona.reinfo_status}</span>
+                  </div>
+                )}
                 {/* {persona.updated_at && (
                   <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full">
                     <CheckCircle2 className="w-3.5 h-3.5" />

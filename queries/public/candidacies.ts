@@ -81,10 +81,11 @@ export async function getCandidatesCards({
       incomes,
       assets,
       work_experience,
-      has_penal_sentence,
       has_criminal_record,
-      sanction_status,
-      backgrounds: background(status)
+      has_penal_sentence,
+      is_under_investigation,
+      has_sanction,
+      reinfo_status
     ),
     political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
@@ -103,18 +104,6 @@ export async function getCandidatesCards({
   const searchWords = search?.trim() ? parseSearchWords(search) : [];
   const hasSearch = searchWords.length > 0;
 
-  // ─────────────────────────────────────────────
-  // Para PRESIDENTE sin búsqueda activa:
-  //   - Traemos todos los presidentes (sin paginación)
-  //     para poder hacer el shuffle completo.
-  //     Los presidentes son pocos (~15-20) así que
-  //     el costo es mínimo.
-  //   - Para el resto de tipos mantenemos paginación normal.
-  //
-  // ¿Por qué no usar ORDER BY random() en Supabase?
-  //   PostgREST no soporta .order('random()') directamente.
-  //   Una RPC funcionaría pero agrega complejidad innecesaria
-  //   para un conjunto tan pequeño de registros.
   // ─────────────────────────────────────────────
   const PRESIDENTE_MAX = 40; // ~3x partidos posibles, margen seguro
   const isPresidente = !hasSearch && type === "PRESIDENTE";
@@ -280,7 +269,6 @@ export async function getCandidatesCards({
         image_candidate_url: p.image_candidate_url,
         profession: p.profession,
 
-        // ── Nuevo ──
         is_incumbent: (p.is_incumbent as boolean) ?? false,
         education_level: (p.education_level as number | null) ?? null,
         secondary_school: (p.secondary_school as boolean | null) ?? null,
@@ -289,8 +277,9 @@ export async function getCandidatesCards({
         work_experience: (p.work_experience as unknown[] | null) ?? null,
         has_criminal_record: (p.has_criminal_record as boolean) ?? false,
         has_penal_sentence: (p.has_penal_sentence as boolean) ?? false,
-        sanction_status: (p.sanction_status as string | null) ?? null,
-        backgrounds: (p.backgrounds as { status: BackgroundStatus }[]) ?? null,
+        is_under_investigation: (p.is_under_investigation as boolean) ?? false,
+        has_sanction: (p.has_sanction as boolean) ?? false,
+        reinfo_status: (p.reinfo_status as string | null) ?? null,
       },
 
       political_party: {
