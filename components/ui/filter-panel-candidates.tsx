@@ -136,16 +136,12 @@ function PartyList({
               <p
                 className={cn(
                   "text-[11px] font-black uppercase tracking-wide leading-tight",
-                  isSelected ? "text-brand" : "text-foreground",
                 )}
               >
                 {party.acronym ?? initials}
               </p>
               <p
-                className={cn(
-                  "text-[10px] leading-tight mt-0.5 line-clamp-2",
-                  isSelected ? "text-brand/70" : "text-muted-foreground",
-                )}
+                className={cn("text-[10px] leading-tight mt-0.5 line-clamp-2")}
               >
                 {party.name}
               </p>
@@ -562,11 +558,15 @@ export function NewFilterPanel({
                   {currentSearch}
                 </span>
               )}
-              {currentParty && (
+              {pendingPartyData && (
                 <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
-                  {selectedPartyData?.acronym ?? currentParty}
+                  {(pendingPartyData.acronym ?? pendingPartyData.name).slice(
+                    0,
+                    3,
+                  )}
                 </span>
               )}
+
               {currentDistrict && showRegion && (
                 <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
                   {currentDistrict}
@@ -962,9 +962,7 @@ export function NewFilterPanel({
                       pendingParty ? "text-brand" : "text-foreground",
                     )}
                   >
-                    {pendingPartyData?.acronym ??
-                      pendingPartyData?.name ??
-                      "Selecciona un partido"}
+                    {pendingPartyData?.name ?? "Selecciona un partido"}
                   </p>
                   {!pendingParty && (
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -1170,9 +1168,9 @@ export function NewFilterPanel({
             </button>
             <div className="flex-1">
               <p className="text-base font-bold">Partido político</p>
-              {pendingParty && (
+              {pendingPartyData && (
                 <p className="text-xs text-brand mt-0.5 truncate">
-                  {pendingParty}
+                  {pendingPartyData?.name}
                 </p>
               )}
             </div>
