@@ -84,7 +84,7 @@ function PartyList({
   return (
     <div className="grid grid-cols-2 gap-2">
       {filtered.map((party) => {
-        const isSelected = selected === party.name;
+        const isSelected = selected === party.id;
         const initials = (party.acronym ?? party.name)
           .slice(0, 3)
           .toUpperCase();
@@ -962,7 +962,9 @@ export function NewFilterPanel({
                       pendingParty ? "text-brand" : "text-foreground",
                     )}
                   >
-                    {pendingParty || "Selecciona un partido"}
+                    {pendingPartyData?.acronym ??
+                      pendingPartyData?.name ??
+                      "Selecciona un partido"}
                   </p>
                   {!pendingParty && (
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -1121,7 +1123,7 @@ export function NewFilterPanel({
           </div>
 
           {/* Footer */}
-          <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
+          {/* <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
             <Button
               onClick={() => {
                 setSubDrawer(null);
@@ -1131,7 +1133,7 @@ export function NewFilterPanel({
             >
               Listo
             </Button>
-          </div>
+          </div> */}
         </DrawerContent>
       </Drawer>
 
@@ -1198,13 +1200,17 @@ export function NewFilterPanel({
             <PartyList
               parties={parties}
               selected={pendingParty}
-              onSelect={(name) => setPendingParty(name)}
+              onSelect={(name) => {
+                setPendingParty(name);
+                setSubDrawer(null);
+                setSubSearch("");
+              }}
               filter={subSearch}
             />
           </div>
 
           {/* Footer */}
-          <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
+          {/* <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
             <Button
               onClick={() => {
                 setSubDrawer(null);
@@ -1214,7 +1220,7 @@ export function NewFilterPanel({
             >
               Listo
             </Button>
-          </div>
+          </div> */}
         </DrawerContent>
       </Drawer>
     </>

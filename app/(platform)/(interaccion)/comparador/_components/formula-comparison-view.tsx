@@ -1110,7 +1110,7 @@ export default function FormulaComparisonView({
     },
     {
       id: "biography",
-      label: "Posturas",
+      label: "Noticias",
       count: tabCounts.biography || undefined,
     },
     { id: "hoja_de_vida", label: "Hoja de vida" },

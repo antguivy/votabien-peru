@@ -292,7 +292,7 @@ export default function DetailCandidato({
               value="timeline"
               className="py-3 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm font-medium"
             >
-              Posturas
+              Noticias
             </TabsTrigger>
           </TabsList>
 

@@ -132,7 +132,7 @@ const TYPE_CONFIG = {
 } satisfies Record<ReportType, unknown>;
 
 const CORRECTION_FIELDS = [
-  { value: "posturas", label: "Posturas políticas" },
+  { value: "posturas", label: "Noticias" },
   { value: "sentencias", label: "Antecedentes" },
   { value: "otro", label: "Otro" },
 ];

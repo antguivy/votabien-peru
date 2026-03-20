@@ -151,7 +151,7 @@ export default function MatchScreen({
             </button>
           ) : (
             <p className="text-muted-foreground text-lg leading-7 mt-5">
-              Responde 9 preguntas sobre lo que te importa y te mostramos qué
+              Responde 10 preguntas sobre lo que te importa y te mostramos qué
               candidatos coinciden contigo.
             </p>
           )}
@@ -164,7 +164,7 @@ export default function MatchScreen({
           </p>
           <div className="flex flex-col gap-1.5">
             {[
-              "Elige tu distrito electoral",
+              "Elige la región en la que votas",
               "Responde 9 preguntas rápidas",
               "Ve los candidatos que más te representan",
               "Guarda tu selección y compártela con tus amigos",
