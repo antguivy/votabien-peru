@@ -67,6 +67,32 @@ export interface Assets {
   value: string;
 }
 
+// ── RNAS ──────────────────────────────────────────────────────────────────
+
+export type RnasTipoSancion =
+  | "EXPULSION"
+  | "SUSPENSION"
+  | "MULTA"
+  | "AMONESTACION";
+export type RnasVigente = "SI" | "NO";
+
+export interface RnasSanction {
+  nro_inscripcion: string;
+  nro_colegiatura: string;
+  nombre_rnas: string;
+  colegio: string;
+  institucion: string;
+  tipo_sancion: RnasTipoSancion;
+  periodo_sancion: string;
+  vigente: RnasVigente;
+}
+
+// ── REINFO ────────────────────────────────────────────────────────────────
+
+export type ReinfoStatus = "Vigente" | "Suspendido" | "Excluido";
+
+// ── PERSON ────────────────────────────────────────────────────────────────
+
 export interface AdminPerson {
   id: string;
   party_number_rop: string | null;
@@ -133,7 +159,9 @@ export interface PersonBase {
   popular_election: PoliticalRole[];
   incomes: Incomes[];
   assets: Assets[];
-  reinfo_status: string | null;
+  is_incumbent: boolean;
+  reinfo_status: ReinfoStatus | null;
+  rnas_sanctions: RnasSanction[] | null;
   updated_at: string;
 }
 
@@ -190,5 +218,5 @@ export interface PersonBackgroundToCard {
   is_under_investigation: boolean;
   has_sanction: boolean;
   reinfo_status: string | null;
-  // backgrounds: { status: BackgroundStatus }[];
+  rnas_sanctions: RnasSanction[] | null;
 }

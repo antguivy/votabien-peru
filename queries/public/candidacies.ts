@@ -8,6 +8,7 @@ import {
   CandidateDetail,
   CandidatePresidentials,
 } from "@/interfaces/candidate";
+import { RnasSanction } from "@/interfaces/person";
 import { createClient } from "@/lib/supabase/server";
 import { QueryData } from "@supabase/supabase-js";
 
@@ -85,7 +86,8 @@ export async function getCandidatesCards({
       has_penal_sentence,
       is_under_investigation,
       has_sanction,
-      reinfo_status
+      reinfo_status,
+      rnas_sanctions
     ),
     political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
@@ -277,6 +279,8 @@ export async function getCandidatesCards({
         is_under_investigation: (p.is_under_investigation as boolean) ?? false,
         has_sanction: (p.has_sanction as boolean) ?? false,
         reinfo_status: (p.reinfo_status as string | null) ?? null,
+        rnas_sanctions:
+          (p.rnas_sanctions as unknown as RnasSanction[] | null) ?? null,
       },
 
       political_party: {
