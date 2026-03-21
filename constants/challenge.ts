@@ -1,146 +1,273 @@
-import {
-  ColumnDef,
-  PartySlot,
-  Challenge,
+import type {
   BoxBounds,
+  ColumnDef,
+  PartyDef,
+  Challenge,
 } from "@/interfaces/simulator";
 
-// ─── Canvas layout (logical pixels — drawn at 2× for retina) ─────────────────
-
+// ─── Canvas layout ────────────────────────────────────────────────────────────
+//
+//  All interactive boxes share BOX_H = 82px (same height).
+//
+//  Presidente:        [Name 58px] │ [Logo 120px] │ [Photo 120px]
+//  Senado Nacional:   [Name 50px] │ [Logo  72px] │ [Pref1 96px] │ [Pref2 96px]
+//  Others:            [Name 50px] │ [Logo  90px] │ [Pref  130px]
+//                                                  ↑ similar size to logo, readable
+//
 export const L = {
-  W: 360,
-  HEADER_H: 64,
-  ROW_H: 105,
-  FOOTER_H: 16,
-  get H() {
-    return this.HEADER_H + this.ROW_H * 2 + this.FOOTER_H;
-  }, // 490
+  W: 340,
+  H: 290,
+  HEADER_H: 46,
+  FOOTER_H: 14,
+  ROW_H: 115, // (290 - 46 - 14) / 2
 
-  // Per-row element positions (relative to row top)
-  NUM_X: 8,
-  LOGO_X: 28,
-  LOGO_W: 50,
-  LOGO_H: 64,
-  LOGO_PAD_T: 9,
-  PHOTO_X: 84,
-  PHOTO_W: 40,
-  PHOTO_H: 58,
-  PHOTO_PAD_T: 12,
-  NAME_X: 130,
-  BOX_W: 74,
-  BOX_H: 56,
-  BOX_PAD_T: 13,
-  BOX_PAD_R: 14,
-  get BOX_X() {
-    return this.W - this.BOX_W - this.BOX_PAD_R;
-  }, // 272
+  // All boxes share this height and Y offset within their row
+  BOX_H: 82,
+  BOX_Y: 18, // distance from row top to box top (leaves room for pref label above)
+
+  // ── Presidente ─────────────────────────────────────────────────────────────
+  P_NAME_X: 6,
+  P_NAME_W: 58,
+  P_LOGO_X: 68, // 6 + 58 + 4
+  P_LOGO_W: 120,
+  P_PHOTO_X: 192, // 68 + 120 + 4
+  P_PHOTO_W: 140, // to right edge 332
+
+  // ── Senado Nacional (2 pref boxes) ─────────────────────────────────────────
+  SN_NAME_X: 6,
+  SN_NAME_W: 50,
+  SN_LOGO_X: 60, // 6 + 50 + 4
+  SN_LOGO_W: 72,
+  SN_PREF1_X: 136, // 60 + 72 + 4
+  SN_PREF1_W: 96,
+  SN_PREF2_X: 236, // 136 + 96 + 4
+  SN_PREF2_W: 96, // right edge: 332
+
+  // ── Others: senador_regional / diputado / parlamento_andino ────────────────
+  // Single pref box — same visual weight as logo, comfortable for writing
+  O_NAME_X: 6,
+  O_NAME_W: 50,
+  O_LOGO_X: 60, // 6 + 50 + 4
+  O_LOGO_W: 90,
+  O_PREF_X: 154, // 60 + 90 + 4
+  O_PREF_W: 130, // right edge: 284 — generous but not overwhelming
+  // (remaining 56px right margin keeps balance)
 } as const;
 
-/** Get the marking box bounds for party at index i */
-export function getBox(i: number): BoxBounds {
-  return {
-    x: L.BOX_X,
-    y: L.HEADER_H + i * L.ROW_H + L.BOX_PAD_T,
-    w: L.BOX_W,
-    h: L.BOX_H,
-  };
-}
-
-/** All 5 marking boxes */
-export const BOXES: BoxBounds[] = [0, 1].map(getBox);
-
-// ─── Columns (Peru 2026) ──────────────────────────────────────────────────────
+// ─── Column definitions ───────────────────────────────────────────────────────
 
 export const COLUMNS: ColumnDef[] = [
   {
     id: "presidente",
-    label: "PRESIDENTE",
-    sublabel: "Y VICEPRESIDENTES",
-    hasPreferential: false,
+    type: "presidente",
+    label: "Presidente",
+    sublabel: "y Vicepresidente",
+    headerLabel: "PRESIDENTE Y VICEPRESIDENTE",
+    description:
+      "Marca con aspa (✗) o cruz (+) el logo del partido, la foto del candidato, o ambos — siempre del MISMO partido.",
+    prefBoxCount: 0,
+    allowPhotoMark: true,
   },
   {
-    id: "sen_unico",
-    label: "SENADOR",
-    sublabel: "DISTRITO ÚNICO",
-    hasPreferential: true,
+    id: "senador_nacional",
+    type: "senador_nacional",
+    label: "Senador Nacional",
+    sublabel: "Lista Nacional",
+    headerLabel: "SENADOR NACIONAL",
+    description:
+      "Marca el logo del partido. Para voto preferencial escribe el número de un candidato en cada recuadro. Puedes usar uno, ambos o ninguno.",
+    prefBoxCount: 2,
+    allowPhotoMark: false,
   },
   {
-    id: "sen_multiple",
-    label: "SENADOR",
-    sublabel: "DISTRITO MÚLTIPLE",
-    hasPreferential: true,
+    id: "senador_regional",
+    type: "senador_regional",
+    label: "Senador Regional",
+    sublabel: "Lista Regional",
+    headerLabel: "SENADOR REGIONAL",
+    description:
+      "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
+    prefBoxCount: 1,
+    allowPhotoMark: false,
   },
   {
-    id: "congresista",
-    label: "CONGRESISTA",
-    sublabel: "DE LA REPÚBLICA",
-    hasPreferential: true,
+    id: "diputado",
+    type: "diputado",
+    label: "Diputado",
+    sublabel: "Distrito Electoral",
+    headerLabel: "DIPUTADO",
+    description:
+      "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
+    prefBoxCount: 1,
+    allowPhotoMark: false,
   },
   {
-    id: "andino",
-    label: "PARLAMENTARIO",
-    sublabel: "ANDINO",
-    hasPreferential: true,
+    id: "parlamento_andino",
+    type: "parlamento_andino",
+    label: "Parlamento Andino",
+    sublabel: "Distrito Único",
+    headerLabel: "PARLAMENTO ANDINO",
+    description:
+      "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
+    prefBoxCount: 1,
+    allowPhotoMark: false,
   },
 ];
 
-// ─── Generic parties (no real parties — learning tool) ───────────────────────
+// ─── Parties (fictional, 2 rows) ─────────────────────────────────────────────
 
-export const PARTIES: PartySlot[] = [
-  { idx: 0, color: "#c8102e", letter: "A", name: "Avancemos Perú" },
-  { idx: 1, color: "#003087", letter: "B", name: "Bienestar Nacional" },
-  //   { idx: 2, color: "#15803d", letter: "C", name: "Convergencia Social" }
-  //   { idx: 3, color: "#d97706", letter: "D", name: "Democracia y Futuro" },
-  //   { idx: 4, color: "#7c3aed", letter: "E", name: "Esperanza Popular" },
+export const PARTIES: PartyDef[] = [
+  {
+    idx: 0,
+    color: "#003087",
+    letter: "A",
+    name: "Partido Político Konoha",
+    symbol: "saw",
+    candidateGender: "male",
+    // ↓ agrega estos dos campos
+    logoUrl: "/images/partidos/partido_konoha.jpg", // en /public/images/...
+    photoUrl: "/images/candidatos/candidato_varon.png",
+  },
+  {
+    idx: 1,
+    color: "#c8102e",
+    letter: "R",
+    name: "Partido Político Toros Negros",
+    symbol: "ball",
+    candidateGender: "female",
+    logoUrl: "/images/partidos/partido_toros_negros.jpg",
+    photoUrl: "/images/candidatos/candidata_mujer.png",
+  },
 ];
 
-// ─── Challenges (one per column in retos mode) ────────────────────────────────
+// ─── Box layout factory ───────────────────────────────────────────────────────
+
+export function getBoxes(col: ColumnDef): BoxBounds[] {
+  const boxes: BoxBounds[] = [];
+
+  for (let i = 0; i < PARTIES.length; i++) {
+    const rY = L.HEADER_H + i * L.ROW_H;
+    const bY = rY + L.BOX_Y;
+
+    if (col.type === "presidente") {
+      boxes.push(
+        {
+          x: L.P_LOGO_X,
+          y: bY,
+          w: L.P_LOGO_W,
+          h: L.BOX_H,
+          role: "logo",
+          partyIdx: i,
+        },
+        {
+          x: L.P_PHOTO_X,
+          y: bY,
+          w: L.P_PHOTO_W,
+          h: L.BOX_H,
+          role: "photo",
+          partyIdx: i,
+        },
+      );
+    } else if (col.type === "senador_nacional") {
+      boxes.push(
+        {
+          x: L.SN_LOGO_X,
+          y: bY,
+          w: L.SN_LOGO_W,
+          h: L.BOX_H,
+          role: "logo",
+          partyIdx: i,
+        },
+        {
+          x: L.SN_PREF1_X,
+          y: bY,
+          w: L.SN_PREF1_W,
+          h: L.BOX_H,
+          role: "pref_1",
+          partyIdx: i,
+        },
+        {
+          x: L.SN_PREF2_X,
+          y: bY,
+          w: L.SN_PREF2_W,
+          h: L.BOX_H,
+          role: "pref_2",
+          partyIdx: i,
+        },
+      );
+    } else {
+      boxes.push(
+        {
+          x: L.O_LOGO_X,
+          y: bY,
+          w: L.O_LOGO_W,
+          h: L.BOX_H,
+          role: "logo",
+          partyIdx: i,
+        },
+        {
+          x: L.O_PREF_X,
+          y: bY,
+          w: L.O_PREF_W,
+          h: L.BOX_H,
+          role: "pref_single",
+          partyIdx: i,
+        },
+      );
+    }
+  }
+
+  return boxes;
+}
+
+// ─── Challenges ───────────────────────────────────────────────────────────────
 
 export const CHALLENGES: Challenge[] = [
   {
-    id: "valid_aspa",
-    emoji: "✅",
-    title: "Voto Válido — Aspa",
+    id: "presidente_valido",
+    emoji: "🗳️",
+    title: "Vota por un candidato a Presidente",
     instruction:
-      "Dibuja una aspa (✗) dentro del recuadro de cualquier partido. El cruce de los líneas debe quedar DENTRO del cuadro.",
-    tip: "Puedes hacerlo en uno o dos trazos. Lo importante es que el cruce quede dentro.",
-    checkPassed: (a) => a.result === "valid" && a.shape === "aspa",
+      "Dibuja una aspa (✗) o cruz (+) dentro del LOGO del partido o la FOTO del candidato. Solo elige UN partido.",
+    tip: "Puedes marcar el logo, la foto, o ambos — siempre del mismo partido. Solo aspa (✗) o cruz (+) son válidos. Una línea o garabato no cuenta.",
+    checkPassed: (a) => a.result === "valid",
   },
   {
-    id: "valid_cruz",
-    emoji: "✅",
-    title: "Voto Válido — Cruz",
+    id: "senado_preferencial_2cands",
+    emoji: "✍️",
+    title: "Voto con dos candidatos de preferencia",
     instruction:
-      "Ahora dibuja una cruz (+): una línea horizontal y una vertical que se crucen dentro del recuadro.",
-    tip: "La ONPE acepta tanto aspa (✗) como cruz (+). Ambas son igualmente válidas.",
-    checkPassed: (a) => a.result === "valid" && a.shape === "cruz",
-  },
-  {
-    id: "null_outside",
-    emoji: "⚠️",
-    title: "Voto Nulo — Cruce fuera",
-    instruction:
-      "Dibuja una aspa pero que el cruce quede FUERA del recuadro. Empieza desde lejos del cuadro.",
-    tip: "Si el punto donde se cruzan las líneas cae fuera del recuadro, el voto es nulo aunque la intención sea clara.",
-    checkPassed: (a) => a.result === "null" && a.intersectionInBox === false,
-  },
-  {
-    id: "null_symbol",
-    emoji: "❌",
-    title: "Voto Nulo — Símbolo incorrecto",
-    instruction:
-      "Dibuja un círculo (○) dentro de cualquier recuadro. O escribe algo en la cédula.",
-    tip: "Solo se aceptan aspa y cruz. Círculo, palomita, firma, letras... todo anula el voto.",
+      "Marca el logo del partido Y escribe el número de un candidato en el primer recuadro y el número de otro candidato en el segundo.",
+    tip: "Cada recuadro es para el número completo de UN candidato. Ejemplo: '7' en el primero y '15' en el segundo. Nunca pongas aspa (✗) en esos recuadros.",
     checkPassed: (a) =>
-      a.result === "null" &&
-      (a.shape === "circle" || a.shape === "scribble" || a.shape === "text"),
+      a.result === "valid" && a.preferentialStatus === "written",
   },
   {
-    id: "viciado",
-    emoji: "🚫",
-    title: "Voto Viciado",
-    instruction: "Marca DOS partidos distintos en esta misma columna.",
-    tip: "Si marcas más de un partido en la misma columna, el voto queda viciado. Las demás columnas siguen siendo válidas.",
-    checkPassed: (a) => a.result === "viciado",
+    id: "senado_sin_preferencial",
+    emoji: "🎯",
+    title: "Vota solo por el partido (sin preferencial)",
+    instruction:
+      "Marca únicamente el logo del partido. Deja el recuadro de voto preferencial completamente en blanco.",
+    tip: "El voto preferencial es opcional. Dejarlo en blanco es completamente válido.",
+    checkPassed: (a) =>
+      a.result === "valid" && a.preferentialStatus === "blank",
+  },
+  {
+    id: "diputado_nulo_aspa_preferencial",
+    emoji: "❌",
+    title: "¿Qué pasa si pones aspa en el recuadro preferencial?",
+    instruction:
+      "Marca el logo del partido Y luego pon una aspa (✗) dentro del recuadro de voto preferencial.",
+    tip: "Los recuadros preferenciales son para ESCRIBIR el número del candidato. Marcarlos con aspa anula el voto de toda la columna.",
+    checkPassed: (a) =>
+      a.result === "null" && a.preferentialStatus === "invalid_mark",
+  },
+  {
+    id: "parlamento_blanco",
+    emoji: "⬜",
+    title: "Deja esta columna en blanco",
+    instruction: "No hagas ninguna marca en esta columna.",
+    tip: "El voto en blanco es completamente legal. Se contabiliza como voto emitido pero no suma a ningún partido.",
+    checkPassed: (a) => a.result === "blank",
   },
 ];

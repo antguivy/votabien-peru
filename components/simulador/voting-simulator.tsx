@@ -8,7 +8,7 @@ import {
   SimulatorMode,
   SimulatorPhase,
 } from "@/interfaces/simulator";
-import { COLUMNS, PARTIES, CHALLENGES } from "@/constants/challenge";
+import { COLUMNS, CHALLENGES } from "@/constants/challenge";
 import { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
 
 const BallotCanvas = dynamic(
@@ -506,7 +506,7 @@ function VotingScreen({
           >
             <BallotCanvas
               ref={canvasRef}
-              columnIdx={colIndex}
+              col={col}
               savedStrokes={saved}
               onUpdate={onUpdate}
             />
@@ -554,7 +554,7 @@ function VotingScreen({
           )}
 
           {/* Preferential note */}
-          {col.hasPreferential && (
+          {col.prefBoxCount && (
             <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
               <p className="text-[11px] text-amber-800 font-bold">
                 Voto Preferencial

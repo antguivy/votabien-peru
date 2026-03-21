@@ -58,15 +58,15 @@ const TOOL_CONFIG: Record<
     sublabel: "Pon a prueba lo que sabes",
     href: "/trivia",
     color: "oklch(0.75 0.16 75)", // ámbar
-    badge: "NUEVOS NIVELES",
+    badge: "SUBE DE NIVEL",
     icon: HelpCircle,
   },
   simulador: {
     label: "Simulador de Voto",
     sublabel: "Practica antes del día",
     href: "/simulador",
-    color: "oklch(0.55 0.01 240)", // slate
-    badge: "PRONTO",
+    color: "oklch(0.65 0.15 145)", // slate
+    badge: "ESTÁ DISPONIBLE!",
     icon: Vote,
   },
 };

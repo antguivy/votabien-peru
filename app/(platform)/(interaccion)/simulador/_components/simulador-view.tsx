@@ -1,132 +1,132 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-  PenLine,
-  Target,
+  Pen,
+  Crosshair,
   CheckCircle2,
   XCircle,
   Square,
   AlertTriangle,
-  Info,
   Lightbulb,
   Trophy,
   ArrowRight,
-  Circle,
-  BookOpen,
+  List,
+  Minus,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
+import type {
   Point,
   ColumnAnalysis,
   SimulatorMode,
   SimulatorPhase,
 } from "@/interfaces/simulator";
-import { COLUMNS, PARTIES, CHALLENGES } from "@/constants/challenge";
-import { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
+import { COLUMNS, CHALLENGES } from "@/constants/challenge";
+import type { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
 
 const BallotCanvas = dynamic(
   () => import("@/components/simulador/ballot-canvas"),
   { ssr: false },
 );
 
-// ─── Result meta ──────────────────────────────────────────────────────────────
+// ─── Result metadata ──────────────────────────────────────────────────────────
 
 type VoteResult = ColumnAnalysis["result"];
 
-const RESULT_META: Record<
-  VoteResult,
-  { label: string; Icon: React.ElementType; colors: string; dot: string }
-> = {
+const RESULT_META = {
   blank: {
-    label: "BLANCO",
+    label: "Blanco",
     Icon: Square,
-    colors: "bg-muted text-muted-foreground border-border",
-    dot: "bg-muted-foreground",
+    pill: "bg-muted text-muted-foreground",
+    banner: "bg-muted/60",
+    dot: "bg-muted-foreground/40",
+    text: "text-muted-foreground",
+    ring: "ring-muted-foreground/20",
   },
   valid: {
-    label: "VÁLIDO",
+    label: "Válido",
     Icon: CheckCircle2,
-    colors:
-      "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+    pill: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
+    banner: "bg-emerald-50/80 dark:bg-emerald-950/30",
     dot: "bg-emerald-500",
+    text: "text-emerald-700 dark:text-emerald-400",
+    ring: "ring-emerald-200 dark:ring-emerald-800/60",
   },
   null: {
-    label: "NULO",
+    label: "Nulo",
     Icon: XCircle,
-    colors:
-      "bg-red-50 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+    pill: "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400",
+    banner: "bg-red-50/80 dark:bg-red-950/30",
     dot: "bg-red-500",
+    text: "text-red-700 dark:text-red-400",
+    ring: "ring-red-200 dark:ring-red-800/60",
   },
   viciado: {
-    label: "VICIADO",
+    label: "Viciado",
     Icon: AlertTriangle,
-    colors:
-      "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+    pill: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
+    banner: "bg-amber-50/80 dark:bg-amber-950/30",
     dot: "bg-amber-500",
+    text: "text-amber-700 dark:text-amber-400",
+    ring: "ring-amber-200 dark:ring-amber-800/60",
   },
-};
+} as const satisfies Record<
+  VoteResult,
+  {
+    label: string;
+    Icon: React.ElementType;
+    pill: string;
+    banner: string;
+    dot: string;
+    text: string;
+    ring: string;
+  }
+>;
 
 // ─── Intro ────────────────────────────────────────────────────────────────────
 
 function IntroScreen({ onSelect }: { onSelect: (m: SimulatorMode) => void }) {
+  const [showColumns, setShowColumns] = useState(false);
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Title area */}
-      <div className="flex-shrink-0 px-1 pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-foreground">
+    <div className="flex flex-col gap-6">
+      {/* Brand */}
+      <div>
+        <h1 className="text-[28px] font-bold tracking-tight text-foreground leading-[1.15]">
           Simulador de Votación
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Practica cómo marcar tu cédula. Tu dedo es el lapicero.
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-[300px]">
+          Practica cómo marcar tu cédula antes del día de la elección.
         </p>
       </div>
 
       {/* Mode cards */}
-      <div className="flex flex-col gap-3 flex-shrink-0">
-        <button
+      <div className="flex flex-col gap-2.5">
+        <ModeCard
+          Icon={Pen}
+          label="Modo Libre"
+          desc="Vota en las 5 columnas como quieras y analiza el resultado."
           onClick={() => onSelect("libre")}
-          className="group w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary/40 hover:bg-accent/40 transition-all duration-200 text-left active:scale-[0.98]"
-        >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/15 transition-colors">
-            <PenLine className="w-6 h-6 text-primary" strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground">Modo Libre</p>
-            <p className="text-sm text-muted-foreground leading-snug mt-0.5">
-              Vota en las 5 columnas libremente y ve el resultado de tu cédula.
-            </p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-        </button>
-
-        <button
+        />
+        <ModeCard
+          Icon={Crosshair}
+          label="Modo Retos"
+          desc="5 retos guiados para dominar cada tipo de voto."
           onClick={() => onSelect("retos")}
-          className="group w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-border bg-card hover:border-brand/40 hover:bg-accent/40 transition-all duration-200 text-left active:scale-[0.98]"
-        >
-          <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center flex-shrink-0 group-hover:bg-brand/15 transition-colors">
-            <Target className="w-6 h-6 text-brand" strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground">Modo Retos</p>
-            <p className="text-sm text-muted-foreground leading-snug mt-0.5">
-              5 retos para aprender cada tipo de voto paso a paso.
-            </p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 group-hover:text-brand transition-colors" />
-        </button>
+        />
       </div>
 
-      {/* Vote type legend */}
-      <div className="mt-4 flex-shrink-0">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
+      {/* Vote types */}
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-2.5">
           Tipos de voto
         </p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {(
             Object.entries(RESULT_META) as [
               VoteResult,
@@ -138,191 +138,125 @@ function IntroScreen({ onSelect }: { onSelect: (m: SimulatorMode) => void }) {
               <div
                 key={key}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-xl border px-3 py-2.5",
-                  meta.colors,
+                  "flex items-center gap-2 rounded-xl px-3 py-2",
+                  meta.pill,
                 )}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
-                <span className="text-xs font-bold tracking-wide">
-                  {meta.label}
-                </span>
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
+                <span className="text-xs font-semibold">{meta.label}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Rules quick ref */}
-      <div className="mt-4 flex-1 min-h-0 flex flex-col">
-        <div className="rounded-2xl border border-border bg-card p-3 overflow-y-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Reglas ONPE
-            </p>
+      {/* Columns reference — collapsible */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          boxShadow: "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05)",
+        }}
+      >
+        <button
+          onClick={() => setShowColumns((v) => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-card text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <List
+              className="w-3.5 h-3.5 text-muted-foreground"
+              strokeWidth={2}
+            />
+            <span className="text-xs font-semibold text-foreground">
+              Las 5 columnas de la cédula
+            </span>
           </div>
-          <div className="space-y-1.5">
-            {[
-              "Solo aspa (✗) o cruz (+) son marcas válidas",
-              "El cruce de los trazos debe estar dentro del recuadro",
-              "Solo un partido por columna — dos o más lo vician",
-              "Escribir en la cédula la anula",
-              "Cada columna se contabiliza de forma independiente",
-            ].map((rule, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold text-xs mt-0.5 flex-shrink-0">
-                  ·
+          <div
+            className={cn(
+              "w-5 h-5 rounded-full bg-muted flex items-center justify-center transition-transform duration-200",
+              showColumns && "rotate-180",
+            )}
+          >
+            <ChevronRight
+              className="w-3 h-3 text-muted-foreground rotate-90"
+              strokeWidth={2.5}
+            />
+          </div>
+        </button>
+
+        {showColumns && (
+          <div className="px-4 pb-4 bg-card border-t border-border/50 space-y-3 pt-3">
+            {COLUMNS.map((col, i) => (
+              <div key={col.id} className="flex items-start gap-3">
+                <span
+                  className="flex-shrink-0 w-5 h-5 rounded-full text-white text-[9px] font-black flex items-center justify-center mt-0.5"
+                  style={{ backgroundColor: "var(--brand)" }}
+                >
+                  {i + 1}
                 </span>
-                <p className="text-xs text-muted-foreground leading-snug">
-                  {rule}
-                </p>
+                <div>
+                  <p className="text-xs font-semibold text-foreground">
+                    {col.label}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                    {col.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Disclaimer */}
-      <p className="text-[10px] text-muted-foreground/60 text-center mt-3 flex-shrink-0 pb-1">
-        Partidos ficticios · Solo uso educativo · Elecciones Generales 2026
+      <p className="text-[10px] text-muted-foreground/40 text-center pb-2">
+        Partidos ficticios · Solo educativo · VotaBien Perú
       </p>
     </div>
   );
 }
 
-// ─── Result Summary ───────────────────────────────────────────────────────────
-
-function ResultSummary({
-  allAnalyses,
-  onRestart,
+function ModeCard({
+  Icon,
+  label,
+  desc,
+  onClick,
 }: {
-  allAnalyses: Record<number, ColumnAnalysis>;
-  onRestart: () => void;
+  Icon: React.ElementType;
+  label: string;
+  desc: string;
+  onClick: () => void;
 }) {
-  const results = COLUMNS.map((_, i) => allAnalyses[i]?.result ?? "blank");
-  const counts = { valid: 0, null: 0, blank: 0, viciado: 0 };
-  results.forEach((r) => counts[r]++);
-  const allValid = counts.valid === COLUMNS.length;
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 pb-4">
-        <div className="flex items-center gap-2.5">
-          {allValid ? (
-            <Trophy className="w-5 h-5 text-emerald-500" strokeWidth={2} />
-          ) : (
-            <CheckCircle2
-              className="w-5 h-5 text-muted-foreground"
-              strokeWidth={2}
-            />
-          )}
-          <h2 className="text-xl font-bold text-foreground">
-            Resumen de tu Cédula
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Así quedaría registrada tu votación
+    <button
+      onClick={onClick}
+      className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-card text-left
+        active:scale-[0.98] transition-all duration-150"
+      style={{
+        boxShadow: "0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)",
+      }}
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{
+          backgroundColor: "color-mix(in oklch, var(--brand) 12%, transparent)",
+        }}
+      >
+        <Icon
+          className="w-4.5 h-4.5"
+          style={{ color: "var(--brand)" }}
+          strokeWidth={2}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+          {desc}
         </p>
       </div>
-
-      {/* Column results */}
-      <div className="flex flex-col gap-2 flex-shrink-0">
-        {COLUMNS.map((col, i) => {
-          const r = results[i];
-          const meta = RESULT_META[r];
-          const Icon = meta.Icon;
-          const a = allAnalyses[i];
-          return (
-            <div
-              key={col.id}
-              className={cn(
-                "flex items-center gap-3 rounded-xl border px-3.5 py-2.5",
-                meta.colors,
-              )}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[11px] font-black tracking-widest">
-                    {meta.label}
-                  </span>
-                  <span className="text-xs font-semibold truncate opacity-80">
-                    {col.label} · {col.sublabel}
-                  </span>
-                </div>
-                {a?.submessage && (
-                  <p className="text-[11px] opacity-70 leading-tight mt-0.5">
-                    {a.submessage}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-2 mt-3 flex-shrink-0">
-        {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
-          const meta = RESULT_META[r];
-          const Icon = meta.Icon;
-          return (
-            <div
-              key={r}
-              className={cn(
-                "rounded-xl border text-center py-2.5 px-1",
-                meta.colors,
-              )}
-            >
-              <Icon className="w-4 h-4 mx-auto mb-1" strokeWidth={2} />
-              <p className="text-xl font-black leading-none">{n}</p>
-              <p className="text-[9px] font-bold tracking-wider mt-0.5 uppercase">
-                {meta.label}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Key rule reminder */}
-      <div className="mt-3 flex-1 min-h-0 overflow-y-auto flex flex-col gap-2">
-        <div className="rounded-xl border border-border bg-muted/30 p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Lightbulb className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-            <p className="text-xs font-semibold text-foreground">
-              Para el día de la votación
-            </p>
-          </div>
-          <div className="space-y-1">
-            {[
-              "Solo aspa (✗) o cruz (+) — ningún otro símbolo",
-              "El cruce debe estar dentro del recuadro",
-              "Máximo un partido por columna",
-              "Cada columna es independiente",
-            ].map((t, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className="text-emerald-500 font-bold text-xs mt-0.5 flex-shrink-0">
-                  ·
-                </span>
-                <p className="text-xs text-muted-foreground leading-snug">
-                  {t}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Restart */}
-      <button
-        onClick={onRestart}
-        className="mt-3 flex-shrink-0 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm active:scale-[0.98] transition-transform"
-      >
-        <RotateCcw className="w-4 h-4" strokeWidth={2.5} />
-        Volver a simular
-      </button>
-    </div>
+      <ArrowRight
+        className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 group-active:translate-x-0.5 transition-transform"
+        strokeWidth={2}
+      />
+    </button>
   );
 }
 
@@ -349,95 +283,120 @@ function VotingScreen({
   const analysis = allAnalyses[colIndex] ?? null;
   const saved = allStrokes[colIndex] ?? [];
   const canvasRef = useRef<BallotCanvasRef>(null);
-
-  const challenge = mode === "retos" ? CHALLENGES[colIndex] : null;
-  const challengeDone = challenge
-    ? challenge.checkPassed(analysis ?? { result: "blank", message: "" })
-    : true;
-
-  const canProceed = mode === "libre" || challengeDone;
-
-  const meta = analysis ? RESULT_META[analysis.result] : null;
-  const ResultIcon = meta?.Icon;
-
   const [showTip, setShowTip] = useState(false);
 
-  // Progress dots
-  const dots = COLUMNS.map((_, i) => {
-    const r = allAnalyses[i]?.result;
-    const m = r ? RESULT_META[r] : null;
-    return {
-      done: i < colIndex,
-      current: i === colIndex,
-      result: r,
-      dot: m?.dot,
-    };
-  });
+  const challenge = mode === "retos" ? CHALLENGES[colIndex] : null;
+  const emptyAnalysis: ColumnAnalysis = {
+    result: "blank",
+    feedbackType: "blank",
+    boxAnalyses: [],
+    hasOutOfBoxStrokes: false,
+    message: "",
+  };
+  const challengeDone = challenge
+    ? challenge.checkPassed(analysis ?? emptyAnalysis)
+    : true;
+  const canProceed = mode === "libre" || challengeDone;
 
   return (
-    <div className="flex flex-col h-full gap-0">
-      {/* ── Top bar ── */}
-      <div className="flex items-center justify-between pb-2 flex-shrink-0">
-        {/* Column stepper */}
-        <div className="flex items-center gap-1.5">
-          {dots.map((d, i) => (
-            <div
-              key={i}
-              className={cn(
-                "rounded-full transition-all duration-300",
-                d.current
-                  ? "w-5 h-2 bg-primary"
-                  : d.done && d.dot
-                    ? `w-2 h-2 ${d.dot}`
-                    : "w-2 h-2 bg-border",
-              )}
-            />
-          ))}
-          <span className="text-xs font-semibold text-muted-foreground ml-1">
-            {col.label}
-            {col.sublabel && (
-              <span className="font-normal"> · {col.sublabel}</span>
-            )}
+    <div className="flex flex-col h-full">
+      {/* ── Progress + header ── */}
+      <div className="flex-shrink-0 mb-3">
+        {/* Progress dots */}
+        <div className="flex items-center gap-1.5 mb-3">
+          {COLUMNS.map((_, i) => {
+            const r = allAnalyses[i]?.result as VoteResult | undefined;
+            const meta = r ? RESULT_META[r] : null;
+            const isCurrent = i === colIndex;
+            const isDone = i < colIndex;
+
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "rounded-full transition-all duration-300",
+                  isCurrent ? "w-6 h-1.5" : "w-1.5 h-1.5",
+                  isCurrent
+                    ? "opacity-100"
+                    : isDone && meta
+                      ? `${meta.dot} opacity-100`
+                      : "bg-border opacity-100",
+                )}
+                style={
+                  isCurrent ? { backgroundColor: "var(--brand)" } : undefined
+                }
+              />
+            );
+          })}
+          <span className="text-[11px] text-muted-foreground ml-1 font-medium">
+            {colIndex + 1} / {COLUMNS.length}
           </span>
         </div>
 
-        {/* Clear */}
-        <button
-          onClick={() => canvasRef.current?.clear()}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-2.5 py-1.5 transition-colors active:bg-muted"
-        >
-          <RotateCcw className="w-3 h-3" strokeWidth={2.5} />
-          Borrar
-        </button>
+        {/* Column title + clear */}
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">
+              {mode === "retos" ? `Reto ${colIndex + 1}` : "Columna"}
+            </p>
+            <h2 className="text-lg font-bold text-foreground leading-tight mt-0.5">
+              {col.label}
+              <span className="text-sm font-normal text-muted-foreground ml-1.5">
+                {col.sublabel}
+              </span>
+            </h2>
+          </div>
+          <button
+            onClick={() => {
+              canvasRef.current?.clear();
+              setShowTip(false);
+            }}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground
+              bg-muted/60 hover:bg-muted rounded-xl px-3 py-2 transition-colors
+              active:scale-[0.97] flex-shrink-0 mt-1"
+          >
+            <RotateCcw className="w-3 h-3" strokeWidth={2.5} />
+            Borrar
+          </button>
+        </div>
       </div>
 
       {/* ── Challenge banner ── */}
       {challenge && (
         <div
           className={cn(
-            "flex-shrink-0 rounded-xl border px-3 py-2.5 flex items-start gap-2.5 mb-2 transition-colors duration-300",
+            "flex-shrink-0 rounded-2xl px-4 py-3 flex items-start gap-3 mb-3 transition-all duration-300",
             challengeDone
-              ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800"
-              : "bg-muted/50 border-border",
+              ? "bg-emerald-50 dark:bg-emerald-950/40"
+              : "bg-muted/50",
           )}
         >
-          {challengeDone ? (
-            <CheckCircle2
-              className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"
-              strokeWidth={2}
-            />
-          ) : (
-            <Target
-              className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5"
-              strokeWidth={2}
-            />
-          )}
+          <div
+            className={cn(
+              "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+              challengeDone
+                ? "bg-emerald-100 dark:bg-emerald-900/60"
+                : "bg-muted",
+            )}
+          >
+            {challengeDone ? (
+              <Check
+                className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
+                strokeWidth={3}
+              />
+            ) : (
+              <Crosshair
+                className="w-3.5 h-3.5 text-muted-foreground"
+                strokeWidth={2}
+              />
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <p
               className={cn(
                 "text-xs font-semibold",
                 challengeDone
-                  ? "text-emerald-800 dark:text-emerald-400"
+                  ? "text-emerald-800 dark:text-emerald-300"
                   : "text-foreground",
               )}
             >
@@ -452,100 +411,71 @@ function VotingScreen({
           {!challengeDone && (
             <button
               onClick={() => setShowTip((t) => !t)}
-              className="flex-shrink-0"
+              className={cn(
+                "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                showTip ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted",
+              )}
             >
-              <Info
+              <Lightbulb
                 className={cn(
-                  "w-4 h-4 transition-colors",
-                  showTip ? "text-primary" : "text-muted-foreground",
+                  "w-3 h-3",
+                  showTip
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground",
                 )}
+                strokeWidth={2}
               />
             </button>
           )}
         </div>
       )}
 
-      {/* Tip expand */}
+      {/* ── Tip ── */}
       {showTip && challenge && !challengeDone && (
-        <div className="flex-shrink-0 mb-2 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2.5 flex items-start gap-2">
+        <div className="flex-shrink-0 mb-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
           <Lightbulb
             className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"
             strokeWidth={2}
           />
-          <p className="text-xs text-amber-800 dark:text-amber-400 leading-snug">
+          <p className="text-xs text-amber-800 dark:text-amber-300 leading-snug">
             {challenge.tip}
           </p>
         </div>
       )}
 
-      {/* ── Ballot canvas ── */}
+      {/* ── Canvas ── */}
       <div
-        className="flex-shrink-0 rounded-2xl overflow-hidden"
+        className="flex-shrink-0 rounded-2xl overflow-hidden bg-card"
         style={{
-          boxShadow: "0 2px 12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
+          boxShadow: "0 2px 20px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
         }}
       >
         <BallotCanvas
           ref={canvasRef}
-          columnIdx={colIndex}
+          col={col}
           savedStrokes={saved}
           onUpdate={onUpdate}
         />
       </div>
 
-      {/* ── Result feedback ── */}
-      <div className="flex-shrink-0 mt-2 min-h-[52px]">
-        {analysis && analysis.result !== "blank" && ResultIcon ? (
-          <div
-            className={cn(
-              "rounded-xl border px-3 py-2.5 flex items-start gap-2.5",
-              meta?.colors,
-            )}
-          >
-            <ResultIcon
-              className="w-4 h-4 flex-shrink-0 mt-0.5"
-              strokeWidth={2}
-            />
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[11px] font-black tracking-widest">
-                  {meta?.label}
-                </span>
-                <span className="text-xs font-medium opacity-80">
-                  {analysis.message}
-                </span>
-              </div>
-              {analysis.submessage && (
-                <p className="text-[11px] opacity-65 leading-tight mt-0.5">
-                  {analysis.submessage}
-                </p>
-              )}
-            </div>
-          </div>
+      {/* ── Feedback ── */}
+      <div className="flex-shrink-0 mt-2.5 min-h-[52px]">
+        {analysis ? (
+          <FeedbackPanel analysis={analysis} col={col} />
         ) : (
-          <div className="flex items-center gap-2 px-1 py-2">
-            <Circle
-              className="w-3.5 h-3.5 text-muted-foreground/40"
-              strokeWidth={1.5}
-            />
-            <p className="text-xs text-muted-foreground/60">
-              {col.hasPreferential
-                ? "Marca un partido · Puedes añadir voto preferencial"
-                : "Dibuja dentro de uno de los recuadros"}
-            </p>
-          </div>
+          <EmptyHint col={col} />
         )}
       </div>
 
-      {/* Spacer */}
       <div className="flex-1 min-h-0" />
 
-      {/* ── Nav footer ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 pt-2">
+      {/* ── Navigation ── */}
+      <div className="flex-shrink-0 flex items-center gap-2 pt-3">
         {colIndex > 0 && (
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 px-3.5 py-3 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors active:scale-[0.97]"
+            className="w-11 h-11 rounded-xl bg-muted/60 flex items-center justify-center
+              text-muted-foreground hover:bg-muted transition-colors active:scale-[0.96]"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
           </button>
@@ -554,23 +484,279 @@ function VotingScreen({
           onClick={onNext}
           disabled={!canProceed}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98]",
+            "flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5",
+            "transition-all duration-150 active:scale-[0.98]",
             canProceed
-              ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              ? "text-white shadow-sm"
               : "bg-muted text-muted-foreground cursor-not-allowed",
           )}
+          style={canProceed ? { backgroundColor: "var(--brand)" } : undefined}
         >
           {colIndex < COLUMNS.length - 1 ? (
             <>
-              Siguiente <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+              Siguiente
+              <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
             </>
           ) : (
             <>
-              Ver resultado <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              Ver mi cédula
+              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
             </>
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ─── Feedback Panel ───────────────────────────────────────────────────────────
+
+function FeedbackPanel({
+  analysis,
+  col,
+}: {
+  analysis: ColumnAnalysis;
+  col: (typeof COLUMNS)[0];
+}) {
+  const meta = RESULT_META[analysis.result];
+  const Icon = meta.Icon;
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl px-4 py-3 transition-all duration-300",
+        meta.banner,
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        <Icon
+          className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
+          strokeWidth={2}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className={cn("text-xs font-bold", meta.text)}>
+              {meta.label}
+            </span>
+            {analysis.submessage && (
+              <span className="text-xs text-muted-foreground">
+                {analysis.submessage}
+              </span>
+            )}
+          </div>
+
+          {analysis.hint && (
+            <p className="text-[11px] text-muted-foreground leading-snug mt-1.5">
+              {analysis.hint}
+            </p>
+          )}
+
+          {col.type !== "presidente" &&
+            analysis.result === "valid" &&
+            analysis.preferentialStatus && (
+              <span
+                className={cn(
+                  "inline-block mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                  analysis.preferentialStatus === "written"
+                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {analysis.preferentialStatus === "written"
+                  ? "Con preferencial"
+                  : "Sin preferencial"}
+              </span>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyHint({ col }: { col: (typeof COLUMNS)[0] }) {
+  const hint =
+    col.type === "presidente"
+      ? "Marca el logo o la foto del candidato con aspa (✗) o cruz (+)."
+      : col.type === "senador_nacional"
+        ? "Marca el logo. Opcionalmente escribe el número de candidato en cada recuadro."
+        : col.prefBoxCount > 0
+          ? "Marca el logo. Opcionalmente escribe el número del candidato."
+          : "Marca el logo del partido con aspa (✗) o cruz (+).";
+
+  return (
+    <div className="flex items-start gap-2.5 px-1 py-2">
+      <Minus
+        className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0 mt-0.5"
+        strokeWidth={2}
+      />
+      <p className="text-[11px] text-muted-foreground/50 leading-snug">
+        {hint}
+      </p>
+    </div>
+  );
+}
+
+// ─── Result Summary ───────────────────────────────────────────────────────────
+
+function ResultSummary({
+  allAnalyses,
+  onRestart,
+}: {
+  allAnalyses: Record<number, ColumnAnalysis>;
+  onRestart: () => void;
+}) {
+  const results = COLUMNS.map(
+    (_, i) => allAnalyses[i]?.result ?? "blank",
+  ) as VoteResult[];
+  const counts = { valid: 0, null: 0, blank: 0, viciado: 0 };
+  results.forEach((r) => counts[r]++);
+  const allValid = counts.valid === COLUMNS.length;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-2.5 mb-1">
+          {allValid ? (
+            <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
+          ) : (
+            <CheckCircle2
+              className="w-5 h-5 text-muted-foreground"
+              strokeWidth={2}
+            />
+          )}
+          <h2 className="text-xl font-bold text-foreground">
+            {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
+          </h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Así quedaría registrada tu votación.
+        </p>
+      </div>
+
+      {/* Column rows */}
+      <div className="flex flex-col gap-1.5">
+        {COLUMNS.map((col, i) => {
+          const r = results[i];
+          const meta = RESULT_META[r];
+          const Icon = meta.Icon;
+          const a = allAnalyses[i];
+          return (
+            <div
+              key={col.id}
+              className="flex items-start gap-3 rounded-2xl px-4 py-3 bg-card"
+              style={{
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Icon
+                className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
+                strokeWidth={2}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-1.5">
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider",
+                      meta.text,
+                    )}
+                  >
+                    {meta.label}
+                  </span>
+                  <span className="text-xs font-semibold text-foreground truncate">
+                    {col.label}
+                  </span>
+                </div>
+                {a?.submessage && (
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {a.submessage}
+                  </p>
+                )}
+                {r === "valid" &&
+                  a?.preferentialStatus === "written" &&
+                  col.type !== "presidente" && (
+                    <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                      Con preferencial
+                    </span>
+                  )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
+          const meta = RESULT_META[r];
+          const Icon = meta.Icon;
+          return (
+            <div
+              key={r}
+              className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
+              style={{
+                boxShadow:
+                  "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+              }}
+            >
+              <Icon className={cn("w-3.5 h-3.5", meta.text)} strokeWidth={2} />
+              <p className="text-[22px] font-black leading-none text-foreground">
+                {n}
+              </p>
+              <p
+                className={cn(
+                  "text-[9px] font-bold tracking-wider uppercase",
+                  meta.text,
+                )}
+              >
+                {meta.label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tips */}
+      <div
+        className="rounded-2xl bg-card px-4 py-4"
+        style={{
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+        }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Lightbulb className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
+          <p className="text-xs font-semibold text-foreground">
+            Para el día de la votación
+          </p>
+        </div>
+        <div className="space-y-2">
+          {[
+            "Solo aspa (✗) o cruz (+) en el logo o foto del candidato.",
+            "Los trazos deben cruzarse dentro del recuadro.",
+            "Un solo partido por columna — marcar dos vicia el voto.",
+            "Recuadros preferenciales: escribe el número, nunca una aspa.",
+            "Cada columna es independiente — un nulo no afecta a las demás.",
+          ].map((t, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0 mt-1.5" />
+              <p className="text-xs text-muted-foreground leading-snug">{t}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Restart */}
+      <button
+        onClick={onRestart}
+        className="w-full h-11 rounded-xl text-white text-sm font-semibold
+          flex items-center justify-center gap-2 shadow-sm
+          active:scale-[0.98] transition-all duration-150"
+        style={{ backgroundColor: "var(--brand)" }}
+      >
+        <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
+        Volver a simular
+      </button>
     </div>
   );
 }
@@ -603,10 +789,12 @@ export default function SimuladorView() {
     () => setColIndex((i) => Math.max(0, i - 1)),
     [],
   );
+
   const handleStart = useCallback((m: SimulatorMode) => {
     setMode(m);
     setPhase("voting");
   }, []);
+
   const handleRestart = useCallback(() => {
     setPhase("intro");
     setColIndex(0);
