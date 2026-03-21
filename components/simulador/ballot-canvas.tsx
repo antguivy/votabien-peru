@@ -15,7 +15,7 @@ import type {
   PartySymbol,
   CandidateGender,
 } from "@/interfaces/simulator";
-import { L, PARTIES, getBoxes } from "@/constants/challenge";
+import { L, PARTIES } from "@/constants/challenge";
 import { analyzeColumn } from "@/lib/stroke-analyzer";
 
 // ─── Image cache ──────────────────────────────────────────────────────────────
@@ -37,6 +37,12 @@ function loadImg(url: string): Promise<HTMLImageElement> {
 const DPR = 2;
 const CW = L.W * DPR;
 const CH = L.H * DPR;
+
+// ─── Layout: name strip above boxes ──────────────────────────────────────────
+// Instead of a left-column for the party name, we use a thin strip at the top
+// of each row. This gives the full canvas width to the logo and pref boxes.
+const NAME_STRIP_H = 17; // px — height of the party name bar
+const ROW_PAD = 3; // inner padding around boxes
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +76,108 @@ const C = {
   prefBad: "#dc2626",
   prefBadBg: "rgba(220,38,38,0.07)",
 } as const;
+
+// ─── Compute boxes locally ────────────────────────────────────────────────────
+//
+// All boxes in a row share the SAME height (bH).
+// Widths are distributed proportionally depending on column type:
+//
+//  presidente       → [logo ~48%] [gap] [photo ~48%]
+//  senador_nacional → [logo ~34%] [gap] [pref_1 ~31%] [gap] [pref_2 ~31%]
+//  single pref      → [logo ~52%] [gap] [pref_single ~44%]
+//  no pref          → [logo 100%]
+//
+const BOX_GAP = 4;
+
+function computeBoxes(col: ColumnDef): BoxBounds[] {
+  const boxes: BoxBounds[] = [];
+  const usableW = L.W - ROW_PAD * 2;
+  const startX = ROW_PAD;
+
+  for (let i = 0; i < PARTIES.length; i++) {
+    const rY = L.HEADER_H + i * L.ROW_H;
+    const bY = rY + NAME_STRIP_H + ROW_PAD;
+    const bH = L.ROW_H - NAME_STRIP_H - ROW_PAD * 2;
+
+    if (col.type === "presidente") {
+      const logoW = Math.floor((usableW - BOX_GAP) * 0.48);
+      const photoW = usableW - BOX_GAP - logoW;
+      boxes.push({
+        partyIdx: i,
+        role: "logo",
+        x: startX,
+        y: bY,
+        w: logoW,
+        h: bH,
+      });
+      boxes.push({
+        partyIdx: i,
+        role: "photo",
+        x: startX + logoW + BOX_GAP,
+        y: bY,
+        w: photoW,
+        h: bH,
+      });
+    } else if (col.type === "senador_nacional") {
+      const logoW = Math.floor((usableW - BOX_GAP * 2) / 3);
+      const prefW = Math.floor((usableW - BOX_GAP * 2 - logoW) / 2);
+      boxes.push({
+        partyIdx: i,
+        role: "logo",
+        x: startX,
+        y: bY,
+        w: logoW,
+        h: bH,
+      });
+      boxes.push({
+        partyIdx: i,
+        role: "pref_1",
+        x: startX + logoW + BOX_GAP,
+        y: bY,
+        w: prefW,
+        h: bH,
+      });
+      boxes.push({
+        partyIdx: i,
+        role: "pref_2",
+        x: startX + logoW + BOX_GAP + prefW + BOX_GAP,
+        y: bY,
+        w: prefW,
+        h: bH,
+      });
+    } else if (col.prefBoxCount > 0) {
+      const logoW = Math.floor((usableW - BOX_GAP) * 0.52);
+      const prefW = usableW - BOX_GAP - logoW;
+      boxes.push({
+        partyIdx: i,
+        role: "logo",
+        x: startX,
+        y: bY,
+        w: logoW,
+        h: bH,
+      });
+      boxes.push({
+        partyIdx: i,
+        role: "pref_single",
+        x: startX + logoW + BOX_GAP,
+        y: bY,
+        w: prefW,
+        h: bH,
+      });
+    } else {
+      boxes.push({
+        partyIdx: i,
+        role: "logo",
+        x: startX,
+        y: bY,
+        w: usableW,
+        h: bH,
+      });
+    }
+  }
+
+  return boxes;
+}
 
 // ─── Canvas primitives ────────────────────────────────────────────────────────
 
@@ -106,47 +214,38 @@ function drawPartySymbol(
   ctx.save();
 
   if (symbol === "saw") {
-    // Serrucho — zigzag saw blade
-    const w = size * 0.7;
-    const h = size * 0.55;
-    const x0 = cx - w / 2;
-    const y0 = cy - h / 2;
-    const teeth = 5;
-    const tw = w / teeth;
-
+    const w = size * 0.7,
+      h = size * 0.55;
+    const x0 = cx - w / 2,
+      y0 = cy - h / 2;
+    const teeth = 5,
+      tw = w / teeth;
     ctx.strokeStyle = "rgba(255,255,255,0.90)";
     ctx.lineWidth = size * 0.045;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(x0, y0 + h); // bottom-left
+    ctx.moveTo(x0, y0 + h);
     for (let i = 0; i < teeth; i++) {
-      const topX = x0 + i * tw + tw * 0.5;
-      const botX = x0 + (i + 1) * tw;
-      ctx.lineTo(topX, y0); // tooth tip
-      ctx.lineTo(botX, y0 + h); // back down
+      ctx.lineTo(x0 + i * tw + tw * 0.5, y0);
+      ctx.lineTo(x0 + (i + 1) * tw, y0 + h);
     }
     ctx.stroke();
-    // Handle bar at the bottom
     ctx.beginPath();
     ctx.moveTo(cx - w / 2, y0 + h + size * 0.07);
     ctx.lineTo(cx + w / 2, y0 + h + size * 0.07);
     ctx.lineWidth = size * 0.07;
     ctx.stroke();
   } else if (symbol === "ball") {
-    // Pelota — circle with curved seam lines
     const r = size * 0.32;
     ctx.strokeStyle = "rgba(255,255,255,0.88)";
     ctx.lineWidth = size * 0.04;
-    // Outer circle
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
-    // Horizontal seam
     ctx.beginPath();
     ctx.ellipse(cx, cy, r * 0.9, r * 0.35, 0, 0, Math.PI * 2);
     ctx.stroke();
-    // Vertical seam
     ctx.beginPath();
     ctx.ellipse(cx, cy, r * 0.35, r * 0.9, 0, 0, Math.PI * 2);
     ctx.stroke();
@@ -167,29 +266,24 @@ function drawCandidateSilhouette(
 ) {
   ctx.save();
   ctx.fillStyle = "#b4bec8";
-
   const cx = x + w / 2;
   const headR = w * 0.17;
   const headY = y + headR * 2.0;
 
-  // Head
   ctx.beginPath();
   ctx.arc(cx, headY, headR, 0, Math.PI * 2);
   ctx.fill();
 
   if (gender === "female") {
-    // Hair bun
     ctx.beginPath();
     ctx.arc(cx, headY - headR * 0.8, headR * 0.45, 0, Math.PI * 2);
     ctx.fillStyle = "#a0aab4";
     ctx.fill();
     ctx.fillStyle = "#b4bec8";
-
-    // Dress / skirt body (trapezoid wider at bottom)
     const bodyTopY = headY + headR * 1.2;
-    const bodyTopW = w * 0.38;
-    const bodyBotW = w * 0.68;
-    const bodyH = h * 0.42;
+    const bodyTopW = w * 0.38,
+      bodyBotW = w * 0.68,
+      bodyH = h * 0.42;
     ctx.beginPath();
     ctx.moveTo(cx - bodyTopW / 2, bodyTopY);
     ctx.lineTo(cx + bodyTopW / 2, bodyTopY);
@@ -197,8 +291,6 @@ function drawCandidateSilhouette(
     ctx.lineTo(cx - bodyBotW / 2, bodyTopY + bodyH);
     ctx.closePath();
     ctx.fill();
-
-    // Arms
     ctx.beginPath();
     ctx.ellipse(
       cx - bodyTopW / 2 - headR * 0.5,
@@ -222,23 +314,18 @@ function drawCandidateSilhouette(
     );
     ctx.fill();
   } else {
-    // Male — rectangular torso + legs
     const shoulderY = headY + headR * 1.3;
-    const torsoW = w * 0.44;
-    const torsoH = h * 0.28;
+    const torsoW = w * 0.44,
+      torsoH = h * 0.28;
     rr(ctx, cx - torsoW / 2, shoulderY, torsoW, torsoH, torsoW * 0.12);
     ctx.fill();
-
-    // Legs
-    const legW = torsoW * 0.36;
-    const legH = h * 0.25;
-    const legY = shoulderY + torsoH + 1;
+    const legW = torsoW * 0.36,
+      legH = h * 0.25,
+      legY = shoulderY + torsoH + 1;
     rr(ctx, cx - torsoW / 2 + 1, legY, legW, legH, legW * 0.25);
     ctx.fill();
     rr(ctx, cx + torsoW / 2 - legW - 1, legY, legW, legH, legW * 0.25);
     ctx.fill();
-
-    // Arms
     ctx.beginPath();
     ctx.ellipse(
       cx - torsoW / 2 - headR * 0.45,
@@ -262,7 +349,6 @@ function drawCandidateSilhouette(
     );
     ctx.fill();
   }
-
   ctx.restore();
 }
 
@@ -272,7 +358,7 @@ function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
-  maxLines = 4,
+  maxLines = 2,
 ): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
@@ -311,8 +397,8 @@ function drawBallot(
   ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, H);
 
-  // Ruled lines
-  ctx.strokeStyle = "rgba(0,0,0,0.020)";
+  // Subtle ruled lines — only in the header zone, not over the box area
+  ctx.strokeStyle = "rgba(0,0,0,0.018)";
   ctx.lineWidth = 1;
   for (let y = L.HEADER_H; y < H - L.FOOTER_H; y += 5) {
     ctx.beginPath();
@@ -327,7 +413,7 @@ function drawBallot(
 
   // Footer
   ctx.fillStyle = C.textLt;
-  ctx.font = "5.5px Arial, sans-serif";
+  ctx.font = "6px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(
@@ -345,24 +431,31 @@ function drawBallot(
   ctx.restore();
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
+
 function drawHeader(ctx: CanvasRenderingContext2D, col: ColumnDef, W: number) {
   ctx.fillStyle = C.red;
   ctx.fillRect(0, 0, W, L.HEADER_H);
+
   ctx.fillStyle = "rgba(255,255,255,0.10)";
   ctx.fillRect(0, 0, 4, L.HEADER_H);
   ctx.fillRect(W - 4, 0, 4, L.HEADER_H);
 
   ctx.textAlign = "center";
-  ctx.font = "6.5px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.56)";
+
+  // ↑ Bigger instruction text
+  ctx.font = "7.5px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.60)";
   ctx.fillText("Marque con aspa (✗) o cruz (+) dentro del recuadro", W / 2, 10);
 
-  ctx.font = "bold 12px 'Georgia', serif";
+  // ↑ Bigger title
+  ctx.font = "bold 14px 'Georgia', serif";
   ctx.fillStyle = "white";
   ctx.fillText(col.headerLabel, W / 2, 27);
 
-  ctx.font = "7px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  // ↑ Bigger sublabel
+  ctx.font = "8px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
   ctx.fillText(col.sublabel, W / 2, 39);
 
   ctx.strokeStyle = "rgba(255,255,255,0.18)";
@@ -373,6 +466,8 @@ function drawHeader(ctx: CanvasRenderingContext2D, col: ColumnDef, W: number) {
   ctx.stroke();
 }
 
+// ─── Row ──────────────────────────────────────────────────────────────────────
+
 function drawRow(
   ctx: CanvasRenderingContext2D,
   col: ColumnDef,
@@ -382,10 +477,9 @@ function drawRow(
 ) {
   const party = PARTIES[partyIdx];
   const rY = L.HEADER_H + partyIdx * L.ROW_H;
-  const bY = rY + L.BOX_Y;
   const rowBoxes = boxes.filter((b) => b.partyIdx === partyIdx);
 
-  // Row background
+  // Alternating row background
   if (partyIdx % 2 === 1) {
     ctx.fillStyle = C.paperAlt;
     ctx.fillRect(0, rY, L.W, L.ROW_H);
@@ -396,10 +490,7 @@ function drawRow(
     const isMe = analysis.markedPartyIdx === partyIdx;
     const isVic = analysis.result === "viciado";
     const isOob = analysis.result === "null" && analysis.hasOutOfBoxStrokes;
-    const isPrefN =
-      analysis.result === "null" &&
-      analysis.preferentialStatus === "invalid_mark";
-    if (isMe || isVic || isOob || (isPrefN && isMe)) {
+    if (isMe || isVic || isOob) {
       ctx.fillStyle =
         analysis.result === "valid"
           ? C.validBg
@@ -421,68 +512,103 @@ function drawRow(
     ctx.stroke();
   }
 
-  // Row number
-  ctx.fillStyle = C.textLt;
-  ctx.font = "8px Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText(`${partyIdx + 1}`, 2, rY + 3);
-  ctx.textBaseline = "alphabetic";
+  // ── Party name strip (full width, at top of row) ─────────────────────────
+  drawPartyNameStrip(ctx, party, partyIdx, rY);
 
-  // Party name column
-  const nameX = col.type === "presidente" ? L.P_NAME_X : L.O_NAME_X;
-  const nameW = col.type === "presidente" ? L.P_NAME_W : L.O_NAME_W;
-  drawPartyNameCol(ctx, party, nameX, nameW, rY, bY, L.BOX_H);
-
-  // Logo
+  // ── Logo ─────────────────────────────────────────────────────────────────
   const logoBox = rowBoxes.find((b) => b.role === "logo")!;
-  drawLogoBox(ctx, logoBox, party, analysis);
+  if (logoBox) drawLogoBox(ctx, logoBox, party, analysis);
 
-  // Right area
+  // ── Right side ────────────────────────────────────────────────────────────
   if (col.type === "presidente") {
     const photoBox = rowBoxes.find((b) => b.role === "photo")!;
-    drawPhotoBox(ctx, photoBox, party, analysis);
+    if (photoBox) drawPhotoBox(ctx, photoBox, party, analysis);
   } else if (col.type === "senador_nacional") {
     const p1 = rowBoxes.find((b) => b.role === "pref_1")!;
     const p2 = rowBoxes.find((b) => b.role === "pref_2")!;
-    drawPrefLabel2(ctx, p1, p2, rY);
-    drawPrefBox(ctx, p1, "Candidato 1", analysis);
-    drawPrefBox(ctx, p2, "Candidato 2", analysis);
+    if (p1 && p2) {
+      drawPrefLabel2(ctx, p1, p2, rY);
+      drawPrefBox(ctx, p1, "Candidato 1", analysis);
+      drawPrefBox(ctx, p2, "Candidato 2", analysis);
+    }
   } else {
     const ps = rowBoxes.find((b) => b.role === "pref_single")!;
-    drawPrefLabelSingle(ctx, ps, rY);
-    drawPrefBox(ctx, ps, "N° candidato", analysis);
+    if (ps) {
+      drawPrefLabelSingle(ctx, ps, rY);
+      drawPrefBox(ctx, ps, "N° candidato", analysis);
+    }
   }
 }
 
-// ─── Party name column ────────────────────────────────────────────────────────
-
-function drawPartyNameCol(
+// ─── Party name strip (replaces the old side column) ─────────────────────────
+//
+// Renders a slim full-width bar at the top of the row:
+//   [colored accent] [N°] [PARTY NAME]
+//
+function drawPartyNameStrip(
   ctx: CanvasRenderingContext2D,
   party: (typeof PARTIES)[0],
-  nameX: number,
-  nameW: number,
+  partyIdx: number,
   rY: number,
-  bY: number,
-  bH: number,
 ) {
-  // Color accent bar
+  const W = L.W;
+  const stripH = NAME_STRIP_H;
+
+  // Subtle tinted background
+  ctx.fillStyle = party.color + "14"; // ~8% opacity
+  ctx.fillRect(0, rY, W, stripH);
+
+  // Left accent bar
   ctx.fillStyle = party.color;
-  ctx.fillRect(nameX, bY, 2.5, bH);
+  ctx.fillRect(0, rY, 3, stripH);
 
-  ctx.font = "bold 6px Arial, sans-serif";
+  // Number badge
+  const badgeR = 5.5;
+  const badgeCX = 10;
+  const badgeCY = rY + stripH / 2;
+  ctx.fillStyle = party.color;
+  ctx.beginPath();
+  ctx.arc(badgeCX, badgeCY, badgeR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "white";
+  ctx.font = "bold 7px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(partyIdx + 1), badgeCX, badgeCY);
+  ctx.textBaseline = "alphabetic";
+
+  // Party name — bold, larger, readable on mobile
   ctx.fillStyle = C.textDk;
+  ctx.font = "bold 8px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-
-  const lines = wrapText(ctx, party.name.toUpperCase(), nameW - 7, 4);
-  const lineH = 9;
-  const totalH = lines.length * lineH;
-  const startY = bY + (bH - totalH) / 2;
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], nameX + 5, startY + i * lineH);
+  ctx.textBaseline = "middle";
+  // Available width: after badge + small gap, before right edge
+  const nameX = badgeCX + badgeR + 4;
+  const nameMaxW = W - nameX - 4;
+  const nameFull = party.name.toUpperCase();
+  // If it fits on one line, great — otherwise truncate with ellipsis
+  if (ctx.measureText(nameFull).width <= nameMaxW) {
+    ctx.fillText(nameFull, nameX, rY + stripH / 2);
+  } else {
+    let truncated = nameFull;
+    while (
+      ctx.measureText(truncated + "…").width > nameMaxW &&
+      truncated.length > 0
+    ) {
+      truncated = truncated.slice(0, -1);
+    }
+    ctx.fillText(truncated + "…", nameX, rY + stripH / 2);
   }
   ctx.textBaseline = "alphabetic";
+
+  // Bottom hairline separator between name strip and boxes
+  ctx.strokeStyle = "rgba(0,0,0,0.06)";
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(0, rY + stripH);
+  ctx.lineTo(W, rY + stripH);
+  ctx.stroke();
 }
 
 // ─── Logo box ─────────────────────────────────────────────────────────────────
@@ -498,12 +624,10 @@ function drawLogoBox(
     (b) => b.role === "logo" && b.partyIdx === box.partyIdx,
   );
 
-  // Fill
   ctx.fillStyle = party.color;
   rr(ctx, x, y, w, h, 6);
   ctx.fill();
 
-  // Shine
   const shine = ctx.createLinearGradient(x, y, x, y + h * 0.55);
   shine.addColorStop(0, "rgba(255,255,255,0.22)");
   shine.addColorStop(1, "rgba(0,0,0,0)");
@@ -511,7 +635,6 @@ function drawLogoBox(
   rr(ctx, x, y, w, h, 6);
   ctx.fill();
 
-  // Party symbol (custom icon)
   const cx = x + w / 2,
     cy = y + h * 0.44;
   const cachedLogo = party.logoUrl ? imgCache.get(party.logoUrl) : undefined;
@@ -525,18 +648,16 @@ function drawLogoBox(
     drawPartySymbol(ctx, party.symbol, cx, cy, Math.min(w, h) * 0.85);
   }
 
-  // Invalid mark warning (line/scribble drawn instead of X)
   if (ba?.isInvalidMark) {
     ctx.fillStyle = "rgba(255,220,0,0.18)";
     rr(ctx, x, y, w, h, 6);
     ctx.fill();
     ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 7px Arial, sans-serif";
+    ctx.font = "bold 8px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("¡Usa ✗ o +!", cx, y + h - 5);
   }
 
-  // Result ring
   if (ba?.isValidMark && analysis) {
     const rc =
       analysis.result === "valid"
@@ -565,12 +686,10 @@ function drawPhotoBox(
     (b) => b.role === "photo" && b.partyIdx === box.partyIdx,
   );
 
-  // Background
   ctx.fillStyle = "#e8edf2";
   rr(ctx, x, y, w, h, 5);
   ctx.fill();
 
-  // Gendered silhouette
   const cachedPhoto = party.photoUrl ? imgCache.get(party.photoUrl) : undefined;
   if (cachedPhoto) {
     ctx.save();
@@ -589,18 +708,16 @@ function drawPhotoBox(
     );
   }
 
-  // Invalid mark warning
   if (ba?.isInvalidMark) {
     ctx.fillStyle = "rgba(255,220,0,0.15)";
     rr(ctx, x, y, w, h, 5);
     ctx.fill();
     ctx.fillStyle = "#d97706";
-    ctx.font = "bold 7px Arial, sans-serif";
+    ctx.font = "bold 8px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("¡Usa ✗ o +!", x + w / 2, y + h - 5);
   }
 
-  // Border
   const isOk = ba?.isValidMark && analysis?.result === "valid";
   const isBad = ba?.isInvalidMark;
   ctx.strokeStyle = isOk ? C.valid : isBad ? C.viciado : "#ced4da";
@@ -609,7 +726,6 @@ function drawPhotoBox(
   rr(ctx, x, y, w, h, 5);
   ctx.stroke();
 
-  // Result ring
   if (ba?.isValidMark && analysis) {
     const rc = analysis.result === "valid" ? C.valid : C.null;
     ctx.strokeStyle = rc;
@@ -625,31 +741,36 @@ function drawPrefLabel2(
   ctx: CanvasRenderingContext2D,
   p1: BoxBounds,
   p2: BoxBounds,
-  rY: number,
+  _rY: number,
 ) {
-  const cx = (p1.x + p2.x + p2.w) / 2;
-  ctx.textAlign = "center";
-  ctx.font = "bold 6px Arial, sans-serif";
-  ctx.fillStyle = C.textMd;
-  ctx.fillText("VOTO PREFERENCIAL", cx, rY + 9);
-  ctx.font = "5px Arial, sans-serif";
-  ctx.fillStyle = C.textLt;
-  ctx.fillText("Un Nº de candidato por recuadro", cx, rY + 16);
+  for (const [box, label] of [
+    [p1, "Candidato 1"],
+    [p2, "Candidato 2"],
+  ] as const) {
+    const cx = box.x + box.w / 2;
+    ctx.textAlign = "center";
+    ctx.font = "bold 6px Arial, sans-serif";
+    ctx.fillStyle = C.textMd;
+    ctx.fillText("PREFERENCIAL", cx, box.y + 9);
+    ctx.font = "5.5px Arial, sans-serif";
+    ctx.fillStyle = C.textLt;
+    ctx.fillText(label, cx, box.y + 16);
+  }
 }
 
 function drawPrefLabelSingle(
   ctx: CanvasRenderingContext2D,
   ps: BoxBounds,
-  rY: number,
+  _rY: number,
 ) {
   const cx = ps.x + ps.w / 2;
   ctx.textAlign = "center";
   ctx.font = "bold 6px Arial, sans-serif";
   ctx.fillStyle = C.textMd;
-  ctx.fillText("VOTO PREFERENCIAL", cx, rY + 9);
-  ctx.font = "5px Arial, sans-serif";
+  ctx.fillText("PREFERENCIAL", cx, ps.y + 9);
+  ctx.font = "5.5px Arial, sans-serif";
   ctx.fillStyle = C.textLt;
-  ctx.fillText("Nº candidato (opcional)", cx, rY + 16);
+  ctx.fillText("N° candidato (opcional)", cx, ps.y + 16);
 }
 
 // ─── Pref box ─────────────────────────────────────────────────────────────────
@@ -657,7 +778,7 @@ function drawPrefLabelSingle(
 function drawPrefBox(
   ctx: CanvasRenderingContext2D,
   box: BoxBounds,
-  topLabel: string,
+  _topLabel: string,
   analysis: ColumnAnalysis | null,
 ) {
   const { x, y, w, h } = box;
@@ -668,55 +789,28 @@ function drawPrefBox(
   const isBad = ba?.isInvalidMark ?? false;
   const isGood = ba?.isValidMark ?? false;
 
-  ctx.fillStyle = isBad ? C.prefBadBg : isGood ? C.prefOkBg : C.prefBg;
+  // Solid fill — covers any background ruled lines
+  ctx.fillStyle = isBad ? C.prefBadBg : isGood ? C.prefOkBg : "#ffffff";
   ctx.fillRect(x, y, w, h);
 
+  // Border
   ctx.strokeStyle = isBad ? C.prefBad : isGood ? C.prefOk : C.prefDash;
   ctx.lineWidth = isBad || isGood ? 2 : 1;
   ctx.setLineDash(isBad || isGood ? [] : [5, 3]);
   ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   ctx.setLineDash([]);
 
-  // Top label
-  ctx.fillStyle = isBad ? C.prefBad : isGood ? C.prefOk : C.textLt;
-  ctx.font = "5.5px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(topLabel, x + w / 2, y + 9);
-
-  // Separator under label
-  ctx.strokeStyle = isBad
-    ? C.prefBad + "55"
-    : isGood
-      ? C.prefOk + "55"
-      : "#e5e7eb";
-  ctx.lineWidth = 0.5;
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  ctx.moveTo(x + 4, y + 12);
-  ctx.lineTo(x + w - 4, y + 12);
-  ctx.stroke();
-
-  // Placeholder when empty
-  if (!ba?.hasStroke) {
-    ctx.fillStyle = "#ced4da";
-    ctx.font = "bold 20px 'Georgia', serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("_", x + w / 2, y + h / 2 + 5);
-    ctx.textBaseline = "alphabetic";
-  }
-
-  // Status badges
+  // Status badge at bottom center — only when marked
   if (isBad) {
     ctx.fillStyle = C.prefBad;
     ctx.font = "bold 6.5px Arial, sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("✗ inválido", x + w - 3, y + h - 4);
+    ctx.textAlign = "center";
+    ctx.fillText("✗ inválido", x + w / 2, y + h - 4);
   } else if (isGood) {
     ctx.fillStyle = C.prefOk;
     ctx.font = "6px Arial, sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("registrado ✓", x + w - 3, y + h - 4);
+    ctx.textAlign = "center";
+    ctx.fillText("registrado ✓", x + w / 2, y + h - 4);
   }
 }
 
@@ -802,7 +896,8 @@ const BallotCanvas = forwardRef<BallotCanvasRef, Props>(function BallotCanvas(
   }, [col]);
 
   useEffect(() => {
-    boxesRef.current = getBoxes(col);
+    // Use locally computed boxes — matches rendering exactly
+    boxesRef.current = computeBoxes(col);
     strokesRef.current = savedStrokes.map((s) => [...s]);
     currentRef.current = [];
     analysisRef.current =
