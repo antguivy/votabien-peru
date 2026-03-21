@@ -61,7 +61,7 @@ export const COLUMNS: ColumnDef[] = [
     id: "presidente",
     type: "presidente",
     label: "Presidente",
-    sublabel: "y Vicepresidente",
+    sublabel: "",
     headerLabel: "PRESIDENTE Y VICEPRESIDENTE",
     description:
       "Marca con aspa (✗) o cruz (+) el logo del partido, la foto del candidato, o ambos — siempre del MISMO partido.",
@@ -72,7 +72,7 @@ export const COLUMNS: ColumnDef[] = [
     id: "senador_nacional",
     type: "senador_nacional",
     label: "Senador Nacional",
-    sublabel: "Lista Nacional",
+    sublabel: "",
     headerLabel: "SENADOR NACIONAL",
     description:
       "Marca el logo del partido. Para voto preferencial escribe el número de un candidato en cada recuadro. Puedes usar uno, ambos o ninguno.",
@@ -83,7 +83,7 @@ export const COLUMNS: ColumnDef[] = [
     id: "senador_regional",
     type: "senador_regional",
     label: "Senador Regional",
-    sublabel: "Lista Regional",
+    sublabel: "",
     headerLabel: "SENADOR REGIONAL",
     description:
       "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
@@ -94,7 +94,7 @@ export const COLUMNS: ColumnDef[] = [
     id: "diputado",
     type: "diputado",
     label: "Diputado",
-    sublabel: "Distrito Electoral",
+    sublabel: "",
     headerLabel: "DIPUTADO",
     description:
       "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
@@ -105,7 +105,7 @@ export const COLUMNS: ColumnDef[] = [
     id: "parlamento_andino",
     type: "parlamento_andino",
     label: "Parlamento Andino",
-    sublabel: "Distrito Único",
+    sublabel: "",
     headerLabel: "PARLAMENTO ANDINO",
     description:
       "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",

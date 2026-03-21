@@ -293,15 +293,16 @@ function ResultSummary({
                   >
                     {s.label}
                   </p>
-                  <p
+                  {/* <p
                     className="text-[13px] font-bold text-gray-800"
                     style={{ fontFamily: "Georgia,serif" }}
                   >
                     {col.label}{" "}
-                    <span className="font-normal text-gray-500 text-[11px]">
+                    {/* <span className="font-normal text-gray-500 text-[11px]">
                       {col.sublabel}
                     </span>
-                  </p>
+                  </p> 
+                     */}
                   {a?.message && (
                     <p
                       className="text-[11px] text-gray-500 mt-0.5"

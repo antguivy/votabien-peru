@@ -413,11 +413,11 @@ function drawBallot(
 
   // Footer
   ctx.fillStyle = C.textLt;
-  ctx.font = "6px Arial, sans-serif";
+  ctx.font = "9px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(
-    "ONPE · Elecciones Generales 2026 · Simulador educativo — partidos ficticios",
+    "Simulador educativo — partidos ficticios - VotaBien Perú",
     W / 2,
     H - L.FOOTER_H / 2,
   );
@@ -444,7 +444,7 @@ function drawHeader(ctx: CanvasRenderingContext2D, col: ColumnDef, W: number) {
   ctx.textAlign = "center";
 
   // ↑ Bigger instruction text
-  ctx.font = "7.5px Arial, sans-serif";
+  ctx.font = "9.5px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.60)";
   ctx.fillText("Marque con aspa (✗) o cruz (+) dentro del recuadro", W / 2, 10);
 
@@ -653,7 +653,7 @@ function drawLogoBox(
     rr(ctx, x, y, w, h, 6);
     ctx.fill();
     ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 8px Arial, sans-serif";
+    ctx.font = "bold 24px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("¡Usa ✗ o +!", cx, y + h - 5);
   }
@@ -712,8 +712,8 @@ function drawPhotoBox(
     ctx.fillStyle = "rgba(255,220,0,0.15)";
     rr(ctx, x, y, w, h, 5);
     ctx.fill();
-    ctx.fillStyle = "#d97706";
-    ctx.font = "bold 8px Arial, sans-serif";
+    ctx.fillStyle = "#3B5B7A";
+    ctx.font = "bold 24px Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("¡Usa ✗ o +!", x + w / 2, y + h - 5);
   }

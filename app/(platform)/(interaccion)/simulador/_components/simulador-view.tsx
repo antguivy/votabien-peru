@@ -18,6 +18,7 @@ import {
   List,
   Minus,
   Check,
+  House,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -28,6 +29,7 @@ import type {
 } from "@/interfaces/simulator";
 import { COLUMNS, CHALLENGES } from "@/constants/challenge";
 import type { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
+import { Button } from "@/components/ui/button";
 
 const BallotCanvas = dynamic(
   () => import("@/components/simulador/ballot-canvas"),
@@ -270,6 +272,7 @@ function VotingScreen({
   onUpdate,
   onNext,
   onBack,
+  onHome,
 }: {
   mode: SimulatorMode;
   colIndex: number;
@@ -278,6 +281,7 @@ function VotingScreen({
   onUpdate: (strokes: Point[][], analysis: ColumnAnalysis) => void;
   onNext: () => void;
   onBack: () => void;
+  onHome: () => void;
 }) {
   const col = COLUMNS[colIndex];
   const analysis = allAnalyses[colIndex] ?? null;
@@ -302,33 +306,48 @@ function VotingScreen({
     <div className="flex flex-col h-full">
       {/* ── Progress + header ── */}
       <div className="flex-shrink-0 mb-3">
-        {/* Progress dots */}
-        <div className="flex items-center gap-1.5 mb-3">
-          {COLUMNS.map((_, i) => {
-            const r = allAnalyses[i]?.result as VoteResult | undefined;
-            const meta = r ? RESULT_META[r] : null;
-            const isCurrent = i === colIndex;
-            const isDone = i < colIndex;
+        {/* Progress row: home button + dots + counter */}
+        <div className="flex items-center gap-2 mb-3">
+          {/* Home button */}
+          <Button
+            onClick={onHome}
+            className="bg-brand"
+            aria-label="Volver al inicio"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
+            Regresar
+          </Button>
 
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "rounded-full transition-all duration-300",
-                  isCurrent ? "w-6 h-1.5" : "w-1.5 h-1.5",
-                  isCurrent
-                    ? "opacity-100"
-                    : isDone && meta
-                      ? `${meta.dot} opacity-100`
-                      : "bg-border opacity-100",
-                )}
-                style={
-                  isCurrent ? { backgroundColor: "var(--brand)" } : undefined
-                }
-              />
-            );
-          })}
-          <span className="text-[11px] text-muted-foreground ml-1 font-medium">
+          {/* Dots */}
+          <div className="flex items-center gap-1.5 flex-1">
+            {COLUMNS.map((_, i) => {
+              const r = allAnalyses[i]?.result as VoteResult | undefined;
+              const meta = r ? RESULT_META[r] : null;
+              const isCurrent = i === colIndex;
+              const isDone = i < colIndex;
+
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "rounded-full transition-all duration-300",
+                    isCurrent ? "w-6 h-1.5" : "w-1.5 h-1.5",
+                    isCurrent
+                      ? "opacity-100"
+                      : isDone && meta
+                        ? `${meta.dot} opacity-100`
+                        : "bg-border opacity-100",
+                  )}
+                  style={
+                    isCurrent ? { backgroundColor: "var(--brand)" } : undefined
+                  }
+                />
+              );
+            })}
+          </div>
+
+          {/* Counter */}
+          <span className="text-[11px] text-muted-foreground font-medium flex-shrink-0">
             {colIndex + 1} / {COLUMNS.length}
           </span>
         </div>
@@ -361,115 +380,116 @@ function VotingScreen({
         </div>
       </div>
 
-      {/* ── Challenge banner ── */}
-      {challenge && (
-        <div
-          className={cn(
-            "flex-shrink-0 rounded-2xl px-4 py-3 flex items-start gap-3 mb-3 transition-all duration-300",
-            challengeDone
-              ? "bg-emerald-50 dark:bg-emerald-950/40"
-              : "bg-muted/50",
-          )}
-        >
+      {/* ── Scrollable area: challenge banner + tip + canvas + feedback ── */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 pb-1">
+        {/* Challenge banner */}
+        {challenge && (
           <div
             className={cn(
-              "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+              "flex-shrink-0 rounded-2xl px-4 py-3 flex items-start gap-3 transition-all duration-300",
               challengeDone
-                ? "bg-emerald-100 dark:bg-emerald-900/60"
-                : "bg-muted",
+                ? "bg-emerald-50 dark:bg-emerald-950/40"
+                : "bg-muted/50",
             )}
           >
-            {challengeDone ? (
-              <Check
-                className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
-                strokeWidth={3}
-              />
-            ) : (
-              <Crosshair
-                className="w-3.5 h-3.5 text-muted-foreground"
-                strokeWidth={2}
-              />
+            <div
+              className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                challengeDone
+                  ? "bg-emerald-100 dark:bg-emerald-900/60"
+                  : "bg-muted",
+              )}
+            >
+              {challengeDone ? (
+                <Check
+                  className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
+                  strokeWidth={3}
+                />
+              ) : (
+                <Crosshair
+                  className="w-3.5 h-3.5 text-muted-foreground"
+                  strokeWidth={2}
+                />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className={cn(
+                  "text-xs font-semibold",
+                  challengeDone
+                    ? "text-emerald-800 dark:text-emerald-300"
+                    : "text-foreground",
+                )}
+              >
+                {challengeDone ? "¡Reto completado!" : challenge.title}
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+                {challengeDone
+                  ? 'Pulsa "Siguiente" para continuar.'
+                  : challenge.instruction}
+              </p>
+            </div>
+            {!challengeDone && (
+              <button
+                onClick={() => setShowTip((t) => !t)}
+                className={cn(
+                  "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                  showTip ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted",
+                )}
+              >
+                <Lightbulb
+                  className={cn(
+                    "w-3 h-3",
+                    showTip
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-muted-foreground",
+                  )}
+                  strokeWidth={2}
+                />
+              </button>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p
-              className={cn(
-                "text-xs font-semibold",
-                challengeDone
-                  ? "text-emerald-800 dark:text-emerald-300"
-                  : "text-foreground",
-              )}
-            >
-              {challengeDone ? "¡Reto completado!" : challenge.title}
-            </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-              {challengeDone
-                ? 'Pulsa "Siguiente" para continuar.'
-                : challenge.instruction}
+        )}
+
+        {/* Tip */}
+        {showTip && challenge && !challengeDone && (
+          <div className="flex-shrink-0 rounded-2xl bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
+            <Lightbulb
+              className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"
+              strokeWidth={2}
+            />
+            <p className="text-xs text-amber-800 dark:text-amber-300 leading-snug">
+              {challenge.tip}
             </p>
           </div>
-          {!challengeDone && (
-            <button
-              onClick={() => setShowTip((t) => !t)}
-              className={cn(
-                "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
-                showTip ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted",
-              )}
-            >
-              <Lightbulb
-                className={cn(
-                  "w-3 h-3",
-                  showTip
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-muted-foreground",
-                )}
-                strokeWidth={2}
-              />
-            </button>
+        )}
+
+        {/* Canvas */}
+        <div
+          className="flex-shrink-0 rounded-2xl overflow-hidden bg-card"
+          style={{
+            boxShadow: "0 2px 20px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
+          }}
+        >
+          <BallotCanvas
+            ref={canvasRef}
+            col={col}
+            savedStrokes={saved}
+            onUpdate={onUpdate}
+          />
+        </div>
+
+        {/* Feedback */}
+        <div className="flex-shrink-0 min-h-[52px]">
+          {analysis ? (
+            <FeedbackPanel analysis={analysis} col={col} />
+          ) : (
+            <EmptyHint col={col} />
           )}
         </div>
-      )}
-
-      {/* ── Tip ── */}
-      {showTip && challenge && !challengeDone && (
-        <div className="flex-shrink-0 mb-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
-          <Lightbulb
-            className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"
-            strokeWidth={2}
-          />
-          <p className="text-xs text-amber-800 dark:text-amber-300 leading-snug">
-            {challenge.tip}
-          </p>
-        </div>
-      )}
-
-      {/* ── Canvas ── */}
-      <div
-        className="flex-shrink-0 rounded-2xl overflow-hidden bg-card"
-        style={{
-          boxShadow: "0 2px 20px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
-        }}
-      >
-        <BallotCanvas
-          ref={canvasRef}
-          col={col}
-          savedStrokes={saved}
-          onUpdate={onUpdate}
-        />
       </div>
 
-      {/* ── Feedback ── */}
-      <div className="flex-shrink-0 mt-2.5 min-h-[52px]">
-        {analysis ? (
-          <FeedbackPanel analysis={analysis} col={col} />
-        ) : (
-          <EmptyHint col={col} />
-        )}
-      </div>
-
-      <div className="flex-1 min-h-0" />
-
-      {/* ── Navigation ── */}
+      {/* ── Navigation — always visible, never scrolls ── */}
       <div className="flex-shrink-0 flex items-center gap-2 pt-3">
         {colIndex > 0 && (
           <button
@@ -613,150 +633,161 @@ function ResultSummary({
   const allValid = counts.valid === COLUMNS.length;
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2.5 mb-1">
-          {allValid ? (
-            <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
-          ) : (
-            <CheckCircle2
-              className="w-5 h-5 text-muted-foreground"
-              strokeWidth={2}
-            />
-          )}
-          <h2 className="text-xl font-bold text-foreground">
-            {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Así quedaría registrada tu votación.
-        </p>
-      </div>
-
-      {/* Column rows */}
-      <div className="flex flex-col gap-1.5">
-        {COLUMNS.map((col, i) => {
-          const r = results[i];
-          const meta = RESULT_META[r];
-          const Icon = meta.Icon;
-          const a = allAnalyses[i];
-          return (
-            <div
-              key={col.id}
-              className="flex items-start gap-3 rounded-2xl px-4 py-3 bg-card"
-              style={{
-                boxShadow:
-                  "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-              }}
-            >
-              <Icon
-                className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
+    // Outer wrapper: fills height, splits into scrollable content + sticky footer
+    <div className="flex flex-col h-full">
+      {/* ── Scrollable content ── */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-5 pb-4">
+        {/* Header */}
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            {allValid ? (
+              <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
+            ) : (
+              <CheckCircle2
+                className="w-5 h-5 text-muted-foreground"
                 strokeWidth={2}
               />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-1.5">
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold uppercase tracking-wider",
-                      meta.text,
-                    )}
-                  >
-                    {meta.label}
-                  </span>
-                  <span className="text-xs font-semibold text-foreground truncate">
-                    {col.label}
-                  </span>
-                </div>
-                {a?.submessage && (
-                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                    {a.submessage}
-                  </p>
-                )}
-                {r === "valid" &&
-                  a?.preferentialStatus === "written" &&
-                  col.type !== "presidente" && (
-                    <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
-                      Con preferencial
-                    </span>
-                  )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
-          const meta = RESULT_META[r];
-          const Icon = meta.Icon;
-          return (
-            <div
-              key={r}
-              className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
-              style={{
-                boxShadow:
-                  "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-              }}
-            >
-              <Icon className={cn("w-3.5 h-3.5", meta.text)} strokeWidth={2} />
-              <p className="text-[22px] font-black leading-none text-foreground">
-                {n}
-              </p>
-              <p
-                className={cn(
-                  "text-[9px] font-bold tracking-wider uppercase",
-                  meta.text,
-                )}
-              >
-                {meta.label}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Tips */}
-      <div
-        className="rounded-2xl bg-card px-4 py-4"
-        style={{
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-        }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-          <p className="text-xs font-semibold text-foreground">
-            Para el día de la votación
+            )}
+            <h2 className="text-xl font-bold text-foreground">
+              {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
+            </h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Así quedaría registrada tu votación.
           </p>
         </div>
-        <div className="space-y-2">
-          {[
-            "Solo aspa (✗) o cruz (+) en el logo o foto del candidato.",
-            "Los trazos deben cruzarse dentro del recuadro.",
-            "Un solo partido por columna — marcar dos vicia el voto.",
-            "Recuadros preferenciales: escribe el número, nunca una aspa.",
-            "Cada columna es independiente — un nulo no afecta a las demás.",
-          ].map((t, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0 mt-1.5" />
-              <p className="text-xs text-muted-foreground leading-snug">{t}</p>
-            </div>
-          ))}
+
+        {/* Column rows */}
+        <div className="flex flex-col gap-1.5">
+          {COLUMNS.map((col, i) => {
+            const r = results[i];
+            const meta = RESULT_META[r];
+            const Icon = meta.Icon;
+            const a = allAnalyses[i];
+            return (
+              <div
+                key={col.id}
+                className="flex items-start gap-3 rounded-2xl px-4 py-3 bg-card"
+                style={{
+                  boxShadow:
+                    "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+                }}
+              >
+                <Icon
+                  className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
+                  strokeWidth={2}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold uppercase tracking-wider",
+                        meta.text,
+                      )}
+                    >
+                      {meta.label}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {col.label}
+                    </span>
+                  </div>
+                  {a?.submessage && (
+                    <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                      {a.submessage}
+                    </p>
+                  )}
+                  {r === "valid" &&
+                    a?.preferentialStatus === "written" &&
+                    col.type !== "presidente" && (
+                      <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                        Con preferencial
+                      </span>
+                    )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
+            const meta = RESULT_META[r];
+            const Icon = meta.Icon;
+            return (
+              <div
+                key={r}
+                className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
+                style={{
+                  boxShadow:
+                    "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+                }}
+              >
+                <Icon
+                  className={cn("w-3.5 h-3.5", meta.text)}
+                  strokeWidth={2}
+                />
+                <p className="text-[22px] font-black leading-none text-foreground">
+                  {n}
+                </p>
+                <p
+                  className={cn(
+                    "text-[9px] font-bold tracking-wider uppercase",
+                    meta.text,
+                  )}
+                >
+                  {meta.label}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Tips */}
+        <div
+          className="rounded-2xl bg-card px-4 py-4"
+          style={{
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
+            <p className="text-xs font-semibold text-foreground">
+              Para el día de la votación
+            </p>
+          </div>
+          <div className="space-y-2">
+            {[
+              "Solo aspa (✗) o cruz (+) en el logo o foto del candidato.",
+              "Los trazos deben cruzarse dentro del recuadro.",
+              "Un solo partido por columna — marcar dos vicia el voto.",
+              "Recuadros preferenciales: escribe el número, nunca una aspa.",
+              "Cada columna es independiente — un nulo no afecta a las demás.",
+            ].map((t, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0 mt-1.5" />
+                <p className="text-xs text-muted-foreground leading-snug">
+                  {t}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Restart */}
-      <button
-        onClick={onRestart}
-        className="w-full h-11 rounded-xl text-white text-sm font-semibold
-          flex items-center justify-center gap-2 shadow-sm
-          active:scale-[0.98] transition-all duration-150"
-        style={{ backgroundColor: "var(--brand)" }}
-      >
-        <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
-        Volver a simular
-      </button>
+      {/* ── Sticky restart button ── */}
+      <div className="flex-shrink-0 pt-3">
+        <button
+          onClick={onRestart}
+          className="w-full h-11 rounded-xl text-white text-sm font-semibold
+            flex items-center justify-center gap-2 shadow-sm
+            active:scale-[0.98] transition-all duration-150"
+          style={{ backgroundColor: "var(--brand)" }}
+        >
+          <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
+          Volver a simular
+        </button>
+      </div>
     </div>
   );
 }
@@ -795,6 +826,14 @@ export default function SimuladorView() {
     setPhase("voting");
   }, []);
 
+  // Resets everything and goes back to intro
+  const handleHome = useCallback(() => {
+    setPhase("intro");
+    setColIndex(0);
+    setAllStrokes({});
+    setAllAnalyses({});
+  }, []);
+
   const handleRestart = useCallback(() => {
     setPhase("intro");
     setColIndex(0);
@@ -817,6 +856,7 @@ export default function SimuladorView() {
       onUpdate={handleUpdate}
       onNext={handleNext}
       onBack={handleBack}
+      onHome={handleHome}
     />
   );
 }

@@ -4,9 +4,9 @@ import SimuladorView from "./_components/simulador-view";
 export default function SimuladorPage() {
   return (
     <ContentPlatformLayout fullHeight>
-      <div className="h-full overflow-y-auto flex justify-center px-4 pt-4 pb-2">
+      <div className="h-full overflow-y-auto flex justify-center px-4 pt-4">
         <div className="w-full max-w-[440px] flex flex-col min-h-0">
-          <div className="min-h-full flex flex-col py-2">
+          <div className="min-h-full flex flex-col">
             <SimuladorView />
           </div>
         </div>

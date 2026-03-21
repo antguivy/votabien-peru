@@ -37,14 +37,52 @@ function coverage(pts: Point[], box: BoxBounds): number {
   return pts.filter((p) => isInBox(p, box)).length / pts.length;
 }
 
-function primarilyIn(pts: Point[], box: BoxBounds): boolean {
-  return coverage(pts, box) >= 0.5;
-}
-
 function nonTrivial(pts: Point[]): boolean {
   if (pts.length < 4) return false;
   const b = bbox(pts);
   return b.spanX > 4 || b.spanY > 4;
+}
+
+// ─── Overflow tolerance ───────────────────────────────────────────────────────
+//
+// ONPE allows the voter's mark to slightly exceed the box edges (natural
+// hand-drawing variance). However, a stroke that massively overflows the box
+// (e.g. a sweeping X drawn across the whole ballot) should be caught.
+//
+// Rule: each side of the stroke's bounding box may extend at most
+// MAX_OVERFLOW_FRACTION × (box dimension) beyond the box edge.
+// At 0.40 that's ±40% of the box width/height — generous for natural marks
+// but strict enough to catch exaggerated strokes like those in screenshots.
+//
+const MAX_OVERFLOW_FRACTION = 0.4;
+
+/**
+ * Returns true if the stroke's spatial bounding box stays within the allowed
+ * overflow margin around `box`. False means the stroke is excessively large.
+ */
+function strokeFitsInBox(stroke: Point[], box: BoxBounds): boolean {
+  const b = bbox(stroke);
+  const overLeft = Math.max(0, box.x - b.minX);
+  const overRight = Math.max(0, b.maxX - (box.x + box.w));
+  const overTop = Math.max(0, box.y - b.minY);
+  const overBottom = Math.max(0, b.maxY - (box.y + box.h));
+
+  return (
+    overLeft <= box.w * MAX_OVERFLOW_FRACTION &&
+    overRight <= box.w * MAX_OVERFLOW_FRACTION &&
+    overTop <= box.h * MAX_OVERFLOW_FRACTION &&
+    overBottom <= box.h * MAX_OVERFLOW_FRACTION
+  );
+}
+
+/**
+ * A stroke "primarily belongs" to a box when:
+ *   1. ≥50% of its points fall inside the box, AND
+ *   2. Its bounding box doesn't excessively overflow the box edges.
+ * Condition 2 catches huge sweeping strokes that happen to cross a box.
+ */
+function primarilyIn(pts: Point[], box: BoxBounds): boolean {
+  return coverage(pts, box) >= 0.5 && strokeFitsInBox(pts, box);
 }
 
 // ─── Vector angle helpers ─────────────────────────────────────────────────────
@@ -95,39 +133,6 @@ function countReversals(pts: Point[]): number {
 }
 
 // ─── Crossing-fraction midpoint check ────────────────────────────────────────
-//
-//  THE key discriminator between a deliberate ✗/+ and any written number.
-//
-//  Core property that is universally true:
-//
-//    ✗ or +  → each stroke PASSES THROUGH the other. The crossing point falls
-//               near the MIDDLE of both strokes (fraction ≈ 0.5 for each).
-//
-//    Any number with 2 strokes (4, 7, t, stylized 1, etc.) → at least one stroke
-//               TERMINATES at or near the crossing. Its crossing fraction is
-//               close to 0.0 or 1.0 — NOT in the middle.
-//
-//  Why this works where bbox-overlap approaches fail:
-//    A symmetric ✗ has bboxes that overlap completely → can't use overlap region.
-//    But the crossing-fraction approach uses index position on each stroke,
-//    which is independent of bbox geometry.
-//
-//  Algorithm:
-//    1. Compute the true centroid (average of all points) of each stroke.
-//    2. For stroke A: find which point in A is closest to B's centroid.
-//       Express that index as a fraction of A's total length → fraction_A.
-//    3. Repeat for stroke B → fraction_B.
-//    4. Require both fractions to be in [LO, HI] (middle zone of the stroke).
-//
-//  Why centroid of OTHER stroke instead of actual intersection point?
-//    The centroid of a stroke is near its geometric center. For a real X,
-//    stroke A's closest point to B's center will be near A's own center.
-//    For a "4" crossbar: the crossbar's closest point to the vertical's center
-//    (which is in the middle of the vertical) is the crossbar's ENDPOINT
-//    (because the crossbar ends at the vertical) → fraction ≈ 1.0 → FAILS.
-//
-//  Tolerance: [0.18, 0.82] — fairly generous to handle fast/sloppy drawing.
-//
 
 function strokeCentroid(pts: Point[]): Point {
   let sx = 0,
@@ -159,24 +164,14 @@ const CROSSING_HI = 0.82;
 function crossingAtMidpointOfBoth(s1: Point[], s2: Point[]): boolean {
   const c1 = strokeCentroid(s1);
   const c2 = strokeCentroid(s2);
-
-  // Where along s1 does s1 come closest to s2's center?
   const t1 = closestIndexFraction(s1, c2);
-  // Where along s2 does s2 come closest to s1's center?
   const t2 = closestIndexFraction(s2, c1);
-
   return (
     t1 > CROSSING_LO && t1 < CROSSING_HI && t2 > CROSSING_LO && t2 < CROSSING_HI
   );
 }
 
 // ─── LOGO/PHOTO cross-mark detection ─────────────────────────────────────────
-//
-//  No numbers inside logo/photo boxes → generous detection.
-//  Accepts any two strokes crossing at > 25° with bbox overlap.
-//  Single-stroke X: must span both axes with ≥1 direction reversal.
-//  3+ strokes: any valid pair (handles accidental pen lifts).
-//
 
 function isMarkCross(strokes: Point[][]): boolean {
   const s = strokes.filter(nonTrivial);
@@ -201,7 +196,6 @@ function isMarkCross(strokes: Point[][]): boolean {
     return true;
   }
 
-  // 3+ strokes: check all pairs (handles accidental pen lifts mid-stroke)
   for (let i = 0; i < s.length - 1; i++) {
     for (let j = i + 1; j < s.length; j++) {
       const bi = bbox(s[i]),
@@ -218,46 +212,17 @@ function isMarkCross(strokes: Point[][]): boolean {
 }
 
 // ─── PREF BOX cross-mark detection ───────────────────────────────────────────
-//
-//  Detects a deliberate ✗ or + drawn in a pref box (which nulls the vote).
-//  Must NOT fire for any written number, regardless of handwriting style.
-//
-//  Requirements (all must pass):
-//    1. Exactly 2 strokes — single strokes and 3+ are always writing.
-//    2. Both strokes must be substantial (≥ 8px on at least one axis).
-//    3. Crossing angle must be > 25° (rejects two nearly-parallel strokes).
-//    4. Bboxes must overlap — strokes physically cross.
-//    5. ── CORE RULE ── The crossing must fall near the middle of BOTH strokes.
-//       Uses crossing-fraction midpoint check (see above).
-//
-//  What each rule eliminates:
-//    Rule 1 → "3", "2", "6", "9", "0", "8" (1 or 3+ strokes)
-//    Rule 2 → tiny accidental marks
-//    Rule 3 → two parallel lines (e.g. "=" or "11")
-//    Rule 4 → strokes that don't actually cross (e.g. "L")
-//    Rule 5 → "4" any style, "7", "t", "f", any number with crossbar at endpoint
-//
 
 function isPrefCross(strokes: Point[][]): boolean {
   const s = strokes.filter(nonTrivial);
-
-  // Only 2-stroke detection
   if (s.length !== 2) return false;
 
   const b0 = bbox(s[0]),
     b1 = bbox(s[1]);
-
-  // Both strokes must be substantial
   if ((b0.spanX < 8 && b0.spanY < 8) || (b1.spanX < 8 && b1.spanY < 8))
     return false;
-
-  // Must have a crossing angle > 25°
   if (!strokeAnglesCross(s[0], s[1])) return false;
-
-  // Bboxes must overlap — strokes are in the same region
   if (boxOverlap(b0, b1) < 0.05) return false;
-
-  // ── Core rule: crossing must fall near the middle of BOTH strokes ──
   if (!crossingAtMidpointOfBoth(s[0], s[1])) return false;
 
   return true;
@@ -300,7 +265,7 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
     const b = bbox(s[0]);
     return b.spanX < 5 && b.spanY < 5 ? "dot" : "line";
   }
-  return "number_stroke"; // multi-stroke non-cross = written number/text
+  return "number_stroke";
 }
 
 // ─── Box-level analysis ───────────────────────────────────────────────────────
@@ -346,11 +311,21 @@ function analyzeBox(strokes: Point[][], box: BoxBounds): BoxAnalysis {
 }
 
 // ─── Out-of-box detection ─────────────────────────────────────────────────────
-
+//
+// A stroke is "out of box" if either:
+//   (a) Less than 30% of its points fall inside ANY box — classic wandering stroke.
+//   (b) Its bounding box excessively overflows ALL boxes — huge sweeping stroke
+//       that happens to cross boxes but isn't reasonably contained in any of them.
+//
 function outOfBoxStrokes(strokes: Point[][], boxes: BoxBounds[]): boolean {
   return strokes.filter(nonTrivial).some((stroke) => {
+    // (a) Point-coverage check — mostly outside every box
     const maxCov = Math.max(...boxes.map((b) => coverage(stroke, b)));
-    return maxCov < 0.3;
+    if (maxCov < 0.3) return true;
+
+    // (b) Spatial-overflow check — doesn't spatially fit in ANY box
+    const fitsAny = boxes.some((b) => strokeFitsInBox(stroke, b));
+    return !fitsAny;
   });
 }
 
@@ -375,6 +350,7 @@ function applyRules(
   boxAnalyses: BoxAnalysis[],
   hasOutOfBox: boolean,
 ): ColumnAnalysis {
+  // ── Out-of-box strokes → null ─────────────────────────────────────────────
   if (hasOutOfBox) {
     return {
       result: "null",
@@ -383,10 +359,11 @@ function applyRules(
       hasOutOfBoxStrokes: true,
       message: "Voto NULO",
       submessage: "Hiciste marcas fuera de los recuadros.",
-      hint: "Escribir fuera de los recuadros anula el voto. Usa Borrar e inténtalo de nuevo.",
+      hint: "La marca debe estar contenida dentro del recuadro del partido. Trazos que excedan demasiado el borde anulan el voto.",
     };
   }
 
+  // ── Invalid mark in pref box → null ──────────────────────────────────────
   const badPref = boxAnalyses.find(
     (b) => PREF_ROLES.has(b.role) && b.isInvalidMark,
   );
@@ -404,6 +381,7 @@ function applyRules(
     };
   }
 
+  // ── Invalid mark (line/scribble) in logo/photo, no valid mark anywhere → null
   const badMark = boxAnalyses.find(
     (b) => MARK_ROLES.has(b.role) && b.isInvalidMark,
   );
@@ -423,6 +401,7 @@ function applyRules(
     };
   }
 
+  // ── Gather marked parties ─────────────────────────────────────────────────
   const logos = boxAnalyses.filter((b) => b.role === "logo");
   const photos = boxAnalyses.filter((b) => b.role === "photo");
 
@@ -433,13 +412,17 @@ function applyRules(
     photos.filter((b) => b.isValidMark).map((b) => b.partyIdx),
   );
 
+  // For presidente: a party counts as marked if its logo OR photo is marked.
+  // For all others: only the logo matters.
   const allMarked =
     col.type === "presidente"
       ? new Set([...markedByLogo, ...markedByPhoto])
       : markedByLogo;
 
+  // ── Nothing meaningful drawn ──────────────────────────────────────────────
   if (!boxAnalyses.some((b) => b.hasStroke)) return blankAnalysis(boxAnalyses);
 
+  // ── Viciado: more than one party marked ──────────────────────────────────
   if (allMarked.size > 1) {
     return {
       result: "viciado",
@@ -452,6 +435,33 @@ function applyRules(
     };
   }
 
+  // ── Viciado (presidente only): logo and photo belong to different parties ─
+  //
+  // Example: logo of party A marked + photo of party B marked.
+  // Even if allMarked ends up with 2 entries (caught above), this gives a
+  // clearer message for the specific logo≠photo conflict.
+  if (
+    col.type === "presidente" &&
+    markedByLogo.size > 0 &&
+    markedByPhoto.size > 0
+  ) {
+    const logoPty = [...markedByLogo][0];
+    const photoPty = [...markedByPhoto][0];
+    if (logoPty !== photoPty) {
+      return {
+        result: "viciado",
+        feedbackType: "error",
+        boxAnalyses,
+        hasOutOfBoxStrokes: false,
+        message: "Voto VICIADO",
+        submessage:
+          "Marcaste el logo de un partido y la foto de otro partido diferente.",
+        hint: "El logo y la foto deben pertenecer al mismo partido. Borra e intenta de nuevo.",
+      };
+    }
+  }
+
+  // ── No valid mark found ───────────────────────────────────────────────────
   if (allMarked.size === 0) {
     const onlyPref =
       !boxAnalyses.some((b) => MARK_ROLES.has(b.role) && b.hasStroke) &&
@@ -471,6 +481,7 @@ function applyRules(
     };
   }
 
+  // ── Valid ─────────────────────────────────────────────────────────────────
   const markedPartyIdx = [...allMarked][0];
   const prefBoxes = boxAnalyses.filter(
     (b) => PREF_ROLES.has(b.role) && b.partyIdx === markedPartyIdx,
