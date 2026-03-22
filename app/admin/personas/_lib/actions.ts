@@ -282,7 +282,6 @@ const cleanForDb = (val: string | null | undefined) => {
   if (!val || val.trim() === "") return null;
   return val.trim();
 };
-
 export async function updatePersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
@@ -290,55 +289,43 @@ export async function updatePersonBackgrounds(
   const supabase = await createClient();
 
   try {
-    const upsertData = backgrounds.map((item) => {
-      return {
-        id: createId(),
-        person_id: personId,
-        type: item.type,
-        status: item.status as BackgroundStatus,
-        title: item.title,
-        summary: item.summary,
-        sanction: cleanForDb(item.sanction),
-        source: item.source,
-        source_url: cleanForDb(item.source_url),
-        publication_date: cleanForDb(item.publication_date),
-      };
-    });
-    const { error: upsertError } = await supabase
+    // 1. Verificar cuántos ya existen
+    const { count: existingCount, error: countError } = await supabase
       .from("background")
-      .upsert(upsertData, { onConflict: "id" });
-
-    if (upsertError) {
-      console.error("❌ Error en UPSERT:", upsertError);
-      throw new Error(`Error al guardar: ${upsertError.message}`);
-    }
-
-    const currentIds = upsertData.map((d) => d.id);
-
-    let deleteQuery = supabase
-      .from("background")
-      .delete()
+      .select("id", { count: "exact", head: true })
       .eq("person_id", personId);
 
-    if (currentIds.length > 0) {
-      const formattedIds = `(${currentIds.map((id) => `"${id}"`).join(",")})`;
-      deleteQuery = deleteQuery.filter("id", "not.in", formattedIds);
-    }
+    if (countError) throw countError;
 
-    const { error: deleteError } = await deleteQuery;
+    // 2. Solo insertar los nuevos (sin tocar los existentes)
+    const insertData = backgrounds.map((item) => ({
+      id: createId(),
+      person_id: personId,
+      type: item.type,
+      status: item.status as BackgroundStatus,
+      title: item.title,
+      summary: item.summary,
+      sanction: cleanForDb(item.sanction),
+      source: item.source,
+      source_url: cleanForDb(item.source_url),
+      publication_date: cleanForDb(item.publication_date),
+    }));
 
-    if (deleteError) {
-      console.error("❌ Error en DELETE:", deleteError);
-      throw new Error(`Error al limpiar antiguos: ${deleteError.message}`);
-    }
+    const { error: insertError } = await supabase
+      .from("background")
+      .insert(insertData);
+
+    if (insertError)
+      throw new Error(`Error al guardar: ${insertError.message}`);
 
     revalidatePath("/admin/personas");
-    return { success: true };
-  } catch (error) {
     return {
-      success: false,
-      error: extractErrorMessage(error),
+      success: true,
+      inserted: insertData.length,
+      previouslyExisted: existingCount ?? 0,
     };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
   }
 }
 

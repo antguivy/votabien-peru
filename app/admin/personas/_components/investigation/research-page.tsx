@@ -96,7 +96,11 @@ export default function ResearchPageDialog({
       const [bgResult, bioResult] = await Promise.all([
         backgrounds.length > 0
           ? updatePersonBackgrounds(personId, backgrounds)
-          : Promise.resolve({ success: true }),
+          : Promise.resolve({
+              success: true,
+              inserted: 0,
+              previouslyExisted: 0,
+            }),
         biography.length > 0
           ? updatePersonBiography(personId, biography)
           : Promise.resolve({ success: true }),
@@ -105,7 +109,16 @@ export default function ResearchPageDialog({
       toast.success("Datos guardados correctamente", {
         description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
       });
-
+      if (bgResult.success && (bgResult.previouslyExisted ?? 0) > 0) {
+        toast.warning("Ya existían antecedentes previos", {
+          description: `Se encontraron ${bgResult.previouslyExisted} antecedentes existentes. 
+                  Se agregaron ${bgResult.inserted} nuevos sin eliminar los anteriores.`,
+        });
+      } else {
+        toast.success("Datos guardados correctamente", {
+          description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
+        });
+      }
       resetEstado();
       onOpenChange(false);
     } catch (err) {
