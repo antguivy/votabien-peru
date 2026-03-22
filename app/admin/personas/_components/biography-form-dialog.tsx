@@ -45,6 +45,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { updatePersonBiography } from "../_lib/actions";
 import { BiographyDetail } from "@/interfaces/person";
+import { getPersonBiography } from "../_lib/data";
 
 // --- Tipos y Constantes ---
 
@@ -153,7 +154,6 @@ interface BiographyFormDialogProps {
   onOpenChange: (open: boolean) => void;
   personId: string;
   personName: string;
-  initialBiography: BiographyDetail[];
 }
 
 export function BiographyFormDialog({
@@ -161,10 +161,11 @@ export function BiographyFormDialog({
   onOpenChange,
   personId,
   personName,
-  initialBiography,
 }: BiographyFormDialogProps) {
   const router = useRouter();
-  const [items, setItems] = useState<BiographyDetail[]>(initialBiography || []);
+  const [items, setItems] = useState<BiographyDetail[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "import">("list");
   const [listDisplayMode, setListDisplayMode] = useState<"visual" | "json">(
@@ -173,13 +174,12 @@ export function BiographyFormDialog({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setItems(initialBiography || []);
-      setViewMode("list");
-      setListDisplayMode("visual");
-      setActiveIndex(null);
-    }
-  }, [open, initialBiography]);
+    if (!open) return;
+    setIsLoading(true);
+    getPersonBiography(personId)
+      .then((data) => setItems(data?.detailed_biography ?? []))
+      .finally(() => setIsLoading(false));
+  }, [open, personId]);
 
   const handleSave = async () => {
     setIsSubmitting(true);

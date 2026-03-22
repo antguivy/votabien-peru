@@ -4,7 +4,7 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { type Tables } from "@/interfaces/supabase";
-import { GetCandidateSchema } from "./validation";
+import { CandidateFormValues, GetCandidateSchema } from "./validation";
 import {
   PaginatedCandidatesResponse,
   PartyCounts,
@@ -16,6 +16,7 @@ import {
   CandidacyStatus,
   CandidacyType,
 } from "@/interfaces/candidate";
+import { PersonBasicInfo } from "@/interfaces/person";
 
 type PersonRow = Tables<"person">;
 type PartyRow = Tables<"politicalparty">;
@@ -62,26 +63,30 @@ export async function getCandidates(
   try {
     let query = supabase.from("candidate").select(
       `
-        *,
+        id,
+        person_id,
+        political_party_id,
+        electoral_district_id,
+        electoral_process_id,
+        type,
+        list_number,
+        status,
+        active,
+        created_at,
         person:person_id!inner(
-          fullname,
-          image_url,
-          image_candidate_url,
-          profession,
-          dni
-        ), 
-        political_party:political_party_id!inner(
           id,
-          name,
-          logo_url,
-          color_hex
+          fullname
         ),
-        electoral_district:electoral_district_id!inner(*),
+        political_party:political_party_id!inner(
+          id, name, color_hex
+        ),
+        electoral_district:electoral_district_id!inner(
+          id, name
+        ),
         electoral_process:electoral_process_id!inner(*)
       `,
       { count: "exact" },
     );
-
     if (input.fullname) {
       query = query.ilike("person.fullname", `%${input.fullname}%`);
     }
@@ -247,4 +252,47 @@ export async function getPartiesCounts(): Promise<PartyCounts> {
     console.error("Error parties counts:", error);
     return {};
   }
+}
+
+type CandidateForEdit = CandidateFormValues & {
+  person: PersonBasicInfo | null;
+};
+
+export async function getCandidateForEdit(
+  id: string,
+): Promise<CandidateForEdit | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("candidate")
+    .select(
+      `
+      id,
+      person_id,
+      political_party_id,
+      electoral_district_id,
+      electoral_process_id,
+      type,
+      list_number,
+      status,
+      active,
+      person:person_id(id, fullname, image_candidate_url, profession)
+    `,
+    )
+    .eq("id", id)
+    .single();
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    person_id: data.person_id ?? "",
+    type: data.type as CandidacyType,
+    status: data.status as CandidacyStatus,
+    political_party_id: data.political_party_id ?? "",
+    electoral_district_id: data.electoral_district_id ?? "",
+    electoral_process_id: data.electoral_process_id ?? "",
+    list_number: data.list_number ?? 0,
+    active: data.active ?? true,
+    person: data.person as PersonBasicInfo | null,
+  };
 }

@@ -54,6 +54,7 @@ import {
   BackgroundType,
   BackgroundStatus,
 } from "@/interfaces/background";
+import { getPersonBackgrounds } from "../_lib/data";
 
 // --- Tipos y Constantes ---
 
@@ -211,9 +212,6 @@ interface BackgroundsFormDialogProps {
   onOpenChange: (open: boolean) => void;
   personId: string;
   personName: string;
-  initialData: BackgroundBase[];
-  partyNumberRop?: string;
-  dni?: string;
 }
 
 export function BackgroundsFormDialog({
@@ -221,12 +219,13 @@ export function BackgroundsFormDialog({
   onOpenChange,
   personId,
   personName,
-  initialData,
-  partyNumberRop,
-  dni,
 }: BackgroundsFormDialogProps) {
   const router = useRouter();
-  const [items, setItems] = useState<BackgroundBase[]>(initialData || []);
+  const [items, setItems] = useState<BackgroundBase[]>([]);
+  const [partyNumberRop, setPartyNumberRop] = useState<string | undefined>();
+  const [dni, setDni] = useState<string | undefined>();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [viewMode, setViewMode] = useState<"list" | "import">("list");
@@ -239,13 +238,17 @@ export function BackgroundsFormDialog({
   const [jneMode, setJneMode] = useState<"classic" | "consolidated">("classic");
 
   useEffect(() => {
-    if (open) {
-      setItems(initialData || []);
-      setViewMode("list");
-      setListDisplayMode("visual");
-      setActiveIndex(null);
-    }
-  }, [open, initialData]);
+    if (!open) return;
+    setIsLoading(true);
+    getPersonBackgrounds(personId)
+      .then((data) => {
+        if (!data) return;
+        setItems((data.backgrounds as BackgroundBase[]) ?? []);
+        setPartyNumberRop(data.party_number_rop ?? undefined);
+        setDni(data.dni ?? undefined);
+      })
+      .finally(() => setIsLoading(false));
+  }, [open, personId]);
 
   const handleFetchFromJNE = async () => {
     if (!partyNumberRop || !dni) {

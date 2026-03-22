@@ -77,10 +77,27 @@ export async function getLegislators(
   try {
     let query = supabase.from("legislator").select(
       `
-        *,
-        person:person_id!inner(*), 
-        political_party:elected_by_party_id(*),
-        electoral_district:electoral_district_id!inner(*),
+        id,
+        person_id,
+        elected_by_party_id,
+        electoral_district_id,
+        chamber,
+        condition,
+        start_date,
+        end_date,
+        active,
+        institutional_email,
+        created_at,
+        person:person_id!inner(
+          id,
+          fullname
+        ),
+        political_party:elected_by_party_id(
+          id, name, acronym, color_hex
+        ),
+        electoral_district:electoral_district_id!inner(
+          id, name, code
+        ),
         current_parliamentary_group,
         parliamentarymembership(
           *,

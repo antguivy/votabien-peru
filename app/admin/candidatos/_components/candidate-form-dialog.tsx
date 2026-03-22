@@ -3,7 +3,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,11 +34,7 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from "@/components/ui/credenza";
-import {
-  AdminCandidate,
-  CandidacyStatus,
-  CandidacyType,
-} from "@/interfaces/candidate";
+import { CandidacyStatus, CandidacyType } from "@/interfaces/candidate";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { AdminCandidateContext } from "@/components/context/admin-candidate";
 import { Badge } from "@/components/ui/badge";
@@ -47,78 +42,48 @@ import { PersonSelector } from "@/components/person-selector";
 import { Card } from "@/components/ui/card";
 import { AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Avatar } from "@radix-ui/react-avatar";
-
-const candidateSchema = z.object({
-  id: z.string().optional(),
-  person_id: z.string().min(1, "Debe seleccionar una persona"),
-  type: z.enum(CandidacyType),
-  status: z.enum(CandidacyStatus),
-  political_party_id: z.string().min(1, "Seleccione un partido"),
-  electoral_district_id: z.string(),
-  electoral_process_id: z.string().min(1, "Seleccione proceso electoral"),
-  list_number: z.number().min(1, "El número de lista es obligatorio"),
-  active: z.boolean().optional(),
-});
-
-type CandidateFormValues = z.infer<typeof candidateSchema>;
+import { CandidateFormValues, candidateSchema } from "../_lib/validation";
+import { getCandidateForEdit } from "../_lib/data";
 
 interface CandidateFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: "create" | "edit";
-  initialData?: Partial<AdminCandidate>;
+  candidateId?: string;
 }
-
 export function CandidateFormDialog({
   open,
   onOpenChange,
   mode = "create",
-  initialData,
+  candidateId,
 }: CandidateFormDialogProps) {
   const { districts, parties, active_process } = useContext(
     AdminCandidateContext,
   );
-
   const [selectedPerson, setSelectedPerson] = useState<PersonBasicInfo | null>(
     null,
   );
-
   const [senatorDistricType, setSenatorDistricType] = useState<
     "UNICO" | "MULTIPLE" | null
   >(null);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
-  const defaultValues = useMemo<CandidateFormValues>(() => {
-    if (mode === "edit" && initialData) {
-      return {
-        ...initialData,
-        id: initialData.id,
-        person_id: initialData.person_id ?? "",
-        type: initialData.type ?? CandidacyType.DIPUTADO,
-        status: initialData.status ?? CandidacyStatus.INSCRITO,
-        political_party_id: initialData.political_party_id ?? "",
-        electoral_district_id: initialData.electoral_district_id ?? "",
-        electoral_process_id: initialData.electoral_process_id ?? "",
-        list_number: initialData?.list_number ?? 0,
-        active: initialData.active ?? true,
-      };
-    }
-    return {
-      id: "",
-      person_id: "",
-      type: CandidacyType.DIPUTADO,
-      status: CandidacyStatus.INSCRITO,
-      political_party_id: "",
-      electoral_district_id: "",
-      electoral_process_id: active_process[0].id,
-      list_number: undefined as unknown as number,
-      active: true,
-    };
-  }, [mode, initialData]);
+  const emptyValues: CandidateFormValues = {
+    id: "",
+    person_id: "",
+    type: CandidacyType.DIPUTADO,
+    status: CandidacyStatus.INSCRITO,
+    political_party_id: "",
+    electoral_district_id: "",
+    electoral_process_id: active_process[0]?.id || "",
+    list_number: undefined as unknown as number,
+    active: true,
+  };
 
   const form = useForm<CandidateFormValues>({
     resolver: zodResolver(candidateSchema),
-    defaultValues,
+    defaultValues: emptyValues,
   });
 
   const watchedType = form.watch("type");
@@ -130,67 +95,47 @@ export function CandidateFormDialog({
     );
   }, [districts]);
 
-  // --- LÓGICA DE NEGOCIO ---
   useEffect(() => {
-    if (open) {
-      if (mode === "edit" && initialData) {
-        form.reset({
-          id: initialData.id,
-          person_id: initialData.person_id ?? "",
-          type: initialData.type ?? CandidacyType.DIPUTADO,
-          status: initialData.status ?? CandidacyStatus.INSCRITO,
-          political_party_id: initialData.political_party_id ?? "",
-          electoral_district_id: initialData.electoral_district_id ?? "",
-          electoral_process_id: initialData.electoral_process_id ?? "",
-          list_number: initialData.list_number ?? 0,
-          active: initialData.active ?? true,
-        });
+    if (!open) {
+      form.reset(emptyValues);
+      setSelectedPerson(null);
+      setSenatorDistricType(null);
+      setGlobalSearch("");
+      return;
+    }
 
-        setSelectedPerson(initialData.person as PersonBasicInfo);
+    if (mode === "create" || !candidateId) {
+      form.reset({
+        ...emptyValues,
+        electoral_process_id: active_process[0]?.id || "",
+      });
+      setSelectedPerson(null);
+      setSenatorDistricType(null);
+      return;
+    }
+
+    // modo edit — carga lazy
+    setIsLoadingData(true);
+    getCandidateForEdit(candidateId)
+      .then((data) => {
+        if (!data) return;
+        const { person, ...formValues } = data;
+        form.reset(formValues);
+        setSelectedPerson(person as PersonBasicInfo);
         setGlobalSearch("");
 
-        // ✅ Determinar el tipo de distrito de senador en modo edit
-        if (
-          initialData.type === "SENADOR" &&
-          initialData.electoral_district_id
-        ) {
-          if (initialData.electoral_district_id === nationalDistrictId) {
-            setSenatorDistricType("UNICO");
-          } else {
-            setSenatorDistricType("MULTIPLE");
-          }
+        if (data.type === "SENADOR" && data.electoral_district_id) {
+          setSenatorDistricType(
+            data.electoral_district_id === nationalDistrictId
+              ? "UNICO"
+              : "MULTIPLE",
+          );
         } else {
           setSenatorDistricType(null);
         }
-      } else {
-        // Modo create
-        form.setValue("person_id", "");
-        form.setValue("list_number", "" as unknown as number);
-        form.setValue("id", "");
-
-        setSelectedPerson(null);
-        setGlobalSearch("");
-        setSenatorDistricType(null); // ✅ Reset
-      }
-    } else {
-      // Al cerrar el modal
-      if (mode === "edit") {
-        form.reset({
-          id: "",
-          person_id: "",
-          type: CandidacyType.DIPUTADO,
-          status: CandidacyStatus.INSCRITO,
-          political_party_id: "",
-          electoral_district_id: "",
-          electoral_process_id: active_process[0]?.id || "",
-          list_number: undefined as unknown as number,
-          active: true,
-        });
-        setSelectedPerson(null);
-        setSenatorDistricType(null); // ✅ Reset
-      }
-    }
-  }, [open, mode, initialData, form, active_process, nationalDistrictId]);
+      })
+      .finally(() => setIsLoadingData(false));
+  }, [open, mode, candidateId]);
 
   const filteredDistricts = useMemo(() => {
     if (!districts) return [];
@@ -233,12 +178,6 @@ export function CandidateFormDialog({
     setSelectedPerson(person);
     form.setValue("person_id", person?.id ?? "");
   };
-
-  useEffect(() => {
-    if (mode === "edit" && initialData?.person) {
-      setSelectedPerson(initialData.person);
-    }
-  }, [initialData]);
 
   const handleRemovePerson = () => {
     setSelectedPerson(null);

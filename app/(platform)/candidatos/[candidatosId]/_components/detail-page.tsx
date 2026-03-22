@@ -28,6 +28,9 @@ import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
 import { CandidateDetail } from "@/interfaces/candidate";
 import { RegistrosOficiales } from "./oficial-register";
+import { getLastUpdated } from "@/lib/utils/date";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 const formatCurrency = (amount: string | number) => {
   if (!amount) return "S/ 0.00";
@@ -50,6 +53,11 @@ export default function DetailCandidato({
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
   const persona = candidate.person;
+
+  const lastUpdated = getLastUpdated(
+    persona.updated_at,
+    persona.backgrounds ?? [],
+  );
 
   useEffect(() => {
     const onScroll = () => setShowStickyNav(window.scrollY > 300);
@@ -103,9 +111,9 @@ export default function DetailCandidato({
       </div>
 
       {/* ── HERO ── */}
-      <div className="relative pb-8 md:pb-12 pt-6">
+      <div className="relative pb-4 md:pb-8">
         <div className="container max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+          <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
             {/* Foto */}
             <div className="relative shrink-0">
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-foreground/5 shadow-xl overflow-hidden relative z-10">
@@ -190,14 +198,26 @@ export default function DetailCandidato({
                 )}
               </div>
             </div>
+            <div className="text-center">
+              {lastUpdated && (
+                <p className="text-[11px] text-success flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Información actualizada{" "}
+                  {formatDistanceToNow(lastUpdated, {
+                    addSuffix: true,
+                    locale: es,
+                  })}
+                </p>
+              )}
 
-            <ShareButton
-              title={`${persona.name} ${persona.lastname}`}
-              url={shareUrl}
-              text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
-              trackingId={candidate.id}
-              trackingType="candidato"
-            />
+              <ShareButton
+                title={`${persona.name} ${persona.lastname}`}
+                url={shareUrl}
+                text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
+                trackingId={candidate.id}
+                trackingType="candidato"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -206,7 +226,7 @@ export default function DetailCandidato({
       <div className="container max-w-5xl mx-auto">
         {/* Alerta antecedentes — minimalista */}
         {persona.backgrounds && persona.backgrounds.length > 0 && (
-          <div className="mb-6 flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
+          <div className="mb-4 flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
             <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-foreground/80">
               Se encontraron{" "}
@@ -232,7 +252,7 @@ export default function DetailCandidato({
         />
 
         {/* ── TABS ── */}
-        <Tabs defaultValue="hoja-vida" className="w-full space-y-8">
+        <Tabs defaultValue="hoja-vida" className="w-full">
           <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl">
             <TabsTrigger
               value="hoja-vida"
@@ -265,9 +285,9 @@ export default function DetailCandidato({
             value="hoja-vida"
             className="space-y-8 animate-in fade-in-50"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Columna izquierda */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Trayectoria política */}
                 <Card className="shadow-none border-border/60">
                   <CardHeader className="pb-3 border-b border-border/40">

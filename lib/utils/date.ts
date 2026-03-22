@@ -105,3 +105,17 @@ export function limaDateToUtc(dateString: string | null): string | null {
 
   return utcDate.toISOString();
 }
+
+// OBTENER EL ULTIMO UPDATE
+
+export function getLastUpdated(
+  personUpdatedAt: string | null,
+  backgrounds: { updated_at: string | null }[],
+): Date | null {
+  const dates = [personUpdatedAt, ...backgrounds.map((b) => b.updated_at)]
+    .filter(Boolean)
+    .map((d) => new Date(d!));
+
+  if (dates.length === 0) return null;
+  return new Date(Math.max(...dates.map((d) => d.getTime())));
+}

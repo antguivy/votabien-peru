@@ -1,10 +1,10 @@
 "use server";
 
 import { unstable_noStore as noStore } from "next/cache";
-import type { GetPersonSchema } from "./validation";
+import type { GetPersonSchema, PersonFormValues } from "./validation";
 import { createClient } from "@/lib/supabase/server";
 import { PaginatedPersonResponse, PersonResponse } from "./types";
-import { AdminPerson } from "@/interfaces/person";
+import { AdminPerson, BiographyDetail } from "@/interfaces/person";
 
 export async function getPersonList(
   input: GetPersonSchema,
@@ -15,9 +15,14 @@ export async function getPersonList(
   try {
     let query = supabase.from("person").select(
       `
-        *,
-        backgrounds: background(*)
-      `,
+    id,
+    fullname,
+    dni,
+    birth_date,
+    place_of_birth,
+    profession,
+    gender
+  `,
       { count: "exact" },
     );
 
@@ -63,28 +68,103 @@ export async function getPersonList(
   }
 }
 
-// async function fetchAllForCounting<K extends keyof Tables<"politicalparty">>(
-//   column: K,
-// ) {
-//   const supabase = await createClient();
-//   const { data } = await supabase.from("politicalparty").select(column);
-//   return (data || []) as unknown as Pick<Tables<"politicalparty">, K>[];
-// }
+export async function getPersonForEdit(
+  id: string,
+): Promise<PersonFormValues | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("person")
+    .select(
+      `
+      id, fullname, name, lastname, dni, gender, party_number_rop,
+      image_url, image_candidate_url, birth_date, place_of_birth, profession,
+      secondary_school, technical_education, no_university_education,
+      university_education, postgraduate_education, work_experience,
+      political_role, popular_election, incomes, assets,
+      facebook_url, twitter_url, instagram_url, tiktok_url
+    `,
+    )
+    .eq("id", id)
+    .single();
 
-// export async function getActivePartiesCounts(): Promise<ActivePartiesCounts> {
-//   try {
-//     const data = await fetchAllForCounting("active");
+  if (!data) return null;
 
-//     return data.reduce<ActivePartiesCounts>((acc, curr) => {
-//       const key = curr.active.toString();
-//       // Validamos que key no sea null (por si acaso)
-//       if (key) {
-//         acc[key] = (acc[key] || 0) + 1;
-//       }
-//       return acc;
-//     }, {});
-//   } catch (error) {
-//     console.error("Error chamber type counts:", error);
-//     return {};
-//   }
-// }
+  return {
+    id: data.id,
+    party_number_rop: data.party_number_rop ?? null,
+    dni: data.dni ?? "",
+    gender: data.gender ?? "",
+    name: data.name ?? "",
+    lastname: data.lastname ?? "",
+    fullname: data.fullname ?? "",
+    image_url: data.image_url ?? null,
+    image_candidate_url: data.image_candidate_url ?? "",
+    birth_date: data.birth_date ?? null,
+    place_of_birth: data.place_of_birth ?? null,
+    profession: data.profession ?? null,
+    secondary_school: data.secondary_school ?? false,
+    technical_education:
+      (data.technical_education as PersonFormValues["technical_education"]) ??
+      [],
+    no_university_education:
+      (data.no_university_education as PersonFormValues["no_university_education"]) ??
+      [],
+    university_education:
+      (data.university_education as PersonFormValues["university_education"]) ??
+      [],
+    postgraduate_education:
+      (data.postgraduate_education as PersonFormValues["postgraduate_education"]) ??
+      [],
+    work_experience:
+      (data.work_experience as PersonFormValues["work_experience"]) ?? [],
+    political_role:
+      (data.political_role as PersonFormValues["political_role"]) ?? [],
+    popular_election:
+      (data.popular_election as PersonFormValues["popular_election"]) ?? [],
+    incomes: (data.incomes as PersonFormValues["incomes"]) ?? [],
+    assets: (data.assets as PersonFormValues["assets"]) ?? [],
+    facebook_url: data.facebook_url ?? null,
+    twitter_url: data.twitter_url ?? null,
+    instagram_url: data.instagram_url ?? null,
+    tiktok_url: data.tiktok_url ?? null,
+  };
+}
+
+export async function getPersonBiography(id: string): Promise<{
+  id: string;
+  fullname: string;
+  detailed_biography: BiographyDetail[];
+} | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("person")
+    .select("id, fullname, detailed_biography")
+    .eq("id", id)
+    .single();
+
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    fullname: data.fullname,
+    detailed_biography:
+      (data.detailed_biography as unknown as BiographyDetail[]) ?? [],
+  };
+}
+
+export async function getPersonBackgrounds(id: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("person")
+    .select(
+      `
+      id, fullname, party_number_rop, dni,
+      backgrounds:background(*)
+    `,
+    )
+    .eq("id", id)
+    .single();
+
+  if (!data) return null;
+  return data;
+}

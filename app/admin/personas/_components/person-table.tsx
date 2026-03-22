@@ -76,7 +76,7 @@ export function PersonTable({ promises }: PersonTableProps) {
           open={true}
           onOpenChange={() => setRowAction(null)}
           mode="edit"
-          initialData={rowAction.row.original}
+          personId={rowAction.row.original.id}
         />
       )}
       {rowAction?.type === "update-biography" && (
@@ -85,7 +85,6 @@ export function PersonTable({ promises }: PersonTableProps) {
           onOpenChange={() => setRowAction(null)}
           personId={rowAction.row.original.id}
           personName={rowAction.row.original.fullname}
-          initialBiography={rowAction.row.original.detailed_biography ?? []}
         />
       )}
       {rowAction?.type === "update-background" && (
@@ -94,9 +93,6 @@ export function PersonTable({ promises }: PersonTableProps) {
           onOpenChange={() => setRowAction(null)}
           personId={rowAction.row.original.id}
           personName={rowAction.row.original.fullname}
-          initialData={rowAction.row.original.backgrounds ?? []}
-          partyNumberRop={rowAction.row.original.party_number_rop ?? ""}
-          dni={rowAction.row.original.dni ?? ""}
         />
       )}
 

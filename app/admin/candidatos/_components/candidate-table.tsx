@@ -103,7 +103,7 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
           open={true}
           onOpenChange={() => setRowAction(null)}
           mode="edit"
-          initialData={rowAction.row.original}
+          candidateId={rowAction.row.original.id}
         />
       )}
       {/* {rowAction?.type === "update-bancada" && (

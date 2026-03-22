@@ -138,7 +138,7 @@ export async function getPersonas({
 
   const { data, error } = await supabase
     .from("person")
-    .select("*")
+    .select("id, fullname, image_candidate_url, profession")
     .ilike("fullname", `%${searchTerm}%`)
     .order("fullname", { ascending: true })
     .range(skip, skip + limit - 1);
