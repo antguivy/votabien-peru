@@ -106,9 +106,6 @@ export default function ResearchPageDialog({
           : Promise.resolve({ success: true }),
       ]);
 
-      toast.success("Datos guardados correctamente", {
-        description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
-      });
       if (bgResult.success && (bgResult.previouslyExisted ?? 0) > 0) {
         toast.warning("Ya existían antecedentes previos", {
           description: `Se encontraron ${bgResult.previouslyExisted} antecedentes existentes. 
