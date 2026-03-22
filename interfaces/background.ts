@@ -24,5 +24,5 @@ export interface BackgroundBase {
   sanction: string | null;
   source: string;
   source_url: string | null;
-  updated_at: string;
+  updated_at?: string;
 }

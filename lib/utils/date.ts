@@ -109,8 +109,8 @@ export function limaDateToUtc(dateString: string | null): string | null {
 // OBTENER EL ULTIMO UPDATE
 
 export function getLastUpdated(
-  personUpdatedAt: string | null,
-  backgrounds: { updated_at: string | null }[],
+  personUpdatedAt: string | null | undefined,
+  backgrounds: { updated_at?: string | null }[],
 ): Date | null {
   const dates = [personUpdatedAt, ...backgrounds.map((b) => b.updated_at)]
     .filter(Boolean)
