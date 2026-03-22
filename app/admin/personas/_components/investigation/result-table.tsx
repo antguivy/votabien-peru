@@ -259,10 +259,15 @@ const SectionToolbar = <T,>({
 
 interface ResultadoTablasProps {
   resultado: ResultadoInvestigacion;
-  onReset: () => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
-export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
+export function ResultadoTablas({
+  resultado,
+  onSave,
+  isSaving,
+}: ResultadoTablasProps) {
   const [modeAntecedentes, setModeAntecedentes] = useState<"table" | "json">(
     "table",
   );
@@ -509,9 +514,21 @@ export function ResultadoTablas({ resultado, onReset }: ResultadoTablasProps) {
               </CredenzaBody>
             </CredenzaContent>
           </Credenza>
-          <Button onClick={onReset} variant="outline" size="lg">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Nueva búsqueda
-          </Button>
+          {onSave && (
+            <Button
+              onClick={onSave}
+              disabled={isSaving}
+              size="lg"
+              className="gap-2"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              {isSaving ? "Guardando..." : "Guardar en perfil"}
+            </Button>
+          )}
         </div>
       </div>
 

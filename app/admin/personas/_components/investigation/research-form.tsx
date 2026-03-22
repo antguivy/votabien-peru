@@ -36,24 +36,25 @@ interface InvestigacionFormProps {
     modelName: string,
   ) => void;
   disabled?: boolean;
+  defaultName?: string;
 }
 
 export function InvestigacionForm({
   onSubmit,
   disabled,
+  defaultName,
 }: InvestigacionFormProps) {
-  const [nombreInvestigado, setNombreInvestigado] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [modelName, setModelName] = useState("gemini-2.5-flash");
+  const [nombreInvestigado, setNombreInvestigado] = useState(defaultName ?? "");
+  const [modelName, setModelName] = useState("gemini-3-flash-preview");
   const [archivo, setArchivo] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MODEL_LIST = ["gemini-2.5-flash", "gemini-3-flash-preview"];
-  useEffect(() => {
-    const savedKey = localStorage.getItem("gemini_api_key_v1");
-    if (savedKey) setApiKey(savedKey);
-  }, []);
+  const [apiKey, setApiKey] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("gemini_api_key_v1") ?? "";
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +69,6 @@ export function InvestigacionForm({
       return;
     }
 
-    if (apiKey.trim()) localStorage.setItem("gemini_api_key_v1", apiKey.trim());
     onSubmit(archivo, nombreInvestigado, apiKey, modelName);
   };
 
@@ -122,7 +122,8 @@ export function InvestigacionForm({
                 <Input
                   value={nombreInvestigado}
                   onChange={(e) => setNombreInvestigado(e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !!defaultName} // 👈 bloqueado si viene del perfil
+                  readOnly={!!defaultName}
                   placeholder="Ej. Carmen Patricia Juarez Gallegos"
                   className="pl-9 h-12 text-lg"
                 />
@@ -214,6 +215,10 @@ export function InvestigacionForm({
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                onBlur={() => {
+                  if (apiKey.trim())
+                    localStorage.setItem("gemini_api_key_v1", apiKey.trim());
+                }}
                 placeholder="sk-..."
                 className="bg-background"
               />

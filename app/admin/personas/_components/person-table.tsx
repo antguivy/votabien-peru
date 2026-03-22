@@ -14,6 +14,7 @@ import { PersonTableToolbarActions } from "./person-table-toolbar-actions";
 import { AdminPerson } from "@/interfaces/person";
 import { BiographyFormDialog } from "./biography-form-dialog";
 import { BackgroundsFormDialog } from "./background-form-dialog";
+import ResearchPageDialog from "./investigation/research-page";
 
 interface PersonTableProps {
   promises: Promise<[PaginatedPersonResponse]>;
@@ -96,6 +97,15 @@ export function PersonTable({ promises }: PersonTableProps) {
           initialData={rowAction.row.original.backgrounds ?? []}
           partyNumberRop={rowAction.row.original.party_number_rop ?? ""}
           dni={rowAction.row.original.dni ?? ""}
+        />
+      )}
+
+      {rowAction?.type === "research" && (
+        <ResearchPageDialog
+          open={true}
+          onOpenChange={() => setRowAction(null)}
+          personId={rowAction.row.original.id}
+          personName={rowAction.row.original.fullname}
         />
       )}
     </>

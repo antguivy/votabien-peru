@@ -37,6 +37,8 @@ interface RootCredenzaProps extends BaseProps {
 interface CredenzaProps extends BaseProps {
   className?: string;
   asChild?: true;
+  onInteractOutside?: (e: Event) => void;
+  onEscapeKeyDown?: (e: KeyboardEvent) => void;
 }
 
 const CredenzaContext = React.createContext<{ isMobile: boolean }>({

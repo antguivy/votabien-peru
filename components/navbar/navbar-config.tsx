@@ -16,7 +16,6 @@ import {
   UserCog, // Candidatos admin — gestión de persona
   FlagTriangleRight, // Partidos admin
   IdCard, // Personas — documento de identidad
-  FlaskConical, // Investigación — análisis
   Trophy, // Trivia admin — juego/logro
   ShieldCheck, // Equipo admin — roles/permisos
   Milestone, // Hito — punto en línea de tiempo
@@ -77,16 +76,6 @@ export const adminNavGroups: NavGroup[] = [
       { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
       { href: "/admin/partidos", label: "Partidos", icon: FlagTriangleRight },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
-    ],
-  },
-  {
-    label: "Herramientas",
-    links: [
-      {
-        href: "/admin/investigacion",
-        label: "Investigación",
-        icon: FlaskConical,
-      },
     ],
   },
   {
