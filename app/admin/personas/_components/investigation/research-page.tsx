@@ -23,7 +23,7 @@ import { BiographyDetail } from "@/interfaces/person";
 import { toast } from "sonner";
 import {
   insertPersonBackgrounds,
-  updatePersonBiography,
+  insertPersonBiography,
 } from "../../_lib/actions";
 
 function normalizeType(raw: string | null | undefined): BackgroundType {
@@ -110,7 +110,7 @@ export default function ResearchPageDialog({
       // --- Mapear Posturas → BiographyDetail ---
       const biography: BiographyDetail[] = (tablas.posturas_validas ?? []).map(
         (pos) => ({
-          id: "",
+          // ← sin id, no existe en BiographyDetail
           type: pos.tema ?? "",
           date: pos.fecha ?? "",
           description: pos.redaccion_final ?? pos.hecho ?? "",
@@ -124,10 +124,25 @@ export default function ResearchPageDialog({
           ? insertPersonBackgrounds(personId, backgrounds)
           : Promise.resolve({ success: true, inserted: 0 }),
         biography.length > 0
-          ? updatePersonBiography(personId, biography)
+          ? insertPersonBiography(personId, biography)
           : Promise.resolve({ success: true }),
       ]);
 
+      if (!bgResult.success || !bioResult.success) {
+        if (!bgResult.success)
+          toast.error("Error al guardar antecedentes", {
+            description:
+              "error" in bgResult ? bgResult.error : "Error desconocido",
+          });
+        if (!bioResult.success)
+          toast.error("Error al guardar noticias", {
+            description:
+              "error" in bioResult
+                ? String(bioResult.error)
+                : "Error desconocido",
+          });
+        return;
+      }
       toast.success("Datos guardados correctamente", {
         description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
       });

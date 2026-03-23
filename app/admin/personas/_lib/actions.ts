@@ -285,15 +285,10 @@ export async function updatePersonBiography(
   const supabase = await createClient();
 
   try {
-    // Filtrar entradas con source_url bloqueadas
-    const filteredBiography = biography.filter(
-      (item) => !isBlockedSourceUrl(item.source_url),
-    );
-
     const { data, error } = await supabase
       .from("person")
       .update({
-        detailed_biography: toJsonInsert(filteredBiography),
+        detailed_biography: toJsonInsert(biography),
       })
       .eq("id", personId)
       .select("id, fullname, detailed_biography")
@@ -311,12 +306,37 @@ export async function updatePersonBiography(
   }
 }
 
+export async function insertPersonBiography(
+  personId: string,
+  biography: BiographyDetail[],
+) {
+  const supabase = await createClient();
+
+  try {
+    // Filtro bloqueados — solo aplica cuando viene de research
+    const filtered = biography.filter(
+      (item) => !isBlockedSourceUrl(item.source_url),
+    );
+
+    const { error } = await supabase
+      .from("person")
+      .update({ detailed_biography: toJsonInsert(filtered) })
+      .eq("id", personId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/personas");
+    return { success: true, inserted: filtered.length };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
 export async function insertPersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
 ) {
   const supabase = await createClient();
-
   try {
     const filtered = backgrounds.filter(
       (item) => !isBlockedSourceUrl(item.source_url),
