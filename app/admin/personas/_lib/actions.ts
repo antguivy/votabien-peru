@@ -250,6 +250,32 @@ export async function searchPersonByDNI(dni: string) {
   }
 }
 
+const cleanForDb = (val: string | null | undefined) => {
+  if (!val || val.trim() === "") return null;
+  return val.trim();
+};
+
+// URLs bloqueadas para nuevos registros
+const BLOCKED_SOURCE_URLS_EXACT = new Set([
+  "https://congrezoo.pe/fauna-electoral/2026/02/10/elecciones-2026-postulantes-condicion-de-deudores-alimentarios-morosos/",
+  "https://congrezoo.pe/fauna-electoral/2026/01/11/podemos-fuerza-popular-app-peru-libre-mayor-numero-candidatos-con-sentencias-penales/",
+]);
+
+const BLOCKED_SOURCE_URL_PREFIXES = [
+  "https://checabien.com/",
+  "https://revisatucandidato.pe/",
+  "https://votoinformado.jne.gob.pe/",
+];
+
+const isBlockedSourceUrl = (url: string | null | undefined): boolean => {
+  if (!url) return false;
+  const trimmed = url.trim();
+  if (BLOCKED_SOURCE_URLS_EXACT.has(trimmed)) return true;
+  return BLOCKED_SOURCE_URL_PREFIXES.some((prefix) =>
+    trimmed.startsWith(prefix),
+  );
+};
+
 export async function updatePersonBiography(
   personId: string,
   biography: BiographyDetail[],
@@ -257,10 +283,15 @@ export async function updatePersonBiography(
   const supabase = await createClient();
 
   try {
+    // Filtrar entradas con source_url bloqueadas
+    const filteredBiography = biography.filter(
+      (item) => !isBlockedSourceUrl(item.source_url),
+    );
+
     const { data, error } = await supabase
       .from("person")
       .update({
-        detailed_biography: toJsonInsert(biography),
+        detailed_biography: toJsonInsert(filteredBiography),
       })
       .eq("id", personId)
       .select("id, fullname, detailed_biography")
@@ -278,10 +309,6 @@ export async function updatePersonBiography(
   }
 }
 
-const cleanForDb = (val: string | null | undefined) => {
-  if (!val || val.trim() === "") return null;
-  return val.trim();
-};
 export async function updatePersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
@@ -297,8 +324,12 @@ export async function updatePersonBackgrounds(
 
     if (countError) throw countError;
 
-    // 2. Solo insertar los nuevos (sin tocar los existentes)
-    const insertData = backgrounds.map((item) => ({
+    // 2. Filtrar backgrounds con source_url bloqueadas antes de insertar
+    const filteredBackgrounds = backgrounds.filter(
+      (item) => !isBlockedSourceUrl(item.source_url),
+    );
+
+    const insertData = filteredBackgrounds.map((item) => ({
       id: createId(),
       person_id: personId,
       type: item.type,

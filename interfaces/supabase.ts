@@ -182,7 +182,7 @@ export type Database = {
           coauthors?: string | null;
           committees?: string | null;
           cosponsors?: string | null;
-          created_at: string;
+          created_at?: string;
           document_url?: string | null;
           id: string;
           legislative_session?: string | null;
@@ -195,7 +195,7 @@ export type Database = {
           summary?: string | null;
           title?: string | null;
           title_ai?: string | null;
-          updated_at: string;
+          updated_at?: string;
         };
         Update: {
           approval_date?: string | null;
@@ -865,7 +865,10 @@ export type Database = {
           facebook_url: string | null;
           fullname: string;
           gender: string | null;
+          has_assets: boolean;
           has_criminal_record: boolean;
+          has_electoral_experience: boolean;
+          has_income: boolean;
           has_penal_sentence: boolean;
           has_sanction: boolean;
           id: string;
@@ -893,6 +896,7 @@ export type Database = {
           university_education: Json;
           updated_at: string;
           work_experience: Json;
+          work_experience_count: number;
         };
         Insert: {
           assets?: Json | null;
@@ -904,7 +908,10 @@ export type Database = {
           facebook_url?: string | null;
           fullname: string;
           gender?: string | null;
+          has_assets?: boolean;
           has_criminal_record?: boolean;
+          has_electoral_experience?: boolean;
+          has_income?: boolean;
           has_penal_sentence?: boolean;
           has_sanction?: boolean;
           id: string;
@@ -932,6 +939,7 @@ export type Database = {
           university_education?: Json;
           updated_at?: string;
           work_experience?: Json;
+          work_experience_count?: number;
         };
         Update: {
           assets?: Json | null;
@@ -943,7 +951,10 @@ export type Database = {
           facebook_url?: string | null;
           fullname?: string;
           gender?: string | null;
+          has_assets?: boolean;
           has_criminal_record?: boolean;
+          has_electoral_experience?: boolean;
+          has_income?: boolean;
           has_penal_sentence?: boolean;
           has_sanction?: boolean;
           id?: string;
@@ -971,6 +982,7 @@ export type Database = {
           university_education?: Json;
           updated_at?: string;
           work_experience?: Json;
+          work_experience_count?: number;
         };
         Relationships: [];
       };
