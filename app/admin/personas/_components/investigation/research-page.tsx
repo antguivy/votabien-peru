@@ -22,9 +22,35 @@ import {
 import { BiographyDetail } from "@/interfaces/person";
 import { toast } from "sonner";
 import {
-  updatePersonBackgrounds,
+  insertPersonBackgrounds,
   updatePersonBiography,
 } from "../../_lib/actions";
+
+function normalizeType(raw: string | null | undefined): BackgroundType {
+  const map: Record<string, BackgroundType> = {
+    PENAL: BackgroundType.PENAL,
+    CIVIL: BackgroundType.CIVIL,
+    ETICA: BackgroundType.ETICA,
+    ETICO: BackgroundType.ETICA,
+    ADMINISTRATIVO: BackgroundType.ADMINISTRATIVO,
+  };
+  return map[raw?.toUpperCase().trim() ?? ""] ?? BackgroundType.PENAL;
+}
+
+function normalizeStatus(raw: string | null | undefined): BackgroundStatus {
+  const map: Record<string, BackgroundStatus> = {
+    EN_INVESTIGACION: BackgroundStatus.EN_INVESTIGACION,
+    SENTENCIADO: BackgroundStatus.SENTENCIADO,
+    SANCIONADO: BackgroundStatus.SANCIONADO,
+    ARCHIVADO: BackgroundStatus.ARCHIVADO,
+    ABSUELTO: BackgroundStatus.ABSUELTO,
+    PRESCRITO: BackgroundStatus.PRESCRITO,
+    DESCONOCIDO: BackgroundStatus.EN_INVESTIGACION,
+  };
+  return (
+    map[raw?.toUpperCase().trim() ?? ""] ?? BackgroundStatus.EN_INVESTIGACION
+  );
+}
 
 interface ResearchDialogProps {
   open: boolean;
@@ -71,8 +97,8 @@ export default function ResearchPageDialog({
         tablas.antecedentes_validos ?? []
       ).map((ant) => ({
         id: "",
-        type: ant.tipo as BackgroundType,
-        status: ant.estado as BackgroundStatus,
+        type: normalizeType(ant.tipo),
+        status: normalizeStatus(ant.estado),
         title: ant.titulo ?? "",
         summary: ant.redaccion_final ?? ant.descripcion ?? "",
         sanction: ant.sancion ?? null,
@@ -95,27 +121,16 @@ export default function ResearchPageDialog({
 
       const [bgResult, bioResult] = await Promise.all([
         backgrounds.length > 0
-          ? updatePersonBackgrounds(personId, backgrounds)
-          : Promise.resolve({
-              success: true,
-              inserted: 0,
-              previouslyExisted: 0,
-            }),
+          ? insertPersonBackgrounds(personId, backgrounds)
+          : Promise.resolve({ success: true, inserted: 0 }),
         biography.length > 0
           ? updatePersonBiography(personId, biography)
           : Promise.resolve({ success: true }),
       ]);
 
-      if (bgResult.success && (bgResult.previouslyExisted ?? 0) > 0) {
-        toast.warning("Ya existían antecedentes previos", {
-          description: `Se encontraron ${bgResult.previouslyExisted} antecedentes existentes. 
-                  Se agregaron ${bgResult.inserted} nuevos sin eliminar los anteriores.`,
-        });
-      } else {
-        toast.success("Datos guardados correctamente", {
-          description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
-        });
-      }
+      toast.success("Datos guardados correctamente", {
+        description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
+      });
       resetEstado();
       onOpenChange(false);
     } catch (err) {

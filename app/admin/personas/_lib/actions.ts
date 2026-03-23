@@ -259,12 +259,14 @@ const cleanForDb = (val: string | null | undefined) => {
 const BLOCKED_SOURCE_URLS_EXACT = new Set([
   "https://congrezoo.pe/fauna-electoral/2026/02/10/elecciones-2026-postulantes-condicion-de-deudores-alimentarios-morosos/",
   "https://congrezoo.pe/fauna-electoral/2026/01/11/podemos-fuerza-popular-app-peru-libre-mayor-numero-candidatos-con-sentencias-penales/",
+  "https://congrezoo.pe/fauna-electoral/2026/01/18/elecciones-2026-lista-de-candidatos-con-sentencias-por-alimentos/",
 ]);
 
 const BLOCKED_SOURCE_URL_PREFIXES = [
   "https://checabien.com/",
   "https://revisatucandidato.pe/",
   "https://votoinformado.jne.gob.pe/",
+  "https://candidatos.pe/",
 ];
 
 const isBlockedSourceUrl = (url: string | null | undefined): boolean => {
@@ -309,27 +311,22 @@ export async function updatePersonBiography(
   }
 }
 
-export async function updatePersonBackgrounds(
+export async function insertPersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
 ) {
   const supabase = await createClient();
 
   try {
-    // 1. Verificar cuántos ya existen
-    const { count: existingCount, error: countError } = await supabase
-      .from("background")
-      .select("id", { count: "exact", head: true })
-      .eq("person_id", personId);
-
-    if (countError) throw countError;
-
-    // 2. Filtrar backgrounds con source_url bloqueadas antes de insertar
-    const filteredBackgrounds = backgrounds.filter(
+    const filtered = backgrounds.filter(
       (item) => !isBlockedSourceUrl(item.source_url),
     );
 
-    const insertData = filteredBackgrounds.map((item) => ({
+    if (filtered.length === 0) {
+      return { success: true, inserted: 0 };
+    }
+
+    const insertData = filtered.map((item) => ({
       id: createId(),
       person_id: personId,
       type: item.type,
@@ -342,19 +339,110 @@ export async function updatePersonBackgrounds(
       publication_date: cleanForDb(item.publication_date),
     }));
 
-    const { error: insertError } = await supabase
-      .from("background")
-      .insert(insertData);
+    const { error } = await supabase.from("background").insert(insertData);
+    if (error) throw new Error(`Error al insertar: ${error.message}`);
 
-    if (insertError)
-      throw new Error(`Error al guardar: ${insertError.message}`);
+    revalidatePath("/admin/personas");
+    return { success: true, inserted: insertData.length };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function updatePersonBackgrounds(
+  personId: string,
+  backgrounds: BackgroundBase[],
+) {
+  const supabase = await createClient();
+
+  try {
+    const newItems = backgrounds.filter((item) => item.id.startsWith("new_"));
+    const existingItems = backgrounds.filter(
+      (item) => !item.id.startsWith("new_"),
+    );
+    const existingIds = existingItems.map((item) => item.id);
+
+    // 1. Eliminar los que ya no están en el array
+    let deleteQuery = supabase
+      .from("background")
+      .delete()
+      .eq("person_id", personId);
+
+    if (existingIds.length > 0) {
+      deleteQuery = deleteQuery.not("id", "in", `(${existingIds.join(",")})`);
+    }
+    // Si existingIds está vacío, borra todos los existentes (el usuario los eliminó todos)
+
+    const { error: deleteError } = await deleteQuery;
+    if (deleteError)
+      throw new Error(`Error al eliminar: ${deleteError.message}`);
+
+    // 2. INSERT los nuevos
+    if (newItems.length > 0) {
+      const insertData = newItems.map((item) => ({
+        id: createId(),
+        person_id: personId,
+        type: item.type,
+        status: item.status as BackgroundStatus,
+        title: item.title,
+        summary: item.summary,
+        sanction: cleanForDb(item.sanction),
+        source: item.source,
+        source_url: cleanForDb(item.source_url),
+        publication_date: cleanForDb(item.publication_date),
+      }));
+
+      const { error: insertError } = await supabase
+        .from("background")
+        .insert(insertData);
+      if (insertError)
+        throw new Error(`Error al insertar: ${insertError.message}`);
+    }
+
+    // 3. UPDATE los existentes
+    for (const item of existingItems) {
+      const { error: updateError } = await supabase
+        .from("background")
+        .update({
+          type: item.type,
+          status: item.status as BackgroundStatus,
+          title: item.title,
+          summary: item.summary,
+          sanction: cleanForDb(item.sanction),
+          source: item.source,
+          source_url: cleanForDb(item.source_url),
+          publication_date: cleanForDb(item.publication_date),
+        })
+        .eq("id", item.id)
+        .eq("person_id", personId);
+
+      if (updateError)
+        throw new Error(`Error al actualizar: ${updateError.message}`);
+    }
 
     revalidatePath("/admin/personas");
     return {
       success: true,
-      inserted: insertData.length,
-      previouslyExisted: existingCount ?? 0,
+      inserted: newItems.length,
+      updated: existingItems.length,
     };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function deletePersonBackground(backgroundId: string) {
+  const supabase = await createClient();
+  try {
+    const { error } = await supabase
+      .from("background")
+      .delete()
+      .eq("id", backgroundId);
+
+    if (error) throw error;
+
+    revalidatePath("/admin/personas");
+    return { success: true };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }
