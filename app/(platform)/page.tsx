@@ -4,6 +4,7 @@ import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getHitos } from "@/queries/public/hito";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroDualSplit from "@/components/landing/hero-dual-split";
+import PodcastSection from "@/components/landing/podcast";
 
 export default async function VotaBienPage() {
   try {
@@ -16,13 +17,7 @@ export default async function VotaBienPage() {
       <ContentPlatformLayout>
         {/* 1 — Hero: gancho emocional + countdown + quick filters */}
         <HeroDualSplit proceso_electoral={proceso_electoral[0]} />
-
-        {/* 2 — Herramientas: qué puede hacer el usuario */}
-        {/* <PeruReadinessSection /> */}
-
-        {/* 3 — Historia: contexto y credibilidad */}
-        {/* <PhotoStory hitos={hitos} /> */}
-
+        <PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />
         <Footer />
       </ContentPlatformLayout>
     );
