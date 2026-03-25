@@ -116,20 +116,50 @@ function boxOverlap(
   return (oxLen * oyLen) / Math.min(areaA, areaB);
 }
 
-function countReversals(pts: Point[]): number {
-  const step = Math.max(1, Math.floor(pts.length / 12));
-  let r = 0;
-  for (let i = step; i < pts.length - step; i += step) {
-    const dx0 = pts[i].x - pts[i - step].x,
-      dy0 = pts[i].y - pts[i - step].y;
-    const dx1 = pts[i + step].x - pts[i].x,
-      dy1 = pts[i + step].y - pts[i].y;
-    const m0 = Math.hypot(dx0, dy0),
-      m1 = Math.hypot(dx1, dy1);
-    if (m0 < 1 || m1 < 1) continue;
-    if ((dx0 * dx1 + dy0 * dy1) / (m0 * m1) < -0.1) r++;
+function isStraightLine(pts: Point[]): boolean {
+  if (pts.length < 2) return true;
+  let pathLen = 0;
+  for (let i = 1; i < pts.length; i++) {
+    pathLen += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
   }
-  return r;
+  const directLen = Math.hypot(
+    pts[pts.length - 1].x - pts[0].x,
+    pts[pts.length - 1].y - pts[0].y,
+  );
+  if (directLen === 0) return false;
+
+  return pathLen / directLen < 1.25;
+}
+
+// function countReversals(pts: Point[]): number {
+//   const step = Math.max(1, Math.floor(pts.length / 12));
+//   let r = 0;
+//   for (let i = step; i < pts.length - step; i += step) {
+//     const dx0 = pts[i].x - pts[i - step].x,
+//       dy0 = pts[i].y - pts[i - step].y;
+//     const dx1 = pts[i + step].x - pts[i].x,
+//       dy1 = pts[i + step].y - pts[i].y;
+//     const m0 = Math.hypot(dx0, dy0),
+//       m1 = Math.hypot(dx1, dy1);
+//     if (m0 < 1 || m1 < 1) continue;
+//     if ((dx0 * dx1 + dy0 * dy1) / (m0 * m1) < -0.1) r++;
+//   }
+//   return r;
+// }
+
+function countAxisReversals(pts: Point[]): { x: number; y: number } {
+  const step = Math.max(1, Math.floor(pts.length / 12));
+  let rx = 0,
+    ry = 0;
+  for (let i = step; i < pts.length - step; i += step) {
+    const dx0 = pts[i].x - pts[i - step].x;
+    const dx1 = pts[i + step].x - pts[i].x;
+    const dy0 = pts[i].y - pts[i - step].y;
+    const dy1 = pts[i + step].y - pts[i].y;
+    if (Math.abs(dx0) > 1 && Math.abs(dx1) > 1 && dx0 * dx1 < 0) rx++;
+    if (Math.abs(dy0) > 1 && Math.abs(dy1) > 1 && dy0 * dy1 < 0) ry++;
+  }
+  return { x: rx, y: ry };
 }
 
 // ─── Crossing-fraction midpoint check ────────────────────────────────────────
@@ -180,11 +210,7 @@ function isMarkCross(strokes: Point[][]): boolean {
   const allBB = bbox(s.flat());
   if (allBB.spanX < 6 || allBB.spanY < 6) return false;
 
-  if (s.length === 1) {
-    const b = bbox(s[0]);
-    if (b.spanX < 10 || b.spanY < 10) return false;
-    return countReversals(s[0]) >= 1;
-  }
+  if (s.length === 1) return false;
 
   if (s.length === 2) {
     const b0 = bbox(s[0]),
@@ -193,6 +219,7 @@ function isMarkCross(strokes: Point[][]): boolean {
       return false;
     if (!strokeAnglesCross(s[0], s[1])) return false;
     if (boxOverlap(b0, b1) < 0.05) return false;
+    if (!crossingAtMidpointOfBoth(s[0], s[1])) return false;
     return true;
   }
 
@@ -204,12 +231,16 @@ function isMarkCross(strokes: Point[][]): boolean {
         continue;
       if (!strokeAnglesCross(s[i], s[j])) continue;
       if (boxOverlap(bi, bj) < 0.05) continue;
+      if (!crossingAtMidpointOfBoth(s[i], s[j])) continue; // ← mismo check
       return true;
     }
   }
 
   return false;
 }
+
+const PREF_CROSSING_LO = 0.12;
+const PREF_CROSSING_HI = 0.88;
 
 // ─── PREF BOX cross-mark detection ───────────────────────────────────────────
 
@@ -221,9 +252,21 @@ function isPrefCross(strokes: Point[][]): boolean {
     b1 = bbox(s[1]);
   if ((b0.spanX < 8 && b0.spanY < 8) || (b1.spanX < 8 && b1.spanY < 8))
     return false;
+
+  if (!isStraightLine(s[0]) || !isStraightLine(s[1])) return false;
   if (!strokeAnglesCross(s[0], s[1])) return false;
   if (boxOverlap(b0, b1) < 0.05) return false;
-  if (!crossingAtMidpointOfBoth(s[0], s[1])) return false;
+  const c1 = strokeCentroid(s[0]);
+  const c2 = strokeCentroid(s[1]);
+  const t1 = closestIndexFraction(s[0], c2);
+  const t2 = closestIndexFraction(s[1], c1);
+  if (
+    t1 < PREF_CROSSING_LO ||
+    t1 > PREF_CROSSING_HI ||
+    t2 < PREF_CROSSING_LO ||
+    t2 > PREF_CROSSING_HI
+  )
+    return false;
 
   return true;
 }
@@ -253,6 +296,10 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
   const s = strokes.filter(nonTrivial);
   if (!s.length) return "dot";
 
+  // 1. Demasiados trazos suele ser un garabato evidente
+  if (s.length > 4) return "scribble";
+
+  // 2. Revisar si es una aspa o cruz intencional
   if (isPrefCross(s)) {
     if (s.length === 2) {
       const diff = angleDiff(primaryAngle(s[0]), primaryAngle(s[1]));
@@ -261,10 +308,27 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
     return "aspa";
   }
 
+  // 3. Evaluar garabatos por cambios bruscos de dirección (reversiones)
+  let totalRx = 0,
+    totalRy = 0;
+  for (const stroke of s) {
+    const revs = countAxisReversals(stroke);
+    totalRx += revs.x;
+    totalRy += revs.y;
+  }
+  // Un número (ej. el 8) puede tener algunas reversiones,
+  // pero más de 4 combinadas es casi seguro un garabato cerrado.
+  if (totalRx > 4 || totalRy > 4) {
+    return "scribble";
+  }
+
+  // 4. Fallback final
   if (s.length === 1) {
     const b = bbox(s[0]);
-    return b.spanX < 5 && b.spanY < 5 ? "dot" : "line";
+    if (b.spanX < 5 && b.spanY < 5) return "dot";
+    return "number_stroke";
   }
+
   return "number_stroke";
 }
 
@@ -296,8 +360,11 @@ function analyzeBox(strokes: Point[][], box: BoxBounds): BoxAnalysis {
 
   if (isPref) {
     const isCross = shape === "aspa" || shape === "cruz";
-    isInvalidMark = isCross;
-    isValidMark = !isCross && shape !== "dot";
+    const isScribble = shape === "scribble";
+
+    // Invalida si dibuja una cruz, aspa o un garabato
+    isInvalidMark = isCross || isScribble;
+    isValidMark = !isInvalidMark && shape !== "dot";
   }
 
   return {
@@ -376,8 +443,10 @@ function applyRules(
       preferentialStatus: "invalid_mark",
       message: "Voto NULO",
       submessage:
-        "Pusiste una aspa (✗) o cruz (+) dentro del recuadro preferencial.",
-      hint: "El recuadro preferencial es solo para ESCRIBIR el número del candidato. Una aspa o cruz allí anula el voto.",
+        badPref.shape === "scribble"
+          ? "Hiciste un garabato o marca inválida en el recuadro preferencial."
+          : "Pusiste una aspa (✗) o cruz (+) dentro del recuadro preferencial.",
+      hint: "El recuadro preferencial es solo para ESCRIBIR el número del candidato. Cualquier otra marca anula el voto.",
     };
   }
 
@@ -385,10 +454,7 @@ function applyRules(
   const badMark = boxAnalyses.find(
     (b) => MARK_ROLES.has(b.role) && b.isInvalidMark,
   );
-  if (
-    badMark &&
-    !boxAnalyses.some((b) => MARK_ROLES.has(b.role) && b.isValidMark)
-  ) {
+  if (badMark) {
     return {
       result: "null",
       feedbackType: "error",
@@ -418,6 +484,20 @@ function applyRules(
     col.type === "presidente"
       ? new Set([...markedByLogo, ...markedByPhoto])
       : markedByLogo;
+
+  // ── Strokes que no pertenecen a ningún box → nulo ─────────────────────────
+  const orphanStrokes = !boxAnalyses.some((b) => b.hasStroke);
+  if (orphanStrokes) {
+    return {
+      result: "null",
+      feedbackType: "error",
+      boxAnalyses,
+      hasOutOfBoxStrokes: false,
+      message: "Voto NULO",
+      submessage: "La marca cruza el límite entre dos partidos.",
+      hint: "Los trazos deben estar contenidos dentro del recuadro de un solo partido.",
+    };
+  }
 
   // ── Nothing meaningful drawn ──────────────────────────────────────────────
   if (!boxAnalyses.some((b) => b.hasStroke)) return blankAnalysis(boxAnalyses);
@@ -483,6 +563,27 @@ function applyRules(
 
   // ── Valid ─────────────────────────────────────────────────────────────────
   const markedPartyIdx = [...allMarked][0];
+
+  // ── Pref mark on a DIFFERENT party → null ────────────────────────────────
+  const foreignPref = boxAnalyses.find(
+    (b) =>
+      PREF_ROLES.has(b.role) &&
+      b.partyIdx !== markedPartyIdx &&
+      (b.isValidMark || b.hasStroke),
+  );
+  if (foreignPref) {
+    return {
+      result: "null",
+      feedbackType: "error",
+      boxAnalyses,
+      hasOutOfBoxStrokes: false,
+      message: "Voto NULO",
+      submessage:
+        "Escribiste en el recuadro preferencial de un partido diferente al que marcaste.",
+      hint: "El recuadro preferencial solo puede usarse para escribir el número de un candidato del partido que elegiste.",
+    };
+  }
+
   const prefBoxes = boxAnalyses.filter(
     (b) => PREF_ROLES.has(b.role) && b.partyIdx === markedPartyIdx,
   );
