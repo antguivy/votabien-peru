@@ -98,7 +98,7 @@ export const COLUMNS: ColumnDef[] = [
     headerLabel: "DIPUTADO",
     description:
       "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
-    prefBoxCount: 1,
+    prefBoxCount: 2,
     allowPhotoMark: false,
   },
   {
@@ -109,7 +109,7 @@ export const COLUMNS: ColumnDef[] = [
     headerLabel: "PARLAMENTO ANDINO",
     description:
       "Marca el logo del partido. Opcionalmente escribe el número del candidato de tu preferencia en el recuadro.",
-    prefBoxCount: 1,
+    prefBoxCount: 2,
     allowPhotoMark: false,
   },
 ];
@@ -250,7 +250,17 @@ export const CHALLENGES: Challenge[] = [
       "Marca únicamente el logo del partido. Deja el recuadro de voto preferencial completamente en blanco.",
     tip: "El voto preferencial es opcional. Dejarlo en blanco es completamente válido.",
     checkPassed: (a) =>
-      a.result === "valid" && a.preferentialStatus === "blank",
+      a.result === "valid" &&
+      // El logo debe estar marcado
+      a.boxAnalyses.some((b) => b.role === "logo" && b.isValidMark) &&
+      // Ninguna casilla preferencial debe tener número escrito
+      !a.boxAnalyses.some(
+        (b) =>
+          (b.role === "pref_single" ||
+            b.role === "pref_1" ||
+            b.role === "pref_2") &&
+          b.isValidMark,
+      ),
   },
   {
     id: "diputado_nulo_aspa_preferencial",
@@ -263,11 +273,13 @@ export const CHALLENGES: Challenge[] = [
       a.result === "null" && a.preferentialStatus === "invalid_mark",
   },
   {
-    id: "parlamento_blanco",
-    emoji: "⬜",
-    title: "Deja esta columna en blanco",
-    instruction: "No hagas ninguna marca en esta columna.",
-    tip: "El voto en blanco es completamente legal. Se contabiliza como voto emitido pero no suma a ningún partido.",
-    checkPassed: (a) => a.result === "blank",
+    id: "parlamento_solo_preferencial",
+    emoji: "✍️",
+    title: "Vota solo con número preferencial",
+    instruction:
+      "Escribe el número de un candidato directamente en el recuadro preferencial. NO marques el logo del partido.",
+    tip: "Según la capacitación para miembros de mesa ONPE: escribir un número válido en la casilla preferencial — sin marcar el logo — cuenta como voto válido.",
+    checkPassed: (a) =>
+      a.result === "valid" && a.preferentialStatus === "written",
   },
 ];

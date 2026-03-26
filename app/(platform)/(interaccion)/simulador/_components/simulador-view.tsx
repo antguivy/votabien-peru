@@ -27,13 +27,21 @@ import type {
   SimulatorMode,
   SimulatorPhase,
 } from "@/interfaces/simulator";
-import { COLUMNS, CHALLENGES } from "@/constants/challenge";
+import { COLUMNS, CHALLENGES, L } from "@/constants/challenge";
 import type { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
 import { Button } from "@/components/ui/button";
 
 const BallotCanvas = dynamic(
   () => import("@/components/simulador/ballot-canvas"),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="w-full bg-muted/30 animate-pulse rounded-sm"
+        style={{ aspectRatio: `${L.W} / ${L.H}` }}
+      />
+    ),
+  },
 );
 
 // ─── Result metadata ──────────────────────────────────────────────────────────
@@ -315,7 +323,7 @@ function VotingScreen({
             aria-label="Volver al inicio"
           >
             <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
-            Regresar
+            Salir
           </Button>
 
           {/* Dots */}
@@ -365,18 +373,18 @@ function VotingScreen({
               </span>
             </h2>
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               canvasRef.current?.clear();
               setShowTip(false);
             }}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground
-              bg-muted/60 hover:bg-muted rounded-xl px-3 py-2 transition-colors
-              active:scale-[0.97] flex-shrink-0 mt-1"
+            className="flex items-center gap-1.5 flex-shrink-0 mt-1"
           >
             <RotateCcw className="w-3 h-3" strokeWidth={2.5} />
             Borrar
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -617,13 +625,14 @@ function EmptyHint({ col }: { col: (typeof COLUMNS)[0] }) {
 }
 
 // ─── Result Summary ───────────────────────────────────────────────────────────
-
 function ResultSummary({
   allAnalyses,
   onRestart,
+  mode,
 }: {
   allAnalyses: Record<number, ColumnAnalysis>;
   onRestart: () => void;
+  mode: SimulatorMode;
 }) {
   const results = COLUMNS.map(
     (_, i) => allAnalyses[i]?.result ?? "blank",
@@ -632,118 +641,197 @@ function ResultSummary({
   results.forEach((r) => counts[r]++);
   const allValid = counts.valid === COLUMNS.length;
 
+  // ── Retos: evaluar cuáles retos se superaron ──────────────────────────────
+  const emptyAnalysis: ColumnAnalysis = {
+    result: "blank",
+    feedbackType: "blank",
+    boxAnalyses: [],
+    hasOutOfBoxStrokes: false,
+    message: "",
+  };
+
+  const retoPassed = CHALLENGES.map((ch, i) =>
+    ch.checkPassed(allAnalyses[i] ?? emptyAnalysis),
+  );
+  const retosCount = retoPassed.filter(Boolean).length;
+  const allPassed = mode === "retos" && retosCount === CHALLENGES.length;
+
   return (
-    // Outer wrapper: fills height, splits into scrollable content + sticky footer
     <div className="flex flex-col h-full">
       {/* ── Scrollable content ── */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-5 pb-4">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            {allValid ? (
-              <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
-            ) : (
-              <CheckCircle2
-                className="w-5 h-5 text-muted-foreground"
-                strokeWidth={2}
-              />
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-4 pb-4">
+        {/* ── Header — distinto según modo ── */}
+        {mode === "retos" ? (
+          <div
+            className={cn(
+              "rounded-2xl px-4 py-4 flex items-start gap-3.5",
+              allPassed
+                ? "bg-emerald-50 dark:bg-emerald-950/40"
+                : "bg-amber-50 dark:bg-amber-950/30",
             )}
-            <h2 className="text-xl font-bold text-foreground">
-              {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
-            </h2>
+          >
+            <div
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl",
+                allPassed
+                  ? "bg-emerald-100 dark:bg-emerald-900/60"
+                  : "bg-amber-100 dark:bg-amber-900/40",
+              )}
+            >
+              {allPassed ? "🏆" : "📋"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-base font-bold text-foreground leading-tight">
+                {allPassed
+                  ? "¡Completaste todos los retos!"
+                  : retosCount > 0
+                    ? `Superaste ${retosCount} de ${CHALLENGES.length} retos`
+                    : "Modo Retos completado"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                {allPassed
+                  ? "Dominaste los 5 escenarios electorales. Estás listo para el día de la votación."
+                  : "Revisa qué retos no superaste y vuelve a intentarlo."}
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Así quedaría registrada tu votación.
-          </p>
-        </div>
+        ) : (
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              {allValid ? (
+                <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
+              ) : (
+                <CheckCircle2
+                  className="w-5 h-5 text-muted-foreground"
+                  strokeWidth={2}
+                />
+              )}
+              <h2 className="text-xl font-bold text-foreground">
+                {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Así quedaría registrada tu votación.
+            </p>
+          </div>
+        )}
 
-        {/* Column rows */}
+        {/* ── Filas por columna ── */}
         <div className="flex flex-col gap-1.5">
           {COLUMNS.map((col, i) => {
             const r = results[i];
             const meta = RESULT_META[r];
             const Icon = meta.Icon;
             const a = allAnalyses[i];
+            const challenge = CHALLENGES[i];
+            const passed = retoPassed[i];
+
             return (
               <div
                 key={col.id}
-                className="flex items-start gap-3 rounded-2xl px-4 py-3 bg-card"
+                className="rounded-2xl px-4 py-3 bg-card"
                 style={{
                   boxShadow:
                     "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
                 }}
               >
-                <Icon
-                  className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
-                  strokeWidth={2}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-1.5">
+                {/* Título del reto (solo en modo retos) */}
+                {mode === "retos" && challenge && (
+                  <div className="flex items-center gap-2 mb-2">
                     <span
                       className={cn(
-                        "text-[10px] font-bold uppercase tracking-wider",
-                        meta.text,
+                        "flex-shrink-0 text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full",
+                        passed
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
+                          : "bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400",
                       )}
                     >
-                      {meta.label}
+                      {passed ? "✓ Superado" : "✗ No superado"}
                     </span>
-                    <span className="text-xs font-semibold text-foreground truncate">
-                      {col.label}
-                    </span>
-                  </div>
-                  {a?.submessage && (
-                    <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                      {a.submessage}
+                    <p className="text-[11px] text-muted-foreground leading-tight truncate">
+                      {challenge.title}
                     </p>
-                  )}
-                  {r === "valid" &&
-                    a?.preferentialStatus === "written" &&
-                    col.type !== "presidente" && (
-                      <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
-                        Con preferencial
+                  </div>
+                )}
+
+                {/* Resultado de la columna */}
+                <div className="flex items-start gap-3">
+                  <Icon
+                    className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
+                    strokeWidth={2}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider",
+                          meta.text,
+                        )}
+                      >
+                        {meta.label}
                       </span>
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {col.label}
+                      </span>
+                    </div>
+                    {a?.submessage && (
+                      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                        {a.submessage}
+                      </p>
                     )}
+                    {r === "valid" &&
+                      a?.preferentialStatus === "written" &&
+                      col.type !== "presidente" && (
+                        <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                          Con preferencial
+                        </span>
+                      )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
-            const meta = RESULT_META[r];
-            const Icon = meta.Icon;
-            return (
-              <div
-                key={r}
-                className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
-                style={{
-                  boxShadow:
-                    "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-                }}
-              >
-                <Icon
-                  className={cn("w-3.5 h-3.5", meta.text)}
-                  strokeWidth={2}
-                />
-                <p className="text-[22px] font-black leading-none text-foreground">
-                  {n}
-                </p>
-                <p
-                  className={cn(
-                    "text-[9px] font-bold tracking-wider uppercase",
-                    meta.text,
-                  )}
-                >
-                  {meta.label}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        {/* ── Stats (solo en modo libre) ── */}
+        {mode === "libre" && (
+          <div className="grid grid-cols-4 gap-1.5">
+            {(Object.entries(counts) as [VoteResult, number][]).map(
+              ([r, n]) => {
+                const meta = RESULT_META[r];
+                const Icon = meta.Icon;
+                return (
+                  <div
+                    key={r}
+                    className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
+                    style={{
+                      boxShadow:
+                        "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    <Icon
+                      className={cn("w-3.5 h-3.5", meta.text)}
+                      strokeWidth={2}
+                    />
+                    <p className="text-[22px] font-black leading-none text-foreground">
+                      {n}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-[9px] font-bold tracking-wider uppercase",
+                        meta.text,
+                      )}
+                    >
+                      {meta.label}
+                    </p>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        )}
 
-        {/* Tips */}
+        {/* ── Tips ── */}
         <div
           className="rounded-2xl bg-card px-4 py-4"
           style={{
@@ -762,6 +850,7 @@ function ResultSummary({
               "Los trazos deben cruzarse dentro del recuadro.",
               "Un solo partido por columna — marcar dos vicia el voto.",
               "Recuadros preferenciales: escribe el número, nunca una aspa.",
+              "Escribir solo el número preferencial también cuenta como voto válido.",
               "Cada columna es independiente — un nulo no afecta a las demás.",
             ].map((t, i) => (
               <div key={i} className="flex items-start gap-2.5">
@@ -775,7 +864,7 @@ function ResultSummary({
         </div>
       </div>
 
-      {/* ── Sticky restart button ── */}
+      {/* ── Botón sticky ── */}
       <div className="flex-shrink-0 pt-3">
         <button
           onClick={onRestart}
@@ -791,7 +880,6 @@ function ResultSummary({
     </div>
   );
 }
-
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
 
 export default function SimuladorView() {
@@ -844,7 +932,11 @@ export default function SimuladorView() {
   if (phase === "intro") return <IntroScreen onSelect={handleStart} />;
   if (phase === "result")
     return (
-      <ResultSummary allAnalyses={allAnalyses} onRestart={handleRestart} />
+      <ResultSummary
+        allAnalyses={allAnalyses}
+        onRestart={handleRestart}
+        mode={mode}
+      />
     );
 
   return (

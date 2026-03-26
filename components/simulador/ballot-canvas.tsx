@@ -118,7 +118,8 @@ function computeBoxes(col: ColumnDef): BoxBounds[] {
         w: photoW,
         h: bH,
       });
-    } else if (col.type === "senador_nacional") {
+    } else if (col.prefBoxCount >= 2) {
+      // ← senador_nacional, diputados, parlamento andino
       const logoW = Math.floor((usableW - BOX_GAP * 2) / 3);
       const prefW = Math.floor((usableW - BOX_GAP * 2 - logoW) / 2);
       boxes.push({
@@ -145,7 +146,7 @@ function computeBoxes(col: ColumnDef): BoxBounds[] {
         w: prefW,
         h: bH,
       });
-    } else if (col.prefBoxCount > 0) {
+    } else if (col.prefBoxCount === 1) {
       const logoW = Math.floor((usableW - BOX_GAP) * 0.52);
       const prefW = usableW - BOX_GAP - logoW;
       boxes.push({
@@ -523,7 +524,7 @@ function drawRow(
   if (col.type === "presidente") {
     const photoBox = rowBoxes.find((b) => b.role === "photo")!;
     if (photoBox) drawPhotoBox(ctx, photoBox, party, analysis);
-  } else if (col.type === "senador_nacional") {
+  } else if (col.prefBoxCount >= 2) {
     const p1 = rowBoxes.find((b) => b.role === "pref_1")!;
     const p2 = rowBoxes.find((b) => b.role === "pref_2")!;
     if (p1 && p2) {
@@ -917,6 +918,18 @@ const BallotCanvas = forwardRef<BallotCanvasRef, Props>(function BallotCanvas(
     );
     if (urls.length === 0) return;
     Promise.allSettled(urls.map(loadImg)).then(() => redraw());
+  }, [redraw]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        // Pequeño delay para que el sistema operativo restaure el contexto
+        setTimeout(() => redraw(), 50);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
   }, [redraw]);
 
   const getPoint = useCallback((e: PointerEvent): Point => {

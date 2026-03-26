@@ -44,22 +44,9 @@ function nonTrivial(pts: Point[]): boolean {
 }
 
 // ─── Overflow tolerance ───────────────────────────────────────────────────────
-//
-// ONPE allows the voter's mark to slightly exceed the box edges (natural
-// hand-drawing variance). However, a stroke that massively overflows the box
-// (e.g. a sweeping X drawn across the whole ballot) should be caught.
-//
-// Rule: each side of the stroke's bounding box may extend at most
-// MAX_OVERFLOW_FRACTION × (box dimension) beyond the box edge.
-// At 0.40 that's ±40% of the box width/height — generous for natural marks
-// but strict enough to catch exaggerated strokes like those in screenshots.
-//
+
 const MAX_OVERFLOW_FRACTION = 0.4;
 
-/**
- * Returns true if the stroke's spatial bounding box stays within the allowed
- * overflow margin around `box`. False means the stroke is excessively large.
- */
 function strokeFitsInBox(stroke: Point[], box: BoxBounds): boolean {
   const b = bbox(stroke);
   const overLeft = Math.max(0, box.x - b.minX);
@@ -75,12 +62,6 @@ function strokeFitsInBox(stroke: Point[], box: BoxBounds): boolean {
   );
 }
 
-/**
- * A stroke "primarily belongs" to a box when:
- *   1. ≥50% of its points fall inside the box, AND
- *   2. Its bounding box doesn't excessively overflow the box edges.
- * Condition 2 catches huge sweeping strokes that happen to cross a box.
- */
 function primarilyIn(pts: Point[], box: BoxBounds): boolean {
   return coverage(pts, box) >= 0.5 && strokeFitsInBox(pts, box);
 }
@@ -127,25 +108,8 @@ function isStraightLine(pts: Point[]): boolean {
     pts[pts.length - 1].y - pts[0].y,
   );
   if (directLen === 0) return false;
-
   return pathLen / directLen < 1.25;
 }
-
-// function countReversals(pts: Point[]): number {
-//   const step = Math.max(1, Math.floor(pts.length / 12));
-//   let r = 0;
-//   for (let i = step; i < pts.length - step; i += step) {
-//     const dx0 = pts[i].x - pts[i - step].x,
-//       dy0 = pts[i].y - pts[i - step].y;
-//     const dx1 = pts[i + step].x - pts[i].x,
-//       dy1 = pts[i + step].y - pts[i].y;
-//     const m0 = Math.hypot(dx0, dy0),
-//       m1 = Math.hypot(dx1, dy1);
-//     if (m0 < 1 || m1 < 1) continue;
-//     if ((dx0 * dx1 + dy0 * dy1) / (m0 * m1) < -0.1) r++;
-//   }
-//   return r;
-// }
 
 function countAxisReversals(pts: Point[]): { x: number; y: number } {
   const step = Math.max(1, Math.floor(pts.length / 12));
@@ -231,7 +195,7 @@ function isMarkCross(strokes: Point[][]): boolean {
         continue;
       if (!strokeAnglesCross(s[i], s[j])) continue;
       if (boxOverlap(bi, bj) < 0.05) continue;
-      if (!crossingAtMidpointOfBoth(s[i], s[j])) continue; // ← mismo check
+      if (!crossingAtMidpointOfBoth(s[i], s[j])) continue;
       return true;
     }
   }
@@ -296,10 +260,8 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
   const s = strokes.filter(nonTrivial);
   if (!s.length) return "dot";
 
-  // 1. Demasiados trazos suele ser un garabato evidente
   if (s.length > 4) return "scribble";
 
-  // 2. Revisar si es una aspa o cruz intencional
   if (isPrefCross(s)) {
     if (s.length === 2) {
       const diff = angleDiff(primaryAngle(s[0]), primaryAngle(s[1]));
@@ -308,7 +270,6 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
     return "aspa";
   }
 
-  // 3. Evaluar garabatos por cambios bruscos de dirección (reversiones)
   let totalRx = 0,
     totalRy = 0;
   for (const stroke of s) {
@@ -316,13 +277,8 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
     totalRx += revs.x;
     totalRy += revs.y;
   }
-  // Un número (ej. el 8) puede tener algunas reversiones,
-  // pero más de 4 combinadas es casi seguro un garabato cerrado.
-  if (totalRx > 4 || totalRy > 4) {
-    return "scribble";
-  }
+  if (totalRx > 4 || totalRy > 4) return "scribble";
 
-  // 4. Fallback final
   if (s.length === 1) {
     const b = bbox(s[0]);
     if (b.spanX < 5 && b.spanY < 5) return "dot";
@@ -361,8 +317,6 @@ function analyzeBox(strokes: Point[][], box: BoxBounds): BoxAnalysis {
   if (isPref) {
     const isCross = shape === "aspa" || shape === "cruz";
     const isScribble = shape === "scribble";
-
-    // Invalida si dibuja una cruz, aspa o un garabato
     isInvalidMark = isCross || isScribble;
     isValidMark = !isInvalidMark && shape !== "dot";
   }
@@ -378,19 +332,11 @@ function analyzeBox(strokes: Point[][], box: BoxBounds): BoxAnalysis {
 }
 
 // ─── Out-of-box detection ─────────────────────────────────────────────────────
-//
-// A stroke is "out of box" if either:
-//   (a) Less than 30% of its points fall inside ANY box — classic wandering stroke.
-//   (b) Its bounding box excessively overflows ALL boxes — huge sweeping stroke
-//       that happens to cross boxes but isn't reasonably contained in any of them.
-//
+
 function outOfBoxStrokes(strokes: Point[][], boxes: BoxBounds[]): boolean {
   return strokes.filter(nonTrivial).some((stroke) => {
-    // (a) Point-coverage check — mostly outside every box
     const maxCov = Math.max(...boxes.map((b) => coverage(stroke, b)));
     if (maxCov < 0.3) return true;
-
-    // (b) Spatial-overflow check — doesn't spatially fit in ANY box
     const fitsAny = boxes.some((b) => strokeFitsInBox(stroke, b));
     return !fitsAny;
   });
@@ -450,7 +396,7 @@ function applyRules(
     };
   }
 
-  // ── Invalid mark (line/scribble) in logo/photo, no valid mark anywhere → null
+  // ── Invalid mark (line/scribble) in logo/photo → null ────────────────────
   const badMark = boxAnalyses.find(
     (b) => MARK_ROLES.has(b.role) && b.isInvalidMark,
   );
@@ -478,14 +424,12 @@ function applyRules(
     photos.filter((b) => b.isValidMark).map((b) => b.partyIdx),
   );
 
-  // For presidente: a party counts as marked if its logo OR photo is marked.
-  // For all others: only the logo matters.
   const allMarked =
     col.type === "presidente"
       ? new Set([...markedByLogo, ...markedByPhoto])
       : markedByLogo;
 
-  // ── Strokes que no pertenecen a ningún box → nulo ─────────────────────────
+  // ── Orphan strokes (no box claimed them) → null ───────────────────────────
   const orphanStrokes = !boxAnalyses.some((b) => b.hasStroke);
   if (orphanStrokes) {
     return {
@@ -499,10 +443,7 @@ function applyRules(
     };
   }
 
-  // ── Nothing meaningful drawn ──────────────────────────────────────────────
-  if (!boxAnalyses.some((b) => b.hasStroke)) return blankAnalysis(boxAnalyses);
-
-  // ── Viciado: more than one party marked ──────────────────────────────────
+  // ── Viciado: more than one party marked ───────────────────────────────────
   if (allMarked.size > 1) {
     return {
       result: "viciado",
@@ -515,11 +456,7 @@ function applyRules(
     };
   }
 
-  // ── Viciado (presidente only): logo and photo belong to different parties ─
-  //
-  // Example: logo of party A marked + photo of party B marked.
-  // Even if allMarked ends up with 2 entries (caught above), this gives a
-  // clearer message for the specific logo≠photo conflict.
+  // ── Viciado (presidente): logo y foto de partidos distintos ──────────────
   if (
     col.type === "presidente" &&
     markedByLogo.size > 0 &&
@@ -541,30 +478,74 @@ function applyRules(
     }
   }
 
-  // ── No valid mark found ───────────────────────────────────────────────────
+  // ── No logo/photo marked — check for preferential-only vote ──────────────
+  //
+  // Según la capacitación para miembros de mesa (ONPE): escribir un número
+  // válido en la casilla preferencial SIN marcar el logo cuenta como voto
+  // válido. Aplica solo a columnas con casillas preferenciales (no presidente).
+  //
   if (allMarked.size === 0) {
-    const onlyPref =
+    // ¿Hay algún número válido escrito en una casilla preferencial?
+    const validPrefBoxes = boxAnalyses.filter(
+      (b) => PREF_ROLES.has(b.role) && b.isValidMark,
+    );
+
+    if (validPrefBoxes.length > 0 && col.type !== "presidente") {
+      // Todos deben pertenecer al mismo partido (si hay varias casillas
+      // preferenciales de distintos partidos marcadas, es viciado).
+      const prefParties = new Set(validPrefBoxes.map((b) => b.partyIdx));
+
+      if (prefParties.size > 1) {
+        return {
+          result: "viciado",
+          feedbackType: "error",
+          boxAnalyses,
+          hasOutOfBoxStrokes: false,
+          message: "Voto VICIADO",
+          submessage: "Escribiste números preferenciales de más de un partido.",
+          hint: "Solo puedes indicar preferencia por candidatos de un mismo partido.",
+        };
+      }
+
+      const markedPartyIdx = [...prefParties][0];
+      return {
+        result: "valid",
+        feedbackType: "success",
+        markedPartyIdx,
+        boxAnalyses,
+        hasOutOfBoxStrokes: false,
+        preferentialStatus: "written",
+        message: "Voto VÁLIDO ✓",
+        submessage:
+          "Número preferencial escrito sin marcar el logo — válido según reglamento ONPE.",
+        hint: "El número en la casilla preferencial basta para emitir un voto válido. Opcionalmente también puedes marcar el logo del partido.",
+      };
+    }
+
+    // Sin número preferencial válido → nulo (comportamiento original)
+    const onlyPrefAttempt =
       !boxAnalyses.some((b) => MARK_ROLES.has(b.role) && b.hasStroke) &&
       boxAnalyses.some((b) => PREF_ROLES.has(b.role) && b.hasStroke);
+
     return {
       result: "null",
       feedbackType: "error",
       boxAnalyses,
       hasOutOfBoxStrokes: false,
       message: "Voto NULO",
-      submessage: onlyPref
-        ? "Escribiste en el recuadro preferencial pero no marcaste el logo."
+      submessage: onlyPrefAttempt
+        ? "La marca en el recuadro preferencial no se reconoció como un número válido."
         : "No se reconoció ninguna marca válida en el logo del partido.",
-      hint: onlyPref
-        ? "Para que el voto sea válido, primero marca el logo del partido con aspa (✗) o cruz (+)."
-        : "Marca el logo del partido con una aspa (✗) o cruz (+). Los trazos deben cruzarse dentro del recuadro.",
+      hint: onlyPrefAttempt
+        ? "Escribe con claridad el número del candidato en la casilla preferencial, o marca el logo con aspa (✗) o cruz (+)."
+        : "Marca el logo del partido con una aspa (✗) o cruz (+), o escribe el número del candidato en la casilla preferencial.",
     };
   }
 
-  // ── Valid ─────────────────────────────────────────────────────────────────
+  // ── Valid logo/photo mark — handle pref boxes ─────────────────────────────
   const markedPartyIdx = [...allMarked][0];
 
-  // ── Pref mark on a DIFFERENT party → null ────────────────────────────────
+  // Número preferencial en casilla de otro partido → nulo
   const foreignPref = boxAnalyses.find(
     (b) =>
       PREF_ROLES.has(b.role) &&
@@ -610,7 +591,7 @@ function buildValidDetail(col: ColumnDef, pref: PreferentialStatus): string {
   if (col.type === "presidente")
     return "Voto presidencial registrado correctamente.";
   if (pref === "written") {
-    return col.type === "senador_nacional"
+    return col.prefBoxCount >= 2
       ? "Logo marcado + número(s) de candidato preferencial registrados."
       : "Logo marcado + número de candidato preferencial registrado.";
   }
@@ -622,7 +603,7 @@ function buildValidHint(
   pref: PreferentialStatus,
 ): string | undefined {
   if (col.type === "presidente" || pref !== "blank") return undefined;
-  return col.type === "senador_nacional"
+  return col.prefBoxCount >= 2
     ? "Opcional: escribe el número de hasta dos candidatos, uno por recuadro."
     : "Opcional: escribe el número del candidato de tu preferencia en el recuadro.";
 }
