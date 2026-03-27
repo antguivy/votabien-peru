@@ -26,7 +26,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { NoDataMessage } from "@/components/no-data-message";
 import { ShareButton } from "@/components/share-rs";
-import { CandidateDetail } from "@/interfaces/candidate";
+import {
+  CandidateDetail,
+  CandidatePresidentials,
+} from "@/interfaces/candidate";
 import { RegistrosOficiales } from "./oficial-register";
 import { getLastUpdated } from "@/lib/utils/date";
 import { formatDistanceToNow } from "date-fns";
@@ -46,9 +49,11 @@ const formatCurrency = (amount: string | number) => {
 
 export default function DetailCandidato({
   candidate,
+  formula = [],
   shareUrl,
 }: {
   candidate: CandidateDetail;
+  formula?: CandidatePresidentials[];
   shareUrl: string;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
@@ -79,6 +84,13 @@ export default function DetailCandidato({
 
   return (
     <div className="bg-background min-h-screen">
+      {!candidate.active && (
+        <div className="bg-muted border-b border-border/60 py-2 px-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            Este candidato ya no forma parte del proceso electoral activo.
+          </p>
+        </div>
+      )}
       {/* ── STICKY NAV ── */}
       <div
         className={cn(
@@ -221,7 +233,6 @@ export default function DetailCandidato({
           </div>
         </div>
       </div>
-
       {/* ── CONTENIDO PRINCIPAL ── */}
       <div className="container max-w-5xl mx-auto">
         {/* Alerta antecedentes — minimalista */}
@@ -288,6 +299,48 @@ export default function DetailCandidato({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Columna izquierda */}
               <div className="space-y-4">
+                {formula.length > 0 && (
+                  <Card className="shadow-none border-border/60">
+                    <CardHeader className="pb-3 border-b border-border/40">
+                      <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+                        <Landmark className="w-4 h-4 text-muted-foreground" />
+                        Fórmula presidencial
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-3">
+                      {formula.map((vp) => (
+                        <Link
+                          key={vp.id}
+                          href={`/candidatos/${vp.id}`}
+                          className="flex items-center gap-3 group p-2 rounded-lg hover:bg-muted/40 transition-colors -mx-2"
+                        >
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-border/40 bg-muted shrink-0 group-hover:border-primary/40 transition-colors">
+                            <Image
+                              src={
+                                vp.person.image_candidate_url ||
+                                "/images/default.svg"
+                              }
+                              alt={vp.person.fullname}
+                              fill
+                              className="object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold leading-tight truncate group-hover:text-primary transition-colors">
+                              {vp.person.fullname}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {vp.type === "VICEPRESIDENTE_1"
+                                ? "1er Vicepresidente"
+                                : "2do Vicepresidente"}
+                            </p>
+                          </div>
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-colors shrink-0" />
+                        </Link>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
                 {/* Trayectoria política */}
                 <Card className="shadow-none border-border/60">
                   <CardHeader className="pb-3 border-b border-border/40">

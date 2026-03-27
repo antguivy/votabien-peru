@@ -130,13 +130,10 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const hasArchivedRecord =
     person.has_criminal_record && !hasConviction && !isUnderInvestigation;
 
-  const incomes = person.incomes as Record<string, unknown> | null;
-  const assets = person.assets as Record<string, unknown> | null;
-  const declaredIncome = incomes != null && Object.keys(incomes).length > 0;
-  const declaredAssets = assets != null && Object.keys(assets).length > 0;
+  const declaredIncome = person.has_income;
+  const declaredAssets = person.has_assets;
 
-  const workExp = person.work_experience as unknown[] | null;
-  const workCount = Array.isArray(workExp) ? workExp.length : 0;
+  const workCount = person.work_experience_count;
 
   const educationLabel = (() => {
     if (person.education_level === 3)

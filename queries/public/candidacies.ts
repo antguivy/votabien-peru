@@ -41,7 +41,8 @@ function normalizeSearchTerm(term: string): string {
   return term
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u0300-\u0302\u0304-\u036f]/g, "")
+    .normalize("NFC")
     .trim();
 }
 
@@ -79,15 +80,15 @@ export async function getCandidatesCards({
       is_incumbent,
       education_level,
       secondary_school,
-      incomes,
-      assets,
-      work_experience,
       has_criminal_record,
       has_penal_sentence,
       is_under_investigation,
       has_sanction,
       reinfo_status,
-      rnas_sanctions
+      rnas_sanctions,
+      has_income,
+      has_assets,
+      work_experience_count
     ),
     political_party:political_party_id!inner (
       id, name, acronym, logo_url, color_hex, active, foundation_date
@@ -97,9 +98,7 @@ export async function getCandidatesCards({
     )
   `;
 
-  const queryBuilder = supabase
-    .from("candidate")
-    .select(selectQuery, { count: "exact" });
+  const queryBuilder = supabase.from("candidate").select(selectQuery);
 
   type CandidatesWithRelations = QueryData<typeof queryBuilder>;
 
@@ -179,54 +178,44 @@ export async function getCandidatesCards({
 
   // ── Búsqueda multi-palabra ──
   if (hasSearch) {
-    // Query separada sobre person — sin foreignTable
-    let personQuery = supabase.from("person").select("id");
-
     for (const word of searchWords) {
-      const normalized = normalizeSearchTerm(word);
-      // Múltiples .or() en la misma tabla = AND entre palabras
-      personQuery = personQuery.or(
-        `name.ilike.%${normalized}%,lastname.ilike.%${normalized}%`,
-      );
+      query = query.or(`name.ilike.%${word}%,lastname.ilike.%${word}%`, {
+        referencedTable: "person",
+      });
     }
-
-    const { data: persons, error: personError } = await personQuery;
-
-    if (personError || !persons?.length) return [];
-
-    // Filtrar candidates por los IDs resueltos
-    query = query.in(
-      "person_id",
-      persons.map((p) => p.id),
-    );
   }
 
   if (alerts && alerts.length > 0) {
-    const conditions: string[] = [];
+    const orConditions: string[] = [];
 
     if (alerts.includes("HAS_PENAL_SENTENCE"))
-      conditions.push("has_penal_sentence.eq.true");
+      orConditions.push("has_penal_sentence.eq.true");
     if (alerts.includes("HAS_SANCTION"))
-      conditions.push("has_sanction.eq.true");
+      orConditions.push("has_sanction.eq.true");
     if (alerts.includes("EN_INVESTIGACION"))
-      conditions.push("is_under_investigation.eq.true");
+      orConditions.push("is_under_investigation.eq.true");
     if (alerts.includes("IS_INCUMBENT"))
-      conditions.push("is_incumbent.eq.true");
+      orConditions.push("is_incumbent.eq.true");
 
-    if (conditions.length > 0) {
-      const { data: excludedPersons } = await supabase
-        .from("person")
-        .select("id")
-        .or(conditions.join(","));
-
-      if (excludedPersons && excludedPersons.length > 0) {
-        query = query.not(
-          "person_id",
-          "in",
-          `(${excludedPersons.map((p) => p.id).join(",")})`,
-        );
-      }
+    if (orConditions.length > 0) {
+      query = query.or(orConditions.join(","), {
+        referencedTable: "person",
+      });
     }
+    // if (conditions.length > 0) {
+    //   const { data: excludedPersons } = await supabase
+    //     .from("person")
+    //     .select("id")
+    //     .or(conditions.join(","));
+
+    //   if (excludedPersons && excludedPersons.length > 0) {
+    //     query = query.not(
+    //       "person_id",
+    //       "in",
+    //       `(${excludedPersons.map((p) => p.id).join(",")})`,
+    //     );
+    //   }
+    // }
   }
 
   query = query.eq("active", true);
@@ -271,9 +260,6 @@ export async function getCandidatesCards({
         is_incumbent: (p.is_incumbent as boolean) ?? false,
         education_level: (p.education_level as number | null) ?? null,
         secondary_school: (p.secondary_school as boolean | null) ?? null,
-        incomes: (p.incomes as Record<string, unknown> | null) ?? null,
-        assets: (p.assets as Record<string, unknown> | null) ?? null,
-        work_experience: (p.work_experience as unknown[] | null) ?? null,
         has_criminal_record: (p.has_criminal_record as boolean) ?? false,
         has_penal_sentence: (p.has_penal_sentence as boolean) ?? false,
         is_under_investigation: (p.is_under_investigation as boolean) ?? false,
@@ -281,6 +267,9 @@ export async function getCandidatesCards({
         reinfo_status: (p.reinfo_status as string | null) ?? null,
         rnas_sanctions:
           (p.rnas_sanctions as unknown as RnasSanction[] | null) ?? null,
+        has_income: (p.has_income as boolean) ?? false,
+        has_assets: (p.has_assets as boolean) ?? false,
+        work_experience_count: p.work_experience_count as number,
       },
 
       political_party: {
@@ -346,6 +335,29 @@ export async function getPrincipalCandidates(
   }));
 }
 
+export async function getFormulaPorPartido(
+  partidoId: string,
+  processId: string,
+): Promise<CandidatePresidentials[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("candidate")
+    .select(
+      `id, type, list_number,
+       person:person_id!inner (
+         id, fullname, image_candidate_url, profession
+       )`,
+    )
+    .eq("electoral_process_id", processId)
+    .eq("political_party_id", partidoId)
+    .in("type", ["VICEPRESIDENTE_1", "VICEPRESIDENTE_2"])
+    .order("list_number", { ascending: true });
+
+  if (error || !data) return [];
+  return data as unknown as CandidatePresidentials[];
+}
+
 export async function getCandidateById(
   candidateId: string,
 ): Promise<CandidateDetail | null> {
@@ -370,7 +382,6 @@ export async function getCandidateById(
       `,
     )
     .eq("id", candidateId)
-    .eq("active", true)
     .single();
 
   if (error) {

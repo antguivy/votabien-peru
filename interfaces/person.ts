@@ -210,13 +210,13 @@ export interface PersonBackgroundToCard {
   is_incumbent: boolean;
   education_level: number | null;
   secondary_school: boolean | null;
-  incomes: Record<string, unknown> | null;
-  assets: Record<string, unknown> | null;
-  work_experience: unknown[] | null;
   has_criminal_record: boolean;
   has_penal_sentence: boolean;
   is_under_investigation: boolean;
   has_sanction: boolean;
   reinfo_status: string | null;
   rnas_sanctions: RnasSanction[] | null;
+  has_income: boolean;
+  has_assets: boolean;
+  work_experience_count: number;
 }

@@ -443,7 +443,7 @@ export default function DetailParty({
                     principalCandidates.map((c) => (
                       <Link
                         key={c.id}
-                        href={`/candidatos/${c.person.id}`}
+                        href={`/candidatos/${c.id}`}
                         className="flex items-center gap-4 rounded-lg p-2 -mx-2 hover:bg-muted transition-colors cursor-pointer"
                       >
                         <div className="w-12 h-12 rounded-full bg-muted flex-shrink-0 overflow-hidden">

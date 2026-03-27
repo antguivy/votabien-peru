@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import DetailCandidato from "./_components/detail-page";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import { getCandidateById } from "@/queries/public/candidacies";
+import {
+  getCandidateById,
+  getFormulaPorPartido,
+} from "@/queries/public/candidacies";
 
 interface PageProps {
   params: Promise<{ candidatosId: string }>;
@@ -10,22 +13,27 @@ interface PageProps {
 export default async function CandidatoDetailPage({ params }: PageProps) {
   const { candidatosId } = await params;
 
-  try {
-    const candidato = await getCandidateById(candidatosId);
+  // Sin try/catch global — maneja cada caso explícitamente
+  const candidato = await getCandidateById(candidatosId);
+  if (!candidato) notFound();
 
-    if (!candidato) notFound();
-    return (
-      <ContentPlatformLayout>
-        <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-4">
-          <DetailCandidato
-            candidate={candidato}
-            shareUrl={`https://votabienperu.com/candidatos/${candidatosId}`}
-          />
-        </section>
-      </ContentPlatformLayout>
-    );
-  } catch (error) {
-    console.error("Error al obtener datos de candidatos:", error);
-    notFound();
-  }
+  const formula =
+    candidato.type === "PRESIDENTE"
+      ? await getFormulaPorPartido(
+          candidato.political_party_id,
+          candidato.electoral_process_id,
+        )
+      : [];
+
+  return (
+    <ContentPlatformLayout>
+      <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-4">
+        <DetailCandidato
+          candidate={candidato}
+          formula={formula}
+          shareUrl={`https://votabienperu.com/candidatos/${candidatosId}`}
+        />
+      </section>
+    </ContentPlatformLayout>
+  );
 }
