@@ -206,12 +206,13 @@ export async function getLegisladorById(
     `,
     )
     .eq("id", legisladorId)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     console.error("Error fetching legislador:", error);
     return null;
   }
+  if (!data) return null;
 
   return data as unknown as LegislatorDetailWithPerson;
 }

@@ -18,7 +18,6 @@ export default async function PartidoDetailPage({ params }: PageProps) {
       getPrincipalCandidates(partidosId),
     ]);
 
-    if (!party) notFound();
     if (party.type === "ALIANZA") {
       return <DetailAlliance alliance={party} />;
     }
@@ -35,7 +34,11 @@ export default async function PartidoDetailPage({ params }: PageProps) {
       </ContentPlatformLayout>
     );
   } catch (error) {
-    console.error("Error al obtener datos del partido:", error);
+    if (error instanceof Error && error.message === "Partido no encontrado") {
+      notFound();
+    }
+
+    console.error("Error inesperado en partido:", error);
     notFound();
   }
 }

@@ -200,26 +200,22 @@ export async function getCandidatesCards({
       orConditions.push("is_incumbent.eq.true");
 
     if (orConditions.length > 0) {
-      query = query.or(orConditions.join(","), {
-        referencedTable: "person",
-      });
+      query = query.not(
+        "person_id",
+        "in",
+        `(${
+          (
+            await supabase
+              .from("person")
+              .select("id")
+              .or(orConditions.join(","))
+          ).data
+            ?.map((p) => p.id)
+            .join(",") ?? ""
+        })`,
+      );
     }
-    // if (conditions.length > 0) {
-    //   const { data: excludedPersons } = await supabase
-    //     .from("person")
-    //     .select("id")
-    //     .or(conditions.join(","));
-
-    //   if (excludedPersons && excludedPersons.length > 0) {
-    //     query = query.not(
-    //       "person_id",
-    //       "in",
-    //       `(${excludedPersons.map((p) => p.id).join(",")})`,
-    //     );
-    //   }
-    // }
   }
-
   query = query.eq("active", true);
   const { data, error } = await query;
 
@@ -400,7 +396,7 @@ export async function getCandidateById(
       `,
     )
     .eq("id", candidateId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error("Error fetching candidate detail:", error);

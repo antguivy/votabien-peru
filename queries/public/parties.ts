@@ -192,7 +192,7 @@ export async function getPartidoById(
       `,
       )
       .eq("id", partidoId)
-      .single(),
+      .maybeSingle(),
 
     supabase
       .from("party_seats_by_district")
@@ -225,10 +225,8 @@ export async function getPartidoById(
       .eq("party_id", partidoId)
       .order("report_date", { ascending: false }),
   ]);
-  if (partidoRes.error || !partidoRes.data) {
-    console.error("Error fetching party:", partidoRes.error);
-    throw new Error("Partido no encontrado");
-  }
+
+  if (!partidoRes.data) throw new Error("Partido no encontrado");
 
   const partido = partidoRes.data;
 

@@ -14,7 +14,6 @@ interface PageProps {
 export default async function CandidatoDetailPage({ params }: PageProps) {
   const { candidatosId } = await params;
 
-  // Sin try/catch global — maneja cada caso explícitamente
   const candidato = await getCandidateById(candidatosId);
   if (!candidato) notFound();
 

@@ -50,7 +50,7 @@ interface NewFilterPanelProps {
 const REGION_TYPES = ["SENADOR_REGIONAL", "DIPUTADO"];
 
 // ─────────────────────────────────────────────
-// Lista de partidos — logo izquierda + nombre derecha
+// Lista de partidos
 // ─────────────────────────────────────────────
 
 function PartyList({
@@ -101,7 +101,6 @@ function PartyList({
                 : "border-border/40 hover:border-border bg-card hover:bg-muted/30",
             )}
           >
-            {/* Logo grande */}
             <div
               className={cn(
                 "relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0",
@@ -131,23 +130,15 @@ function PartyList({
               )}
             </div>
 
-            {/* Siglas + nombre */}
             <div className="w-full text-center">
-              <p
-                className={cn(
-                  "text-[11px] font-black uppercase tracking-wide leading-tight",
-                )}
-              >
+              <p className="text-[11px] font-black uppercase tracking-wide leading-tight">
                 {party.acronym ?? initials}
               </p>
-              <p
-                className={cn("text-[10px] leading-tight mt-0.5 line-clamp-2")}
-              >
+              <p className="text-[10px] leading-tight mt-0.5 line-clamp-2">
                 {party.name}
               </p>
             </div>
 
-            {/* Indicador de selección */}
             {isSelected && (
               <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-brand flex items-center justify-center">
                 <Check className="w-2.5 h-2.5 text-white" />
@@ -236,7 +227,7 @@ function DistrictList({
 }
 
 // ─────────────────────────────────────────────
-// Buscador reutilizable para credenza/drawer
+// SearchBar reutilizable
 // ─────────────────────────────────────────────
 
 function SearchBar({
@@ -270,11 +261,7 @@ function SearchBar({
 }
 
 const ALERT_OPTIONS = [
-  {
-    value: "HAS_PENAL_SENTENCE",
-    label: "Sentenciados",
-    color: "red",
-  },
+  { value: "HAS_PENAL_SENTENCE", label: "Sentenciados", color: "red" },
   { value: "HAS_SANCTION", label: "Sancionados", color: "orange" },
   { value: "EN_INVESTIGACION", label: "Investigados", color: "amber" },
   { value: "IS_INCUMBENT", label: "Congresistas actuales", color: "blue" },
@@ -304,6 +291,8 @@ export function NewFilterPanel({
   const pathname = usePathname();
 
   const showRegion = REGION_TYPES.includes(currentType);
+
+  // Cuántos filtros están activos en la URL actual (para la pill del trigger)
   const activeCount = [
     currentSearch ? 1 : 0,
     currentParty ? 1 : 0,
@@ -330,11 +319,13 @@ export function NewFilterPanel({
   const [subDrawer, setSubDrawer] = useState<"party" | "region" | null>(null);
   const [subSearch, setSubSearch] = useState("");
 
-  // Pending state mobile
+  // Estado pendiente mobile — se inicializa al abrir el drawer
   const [pendingSearch, setPendingSearch] = useState(currentSearch);
   const [pendingParty, setPendingParty] = useState(currentParty);
   const [pendingDistrict, setPendingDistrict] = useState(currentDistrict);
+  const [pendingAlerts, setPendingAlerts] = useState<string[]>(currentAlerts);
 
+  // Sincronizar estado pendiente al abrir el drawer
   useEffect(() => {
     if (isDrawerOpen) {
       setPendingSearch(currentSearch);
@@ -371,6 +362,46 @@ export function NewFilterPanel({
   );
 
   // ─────────────────────────────────────────────
+  // Detección de cambios — el fix central
+  // ─────────────────────────────────────────────
+  // "¿Hay algo diferente entre lo que el usuario configuró y lo que está en la URL?"
+  // Esto es lo que habilita/deshabilita el botón Apply, no si hay filtros activos.
+
+  const hasChanges = useMemo(() => {
+    const alertsChanged =
+      pendingAlerts.length !== currentAlerts.length ||
+      pendingAlerts.some((a) => !currentAlerts.includes(a));
+
+    return (
+      pendingSearch !== currentSearch ||
+      pendingParty !== currentParty ||
+      (showRegion ? pendingDistrict !== currentDistrict : false) ||
+      alertsChanged
+    );
+  }, [
+    pendingSearch,
+    currentSearch,
+    pendingParty,
+    currentParty,
+    pendingDistrict,
+    currentDistrict,
+    showRegion,
+    pendingAlerts,
+    currentAlerts,
+  ]);
+
+  // Cuántos filtros tiene el estado pendiente (para el label del botón)
+  const pendingActiveCount = [
+    pendingSearch ? 1 : 0,
+    pendingParty ? 1 : 0,
+    pendingDistrict && showRegion ? 1 : 0,
+    pendingAlerts.length > 0 ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  // ¿El estado pendiente tiene algún filtro activo? (para mostrar "Limpiar")
+  const pendingHasFilters = pendingActiveCount > 0;
+
+  // ─────────────────────────────────────────────
   // URL builder
   // ─────────────────────────────────────────────
 
@@ -395,9 +426,7 @@ export function NewFilterPanel({
     (value: string) => {
       router.replace(
         buildUrl(value, currentParty, currentDistrict, currentAlerts),
-        {
-          scroll: false,
-        },
+        { scroll: false },
       );
     },
     [router, buildUrl, currentParty, currentDistrict, currentAlerts],
@@ -407,9 +436,7 @@ export function NewFilterPanel({
     (name: string) => {
       router.replace(
         buildUrl(currentSearch, name, currentDistrict, currentAlerts),
-        {
-          scroll: false,
-        },
+        { scroll: false },
       );
       setOpenCredenza(null);
       setDesktopSearch("");
@@ -421,11 +448,8 @@ export function NewFilterPanel({
     (name: string) => {
       router.replace(
         buildUrl(currentSearch, currentParty, name, currentAlerts),
-        {
-          scroll: false,
-        },
+        { scroll: false },
       );
-
       setOpenCredenza(null);
       setDesktopSearch("");
     },
@@ -437,13 +461,6 @@ export function NewFilterPanel({
     setLocalSearch("");
   }, [router, buildUrl]);
 
-  // ─────────────────────────────────────────────
-  // Mobile handlers
-  // ─────────────────────────────────────────────
-
-  const [pendingAlerts, setPendingAlerts] = useState<string[]>(currentAlerts);
-
-  // 2. Separar handler desktop (URL inmediata) vs mobile (estado pendiente)
   const toggleAlertDesktop = useCallback(
     (value: string) => {
       const next = currentAlerts.includes(value)
@@ -464,6 +481,10 @@ export function NewFilterPanel({
     ],
   );
 
+  // ─────────────────────────────────────────────
+  // Mobile handlers
+  // ─────────────────────────────────────────────
+
   const toggleAlertMobile = useCallback((value: string) => {
     setPendingAlerts((prev) =>
       prev.includes(value) ? prev.filter((a) => a !== value) : [...prev, value],
@@ -473,9 +494,7 @@ export function NewFilterPanel({
   const applyMobile = useCallback(() => {
     router.replace(
       buildUrl(pendingSearch, pendingParty, pendingDistrict, pendingAlerts),
-      {
-        scroll: false,
-      },
+      { scroll: false },
     );
     setIsDrawerOpen(false);
   }, [
@@ -487,20 +506,16 @@ export function NewFilterPanel({
     pendingAlerts,
   ]);
 
-  const clearMobile = useCallback(() => {
+  // Limpiar solo resetea el estado pendiente — no toca la URL
+  // El usuario aún tiene que presionar "Aplicar" para confirmar
+  const clearPending = useCallback(() => {
     setPendingSearch("");
     setPendingParty("");
     setPendingDistrict("");
     setPendingAlerts([]);
   }, []);
 
-  const pendingCount = [
-    pendingSearch ? 1 : 0,
-    pendingParty ? 1 : 0,
-    pendingDistrict && showRegion ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
-
-  // Partido seleccionado actualmente (para mostrar logo en trigger)
+  // Datos del partido seleccionado
   const selectedPartyData = currentParty
     ? parties.find((p) => p.id === currentParty)
     : null;
@@ -550,7 +565,6 @@ export function NewFilterPanel({
             {activeCount > 0 ? "Filtros activos" : "Buscar y filtrar"}
           </span>
 
-          {/* Active filter pills preview */}
           {activeCount > 0 && (
             <div className="flex items-center gap-1.5 overflow-hidden">
               {currentSearch && (
@@ -558,15 +572,14 @@ export function NewFilterPanel({
                   {currentSearch}
                 </span>
               )}
-              {pendingPartyData && (
+              {selectedPartyData && (
                 <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
-                  {(pendingPartyData.acronym ?? pendingPartyData.name).slice(
+                  {(selectedPartyData.acronym ?? selectedPartyData.name).slice(
                     0,
                     3,
                   )}
                 </span>
               )}
-
               {currentDistrict && showRegion && (
                 <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
                   {currentDistrict}
@@ -632,7 +645,7 @@ export function NewFilterPanel({
         </div>
 
         {ALERT_OPTIONS.map((opt) => {
-          const isActive = currentAlerts.includes(opt.value); // o currentAlerts en desktop
+          const isActive = currentAlerts.includes(opt.value);
           const colors = colorMap[opt.color];
           return (
             <button
@@ -651,6 +664,7 @@ export function NewFilterPanel({
             </button>
           );
         })}
+
         {/* Región — Credenza */}
         {showRegion && (
           <Credenza
@@ -729,7 +743,6 @@ export function NewFilterPanel({
                   : "bg-background border-border/60 text-muted-foreground hover:border-border hover:text-foreground",
               )}
             >
-              {/* Logo del partido si hay uno seleccionado */}
               {selectedPartyData?.logo_url ? (
                 <div className="relative w-5 h-5 rounded overflow-hidden bg-white border border-border/30 flex-shrink-0">
                   <Image
@@ -779,7 +792,6 @@ export function NewFilterPanel({
           </CredenzaContent>
         </Credenza>
 
-        {/* Limpiar */}
         {activeCount > 0 && (
           <button
             onClick={clearAll}
@@ -815,15 +827,27 @@ export function NewFilterPanel({
                 <SlidersHorizontal className="w-4 h-4 text-brand" />
               </div>
               <span className="text-xl font-bold tracking-tight">Filtros</span>
-              {pendingCount > 0 && (
+              {activeCount > 0 && (
                 <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[10px] font-bold">
-                  {pendingCount}
+                  {activeCount}
                 </span>
               )}
+
+              {/* Limpiar */}
+              {activeCount > 0 && (
+                <Button
+                  onClick={() => {
+                    clearPending();
+                    router.replace(buildUrl("", "", "", []), { scroll: false });
+                  }}
+                  variant={"outline"}
+                  className="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Limpiar todo
+                  <X />
+                </Button>
+              )}
             </DrawerTitle>
-            <DrawerDescription className="sr-only">
-              Panel de filtros de búsqueda
-            </DrawerDescription>
           </DrawerHeader>
 
           {/* Contenido scrolleable */}
@@ -844,7 +868,7 @@ export function NewFilterPanel({
                 {pendingSearch && (
                   <button
                     onClick={() => setPendingSearch("")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -922,7 +946,6 @@ export function NewFilterPanel({
                     : "bg-card border-border/50 hover:border-border",
                 )}
               >
-                {/* Logo o placeholder */}
                 <div
                   className={cn(
                     "w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border flex items-center justify-center",
@@ -978,13 +1001,15 @@ export function NewFilterPanel({
                 <ChevronDown className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
               </button>
             </div>
+
+            {/* Alertas */}
             <div className="space-y-2">
               <p className="text-[11px] font-bold text-brand uppercase tracking-widest px-1">
                 ¿A quiénes prefieres excluir?
               </p>
               <div className="flex flex-col gap-1.5">
                 {ALERT_OPTIONS.map((opt) => {
-                  const isActive = pendingAlerts.includes(opt.value); // o currentAlerts en desktop
+                  const isActive = pendingAlerts.includes(opt.value);
                   const colors = colorMap[opt.color];
                   return (
                     <button
@@ -1007,43 +1032,26 @@ export function NewFilterPanel({
             </div>
           </div>
 
-          {/* Footer — estado condicional */}
+          {/* ── Footer ─────────────────────────────
+              Lógica nueva:
+              - hasChanges  → habilita "Aplicar"
+              - !hasChanges → solo "Cerrar"
+              - pendingHasFilters → muestra "Limpiar" como secundario
+          ─────────────────────────────────────── */}
           <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background space-y-2">
-            {pendingCount > 0 ? (
-              <>
-                {/* Con filtros: Aplicar prominente + Limpiar secundario */}
-                <Button
-                  onClick={applyMobile}
-                  className="w-full h-12 rounded-xl text-base font-bold bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand/90 active:scale-[0.98] transition-all"
-                >
-                  Aplicar filtros ({pendingCount})
-                </Button>
-                <Button
-                  onClick={clearMobile}
-                  variant={"ghost"}
-                  className="w-full h-12 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive border-2 border-border/40 hover:border-destructive/30 hover:bg-destructive/5 transition-all active:scale-[0.98]"
-                >
-                  Limpiar filtros
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* Sin filtros: Aplicar deshabilitado + Cerrar */}
-                <Button
-                  disabled
-                  variant={"outline"}
-                  className="w-full h-12 rounded-xl text-base font-bold bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                >
-                  Aplicar filtros
-                </Button>
-                <Button
-                  onClick={() => setIsDrawerOpen(false)}
-                  className="w-full h-12 bg-brand rounded-xl text-white text-base hover:bg-brand/90 transition-all active:scale-[0.98]"
-                >
-                  Cerrar
-                </Button>
-              </>
-            )}
+            <Button
+              onClick={applyMobile}
+              className="w-full h-12 rounded-xl text-base font-bold bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand/90 active:scale-[0.98] transition-all"
+            >
+              {`Aplicar filtros (${pendingActiveCount})`}
+            </Button>
+            <Button
+              onClick={() => setIsDrawerOpen(false)}
+              variant={"outline"}
+              className="w-full h-12 bg-brand rounded-xl text-white text-base hover:bg-brand/90 transition-all active:scale-[0.98]"
+            >
+              Cerrar
+            </Button>
           </div>
         </DrawerContent>
       </Drawer>
@@ -1068,7 +1076,6 @@ export function NewFilterPanel({
             <DrawerTitle />
           </DrawerHeader>
 
-          {/* Cabecera */}
           <div className="flex-shrink-0 flex items-center gap-3 px-4 py-4 border-b border-border/40">
             <button
               onClick={() => {
@@ -1097,7 +1104,6 @@ export function NewFilterPanel({
             )}
           </div>
 
-          {/* Buscador */}
           <div className="flex-shrink-0 px-4 py-3 border-b border-border/40">
             <SearchBar
               value={subSearch}
@@ -1106,7 +1112,6 @@ export function NewFilterPanel({
             />
           </div>
 
-          {/* Lista */}
           <div className="flex-1 overflow-y-auto px-4 py-3">
             <DistrictList
               districts={districtOptions}
@@ -1119,19 +1124,6 @@ export function NewFilterPanel({
               filter={subSearch}
             />
           </div>
-
-          {/* Footer */}
-          {/* <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
-            <Button
-              onClick={() => {
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              className="w-full h-12 rounded-xl text-base font-bold bg-brand hover:bg-brand/90 text-white shadow-lg shadow-brand/20 active:scale-[0.98] transition-all"
-            >
-              Listo
-            </Button>
-          </div> */}
         </DrawerContent>
       </Drawer>
 
@@ -1155,7 +1147,6 @@ export function NewFilterPanel({
             <DrawerTitle />
           </DrawerHeader>
 
-          {/* Cabecera */}
           <div className="flex-shrink-0 flex items-center gap-3 px-4 py-4 border-b border-border/40">
             <button
               onClick={() => {
@@ -1184,7 +1175,6 @@ export function NewFilterPanel({
             )}
           </div>
 
-          {/* Buscador */}
           <div className="flex-shrink-0 px-4 py-3 border-b border-border/40">
             <SearchBar
               value={subSearch}
@@ -1193,7 +1183,6 @@ export function NewFilterPanel({
             />
           </div>
 
-          {/* Lista */}
           <div className="flex-1 overflow-y-auto px-4 py-3">
             <PartyList
               parties={parties}
@@ -1206,19 +1195,6 @@ export function NewFilterPanel({
               filter={subSearch}
             />
           </div>
-
-          {/* Footer */}
-          {/* <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background">
-            <Button
-              onClick={() => {
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              className="w-full h-12 rounded-xl text-base font-bold bg-brand hover:bg-brand/90 text-white shadow-lg shadow-brand/20 active:scale-[0.98] transition-all"
-            >
-              Listo
-            </Button>
-          </div> */}
         </DrawerContent>
       </Drawer>
     </>
