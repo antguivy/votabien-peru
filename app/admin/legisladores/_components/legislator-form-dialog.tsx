@@ -48,39 +48,27 @@ import { PersonSelector } from "@/components/person-selector";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const legislatorPeriodSchema = z
-  .object({
-    id: z.string(),
-    person_id: z.string().min(1, "Debe seleccionar una persona"),
-    chamber: z.enum(ChamberType),
-    condition: z.enum(LegislatorCondition),
-    electoral_district_id: z
-      .string()
-      .min(1, "Debe seleccionar un distrito electoral"),
-    elected_by_party_id: z
-      .string()
-      .min(1, "Debe seleccionar el partido original"),
-    start_date: z.string(),
-    end_date: z.string().nullable(),
-    institutional_email: z
-      .union([z.email({ message: "Email inválido" }), z.literal("")])
-      .optional(),
-    active: z.boolean(),
-  })
-  .refine(
-    (data) => {
-      // Validar que end_date sea posterior a start_date
-      if (data.start_date && data.end_date) {
-        return new Date(data.end_date) >= new Date(data.start_date);
-      }
-      return true;
-    },
-    {
-      message:
-        "La fecha de fin debe ser posterior o igual a la fecha de inicio",
-      path: ["end_date"],
-    },
-  );
+const legislatorPeriodSchema = z.object({
+  id: z.string(),
+  person_id: z.string().min(1, "Debe seleccionar una persona"),
+  chamber: z.enum(ChamberType),
+  condition: z.enum(LegislatorCondition),
+  electoral_district_id: z
+    .string()
+    .min(1, "Debe seleccionar un distrito electoral"),
+  elected_by_party_id: z
+    .string()
+    .min(1, "Debe seleccionar el partido original"),
+  start_date: z.string().min(1, "La fecha de inicio es requerida"),
+  end_date: z
+    .string()
+    .nullable()
+    .transform((v) => v || null),
+  institutional_email: z
+    .union([z.email({ message: "Email inválido" }), z.literal("")])
+    .optional(),
+  active: z.boolean(),
+});
 
 type LegislatorPeriodFormValues = z.infer<typeof legislatorPeriodSchema>;
 
@@ -147,21 +135,29 @@ export function LegislatorFormDialog({
     setSelectedPerson(null);
     form.setValue("person_id", "");
   };
+
   const onSubmit = async (values: LegislatorPeriodFormValues) => {
     const isEditing = mode === "edit";
     const action = isEditing ? updateLegislatorPeriod : createLegislatorPeriod;
     const message = isEditing ? "actualizado" : "creado";
 
-    toast.promise(action(values), {
-      loading: `${isEditing ? "Actualizando" : "Creando"} periodo legislativo...`,
-      success: `Periodo legislativo ${message} exitosamente`,
-      error: (err) =>
-        err?.message || `Error al ${message} el periodo legislativo`,
-    });
+    try {
+      const result = await action(values);
 
-    onOpenChange(false);
-    router.refresh();
-    form.reset();
+      if (result.success) {
+        toast.success(`Periodo legislativo ${message} exitosamente`);
+        onOpenChange(false);
+        form.reset();
+      } else {
+        toast.error(`Error al ${message} el legislador`);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Error al ${message} el legislador`;
+      toast.error(errorMessage);
+    }
   };
 
   useEffect(() => {

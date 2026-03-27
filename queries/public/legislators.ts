@@ -1,10 +1,15 @@
 "use server";
 
-import { LegislatorCard } from "@/interfaces/legislator";
+import {
+  LegislatorCard,
+  LegislatorDetail,
+  LegislatorDetailWithPerson,
+} from "@/interfaces/legislator";
 import { LegislatorVersusCard } from "@/interfaces/legislator-metrics";
 import { ChamberType } from "@/interfaces/politics";
 import { Database } from "@/interfaces/supabase";
 import { createClient } from "@/lib/supabase/server";
+import { getBillStatusGroup } from "@/lib/utils-bill";
 
 interface GetLegislatorsParams {
   active_only?: boolean;
@@ -175,6 +180,41 @@ type LegislatorFromDB = {
   } | null;
   metrics: MetricsRow | MetricsRow[] | null;
 };
+
+export async function getLegisladorById(
+  legisladorId: string,
+): Promise<LegislatorDetailWithPerson | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("legislator")
+    .select(
+      `
+      *,
+      elected_by_party:politicalparty(*),
+      electoral_district:electoraldistrict(*),
+      bill_authorships:bill(*),
+      attendances:attendance(*),
+      parliamentary_memberships:parliamentarymembership(
+        *,
+        parliamentary_group:parliamentarygroup(*)
+      ),
+      person:person_id!inner(
+        *,
+        backgrounds:background(*)
+      )
+    `,
+    )
+    .eq("id", legisladorId)
+    .single();
+
+  if (error || !data) {
+    console.error("Error fetching legislador:", error);
+    return null;
+  }
+
+  return data as unknown as LegislatorDetailWithPerson;
+}
 
 export async function getVersusLegislators({
   limit = 40,

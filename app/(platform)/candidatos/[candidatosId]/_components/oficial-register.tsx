@@ -14,6 +14,7 @@ interface RegistrosOficialesProps {
   reinfo_status: ReinfoStatus | null;
   rnas_sanctions: RnasSanction[] | null;
   profession: string | null;
+  legislatorId?: string | null;
 }
 
 type StatusLevel = "alert" | "warning" | "neutral" | "clean";
@@ -101,7 +102,7 @@ function Row({
 // Incumbente
 // ─────────────────────────────────────────────────────────────────────────────
 
-function IncumbentRow() {
+function IncumbentRow({ legislatorId }: { legislatorId?: string | null }) {
   return (
     <Row icon={Landmark} level="neutral">
       <p className="text-sm font-semibold text-foreground leading-tight">
@@ -110,6 +111,15 @@ function IncumbentRow() {
       <p className="text-xs text-muted-foreground">
         Actualmente ocupa un escaño en el Congreso de la República.
       </p>
+      {legislatorId && (
+        <Link
+          href={`/legisladores/${legislatorId}`}
+          className="inline-flex items-center gap-1 text-xs text-info hover:underline transition-colors"
+        >
+          Ver perfil de congresista
+          <ExternalLink className="w-3 h-3" />
+        </Link>
+      )}
     </Row>
   );
 }
@@ -290,6 +300,7 @@ export function RegistrosOficiales({
   reinfo_status,
   rnas_sanctions,
   profession,
+  legislatorId,
 }: RegistrosOficialesProps) {
   const hasRnas = rnas_sanctions !== null && rnas_sanctions.length > 0;
   const candidateIsLawyer = isLawyer(profession);
@@ -298,7 +309,7 @@ export function RegistrosOficiales({
 
   return (
     <section className="mb-2 rounded-xl border border-border/60 bg-card divide-y divide-border/40 overflow-hidden">
-      {is_incumbent && <IncumbentRow />}
+      {is_incumbent && <IncumbentRow legislatorId={legislatorId} />}
       {reinfo_status ? (
         <ReinfoRow status={reinfo_status} />
       ) : (

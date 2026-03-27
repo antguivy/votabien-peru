@@ -1,4 +1,5 @@
 import { Attendance } from "./attendance";
+import { BackgroundBase } from "./background";
 import { BillBasic } from "./bill";
 import {
   ElectoralDistrictBase,
@@ -8,7 +9,7 @@ import {
   ParliamentaryGroupBasic,
   ParliamentaryMembershipWithGroup,
 } from "./parliamentary-membership";
-import { PersonBasicInfo } from "./person";
+import { PersonBase, PersonBasicInfo } from "./person";
 import { PoliticalPartyBase } from "./political-party";
 import { ChamberType, LegislatorCondition } from "./politics";
 
@@ -37,6 +38,16 @@ export interface LegislatorDetail extends LegislatorBase {
   bill_authorships: BillBasic[];
   attendances: Attendance[];
   parliamentary_memberships: ParliamentaryMembershipWithGroup[];
+}
+
+export interface LegislatorDetailWithPerson extends LegislatorDetail {
+  person: PersonBase & {
+    backgrounds: BackgroundBase[];
+    facebook_url: string | null;
+    twitter_url: string | null;
+    instagram_url: string | null;
+    tiktok_url: string | null;
+  };
 }
 
 export interface LegislatorInSeat {

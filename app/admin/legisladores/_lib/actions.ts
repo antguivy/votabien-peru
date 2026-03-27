@@ -136,7 +136,6 @@ export async function updateLegislatorPeriod(
         data.id,
       );
     }
-
     const { id, ...updateBody } = data;
 
     // Casting parcial seguro para update

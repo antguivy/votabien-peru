@@ -8,8 +8,10 @@ import {
   CandidateDetail,
   CandidatePresidentials,
 } from "@/interfaces/candidate";
+import { LegislatorDetail } from "@/interfaces/legislator";
 import { RnasSanction } from "@/interfaces/person";
 import { createClient } from "@/lib/supabase/server";
+import { getBillStatusGroup } from "@/lib/utils-bill";
 import { QueryData } from "@supabase/supabase-js";
 
 interface GetCandidatesParams {
@@ -356,6 +358,22 @@ export async function getFormulaPorPartido(
 
   if (error || !data) return [];
   return data as unknown as CandidatePresidentials[];
+}
+
+export async function getActiveLegislatorId(
+  personId: string,
+): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("legislator")
+    .select("id")
+    .eq("person_id", personId)
+    .eq("active", true)
+    .single();
+
+  if (error || !data) return null;
+  return data.id;
 }
 
 export async function getCandidateById(

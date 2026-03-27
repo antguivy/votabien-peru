@@ -18,6 +18,8 @@ import {
   ArrowRightLeft,
   User,
   ScrollText,
+  ExternalLink,
+  CheckCircle2,
 } from "lucide-react";
 import { SlSocialFacebook, SlSocialTwitter } from "react-icons/sl";
 import { PiTiktokLogo } from "react-icons/pi";
@@ -30,27 +32,30 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { formatFechaJsonable } from "@/lib/utils/date";
 import { NoDataMessage } from "@/components/no-data-message";
-import { PersonDetailLegislator } from "@/interfaces/person";
 import BillsDialog from "./bills-dialog";
 import ProyectoItem from "./proyect-item";
 import { cn } from "@/lib/utils";
-import { getBackgroundVariant } from "@/lib/utils/helper-enums";
+import {
+  backgroundTypeConfig,
+  DEFAULT_BACKGROUND_CONFIG,
+} from "@/lib/utils/background-config";
+import { LegislatorDetailWithPerson } from "@/interfaces/legislator";
 
 export default function DetailLegislador({
-  persona,
+  legislador,
 }: {
-  persona: PersonDetailLegislator;
+  legislador: LegislatorDetailWithPerson;
 }) {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
   const [openBills, setOpenBills] = useState(false);
 
-  const periodoActivo = persona.legislative_periods?.[0];
+  const persona = legislador.person;
+  const periodoActivo = legislador;
   const proyectos = periodoActivo?.bill_authorships || [];
   const bancadas = periodoActivo?.parliamentary_memberships || [];
   const asistencias = periodoActivo?.attendances || [];
@@ -150,7 +155,7 @@ export default function DetailLegislador({
       </div>
 
       {/* ===== HEADER COMPACTO ===== */}
-      <div className="relative pb-8 md:pb-12">
+      <div className="relative pb-4 md:pb-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar */}
@@ -244,45 +249,26 @@ export default function DetailLegislador({
 
       {/* ===== CONTENIDO CON TABS ===== */}
       <div className="container mx-auto px-4">
-        <Tabs defaultValue="labor" className="w-full space-y-6">
+        <Tabs defaultValue="labor" className="w-full">
           {/* LISTA DE PESTAÑAS */}
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 rounded-xl">
-            <TabsTrigger
-              value="labor"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
-              <ScrollText className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm font-medium">
-                Legislativo
-              </span>
-            </TabsTrigger>
+          <TabsList className="grid grid-cols-3">
+            <TabsTrigger value="labor">Legislativo</TabsTrigger>
             <TabsTrigger
               value="politica"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
+              // className="data-[state=active]:text-destructive"zz
             >
-              <ArrowRightLeft className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm font-medium">
-                Trayectoria
-              </span>
+              Trayectoria
             </TabsTrigger>
-            <TabsTrigger
-              value="hoja-vida"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
-              <User className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm font-medium">
-                Hoja de Vida
-              </span>
-            </TabsTrigger>
+            <TabsTrigger value="hoja-vida">Hoja de Vida</TabsTrigger>
           </TabsList>
 
           {/* --- TAB 1: LABOR LEGISLATIVA (Core) --- */}
           <TabsContent
             value="labor"
-            className="space-y-6 animate-in fade-in-50 duration-300"
+            className="space-y-4 animate-in fade-in-50 duration-300"
           >
             {/* KPIs Resumidos */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-2xl font-bold text-foreground">
@@ -325,7 +311,7 @@ export default function DetailLegislador({
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Columna Izquierda: Proyectos (2/3 ancho) */}
               <div className="lg:col-span-2 space-y-6">
                 <Card className="border-l-4 border-l-primary shadow-sm">
@@ -362,12 +348,12 @@ export default function DetailLegislador({
               </div>
 
               {/* Columna Derecha: Asistencia (1/3 ancho) */}
-              {/* <div className="lg:col-span-1">
+              <div className="lg:col-span-1">
                 <Card className="h-full shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <Vote className="w-4 h-4 text-blue-500" /> Asistencia al
-                      Pleno
+                      <Vote className="w-4 h-4 text-blue-500" />
+                      Asistencia al Pleno
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -435,11 +421,11 @@ export default function DetailLegislador({
                         </div>
                       </div>
                     ) : (
-                      <NoDataMessage text="Sin registro de asistencia." />
+                      <NoDataMessage text="No disponible por el momento" />
                     )}
                   </CardContent>
                 </Card>
-              </div> */}
+              </div>
             </div>
           </TabsContent>
 
@@ -448,7 +434,7 @@ export default function DetailLegislador({
             value="politica"
             className="space-y-6 animate-in fade-in-50 duration-300"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Historial Bancadas */}
               <Card className="shadow-sm">
                 <CardHeader>
@@ -511,38 +497,101 @@ export default function DetailLegislador({
 
               {/* Antecedentes */}
               <Card className="pt-0 shadow-sm border-warning/40">
-                <CardHeader className="bg-warning/5 py-2">
-                  <CardTitle className="flex items-center gap-2 text-foreground/80">
-                    <AlertTriangle className="w-5 h-5 text-warning" />{" "}
-                    Antecedentes Reportados
+                <CardHeader className="py-2 bg-warning/20">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    Antecedentes reportados
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4">
                   {persona.backgrounds && persona.backgrounds.length > 0 ? (
-                    persona.backgrounds.map((bg) => (
-                      <div
-                        key={bg.id}
-                        className="p-3 rounded-lg border border-border bg-card"
-                      >
-                        <div className="flex justify-between items-start mb-1">
-                          <Badge
-                            variant={getBackgroundVariant(bg.type)}
-                            className="text-[10px]"
-                          >
-                            {bg.type}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            {formatFechaJsonable(bg.publication_date)}
-                          </span>
+                    persona.backgrounds.map((bg, i) => {
+                      const isJNE = bg.source?.toUpperCase() === "JNE";
+                      const config =
+                        backgroundTypeConfig[bg.type?.toUpperCase()] ??
+                        DEFAULT_BACKGROUND_CONFIG;
+
+                      return (
+                        <div key={bg.id ?? i} className="flex flex-col gap-1.5">
+                          {/* Row: badge + fecha */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
+                                  config.header,
+                                  config.badge,
+                                )}
+                              >
+                                {bg.type}
+                              </span>
+                              {isJNE && (
+                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                  JNE
+                                </span>
+                              )}
+                            </div>
+                            {bg.publication_date && (
+                              <span className="text-xs text-muted-foreground font-mono shrink-0">
+                                {new Intl.DateTimeFormat("es-PE", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }).format(new Date(bg.publication_date))}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Título */}
+                          <p className="text-base font-semibold text-foreground leading-snug">
+                            {bg.title}
+                          </p>
+
+                          {/* Resumen */}
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {bg.summary}
+                          </p>
+
+                          {/* Fuente */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              Fuente:{" "}
+                              <span className="font-medium text-foreground">
+                                {bg.source}
+                              </span>
+                            </span>
+                            {bg.source_url && (
+                              <Link
+                                href={bg.source_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                {isJNE
+                                  ? "Ver en JNE"
+                                  : new URL(bg.source_url).hostname.replace(
+                                      "www.",
+                                      "",
+                                    )}
+                              </Link>
+                            )}
+                          </div>
+
+                          {/* Separador manual, excepto el último */}
+                          {i < persona.backgrounds.length - 1 && (
+                            <div className="border-t border-dashed border-border/60 mt-1" />
+                          )}
                         </div>
-                        <p className="text-sm font-medium mt-1">{bg.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {bg.summary}
-                        </p>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
-                    <NoDataMessage text="No registra antecedentes en nuestra base de datos." />
+                    <div className="py-10 flex flex-col items-center gap-2 text-center">
+                      <CheckCircle2 className="w-8 h-8 text-muted-foreground/25" />
+                      <p className="text-sm text-muted-foreground">
+                        Sin antecedentes documentados
+                      </p>
+                    </div>
                   )}
                 </CardContent>
               </Card>

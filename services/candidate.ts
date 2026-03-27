@@ -35,7 +35,7 @@ export const candidateService = {
       const response = await apiClient<CandidateDetail>(
         `/api/v1/candidates/${candidateId}/detail`,
       );
-      console.log("Fetched candidate detail:", response);
+
       return response;
     } catch (error) {
       console.error("Error fetching candidate detail:", error);

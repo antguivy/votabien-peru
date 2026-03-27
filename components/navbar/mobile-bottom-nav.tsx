@@ -60,7 +60,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
       {/* ── BARRA ── */}
       <div
         className={cn(
-          "fixed bottom-5 left-4 right-4 z-40 lg:hidden",
+          "fixed bottom-2 left-4 right-4 z-40 lg:hidden",
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",
         )}

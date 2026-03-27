@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import DetailLegislador from "./_components/detail-page";
-import { getPersonaAsLegisladorById } from "@/queries/public/person";
+import { getLegisladorById } from "@/queries/public/legislators";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 interface PageProps {
@@ -11,13 +11,13 @@ export default async function LegisladorDetailPage({ params }: PageProps) {
   const { legisladoresId } = await params;
 
   try {
-    const legislador = await getPersonaAsLegisladorById(legisladoresId);
+    const legislador = await getLegisladorById(legisladoresId);
     if (!legislador) notFound();
 
     return (
       <ContentPlatformLayout>
-        <section className="pt-4 container mx-auto pb-20 lg:pb-0">
-          <DetailLegislador persona={legislador} />
+        <section className="pt-4 container mx-auto pb-20 lg:pb-4">
+          <DetailLegislador legislador={legislador} />
         </section>
       </ContentPlatformLayout>
     );

@@ -114,7 +114,7 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
 
   return (
     <Link
-      href={`/legisladores/${legislador.person.id}`}
+      href={`/legisladores/${legislador.id}`}
       className="group relative flex w-full h-32 bg-card hover:bg-accent/5 rounded-xl border border-border/60 hover:border-border transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
     >
       {/* --- COLUMNA IZQUIERDA: IMAGEN --- */}

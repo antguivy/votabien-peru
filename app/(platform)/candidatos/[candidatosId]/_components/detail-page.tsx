@@ -34,6 +34,10 @@ import { RegistrosOficiales } from "./oficial-register";
 import { getLastUpdated } from "@/lib/utils/date";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+  backgroundTypeConfig,
+  DEFAULT_BACKGROUND_CONFIG,
+} from "@/lib/utils/background-config";
 
 const formatCurrency = (amount: string | number) => {
   if (!amount) return "S/ 0.00";
@@ -51,10 +55,12 @@ export default function DetailCandidato({
   candidate,
   formula = [],
   shareUrl,
+  legislatorId,
 }: {
   candidate: CandidateDetail;
   formula?: CandidatePresidentials[];
   shareUrl: string;
+  legislatorId?: string | null;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
   const persona = candidate.person;
@@ -128,7 +134,7 @@ export default function DetailCandidato({
           <div className="flex flex-col md:flex-row gap-4 items-center md:items-start">
             {/* Foto */}
             <div className="relative shrink-0">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-foreground/5 shadow-xl overflow-hidden relative z-10">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-foreground/5 shadow-xl overflow-hidden relative">
                 <div className="absolute inset-0 z-0">
                   <Image
                     src={persona.image_candidate_url || "/images/default.svg"}
@@ -149,7 +155,7 @@ export default function DetailCandidato({
               </div>
 
               {/* Logo partido */}
-              <div className="absolute -bottom-2 -right-2 z-20 bg-white p-1.5 rounded-xl shadow-md border">
+              <div className="absolute -bottom-2 -right-2 z-10 bg-white p-1.5 rounded-xl shadow-md border">
                 <div className="relative w-8 h-8 md:w-10 md:h-10">
                   <Image
                     src={
@@ -165,7 +171,7 @@ export default function DetailCandidato({
 
               {/* Número de lista */}
               {candidate.list_number && (
-                <div className="absolute -bottom-2 -left-2 z-20 bg-white p-1.5 rounded-xl shadow-md border">
+                <div className="absolute -bottom-2 -left-2 z-10 bg-white p-1.5 rounded-xl shadow-md border">
                   <div className="w-8 h-8 md:w-10 md:h-10 text-4xl text-center font-black text-black flex items-center justify-center leading-none">
                     {candidate.list_number}
                   </div>
@@ -260,35 +266,21 @@ export default function DetailCandidato({
           reinfo_status={persona.reinfo_status}
           rnas_sanctions={persona.rnas_sanctions}
           profession={persona.profession}
+          legislatorId={legislatorId}
         />
 
         {/* ── TABS ── */}
         <Tabs defaultValue="hoja-vida" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl">
-            <TabsTrigger
-              value="hoja-vida"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-            >
-              Hoja de Vida
-            </TabsTrigger>
+          <TabsList className="grid grid-cols-4">
+            <TabsTrigger value="hoja-vida">Perfil</TabsTrigger>
             <TabsTrigger
               value="antecedentes"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium data-[state=active]:text-destructive"
+              className="data-[state=active]:text-destructive"
             >
               Antecedentes
             </TabsTrigger>
-            <TabsTrigger
-              value="bienes"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-            >
-              Bienes
-            </TabsTrigger>
-            <TabsTrigger
-              value="noticias"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm font-medium"
-            >
-              Noticias
-            </TabsTrigger>
+            <TabsTrigger value="bienes">Bienes</TabsTrigger>
+            <TabsTrigger value="noticias">Noticias</TabsTrigger>
           </TabsList>
 
           {/* ── 1. HOJA DE VIDA ── */}
@@ -609,63 +601,67 @@ export default function DetailCandidato({
 
           {/* ── 2. ANTECEDENTES ── */}
           <TabsContent value="antecedentes" className="animate-in fade-in-50">
-            <div className="grid gap-4 max-w-3xl mx-auto">
-              {persona.backgrounds.length > 0 ? (
+            <div className="space-y-4">
+              {persona.backgrounds && persona.backgrounds.length > 0 ? (
                 persona.backgrounds.map((bg, i) => {
                   const isJNE = bg.source?.toUpperCase() === "JNE";
+                  const config =
+                    backgroundTypeConfig[bg.type?.toUpperCase()] ??
+                    DEFAULT_BACKGROUND_CONFIG;
+
                   return (
-                    <Card
-                      key={i}
-                      className="pt-0 border-l-4 border-l-destructive overflow-hidden shadow-none"
+                    <div
+                      key={bg.id ?? i}
+                      className={cn(
+                        "rounded-sm border border-border/50 border-l-2 overflow-hidden",
+                        config.border,
+                      )}
                     >
-                      <div className="bg-destructive/8 py-2 px-4 flex justify-between items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-destructive uppercase tracking-wider">
+                      {/* Header */}
+                      <div
+                        className={cn(
+                          "flex items-center justify-between gap-2 px-3 py-2",
+                          config.header,
+                        )}
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={cn(
+                              "text-xs font-bold uppercase tracking-wider",
+                              config.badge,
+                            )}
+                          >
                             {bg.type}
                           </span>
-                          {bg.publication_date && (
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              {new Intl.DateTimeFormat("es-PE", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              }).format(new Date(bg.publication_date))}
+                          {isJNE && (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              JNE
                             </span>
                           )}
                         </div>
-                        {isJNE && (
-                          <span className="text-[10px] text-muted-foreground bg-background/50 px-2 py-0.5 rounded shrink-0">
-                            Declarado ante JNE
+                        {bg.publication_date && (
+                          <span className="text-xs text-muted-foreground font-mono shrink-0">
+                            {new Intl.DateTimeFormat("es-PE", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }).format(new Date(bg.publication_date))}
                           </span>
                         )}
                       </div>
-                      <CardContent className="pt-4 space-y-4">
-                        <h4 className="font-bold text-base text-foreground leading-tight">
+
+                      {/* Body */}
+                      <div className="px-3 py-3 space-y-2">
+                        <p className="text-base font-semibold text-foreground leading-tight">
                           {bg.title}
-                        </h4>
-                        <p className="text-sm text-foreground/70 leading-relaxed bg-muted/30 p-4 rounded-lg border border-border/40">
+                        </p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
                           {bg.summary}
                         </p>
-                        <div className="flex flex-wrap gap-2 text-sm">
-                          {bg.sanction && (
-                            <span className="text-destructive font-semibold flex items-center gap-1.5 bg-destructive/5 px-2 py-1 rounded text-xs">
-                              <Gavel className="w-3.5 h-3.5" />
-                              {bg.sanction}
-                            </span>
-                          )}
-                          {bg.status && (
-                            <Badge
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                            >
-                              {bg.status.replace(/_/g, " ")}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 pt-1">
                           <span className="text-xs text-muted-foreground">
                             Fuente:{" "}
-                            <span className="font-semibold text-foreground">
+                            <span className="font-medium text-foreground">
                               {bg.source}
                             </span>
                           </span>
@@ -674,26 +670,27 @@ export default function DetailCandidato({
                               href={bg.source_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0"
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-primary transition-colors shrink-0"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              {isJNE ? "Ver en JNE" : "Ver fuente"}
+                              {isJNE
+                                ? "Ver en JNE"
+                                : new URL(bg.source_url).hostname.replace(
+                                    "www.",
+                                    "",
+                                  )}
                             </Link>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })
               ) : (
-                <div className="text-center py-16 bg-muted/20 rounded-xl border border-dashed border-border/60">
-                  <CheckCircle2 className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-foreground">
+                <div className="py-10 flex flex-col items-center gap-2 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-muted-foreground/25" />
+                  <p className="text-sm text-muted-foreground">
                     Sin antecedentes documentados
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                    No encontramos investigaciones en medios periodísticos ni
-                    registros institucionales.
                   </p>
                 </div>
               )}
@@ -809,13 +806,13 @@ export default function DetailCandidato({
           {/* ── 4. NOTICIAS ── */}
           <TabsContent value="noticias" className="animate-in fade-in-50">
             <Card className="shadow-none border-border/60">
-              <CardContent className="pt-8">
+              <CardContent className="pt-6">
                 {persona.detailed_biography?.length > 0 ? (
-                  <div className="max-w-3xl mx-auto border-l border-border/60 ml-4 space-y-8">
+                  <div className="border-l border-border/60 ml-3 space-y-6">
                     {persona.detailed_biography.map((bio, i) => (
                       <div key={i} className="relative pl-6">
-                        <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
-                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-primary/8 text-primary mb-1.5">
+                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-primary/8 text-primary mb-2">
                           {bio.date}
                         </span>
                         <p className="text-sm text-foreground/80 leading-relaxed">
@@ -825,10 +822,14 @@ export default function DetailCandidato({
                           <Link
                             href={bio.source_url}
                             target="_blank"
-                            className="inline-flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 mt-2 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors"
                           >
-                            <ExternalLink size={11} />
-                            Fuente verificada
+                            <ExternalLink size={10} />
+                            {new URL(bio.source_url).hostname.replace(
+                              "www.",
+                              "",
+                            )}
                           </Link>
                         )}
                       </div>
