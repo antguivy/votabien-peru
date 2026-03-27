@@ -45,6 +45,7 @@ import {
   DEFAULT_BACKGROUND_CONFIG,
 } from "@/lib/utils/background-config";
 import { LegislatorDetailWithPerson } from "@/interfaces/legislator";
+import { calcBillStats } from "@/lib/utils/bill-status";
 
 export default function DetailLegislador({
   legislador,
@@ -64,23 +65,7 @@ export default function DetailLegislador({
   const PREVIEW_LIMIT = 4; // Mostramos un poco más porque hay más espacio
 
   // --- STATS PROYECTOS ---
-  const stats_proyectos = useMemo(() => {
-    const counts = {
-      PRESENTADO: 0,
-      EN_PROCESO: 0,
-      APROBADO: 0,
-      ARCHIVADO: 0,
-      RETIRADO: 0,
-      total: 0,
-    };
-    proyectos.forEach((p) => {
-      const group = (p.status_group || "PRESENTADO") as keyof typeof counts;
-      if (counts[group] !== undefined) counts[group]++;
-      else counts.PRESENTADO++;
-      counts.total++;
-    });
-    return counts;
-  }, [proyectos]);
+  const stats_proyectos = useMemo(() => calcBillStats(proyectos), [proyectos]);
 
   // --- STATS ASISTENCIA ---
   const stats_asistencia = useMemo(() => {
@@ -268,7 +253,7 @@ export default function DetailLegislador({
             className="space-y-4 animate-in fade-in-50 duration-300"
           >
             {/* KPIs Resumidos */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-2xl font-bold text-foreground">
@@ -285,27 +270,33 @@ export default function DetailLegislador({
                     {stats_proyectos.APROBADO}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Proyectos Aprobados
+                    Aprobados
                   </span>
                 </CardContent>
               </Card>
-              {/* <Card className="shadow-none border bg-card">
+              <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold text-blue-500">
-                    {stats_asistencia?.porcentajePresencia || 0}%
+                  <span className="text-2xl font-bold text-destructive">
+                    {stats_proyectos.ARCHIVADO}
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Asistencia
+                    Archivados
                   </span>
                 </CardContent>
-              </Card> */}
+              </Card>
               <Card className="shadow-none border bg-card">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-2xl font-bold text-orange-500">
-                    {bancadas.length}
+                    {stats_proyectos.total > 0
+                      ? Math.round(
+                          (stats_proyectos.APROBADO / stats_proyectos.total) *
+                            100,
+                        )
+                      : 0}
+                    %
                   </span>
                   <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Cambios de Bancada
+                    Efectividad
                   </span>
                 </CardContent>
               </Card>

@@ -14,10 +14,10 @@ import { BillBasic } from "@/interfaces/bill";
 import { FileText, Filter, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProyectoItem from "./proyect-item";
-import { BillStatusGroupType } from "@/lib/utils-bill"; // Importamos el Tipo, no el Enum
+import { getBillGroup, BillGroup } from "@/lib/utils/bill-status";
 
 // Definimos los grupos para iterar en los botones (ordenados lógicamente)
-const FILTER_GROUPS: BillStatusGroupType[] = [
+const FILTER_GROUPS: BillGroup[] = [
   "PRESENTADO",
   "EN_PROCESO",
   "APROBADO",
@@ -38,13 +38,10 @@ export default function BillsDialog({
 }: BillsDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   // El filtro puede ser un grupo o "todos"
-  const [groupFilter, setGroupFilter] = useState<BillStatusGroupType | "todos">(
-    "todos",
-  );
+  const [groupFilter, setGroupFilter] = useState<BillGroup | "todos">("todos");
 
   // 1. Contar proyectos por grupo (Optimizada: O(n))
   const groupCounts = useMemo(() => {
-    // Inicializamos contadores en 0
     const counts: Record<string, number> = {
       todos: proyectos.length,
       PRESENTADO: 0,
@@ -53,31 +50,25 @@ export default function BillsDialog({
       ARCHIVADO: 0,
       RETIRADO: 0,
     };
-
     proyectos.forEach((p) => {
-      // Usamos el status_group que ya viene listo del servidor
-      const group = p.status_group || "PRESENTADO";
-      if (counts[group] !== undefined) {
-        counts[group]++;
-      }
+      const group = getBillGroup(p.approval_status);
+      counts[group]++;
     });
-
     return counts;
   }, [proyectos]);
 
   // 2. Filtrado
   const proyectosFiltrados = useMemo(() => {
     return proyectos.filter((p) => {
-      // Filtro de Texto
       const cleanSearch = searchTerm.toLowerCase();
       const matchSearch =
         p.number.toLowerCase().includes(cleanSearch) ||
         p.title.toLowerCase().includes(cleanSearch) ||
         (p.title_ai && p.title_ai.toLowerCase().includes(cleanSearch));
 
-      // Filtro de Grupo (Directo, sin funciones extra)
       const matchGroup =
-        groupFilter === "todos" || p.status_group === groupFilter;
+        groupFilter === "todos" ||
+        getBillGroup(p.approval_status) === groupFilter;
 
       return matchSearch && matchGroup;
     });
