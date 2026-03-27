@@ -1072,11 +1072,12 @@ export function PersonFormDialog({
                                   if (from)
                                     form.setValue(
                                       "birth_date",
-                                      from.toISOString().split("T")[0],
+                                      from.toISOString(),
                                     );
                                 }}
                                 variant="outline"
                                 numberOfMonths={1}
+                                withoutdropdown={true}
                                 yearsRange={100}
                                 closeOnSelect
                                 className="w-full"
