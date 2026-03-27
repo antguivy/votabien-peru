@@ -188,34 +188,16 @@ export async function getCandidatesCards({
   }
 
   if (alerts && alerts.length > 0) {
-    const orConditions: string[] = [];
-
     if (alerts.includes("HAS_PENAL_SENTENCE"))
-      orConditions.push("has_penal_sentence.eq.true");
+      query = query.eq("person.has_penal_sentence", false);
     if (alerts.includes("HAS_SANCTION"))
-      orConditions.push("has_sanction.eq.true");
+      query = query.eq("person.has_sanction", false);
     if (alerts.includes("EN_INVESTIGACION"))
-      orConditions.push("is_under_investigation.eq.true");
+      query = query.eq("person.is_under_investigation", false);
     if (alerts.includes("IS_INCUMBENT"))
-      orConditions.push("is_incumbent.eq.true");
-
-    if (orConditions.length > 0) {
-      query = query.not(
-        "person_id",
-        "in",
-        `(${
-          (
-            await supabase
-              .from("person")
-              .select("id")
-              .or(orConditions.join(","))
-          ).data
-            ?.map((p) => p.id)
-            .join(",") ?? ""
-        })`,
-      );
-    }
+      query = query.eq("person.is_incumbent", false);
   }
+
   query = query.eq("active", true);
   const { data, error } = await query;
 

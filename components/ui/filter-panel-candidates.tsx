@@ -1048,7 +1048,7 @@ export function NewFilterPanel({
             <Button
               onClick={() => setIsDrawerOpen(false)}
               variant={"outline"}
-              className="w-full h-12 bg-brand rounded-xl text-white text-base hover:bg-brand/90 transition-all active:scale-[0.98]"
+              className="w-full h-12 rounded-xl text-foreground text-base transition-all active:scale-[0.98]"
             >
               Cerrar
             </Button>

@@ -19,9 +19,9 @@ export const backgroundTypeConfig: Record<
   ADMINISTRATIVO: {
     border: "border-l-warning",
     header: "bg-warning/6",
-    badge: "text-warning-foreground",
+    badge: "text-warning",
   },
-  ETICO: {
+  ETICA: {
     border: "border-l-blue-500",
     header: "bg-blue-500/6",
     badge: "text-blue-600 dark:text-blue-400",
