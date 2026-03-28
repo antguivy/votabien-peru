@@ -7,19 +7,17 @@ import {
   FileText,
   Mail,
   Check,
-  Copy,
   GraduationCap,
   AlertTriangle,
   Briefcase,
   ChevronRight,
-  DollarSign,
   Home,
   Vote,
   ArrowRightLeft,
-  User,
-  ScrollText,
   ExternalLink,
   CheckCircle2,
+  Newspaper,
+  Copy,
 } from "lucide-react";
 import { SlSocialFacebook, SlSocialTwitter } from "react-icons/sl";
 import { PiTiktokLogo } from "react-icons/pi";
@@ -186,6 +184,22 @@ export default function DetailLegislador({
                 </span>
               </div>
 
+              {periodoActivo.institutional_email && (
+                <Button
+                  onClick={() =>
+                    copyToClipboard(periodoActivo.institutional_email, "email")
+                  }
+                  variant="outline"
+                  title="Copiar correo institucional"
+                >
+                  {periodoActivo.institutional_email}
+                  {isCopied("email") ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </Button>
+              )}
               {/* Redes Sociales en Header */}
               {hasSocialLinks && (
                 <div className="flex justify-center md:justify-start gap-3 mt-2">
@@ -244,7 +258,7 @@ export default function DetailLegislador({
             >
               Trayectoria
             </TabsTrigger>
-            <TabsTrigger value="hoja-vida">Hoja de Vida</TabsTrigger>
+            <TabsTrigger value="perfil">Perfil</TabsTrigger>
           </TabsList>
 
           {/* --- TAB 1: LABOR LEGISLATIVA (Core) --- */}
@@ -253,53 +267,49 @@ export default function DetailLegislador({
             className="space-y-4 animate-in fade-in-50 duration-300"
           >
             {/* KPIs Resumidos */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="shadow-none border bg-card">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold text-foreground">
-                    {stats_proyectos.total}
+            <div className="grid grid-cols-4 gap-0 rounded-lg border bg-card overflow-hidden">
+              {[
+                {
+                  value: stats_proyectos.total,
+                  label: "Proyectos",
+                  color: "text-foreground",
+                },
+                {
+                  value: stats_proyectos.APROBADO,
+                  label: "Aprobados",
+                  color: "text-success",
+                },
+                {
+                  value: stats_proyectos.ARCHIVADO,
+                  label: "Archivados",
+                  color: "text-destructive",
+                },
+                {
+                  value: `${stats_proyectos.total > 0 ? Math.round((stats_proyectos.APROBADO / stats_proyectos.total) * 100) : 0}%`,
+                  label: "Efectividad",
+                  color: "text-orange-500",
+                },
+              ].map((stat, i, arr) => (
+                <div
+                  key={stat.label}
+                  className={cn(
+                    "flex flex-col items-center justify-center py-3 px-2 text-center",
+                    i !== arr.length - 1 && "border-r border-border",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-xl font-bold leading-tight",
+                      stat.color,
+                    )}
+                  >
+                    {stat.value}
                   </span>
-                  <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Total Proyectos
+                  <span className="text-xs text-muted-foreground uppercase font-medium leading-tight mt-0.5">
+                    {stat.label}
                   </span>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none border bg-card">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold text-success">
-                    {stats_proyectos.APROBADO}
-                  </span>
-                  <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Aprobados
-                  </span>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none border bg-card">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold text-destructive">
-                    {stats_proyectos.ARCHIVADO}
-                  </span>
-                  <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Archivados
-                  </span>
-                </CardContent>
-              </Card>
-              <Card className="shadow-none border bg-card">
-                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-2xl font-bold text-orange-500">
-                    {stats_proyectos.total > 0
-                      ? Math.round(
-                          (stats_proyectos.APROBADO / stats_proyectos.total) *
-                            100,
-                        )
-                      : 0}
-                    %
-                  </span>
-                  <span className="text-xs text-muted-foreground uppercase font-medium">
-                    Efectividad
-                  </span>
-                </CardContent>
-              </Card>
+                </div>
+              ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -425,9 +435,9 @@ export default function DetailLegislador({
             value="politica"
             className="space-y-6 animate-in fade-in-50 duration-300"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               {/* Historial Bancadas */}
-              <Card className="shadow-sm">
+              <Card className="shadow-sm lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ArrowRightLeft className="w-5 h-5 text-orange-500" />{" "}
@@ -452,7 +462,7 @@ export default function DetailLegislador({
                           />
                           <div className="flex items-start justify-between">
                             <div>
-                              <p className="font-bold text-foreground text-base">
+                              <p className="font-bold text-foreground text-sm">
                                 {b.parliamentary_group?.name}
                               </p>
                               <p className="text-xs text-muted-foreground">
@@ -487,14 +497,14 @@ export default function DetailLegislador({
               </Card>
 
               {/* Antecedentes */}
-              <Card className="pt-0 shadow-sm border-warning/40">
+              <Card className="pt-0 shadow-sm border-warning/40 lg:col-span-2">
                 <CardHeader className="py-2 bg-warning/20">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <AlertTriangle className="w-4 h-4 text-destructive" />
                     Antecedentes reportados
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4">
+                <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4 overflow-y-auto">
                   {persona.backgrounds && persona.backgrounds.length > 0 ? (
                     persona.backgrounds.map((bg, i) => {
                       const isJNE = bg.source?.toUpperCase() === "JNE";
@@ -517,7 +527,7 @@ export default function DetailLegislador({
                                 {bg.type}
                               </span>
                               {isJNE && (
-                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
                                   JNE
                                 </span>
                               )}
@@ -591,140 +601,112 @@ export default function DetailLegislador({
 
           {/* --- TAB 3: HOJA DE VIDA --- */}
           <TabsContent
-            value="hoja-vida"
+            value="perfil"
             className="space-y-6 animate-in fade-in-50 duration-300"
           >
             {/* Contacto & Ingresos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm uppercase text-muted-foreground">
-                    <Mail className="w-4 h-4" /> Contacto
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {periodoActivo.institutional_email ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full justify-between h-auto py-3 px-4"
-                      onClick={() =>
-                        copyToClipboard(
-                          periodoActivo.institutional_email,
-                          "email",
-                        )
-                      }
-                    >
-                      <span className="truncate text-sm">
-                        {periodoActivo.institutional_email}
-                      </span>
-                      {isCopied("email") ? (
-                        <Check className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4 text-muted-foreground" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+              {/* Educación y Experiencia */}
+              <div className="grid grid-cols-1 gap-6 md:col-span-1">
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-muted-foreground" />{" "}
+                      Educación
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {persona.postgraduate_education?.map((edu, i) => (
+                      <div key={i} className="text-sm">
+                        <p className="font-bold">{edu.specialization}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {edu.graduate_school} • {edu.degree}
+                        </p>
+                      </div>
+                    ))}
+                    {persona.university_education?.map((edu, i) => (
+                      <div key={i} className="text-sm">
+                        <p className="font-bold">{edu.degree}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {edu.university}
+                        </p>
+                      </div>
+                    ))}
+                    {!persona.postgraduate_education?.length &&
+                      !persona.university_education?.length && (
+                        <NoDataMessage text="Sin registros de educación superior." />
                       )}
-                    </Button>
-                  ) : (
-                    <NoDataMessage text="Correo no público" />
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm uppercase text-muted-foreground">
-                    <DollarSign className="w-4 h-4" /> Ingresos (Año Previo)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {persona.incomes?.length > 0 ? (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Total Declarado
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-muted-foreground" />{" "}
+                      Experiencia Laboral
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {persona.work_experience?.map((exp, i) => (
+                      <div
+                        key={i}
+                        className="text-sm relative pl-4 border-l-2 border-border"
+                      >
+                        <p className="font-bold">{exp.position}</p>
+                        <p className="text-muted-foreground text-sm">
+                          {exp.organization}
                         </p>
-                        <p className="text-2xl font-mono font-bold">
-                          S/ {persona.incomes[0].total_income}
+                        <p className="text-xs text-muted-foreground/70 mt-0.5">
+                          {exp.period}
                         </p>
                       </div>
-                      <div className="text-right text-xs">
-                        <p>
-                          <span className="text-muted-foreground">
-                            Público:
-                          </span>{" "}
-                          S/ {persona.incomes[0].public_income}
-                        </p>
-                        <p>
-                          <span className="text-muted-foreground">
-                            Privado:
-                          </span>{" "}
-                          S/ {persona.incomes[0].private_income}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <NoDataMessage text="No disponible" />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Educación y Experiencia */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-muted-foreground" />{" "}
-                    Educación
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  {persona.postgraduate_education?.map((edu, i) => (
-                    <div key={i} className="text-sm">
-                      <p className="font-bold">{edu.specialization}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {edu.graduate_school} • {edu.degree}
-                      </p>
-                    </div>
-                  ))}
-                  {persona.university_education?.map((edu, i) => (
-                    <div key={i} className="text-sm">
-                      <p className="font-bold">{edu.degree}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {edu.university}
-                      </p>
-                    </div>
-                  ))}
-                  {!persona.postgraduate_education?.length &&
-                    !persona.university_education?.length && (
-                      <NoDataMessage text="Sin registros de educación superior." />
+                    ))}
+                    {!persona.work_experience?.length && (
+                      <NoDataMessage text="Sin registros laborales previos." />
                     )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
-              <Card className="shadow-sm">
+              {/* Derecha: Noticias */}
+              <Card className="shadow-sm md:col-span-2 sticky top-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-muted-foreground" />{" "}
-                    Experiencia Laboral
+                    <Newspaper className="w-5 h-5 text-muted-foreground" />
+                    En los medios
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5">
-                  {persona.work_experience?.map((exp, i) => (
-                    <div
-                      key={i}
-                      className="text-sm relative pl-4 border-l-2 border-border"
-                    >
-                      <p className="font-bold">{exp.position}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {exp.organization}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                        {exp.period}
-                      </p>
+                <CardContent className="overflow-y-auto">
+                  {persona.detailed_biography?.length > 0 ? (
+                    <div className="border-l border-border/60 ml-3 space-y-6">
+                      {persona.detailed_biography.map((bio, i) => (
+                        <div key={i} className="relative pl-6">
+                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
+                          <span className="inline-block px-2 py-0.5 rounded text-sm font-bold bg-primary/8 text-primary mb-2">
+                            {bio.date}
+                          </span>
+                          <p className="text-sm text-foreground/80 leading-relaxed">
+                            {bio.description}
+                          </p>
+                          {bio.source_url && (
+                            <Link
+                              href={bio.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground/60 hover:text-primary transition-colors"
+                            >
+                              <ExternalLink size={10} />
+                              {new URL(bio.source_url).hostname.replace(
+                                "www.",
+                                "",
+                              )}
+                            </Link>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                  {!persona.work_experience?.length && (
-                    <NoDataMessage text="Sin registros laborales previos." />
+                  ) : (
+                    <NoDataMessage text="Sin cobertura mediática registrada." />
                   )}
                 </CardContent>
               </Card>

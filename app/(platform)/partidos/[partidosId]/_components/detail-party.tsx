@@ -370,34 +370,22 @@ export default function DetailParty({
       {/* CONTENIDO CON TABS */}
       <div className="container mx-auto mt-8 px-4">
         <Tabs defaultValue="resumen" className="w-full space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1 bg-muted/50 rounded-xl gap-1">
-            <TabsTrigger
-              value="resumen"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
+          <TabsList className="grid grid-cols-2 md:grid-cols-4">
+            <TabsTrigger value="resumen">
               <LayoutDashboard className="w-4 h-4" />
-              <span className="text-xs font-bold">Resumen</span>
+              Resumen
             </TabsTrigger>
-            <TabsTrigger
-              value="trayectoria"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
+            <TabsTrigger value="trayectoria">
               <History className="w-4 h-4" />
-              <span className="text-xs font-bold">Trayectoria</span>
+              Trayectoria
             </TabsTrigger>
-            <TabsTrigger
-              value="finanzas"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
+            <TabsTrigger value="finanzas">
               <CircleDollarSign className="w-4 h-4" />
-              <span className="text-xs font-bold">Finanzas</span>
+              Finanzas
             </TabsTrigger>
-            <TabsTrigger
-              value="territorio"
-              className="py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex gap-2 items-center justify-center"
-            >
+            <TabsTrigger value="territorio">
               <MapIcon className="w-4 h-4" />
-              <span className="text-xs font-bold">Territorio</span>
+              Territorio
             </TabsTrigger>
           </TabsList>
 

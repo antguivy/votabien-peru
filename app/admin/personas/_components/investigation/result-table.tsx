@@ -534,22 +534,13 @@ export function ResultadoTablas({
 
       <Tabs defaultValue="antecedentes" className="w-full">
         <TabsList className="bg-muted/50 p-1 rounded-lg border border-border w-full md:w-auto inline-flex h-auto flex-wrap gap-1 mb-4">
-          <TabsTrigger
-            value="antecedentes"
-            className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
+          <TabsTrigger value="antecedentes">
             <History className="h-4 w-4" /> Antecedentes
           </TabsTrigger>
-          <TabsTrigger
-            value="biografia"
-            className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
+          <TabsTrigger value="biografia">
             <User className="h-4 w-4" /> Noticias
           </TabsTrigger>
-          <TabsTrigger
-            value="alertas"
-            className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-          >
+          <TabsTrigger value="alertas">
             <ShieldAlert className="h-4 w-4" /> Alertas
             {alertas.length > 0 && (
               <Badge
@@ -560,10 +551,7 @@ export function ResultadoTablas({
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger
-            value="evidencia"
-            className="gap-2 px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
+          <TabsTrigger value="evidencia">
             <Database className="h-4 w-4" /> Contenido Revisado
           </TabsTrigger>
         </TabsList>
