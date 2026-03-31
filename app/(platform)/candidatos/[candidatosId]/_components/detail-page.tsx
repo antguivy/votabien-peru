@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import {
   Briefcase,
   GraduationCap,
-  AlertTriangle,
   DollarSign,
   Home,
   MapPin,
@@ -18,7 +17,6 @@ import {
   Car,
   ScrollText,
   Building2,
-  Gavel,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +49,15 @@ const formatCurrency = (amount: string | number) => {
   }).format(num);
 };
 
+const SEVERITY_ORDER = ["PENAL", "CIVIL", "ETICA", "ADMINISTRATIVO"];
+
+const TYPE_LABELS: Record<string, string> = {
+  PENAL: "Penales",
+  CIVIL: "Civiles",
+  ETICA: "Ética",
+  ADMINISTRATIVO: "Administrativo",
+};
+
 export default function DetailCandidato({
   candidate,
   formula = [],
@@ -77,6 +84,7 @@ export default function DetailCandidato({
   }, []);
 
   const incomeData = persona.incomes?.[0];
+  const hasAssets = (persona.assets?.length || 0) > 0;
 
   const hasEducation =
     (persona.postgraduate_education?.length || 0) > 0 ||
@@ -88,6 +96,17 @@ export default function DetailCandidato({
     (persona.popular_election?.length || 0) > 0 ||
     (persona.political_role?.length || 0) > 0;
 
+  const byType = persona.backgrounds?.reduce(
+    (acc, bg) => {
+      const key = bg.type?.toUpperCase();
+      if (key) acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const backgroundTypes = SEVERITY_ORDER.filter((t) => byType?.[t]);
+
   return (
     <div className="bg-background min-h-screen">
       {!candidate.active && (
@@ -97,6 +116,7 @@ export default function DetailCandidato({
           </p>
         </div>
       )}
+
       {/* ── STICKY NAV ── */}
       <div
         className={cn(
@@ -188,13 +208,15 @@ export default function DetailCandidato({
                 >
                   {candidate.type.replace(/_/g, " ")}
                 </Badge>
-                <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-foreground uppercase">
-                  {persona.name} <br />
-                  <span className="text-primary">{persona.lastname}</span>
+                {/* ── Nombre: más sobrio, sin uppercase agresivo ── */}
+                <h1 className="text-2xl md:text-4xl font-bold tracking-tight leading-tight text-foreground">
+                  {persona.name}{" "}
+                  <span className="text-muted-foreground font-medium">
+                    {persona.lastname}
+                  </span>
                 </h1>
               </div>
 
-              {/* Pills de info — sin REINFO, eso va en RegistrosOficiales */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full text-xs">
                   <MapPin className="w-3.5 h-3.5" />
@@ -215,50 +237,74 @@ export default function DetailCandidato({
                   </div>
                 )}
               </div>
-            </div>
-            <div className="text-center">
-              {lastUpdated && (
-                <p className="text-[11px] text-success flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Información actualizada{" "}
-                  {formatDistanceToNow(lastUpdated, {
-                    addSuffix: true,
-                    locale: es,
-                  })}
-                </p>
-              )}
 
-              <ShareButton
-                title={`${persona.name} ${persona.lastname}`}
-                url={shareUrl}
-                text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
-                trackingId={candidate.id}
-                trackingType="candidato"
-              />
+              {/* ── Actualización + Share integrados bajo las pills ── */}
+              <div className="flex items-center gap-3 pt-1">
+                {lastUpdated && (
+                  <p className="text-[11px] text-success flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Actualizado{" "}
+                    {formatDistanceToNow(lastUpdated, {
+                      addSuffix: true,
+                      locale: es,
+                    })}
+                  </p>
+                )}
+                <ShareButton
+                  title={`${persona.name} ${persona.lastname}`}
+                  url={shareUrl}
+                  text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
+                  trackingId={candidate.id}
+                  trackingType="candidato"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
+
       {/* ── CONTENIDO PRINCIPAL ── */}
       <div className="container max-w-5xl mx-auto">
-        {/* Alerta antecedentes — minimalista */}
-        {persona.backgrounds && persona.backgrounds.length > 0 && (
-          <div className="mb-4 flex items-start gap-3 p-4 rounded-xl border border-destructive/30 bg-destructive/5">
-            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <p className="text-sm text-foreground/80">
-              Se encontraron{" "}
-              <strong className="text-foreground">
-                {persona.backgrounds.length} antecedente
-                {persona.backgrounds.length !== 1 ? "s" : ""}
-              </strong>{" "}
-              documentados. Revisa la pestaña{" "}
-              <span className="font-semibold text-destructive">
-                Antecedentes
+        {/* ── Antecedentes ── */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {backgroundTypes.length === 0 ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/50">
+              <CheckCircle2 className="w-3 h-3 text-success" />
+              <span className="text-[11px] text-success uppercase tracking-widest">
+                Sin registros
               </span>
-              .
-            </p>
-          </div>
-        )}
+            </div>
+          ) : (
+            backgroundTypes.map((type) => {
+              const cfg =
+                backgroundTypeConfig[type] ?? DEFAULT_BACKGROUND_CONFIG;
+              const count = byType?.[type] ?? 0;
+              return (
+                <div
+                  key={type}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/40"
+                >
+                  <span
+                    className={cn(
+                      "text-[13px] font-medium leading-none",
+                      cfg.badge,
+                    )}
+                  >
+                    {count}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[11px] uppercase tracking-widest leading-none",
+                      cfg.badge,
+                    )}
+                  >
+                    {TYPE_LABELS[type]}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
 
         {/* Registros oficiales */}
         <RegistrosOficiales
@@ -271,7 +317,7 @@ export default function DetailCandidato({
 
         {/* ── TABS ── */}
         <Tabs defaultValue="hoja-vida" className="w-full">
-          <TabsList className="grid grid-cols-4">
+          <TabsList className="grid grid-cols-4 mb-2">
             <TabsTrigger value="hoja-vida">Perfil</TabsTrigger>
             <TabsTrigger
               value="antecedentes"
@@ -280,7 +326,7 @@ export default function DetailCandidato({
               Antecedentes
             </TabsTrigger>
             <TabsTrigger value="bienes">Bienes</TabsTrigger>
-            <TabsTrigger value="noticias">Noticias</TabsTrigger>
+            <TabsTrigger value="biografia">Biografía</TabsTrigger>
           </TabsList>
 
           {/* ── 1. HOJA DE VIDA ── */}
@@ -333,6 +379,7 @@ export default function DetailCandidato({
                     </CardContent>
                   </Card>
                 )}
+
                 {/* Trayectoria política */}
                 <Card className="shadow-none border-border/60">
                   <CardHeader className="pb-3 border-b border-border/40">
@@ -617,7 +664,6 @@ export default function DetailCandidato({
                         config.border,
                       )}
                     >
-                      {/* Header */}
                       <div
                         className={cn(
                           "flex items-center justify-between gap-2 px-3 py-2",
@@ -649,8 +695,6 @@ export default function DetailCandidato({
                           </span>
                         )}
                       </div>
-
-                      {/* Body */}
                       <div className="px-3 py-3 space-y-2">
                         <p className="text-base font-semibold text-foreground leading-tight">
                           {bg.title}
@@ -702,109 +746,115 @@ export default function DetailCandidato({
             value="bienes"
             className="space-y-6 animate-in fade-in-50"
           >
-            {incomeData ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="shadow-none border-border/60">
-                  <CardContent className="p-5">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Total anual declarado
-                    </p>
-                    <p className="text-3xl font-black text-foreground tabular-nums">
-                      {formatCurrency(incomeData.total_income)}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Hoja de vida JNE
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-none border-border/60">
-                  <CardContent className="p-5">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Sector público
-                    </p>
-                    <p className="text-2xl font-bold tabular-nums">
-                      {formatCurrency(incomeData.public_income)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-none border-border/60">
-                  <CardContent className="p-5">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Sector privado
-                    </p>
-                    <p className="text-2xl font-bold tabular-nums">
-                      {formatCurrency(incomeData.private_income)}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
+            {!incomeData && !hasAssets ? (
               <NoDataMessage
-                text="No se registra información de ingresos declarada."
+                text="No se registra información patrimonial declarada."
                 icon={DollarSign}
               />
-            )}
+            ) : (
+              <>
+                {incomeData && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="shadow-none border-border/60">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                          Total anual declarado
+                        </p>
+                        <p className="text-3xl font-black text-foreground tabular-nums">
+                          {formatCurrency(incomeData.total_income)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Hoja de vida JNE
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-none border-border/60">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                          Sector público
+                        </p>
+                        <p className="text-2xl font-bold tabular-nums">
+                          {formatCurrency(incomeData.public_income)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-none border-border/60">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                          Sector privado
+                        </p>
+                        <p className="text-2xl font-bold tabular-nums">
+                          {formatCurrency(incomeData.private_income)}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="shadow-none border-border/60">
-                <CardHeader className="pb-3 border-b border-border/40">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Home className="w-4 h-4 text-muted-foreground" />
-                    Bienes declarados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-2">
-                  {persona.assets?.length > 0 ? (
-                    persona.assets.map((asset, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between items-start p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
-                      >
-                        <div className="flex gap-2.5">
-                          {asset.type.includes("CAMIONETA") ||
-                          asset.type.includes("VEHICULO") ||
-                          asset.type.includes("AUTO") ? (
-                            <Car className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
-                          ) : (
-                            <Building2 className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
-                          )}
-                          <div>
-                            <p className="text-sm font-medium">{asset.type}</p>
-                            {asset.description && (
-                              <p className="text-xs text-muted-foreground">
-                                {asset.description}
-                              </p>
-                            )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card className="shadow-none border-border/60">
+                    <CardHeader className="pb-3 border-b border-border/40">
+                      <CardTitle className="text-base font-semibold flex items-center gap-2">
+                        <Home className="w-4 h-4 text-muted-foreground" />
+                        Bienes declarados
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 space-y-2">
+                      {hasAssets ? (
+                        persona.assets.map((asset, i) => (
+                          <div
+                            key={i}
+                            className="flex justify-between items-start p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex gap-2.5">
+                              {asset.type.includes("CAMIONETA") ||
+                              asset.type.includes("VEHICULO") ||
+                              asset.type.includes("AUTO") ? (
+                                <Car className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                              ) : (
+                                <Building2 className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {asset.type}
+                                </p>
+                                {asset.description && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {asset.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-mono text-sm font-medium whitespace-nowrap">
+                              {formatCurrency(asset.value)}
+                            </span>
                           </div>
-                        </div>
-                        <span className="font-mono text-sm font-medium whitespace-nowrap">
-                          {formatCurrency(asset.value)}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <NoDataMessage text="No registra bienes declarados." />
-                  )}
-                </CardContent>
-              </Card>
+                        ))
+                      ) : (
+                        <NoDataMessage text="No registra bienes declarados." />
+                      )}
+                    </CardContent>
+                  </Card>
 
-              <div className="rounded-xl border border-border/60 bg-muted/20 p-5 h-fit space-y-2">
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  <ScrollText className="w-4 h-4 text-muted-foreground" />
-                  Sobre esta información
-                </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Información patrimonial declarada ante el Jurado Nacional de
-                  Elecciones (JNE) en la Hoja de Vida del presente proceso
-                  electoral. Los montos corresponden al ejercicio fiscal
-                  anterior.
-                </p>
-              </div>
-            </div>
+                  <div className="rounded-xl border border-border/60 bg-muted/20 p-5 h-fit space-y-2">
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <ScrollText className="w-4 h-4 text-muted-foreground" />
+                      Sobre esta información
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Información patrimonial declarada ante el Jurado Nacional
+                      de Elecciones (JNE) en la Hoja de Vida del presente
+                      proceso electoral. Los montos corresponden al ejercicio
+                      fiscal anterior.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </TabsContent>
 
-          {/* ── 4. NOTICIAS ── */}
-          <TabsContent value="noticias" className="animate-in fade-in-50">
+          {/* ── 4. BIOGRAFÍA ── */}
+          <TabsContent value="biografia" className="animate-in fade-in-50">
             <Card className="shadow-none border-border/60">
               <CardContent className="pt-6">
                 {persona.detailed_biography?.length > 0 ? (
@@ -836,7 +886,7 @@ export default function DetailCandidato({
                     ))}
                   </div>
                 ) : (
-                  <NoDataMessage text="No se encontraron noticias en medios periodísticos." />
+                  <NoDataMessage text="No se registra información biográfica." />
                 )}
               </CardContent>
             </Card>

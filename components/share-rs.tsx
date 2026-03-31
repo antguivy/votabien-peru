@@ -83,7 +83,7 @@ export function ShareButton({
           size="sm"
           onClick={handleShare}
           className={cn(
-            "gap-2 rounded-full h-9 px-4 text-sm mt-4 font-medium border-border/60 hover:border-primary/40 transition-all cursor-pointer",
+            "gap-2 rounded-full h-9 px-4 text-sm font-medium border-border/60 hover:border-primary/40 transition-all cursor-pointer",
             className,
           )}
         >
