@@ -14,15 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Credenza,
-  CredenzaBody,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaHeader,
-  CredenzaTitle,
-  CredenzaTrigger,
-} from "@/components/ui/credenza";
-import {
   Download,
   Copy,
   User,
@@ -261,12 +252,20 @@ interface ResultadoTablasProps {
   resultado: ResultadoInvestigacion;
   onSave?: () => void;
   isSaving?: boolean;
+  saveAntecedentes: boolean;
+  setSaveAntecedentes: (val: boolean) => void;
+  saveNoticias: boolean;
+  setSaveNoticias: (val: boolean) => void;
 }
 
 export function ResultadoTablas({
   resultado,
   onSave,
   isSaving,
+  saveAntecedentes,
+  setSaveAntecedentes,
+  saveNoticias,
+  setSaveNoticias,
 }: ResultadoTablasProps) {
   const [modeAntecedentes, setModeAntecedentes] = useState<"table" | "json">(
     "table",
@@ -274,9 +273,6 @@ export function ResultadoTablas({
   const [modeFact, setModeFact] = useState<"table" | "json">("table");
   const [modeAlertas, setModeAlertas] = useState<"table" | "json">("table");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-
-  // --- SELECCIÓN DE DATOS (CAMBIO CRÍTICO: USAMOS STAGE 2 PARA TABLAS) ---
-  const datosDraft = resultado.stage1_draft || {};
 
   // Accedemos a stage2_tablas que viene del backend validado
   const datosValidados = resultado.stage2_tablas || {
@@ -483,57 +479,57 @@ export function ResultadoTablas({
           <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
             <CheckCircle2 className="h-3 w-3 text-green-500" />
             <span className="flex items-center gap-1">
-              Abre una nueva ventana, copia los resultados <br />y guarda en la
-              persona que corresponda.
+              Selecciona qué datos deseas guardar en la base de datos.
             </span>
           </div>
         </div>
         {/* 3. Resultados Finales */}
 
-        <div className="flex flex-col gap-4 justify-center">
-          <Credenza>
-            <CredenzaTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <FileJson className="h-4 w-4 text-orange-500" />
-                Ver Borrador
-              </Button>
-            </CredenzaTrigger>
-            <CredenzaContent className="max-w-4xl max-h-[85vh] flex flex-col">
-              <CredenzaHeader>
-                <CredenzaTitle className="flex items-center gap-2">
-                  <FileJson className="h-5 w-5 text-orange-500" />
-                  Borrador (Deep Research)
-                </CredenzaTitle>
-                <CredenzaDescription>
-                  Este es el análisis del documento de investigación generado
-                  por Deep Research.
-                </CredenzaDescription>
-              </CredenzaHeader>
-              <CredenzaBody className="flex-1 overflow-hidden mt-4">
-                <PrettyJson data={datosDraft} />
-              </CredenzaBody>
-            </CredenzaContent>
-          </Credenza>
+        <div className="flex flex-col items-end gap-3">
           {onSave && (
-            <Button
-              onClick={onSave}
-              disabled={isSaving}
-              size="lg"
-              className="gap-2"
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4" />
-              )}
-              {isSaving ? "Guardando..." : "Guardar en perfil"}
-            </Button>
+            <>
+              <div className="flex items-center gap-4 text-sm font-medium bg-muted/30 p-2 rounded-lg border border-border">
+                <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={saveAntecedentes}
+                    onChange={(e) => setSaveAntecedentes(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  Sobreescribir Antecedentes
+                </label>
+                <div className="w-px h-4 bg-border"></div>
+                <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={saveNoticias}
+                    onChange={(e) => setSaveNoticias(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  Guardar Noticias (Biografía)
+                </label>
+              </div>
+
+              <Button
+                onClick={onSave}
+                disabled={isSaving || (!saveAntecedentes && !saveNoticias)}
+                size="lg"
+                className="gap-2 w-full sm:w-auto"
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Database className="h-4 w-4" />
+                )}
+                {isSaving ? "Guardando..." : "Guardar Selección"}
+              </Button>
+            </>
           )}
         </div>
       </div>
 
       <Tabs defaultValue="antecedentes" className="w-full">
-        <TabsList className="bg-muted/50 p-1 rounded-lg border border-border w-full md:w-auto inline-flex h-auto flex-wrap gap-1 mb-4">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="antecedentes">
             <History className="h-4 w-4" /> Antecedentes
           </TabsTrigger>

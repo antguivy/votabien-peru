@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   Search,
   Key,
   Bot,
-  FileText,
   Loader2,
   Cpu,
-  Trash2,
-  Upload,
   Fingerprint,
+  Newspaper,
+  Youtube,
+  AlertCircle,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +25,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 interface InvestigacionFormProps {
+  // 🚨 Actualizamos la firma para enviar los switches al backend
   onSubmit: (
-    archivo: File,
     nombre: string,
     apiKey: string,
     modelName: string,
+    includeYoutube: boolean,
+    includeNews: boolean,
   ) => void;
   disabled?: boolean;
   defaultName?: string;
@@ -46,167 +46,145 @@ export function InvestigacionForm({
 }: InvestigacionFormProps) {
   const [nombreInvestigado, setNombreInvestigado] = useState(defaultName ?? "");
   const [modelName, setModelName] = useState("gemini-3-flash-preview");
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const MODEL_LIST = ["gemini-2.5-flash", "gemini-3-flash-preview"];
   const [apiKey, setApiKey] = useState(() => {
     if (typeof window === "undefined") return "";
     return localStorage.getItem("gemini_api_key_v1") ?? "";
   });
 
+  // 🚨 Nuevos estados para las fuentes (Noticias por defecto, YT opcional)
+  const [includeNews, setIncludeNews] = useState(true);
+  const [includeYoutube, setIncludeYoutube] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!archivo || !nombreInvestigado) return;
-    const validExtensions = [".md", ".pdf"];
-    const fileExtension = archivo.name
-      .substring(archivo.name.lastIndexOf("."))
-      .toLowerCase();
+    if (!nombreInvestigado) return;
 
-    if (!validExtensions.includes(fileExtension)) {
-      alert("Solo se permiten archivos Markdown (.md) o PDF (.pdf)");
+    if (!includeNews && !includeYoutube) {
+      alert("Debes seleccionar al menos una fuente de investigación.");
       return;
     }
 
-    onSubmit(archivo, nombreInvestigado, apiKey, modelName);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const name = files[0].name.toLowerCase();
-      if (name.endsWith(".md") || name.endsWith(".pdf")) {
-        setArchivo(files[0]);
-      } else {
-        alert("Formato no soportado. Usa .md o .pdf");
-      }
-    }
-  };
-
-  const clearFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setArchivo(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    onSubmit(nombreInvestigado, apiKey, modelName, includeYoutube, includeNews);
   };
 
   return (
     <Card className="w-full max-w-5xl shadow-xl overflow-hidden border-border/60">
-      <CardContent className="flex flex-col md:flex-row">
-        <div className="flex-1 flex flex-col gap-6 mb-4 md:mb-0 md:mr-4">
+      <CardContent className="flex flex-col md:flex-row p-0">
+        {/* Lado Izquierdo: Objetivo y Fuentes */}
+        <div className="flex-1 flex flex-col gap-4 p-5">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Fingerprint className="h-5 w-5" />
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <Fingerprint className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">
-                Panel de Investigación
+              <h2 className="text-lg font-bold tracking-tight">
+                Agente de Investigación
               </h2>
-              <p className="text-sm text-muted-foreground">
-                Define el objetivo y carga la evidencia
+              <p className="text-xs text-muted-foreground">
+                El sistema buscará, leerá y estructurará la información en la
+                web.
               </p>
             </div>
           </div>
 
           <Separator />
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground font-bold tracking-wider">
-                Nombres y apellidos
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={nombreInvestigado}
-                  onChange={(e) => setNombreInvestigado(e.target.value)}
-                  disabled={disabled || !!defaultName} // 👈 bloqueado si viene del perfil
-                  readOnly={!!defaultName}
-                  placeholder="Ej. Carmen Patricia Juarez Gallegos"
-                  className="pl-9 h-12 text-lg"
-                />
-              </div>
+          <div className="space-y-3 flex-1 flex flex-col justify-start mt-2">
+            <Label className="text-[11px] uppercase text-muted-foreground font-bold tracking-wider">
+              Nombres y Apellidos del Objetivo
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={nombreInvestigado}
+                onChange={(e) => setNombreInvestigado(e.target.value)}
+                disabled={disabled || !!defaultName}
+                readOnly={!!defaultName}
+                placeholder="Ej. Rafael López Aliaga"
+                className="pl-10 h-11 text-base bg-muted/20"
+              />
             </div>
 
-            <div className="space-y-2 flex flex-col flex-1">
-              <Label className="text-xs uppercase text-muted-foreground font-bold tracking-wider">
-                Evidencia (PDF o Markdown)
+            {/* 🚨 ZONA DE SWITCHES (Tarjetas Interactivas) */}
+            <div className="pt-2">
+              <Label className="text-[11px] uppercase text-muted-foreground font-bold tracking-wider mb-2 block">
+                Fuentes de Extracción
               </Label>
-              <div
-                onDrop={handleDrop}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "relative flex-1 min-h-[200px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-6 gap-4 cursor-pointer transition-all duration-200",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
-                  archivo ? "bg-primary/5 border-primary/20" : "bg-muted/5",
-                )}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".md,.pdf"
-                  className="hidden"
-                  onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                />
-
-                {archivo ? (
-                  <div className="text-center animate-in fade-in zoom-in duration-300">
-                    <div className="h-14 w-14 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
-                      <FileText className="h-7 w-7" />
-                    </div>
-                    <p className="font-medium text-lg">{archivo.name}</p>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      {(archivo.size / 1024).toFixed(1)} KB
-                    </p>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={clearFile}
-                      className="h-8 rounded-full"
-                    >
-                      <Trash2 className="h-3 w-3 mr-2" /> Remover
-                    </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Switch Noticias */}
+                <label
+                  className={`relative flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition-all ${
+                    includeNews
+                      ? "bg-primary/5 border-primary/40 ring-1 ring-primary/20"
+                      : "bg-background hover:bg-muted/50 border-border"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeNews}
+                    onChange={(e) => setIncludeNews(e.target.checked)}
+                    disabled={disabled}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-semibold flex items-center gap-1.5">
+                      <Newspaper className="h-3.5 w-3.5" /> Prensa Escrita
+                    </span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">
+                      Rápido. Ideal para antecedentes penales y denuncias.
+                    </span>
                   </div>
-                ) : (
-                  <>
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <Upload className="h-6 w-6 text-muted-foreground" />
+                </label>
+
+                {/* Switch YouTube */}
+                <label
+                  className={`relative flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition-all ${
+                    includeYoutube
+                      ? "bg-red-500/5 border-red-500/40 ring-1 ring-red-500/20"
+                      : "bg-background hover:bg-muted/50 border-border"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={includeYoutube}
+                    onChange={(e) => setIncludeYoutube(e.target.checked)}
+                    disabled={disabled}
+                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-600 disabled:opacity-50"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-semibold flex items-center gap-1.5">
+                      <Youtube className="h-3.5 w-3.5" /> YouTube (Opcional)
+                    </span>
+                    <span className="text-[10px] text-muted-foreground leading-tight">
+                      Lento. Analiza entrevistas, ideología y posturas.
+                    </span>
+                  </div>
+                  {includeYoutube && (
+                    <div
+                      className="absolute top-2 right-2 text-red-500"
+                      title="Consume más tiempo y recursos"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" />
                     </div>
-                    <div className="text-center space-y-1">
-                      <p className="font-medium text-sm">
-                        Arrastra tu archivo aquí
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Soporta solo archivos .pdf y .md
-                      </p>
-                    </div>
-                  </>
-                )}
+                  )}
+                </label>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="w-full md:w-[320px] bg-muted/30 border-t md:border-t-0 md:border-l border-border p-2 md:px-4 md:py-0 flex flex-col justify-between">
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-2">
+        {/* Lado Derecho: Configuración */}
+        <div className="w-full md:w-[300px] bg-muted/30 border-t md:border-t-0 md:border-l border-border p-5 flex flex-col justify-between">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 mb-1">
               <Cpu className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold">Configuración</h3>
+              <h3 className="font-semibold text-sm">Configuración LLM</h3>
             </div>
-
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label
                 htmlFor="apiKey"
-                className="flex items-center gap-2 text-xs"
+                className="flex items-center gap-1.5 text-[11px] uppercase font-bold text-muted-foreground tracking-wider"
               >
                 <Key className="h-3 w-3" /> Gemini API Key
               </Label>
@@ -220,56 +198,50 @@ export function InvestigacionForm({
                     localStorage.setItem("gemini_api_key_v1", apiKey.trim());
                 }}
                 placeholder="sk-..."
-                className="bg-background"
+                className="bg-background h-9 text-xs"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-xs">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-[11px] uppercase font-bold text-muted-foreground tracking-wider">
                 <Bot className="h-3 w-3" /> Modelo IA
               </Label>
               <Select value={modelName} onValueChange={setModelName}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Selecciona un modelo" />
+                <SelectTrigger className="bg-background h-9 text-xs">
+                  <SelectValue placeholder="Selecciona modelo" />
                 </SelectTrigger>
                 <SelectContent>
                   {MODEL_LIST.map((model) => (
-                    <SelectItem key={model} value={model}>
+                    <SelectItem key={model} value={model} className="text-xs">
                       {model}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="pt-4 flex flex-col gap-2">
+            <div className="pt-2">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">Objetivo</span>
+                <span className="text-muted-foreground">Estado</span>
                 <Badge
                   variant={nombreInvestigado ? "default" : "outline"}
-                  className="h-5"
+                  className="h-5 text-[10px]"
                 >
-                  {nombreInvestigado ? "Listo" : "---"}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">Archivo</span>
-                <Badge
-                  variant={archivo ? "default" : "outline"}
-                  className="h-5"
-                >
-                  {archivo ? "Cargado" : "---"}
+                  {nombreInvestigado
+                    ? "Listo para iniciar"
+                    : "Esperando objetivo"}
                 </Badge>
               </div>
             </div>
           </div>
 
-          <div className="pt-6 mt-6 border-t border-border/50">
+          <div className="pt-5 mt-5 border-t border-border/50">
             <Button
               onClick={handleSubmit}
-              disabled={disabled || !nombreInvestigado || !archivo}
-              className="w-full h-12 text-base font-semibold shadow-md"
-              size="lg"
+              disabled={
+                disabled ||
+                !nombreInvestigado ||
+                (!includeNews && !includeYoutube)
+              }
+              className="w-full h-11 text-sm font-semibold shadow-md"
             >
               {disabled ? (
                 <>
@@ -277,7 +249,7 @@ export function InvestigacionForm({
                   Procesando
                 </>
               ) : (
-                "Iniciar Análisis"
+                "Iniciar Agente"
               )}
             </Button>
           </div>

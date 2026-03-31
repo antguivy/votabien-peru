@@ -66,11 +66,12 @@ export default function ResearchPageDialog({
   personName,
 }: ResearchDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [saveAntecedentes, setSaveAntecedentes] = useState(false);
+  const [saveNoticias, setSaveNoticias] = useState(true);
 
   const {
     isStreaming,
     logs,
-    draftData,
     resultadoFinal,
     progresoScraping,
     iniciarInvestigacion,
@@ -87,6 +88,11 @@ export default function ResearchPageDialog({
   }
 
   async function handleSave(resultado: ResultadoInvestigacion) {
+    if (!saveAntecedentes && !saveNoticias) {
+      toast.warning("Debes seleccionar al menos una opción para guardar.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const tablas = resultado.stage2_tablas;
@@ -120,32 +126,24 @@ export default function ResearchPageDialog({
       );
 
       const [bgResult, bioResult] = await Promise.all([
-        backgrounds.length > 0
+        saveAntecedentes && backgrounds.length > 0
           ? insertPersonBackgrounds(personId, backgrounds)
           : Promise.resolve({ success: true, inserted: 0 }),
-        biography.length > 0
+        saveNoticias && biography.length > 0
           ? insertPersonBiography(personId, biography)
           : Promise.resolve({ success: true }),
       ]);
 
       if (!bgResult.success || !bioResult.success) {
-        if (!bgResult.success)
-          toast.error("Error al guardar antecedentes", {
-            description:
-              "error" in bgResult ? bgResult.error : "Error desconocido",
-          });
-        if (!bioResult.success)
-          toast.error("Error al guardar noticias", {
-            description:
-              "error" in bioResult
-                ? String(bioResult.error)
-                : "Error desconocido",
-          });
+        if (!bgResult.success) toast.error("Error al guardar antecedentes");
+        if (!bioResult.success) toast.error("Error al guardar noticias");
         return;
       }
+
       toast.success("Datos guardados correctamente", {
         description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
       });
+
       resetEstado();
       onOpenChange(false);
     } catch (err) {
@@ -166,19 +164,19 @@ export default function ResearchPageDialog({
       >
         <CredenzaHeader>
           <CredenzaTitle>
-            {showForm && "Nueva Investigación"}
+            {showForm && "Investigación Autónoma RAG"}
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
               "Procesando investigación..."}
             {resultadoFinal && `Resultados — ${resultadoFinal.investigado}`}
           </CredenzaTitle>
           <CredenzaDescription>
-            {showForm && `Carga el archivo de evidencia para ${personName}.`}
+            {showForm && `Lanza el agente de investigación para ${personName}.`}
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
-              "La investigación está en curso, por favor espere."}
-            {resultadoFinal && "Revisa los datos y guárdalos en el perfil."}
+              "El agente está leyendo la web, por favor espere."}
+            {resultadoFinal &&
+              "Revisa los datos consolidados y guárdalos en el perfil."}
           </CredenzaDescription>
         </CredenzaHeader>
-
         <CredenzaBody className="overflow-y-auto max-h-[70vh]">
           <div className="animate-in fade-in zoom-in-95 duration-300">
             {showForm && (
@@ -192,7 +190,6 @@ export default function ResearchPageDialog({
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) && (
               <ProgressStream
                 logs={logs}
-                draftData={draftData}
                 progreso={progresoScraping}
                 isStreaming={isStreaming}
                 onStop={detenerInvestigacion}
@@ -203,7 +200,11 @@ export default function ResearchPageDialog({
               <ResultadoTablas
                 resultado={resultadoFinal}
                 isSaving={isSaving}
-                onSave={() => handleSave(resultadoFinal)} // 👈 nuevo
+                onSave={() => handleSave(resultadoFinal)}
+                saveAntecedentes={saveAntecedentes}
+                setSaveAntecedentes={setSaveAntecedentes}
+                saveNoticias={saveNoticias}
+                setSaveNoticias={setSaveNoticias}
               />
             )}
           </div>

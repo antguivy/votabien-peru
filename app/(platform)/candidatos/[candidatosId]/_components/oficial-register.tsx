@@ -308,7 +308,7 @@ export function RegistrosOficiales({
   const showRnasFallback = !hasRnas && candidateIsLawyer;
 
   return (
-    <section className="mb-2 rounded-xl border border-border/60 bg-card divide-y divide-border/40 overflow-hidden">
+    <section className="mb-4 rounded-xl border border-border/60 bg-card divide-y divide-border/40 overflow-hidden">
       {is_incumbent && <IncumbentRow legislatorId={legislatorId} />}
       {reinfo_status ? (
         <ReinfoRow status={reinfo_status} />
