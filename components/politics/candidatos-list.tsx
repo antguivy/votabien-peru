@@ -160,7 +160,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
     person.is_incumbent ||
     hasConviction ||
     isUnderInvestigation ||
-    hasArchivedRecord ||
+    // hasArchivedRecord ||
     !declaredIncome ||
     !declaredAssets ||
     reinfoIsAlert ||
@@ -289,9 +289,9 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                 {isUnderInvestigation && (
                   <AlertBadge variant="amber">Investigado</AlertBadge>
                 )}
-                {hasArchivedRecord && (
+                {/* {hasArchivedRecord && (
                   <AlertBadge variant="orange">Con antecedentes</AlertBadge>
-                )}
+                )} */}
                 {!declaredIncome && (
                   <AlertBadge variant="orange">No declaró ingresos</AlertBadge>
                 )}
