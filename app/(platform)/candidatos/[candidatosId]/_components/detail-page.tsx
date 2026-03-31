@@ -17,6 +17,7 @@ import {
   Car,
   ScrollText,
   Building2,
+  Gavel,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ import { getLastUpdated } from "@/lib/utils/date";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import {
+  backgroundStatusConfig,
   backgroundTypeConfig,
   DEFAULT_BACKGROUND_CONFIG,
 } from "@/lib/utils/background-config";
@@ -317,13 +319,13 @@ export default function DetailCandidato({
 
         {/* ── TABS ── */}
         <Tabs defaultValue="hoja-vida" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-2">
+          <TabsList className="flex mb-2">
             <TabsTrigger value="hoja-vida">Perfil</TabsTrigger>
             <TabsTrigger
               value="antecedentes"
               className="data-[state=active]:text-destructive"
             >
-              Antecedentes
+              Historial Legal
             </TabsTrigger>
             <TabsTrigger value="bienes">Bienes</TabsTrigger>
             <TabsTrigger value="biografia">Biografía</TabsTrigger>
@@ -656,6 +658,11 @@ export default function DetailCandidato({
                     backgroundTypeConfig[bg.type?.toUpperCase()] ??
                     DEFAULT_BACKGROUND_CONFIG;
 
+                  // Extraemos la configuración visual del estado legal
+                  const statusConfig = bg.status
+                    ? backgroundStatusConfig[bg.status.toUpperCase()]
+                    : null;
+
                   return (
                     <div
                       key={bg.id ?? i}
@@ -664,6 +671,7 @@ export default function DetailCandidato({
                         config.border,
                       )}
                     >
+                      {/* ── HEADER (Tipo + Estado + Fecha) ── */}
                       <div
                         className={cn(
                           "flex items-center justify-between gap-2 px-3 py-2",
@@ -679,8 +687,22 @@ export default function DetailCandidato({
                           >
                             {bg.type}
                           </span>
+
+                          {/* Badge de Estado */}
+                          {statusConfig && (
+                            <Badge
+                              className={cn(
+                                "text-xs font-semibold px-2 py-0.5",
+                                statusConfig.badge,
+                              )}
+                            >
+                              {/* Reemplazamos guiones bajos por espacios para que se lea mejor */}
+                              {bg.status.replace("_", " ")}
+                            </Badge>
+                          )}
+
                           {isJNE && (
-                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                               JNE
                             </span>
                           )}
@@ -695,34 +717,55 @@ export default function DetailCandidato({
                           </span>
                         )}
                       </div>
-                      <div className="px-3 py-3 space-y-2">
-                        <p className="text-base font-semibold text-foreground leading-tight">
-                          {bg.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {bg.summary}
-                        </p>
-                        <div className="flex items-center justify-between gap-2 pt-1">
-                          <span className="text-xs text-muted-foreground">
+
+                      {/* ── BODY (Título + Resumen + Sanción) ── */}
+                      <div className="px-3 py-3 space-y-3">
+                        <div>
+                          <p className="text-base font-semibold text-foreground leading-tight mb-1">
+                            {bg.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {bg.summary}
+                          </p>
+                        </div>
+
+                        {/* NUEVO: Bloque de Sanción (Solo se muestra si existe) */}
+                        {bg.sanction && (
+                          <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2.5 flex gap-2.5 items-start mt-2">
+                            <Gavel className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
+                                Sanción Impuesta / Fallo
+                              </span>
+                              <p className="text-sm text-foreground/90 font-medium">
+                                {bg.sanction}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── FOOTER (Fuente y Enlace) ── */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 mt-3 border-t border-border/40">
+                          <span className="text-sm text-muted-foreground">
                             Fuente:{" "}
-                            <span className="font-medium text-foreground">
+                            <span className="font-semibold text-foreground">
                               {bg.source}
                             </span>
                           </span>
+
                           {bg.source_url && (
                             <Link
                               href={bg.source_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-primary transition-colors shrink-0"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
                             >
-                              <ExternalLink className="w-3 h-3" />
+                              <ExternalLink className="w-3.5 h-3.5" />
                               {isJNE
-                                ? "Ver en JNE"
-                                : new URL(bg.source_url).hostname.replace(
-                                    "www.",
-                                    "",
-                                  )}
+                                ? "Revisar documento oficial"
+                                : `Ver en ${new URL(
+                                    bg.source_url,
+                                  ).hostname.replace("www.", "")}`}
                             </Link>
                           )}
                         </div>

@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Newspaper,
   Copy,
+  Gavel,
 } from "lucide-react";
 import { SlSocialFacebook, SlSocialTwitter } from "react-icons/sl";
 import { PiTiktokLogo } from "react-icons/pi";
@@ -39,6 +40,7 @@ import BillsDialog from "./bills-dialog";
 import ProyectoItem from "./proyect-item";
 import { cn } from "@/lib/utils";
 import {
+  backgroundStatusConfig,
   backgroundTypeConfig,
   DEFAULT_BACKGROUND_CONFIG,
 } from "@/lib/utils/background-config";
@@ -512,11 +514,16 @@ export default function DetailLegislador({
                         backgroundTypeConfig[bg.type?.toUpperCase()] ??
                         DEFAULT_BACKGROUND_CONFIG;
 
+                      // 1. Extraemos la configuración del estado
+                      const statusConfig = bg.status
+                        ? backgroundStatusConfig[bg.status.toUpperCase()]
+                        : null;
+
                       return (
-                        <div key={bg.id ?? i} className="flex flex-col gap-1.5">
-                          {/* Row: badge + fecha */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5">
+                        <div key={bg.id ?? i} className="flex flex-col gap-2">
+                          {/* Row: badges + fecha */}
+                          <div className="flex items-start sm:items-center justify-between gap-2 flex-col sm:flex-row">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span
                                 className={cn(
                                   "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
@@ -526,14 +533,27 @@ export default function DetailLegislador({
                               >
                                 {bg.type}
                               </span>
+
+                              {/* 2. Agregamos el Badge de Estado Legal */}
+                              {statusConfig && (
+                                <span
+                                  className={cn(
+                                    "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
+                                    statusConfig.badge,
+                                  )}
+                                >
+                                  {bg.status.replace("_", " ")}
+                                </span>
+                              )}
+
                               {isJNE && (
-                                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border border-border/50">
                                   JNE
                                 </span>
                               )}
                             </div>
                             {bg.publication_date && (
-                              <span className="text-xs text-muted-foreground font-mono shrink-0">
+                              <span className="text-[11px] text-muted-foreground font-mono shrink-0">
                                 {new Intl.DateTimeFormat("es-PE", {
                                   day: "numeric",
                                   month: "short",
@@ -543,45 +563,60 @@ export default function DetailLegislador({
                             )}
                           </div>
 
-                          {/* Título */}
-                          <p className="text-base font-semibold text-foreground leading-snug">
-                            {bg.title}
-                          </p>
+                          {/* Título y Resumen */}
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-foreground leading-snug">
+                              {bg.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {bg.summary}
+                            </p>
+                          </div>
 
-                          {/* Resumen */}
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {bg.summary}
-                          </p>
+                          {/* 3. Agregamos la Caja de Sanción adaptada a esta Card */}
+                          {bg.sanction && (
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2 flex gap-2 items-start mt-1">
+                              <Gavel className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
+                                  Sanción Impuesta / Fallo
+                                </span>
+                                <p className="text-xs text-foreground/90 font-medium leading-snug">
+                                  {bg.sanction}
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                          {/* Fuente */}
-                          <div className="flex items-center justify-between gap-2">
+                          {/* 4. Footer con el nuevo botón de Evidencia */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 mt-1">
                             <span className="text-xs text-muted-foreground">
                               Fuente:{" "}
                               <span className="font-medium text-foreground">
                                 {bg.source}
                               </span>
                             </span>
+
                             {bg.source_url && (
                               <Link
                                 href={bg.source_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
                               >
                                 <ExternalLink className="w-3 h-3" />
                                 {isJNE
-                                  ? "Ver en JNE"
-                                  : new URL(bg.source_url).hostname.replace(
-                                      "www.",
-                                      "",
-                                    )}
+                                  ? "Revisar documento oficial"
+                                  : `Ver en ${new URL(
+                                      bg.source_url,
+                                    ).hostname.replace("www.", "")}`}
                               </Link>
                             )}
                           </div>
 
                           {/* Separador manual, excepto el último */}
                           {i < persona.backgrounds.length - 1 && (
-                            <div className="border-t border-dashed border-border/60 mt-1" />
+                            <div className="border-t border-dashed border-border/60 mt-2 mb-1" />
                           )}
                         </div>
                       );

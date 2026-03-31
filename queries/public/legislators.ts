@@ -206,6 +206,10 @@ export async function getLegisladorById(
     `,
     )
     .eq("id", legisladorId)
+    .order("start_date", {
+      referencedTable: "parliamentarymembership",
+      ascending: false,
+    })
     .maybeSingle();
 
   if (error) {
