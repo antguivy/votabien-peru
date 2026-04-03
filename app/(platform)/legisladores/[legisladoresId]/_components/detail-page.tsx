@@ -43,6 +43,9 @@ import {
   backgroundStatusConfig,
   backgroundTypeConfig,
   DEFAULT_BACKGROUND_CONFIG,
+  SEVERITY_ORDER,
+  TYPE_LABELS,
+  TYPE_LABELS_SINGULAR,
 } from "@/lib/utils/background-config";
 import { LegislatorDetailWithPerson } from "@/interfaces/legislator";
 import { calcBillStats } from "@/lib/utils/bill-status";
@@ -102,6 +105,15 @@ export default function DetailLegislador({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  const byType = persona.backgrounds?.reduce(
+    (acc, bg) => {
+      const key = bg.type?.toUpperCase();
+      if (key) acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const backgroundTypes = SEVERITY_ORDER.filter((t) => byType?.[t]);
 
   if (!periodoActivo) {
     return (
@@ -247,9 +259,42 @@ export default function DetailLegislador({
           </div>
         </div>
       </div>
-
       {/* ===== CONTENIDO CON TABS ===== */}
       <div className="container mx-auto px-4">
+        {/* ── REGISTROS ── */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {backgroundTypes.length === 0 ? (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              <span className="text-xs font-medium text-success">
+                Sin historial legal
+              </span>
+            </div>
+          ) : (
+            backgroundTypes.map((type) => {
+              const cfg =
+                backgroundTypeConfig[type] ?? DEFAULT_BACKGROUND_CONFIG;
+              const count = byType?.[type] ?? 0;
+              const label =
+                count === 1 ? TYPE_LABELS_SINGULAR[type] : TYPE_LABELS[type];
+
+              return (
+                <div
+                  key={type}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                    cfg.pill,
+                  )}
+                >
+                  <span className="font-black tabular-nums">{count}</span>
+                  <span className="font-medium opacity-80">
+                    {count === 1 ? `registro ${label}` : `registros ${label}`}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
         <Tabs defaultValue="labor" className="w-full">
           {/* LISTA DE PESTAÑAS */}
           <TabsList className="grid grid-cols-3">

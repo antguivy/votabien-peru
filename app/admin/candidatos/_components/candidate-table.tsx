@@ -21,6 +21,7 @@ import {
   CandidacyType,
 } from "@/interfaces/candidate";
 import { CandidateFormDialog } from "./candidate-form-dialog";
+import { EmbeddingDialog } from "./embedding-dialog";
 
 interface CandidatesTableProps {
   promises: Promise<
@@ -106,15 +107,14 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
           candidateId={rowAction.row.original.id}
         />
       )}
-      {/* {rowAction?.type === "update-bancada" && (
-        <ParliamentaryMembershipDialog
+      {rowAction?.type === "generate-embedding" && (
+        <EmbeddingDialog
           open={true}
           onOpenChange={() => setRowAction(null)}
-          legislator_id={rowAction.row.original.id}
-          legislatorName={rowAction.row.original.person?.fullname ?? ""}
-          memberships={rowAction.row.original.parliamentary_memberships ?? []}
+          personId={rowAction.row.original.person_id}
+          fullname={rowAction.row.original.person?.fullname || "Desconocido"}
         />
-      )} */}
+      )}
     </>
   );
 }

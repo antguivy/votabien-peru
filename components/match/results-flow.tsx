@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Loader2,
   SkipForward,
+  ThumbsDown,
   X as XIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -22,8 +23,8 @@ const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
   "senador_nacional",
   "senador_regional",
-  "diputado_regional",
-  "parlamento_andino",
+  // "diputado_regional",
+  // "parlamento_andino",
 ];
 
 const CATEGORY_CONFIG: Record<
@@ -57,20 +58,20 @@ const CATEGORY_CONFIG: Record<
     border: "rgba(4,120,87,0.25)",
     description: "Desliza o usa los botones para elegir",
   },
-  diputado_regional: {
-    title: "Diputado Regional",
-    color: "#b91c1c",
-    bg: "rgba(185,28,28,0.08)",
-    border: "rgba(185,28,28,0.25)",
-    description: "Desliza o usa los botones para elegir",
-  },
-  parlamento_andino: {
-    title: "Parlamento Andino",
-    color: "#0f766e",
-    bg: "rgba(15,118,110,0.08)",
-    border: "rgba(15,118,110,0.25)",
-    description: "Desliza o usa los botones para elegir",
-  },
+  // diputado_regional: {
+  //   title: "Diputado Regional",
+  //   color: "#b91c1c",
+  //   bg: "rgba(185,28,28,0.08)",
+  //   border: "rgba(185,28,28,0.25)",
+  //   description: "Desliza o usa los botones para elegir",
+  // },
+  // parlamento_andino: {
+  //   title: "Parlamento Andino",
+  //   color: "#0f766e",
+  //   bg: "rgba(15,118,110,0.08)",
+  //   border: "rgba(15,118,110,0.25)",
+  //   description: "Desliza o usa los botones para elegir",
+  // },
 };
 
 const MAX_SWIPE_CANDIDATES = 60;
@@ -125,12 +126,22 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     useState<CandidateDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const openDetail = useCallback(async (candidateId: string) => {
+  const openDetail = useCallback(async (candidate: CandidateCard) => {
+    // ¡OJO! Ahora recibe el objeto completo, no solo el ID
     setLoadingDetail(true);
     try {
-      setSelectedDetailCandidate(
-        await candidateService.getCandidateDetail(candidateId),
+      const detailFromDB = await candidateService.getCandidateDetail(
+        candidate.id,
       );
+
+      // Inyectamos el score y análisis de la IA que ya tenemos en memoria
+      const fullDetail = {
+        ...detailFromDB,
+        ai_score: candidate.ai_score,
+        ai_analysis: candidate.ai_analysis,
+      };
+
+      setSelectedDetailCandidate(fullDetail);
     } catch {
       /* silent */
     } finally {
@@ -202,6 +213,24 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     goToNextCard();
   }, [currentCategory, currentCandidate, goToNextCard]);
 
+  const handleRemoveFromFinal = useCallback(
+    (cat: CategoryType, candidateId: string, e: React.MouseEvent) => {
+      e.stopPropagation(); // Evita que abra el detalle del candidato
+
+      // Remover del store (historial)
+      if (savedIdRef.current) {
+        removeCandidate(savedIdRef.current, cat, candidateId);
+      }
+
+      // Remover del estado local para que desaparezca de la vista
+      setSelectedCandidates((prev) => ({
+        ...prev,
+        [cat]: (prev[cat] ?? []).filter((c) => c.id !== candidateId),
+      }));
+    },
+    [removeCandidate],
+  );
+
   // Swipe right → candidate already saved, just advance
   const handleSwipeRight = useCallback(() => {
     goToNextCard();
@@ -271,7 +300,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                         <button
                           key={candidate.id}
                           type="button"
-                          onClick={() => openDetail(candidate.id)}
+                          onClick={() => openDetail(candidate)}
                           className="bg-card rounded-2xl border border-border p-4 flex items-center text-left hover:border-primary/40 transition-colors w-full group"
                         >
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted mr-4 flex-shrink-0">
@@ -292,9 +321,48 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
                               Toca para ver su perfil
                             </p>
                           </div>
+                          {cat === "presidente" &&
+                          candidate.ai_score !== undefined ? (
+                            <div className="flex flex-col items-center justify-center bg-purple-100 rounded-lg px-2.5 py-1 mr-2 border border-purple-200">
+                              <span className="text-purple-700 font-black text-sm">
+                                {candidate.ai_score}%
+                              </span>
+                              <span className="text-purple-600/80 text-[9px] font-bold uppercase -mt-1 tracking-wider">
+                                IA
+                              </span>
+                            </div>
+                          ) : cat !== "presidente" ? (
+                            <div className="flex items-center gap-3 mr-2">
+                              {/* Asumiendo que esta es la ruta del logo del partido */}
+                              {candidate.political_party?.logo_url && (
+                                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted border border-border shadow-sm">
+                                  <Image
+                                    src={candidate.political_party.logo_url}
+                                    alt={
+                                      candidate.political_party?.name ||
+                                      "Partido"
+                                    }
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) =>
+                                  handleRemoveFromFinal(cat, candidate.id, e)
+                                }
+                                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                                title="No me gusta (Descartar)"
+                              >
+                                <ThumbsDown size={20} />
+                              </button>
+                            </div>
+                          ) : null}
+
                           <ChevronRight
                             size={18}
-                            className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors"
+                            className="text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors ml-1"
                           />
                         </button>
                       ))}

@@ -1,13 +1,16 @@
 "use client";
 
 import { MATCH_QUESTIONS } from "@/constants/match-questions";
+import { AI_INTERESTS } from "@/constants/interests";
 import { useMatchmaking } from "@/hooks/use-matchmaking";
 import { QuestionOption } from "@/interfaces/match";
 import {
   AlertTriangle,
   Bookmark,
+  BrainCircuit,
   ChevronLeft,
   ChevronRight,
+  ListFilter,
   Loader2,
   X,
 } from "lucide-react";
@@ -21,6 +24,7 @@ import { SavedResultsView } from "@/components/match/saved-results";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { useSavedResults } from "@/store/saved-match-results";
 import { Button } from "@/components/ui/button";
+import { AILoadingState } from "@/components/match/ai-loading-state";
 
 type View = "home" | "saved";
 
@@ -34,16 +38,21 @@ export default function MatchScreen({
     formData,
     results,
     loading,
+    isAILoading,
+    aiStatusText,
     step,
     updateAnswer,
     setExcludedParties,
     nextStep,
     prevStep,
+    applyAIFilter,
     submitMatch,
     resetMatch,
   } = useMatchmaking();
   const { savedResults } = useSavedResults();
   const [view, setView] = useState<View>("home");
+  const [showAIOptions, setShowAIOptions] = useState(false);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const currentQuestionIndex = step - 1;
   const currentQuestion = MATCH_QUESTIONS[currentQuestionIndex];
@@ -57,20 +66,15 @@ export default function MatchScreen({
   const handleAnswer = useCallback(
     (option: QuestionOption) => {
       if (option.paramKey) updateAnswer(option.paramKey, option.value);
-      if (isLastQuestion) {
-        const finalOverride = option.paramKey
-          ? { [option.paramKey]: option.value }
-          : {};
-        submitMatch(finalOverride);
-      } else {
-        nextStep();
-      }
+      nextStep();
     },
-    [isLastQuestion, updateAnswer, submitMatch, nextStep],
+    [updateAnswer, nextStep],
   );
 
   const handleRestartMatch = useCallback(() => {
     setView("home");
+    setShowAIOptions(false);
+    setSelectedInterests([]);
     resetMatch();
   }, [resetMatch]);
 
@@ -78,11 +82,28 @@ export default function MatchScreen({
     setView("saved");
   }, []);
 
+  const toggleInterest = (interestId: string) => {
+    setSelectedInterests((prev) => {
+      if (prev.includes(interestId)) {
+        return prev.filter((id) => id !== interestId);
+      }
+
+      const optionToAdd = AI_INTERESTS.find((opt) => opt.id === interestId);
+      const conflicts = optionToAdd?.conflictsWith || [];
+
+      return [...prev.filter((id) => !conflicts.includes(id)), interestId];
+    });
+  };
+
   // ── Loading ────────────────────────────────────────────────────────────────
-  if (loading) {
+  if (loading || isAILoading) {
+    if (isAILoading) {
+      return <AILoadingState statusText={aiStatusText} />;
+    }
+
     return (
-      <div className="flex-1 flex items-center justify-center pb-20">
-        <div className="bg-card rounded-3xl p-8 flex flex-col items-center shadow-lg border border-border">
+      <div className="flex-1 flex items-center justify-center pb-20 animate-in fade-in duration-300">
+        <div className="bg-card rounded-3xl p-8 flex flex-col items-center shadow-lg border border-border text-center max-w-[280px]">
           <Loader2 size={48} className="text-primary animate-spin" />
           <p className="mt-6 text-foreground font-semibold text-base">
             Calculando compatibilidad
@@ -96,8 +117,184 @@ export default function MatchScreen({
   }
 
   // ── Results flow ───────────────────────────────────────────────────────────
-  if (step === MATCH_QUESTIONS.length + 1 && results) {
+  if (step === MATCH_QUESTIONS.length + 2 && results) {
     return <ResultsFlow results={results} onReset={resetMatch} />;
+  }
+
+  // ── PANTALLA DE DECISIÓN (Paso 11) ─────────────────────────────────────────
+  // Reemplaza el bloque `if (step === MATCH_QUESTIONS.length + 1)` con este:
+
+  if (step === MATCH_QUESTIONS.length + 1) {
+    return (
+      <div className="flex-1 flex flex-col w-full h-full overflow-hidden">
+        {!showAIOptions ? (
+          /* ─── VISTA: Elegir camino ─── */
+          <div className="flex-1 flex flex-col justify-center items-center text-center px-6 py-8 animate-in fade-in slide-in-from-bottom-4 duration-400">
+            <div className="mb-10">
+              <div className="relative w-14 h-14 mx-auto mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-md" />
+                <div className="relative w-14 h-14 rounded-2xl bg-background border border-border flex items-center justify-center shadow-sm">
+                  <Bookmark
+                    className="text-primary"
+                    size={22}
+                    strokeWidth={1.75}
+                  />
+                </div>
+              </div>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground mb-1.5">
+                Respuestas guardadas
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-[260px] mx-auto">
+                ¿Cómo quieres explorar a tus candidatos?
+              </p>
+            </div>
+
+            <div className="w-full max-w-sm flex flex-col gap-2.5">
+              <button
+                onClick={() => submitMatch()}
+                className="w-full bg-card border border-border hover:border-border hover:bg-muted/40 p-4 rounded-2xl flex items-center text-left transition-all duration-200 active:scale-[0.98] group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center mr-3.5 shrink-0">
+                  <ListFilter className="text-foreground/50" size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground text-sm">
+                    Resultados básicos
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    Filtro rápido con tus respuestas
+                  </p>
+                </div>
+                <ChevronRight
+                  size={15}
+                  className="text-muted-foreground/50 ml-3 shrink-0"
+                />
+              </button>
+
+              <button
+                onClick={() => setShowAIOptions(true)}
+                className="w-full bg-primary text-primary-foreground p-4 rounded-2xl flex items-center text-left transition-all duration-200 active:scale-[0.98] shadow-md shadow-primary/20"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center mr-3.5 shrink-0">
+                  <BrainCircuit size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">Análisis con IA</p>
+                  <p className="text-xs text-primary-foreground/60 mt-0.5 truncate">
+                    Compara según tus temas prioritarios
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={prevStep}
+              className="mt-10 text-muted-foreground/60 text-xs font-medium flex items-center gap-1 hover:text-muted-foreground transition-colors"
+            >
+              <ChevronLeft size={13} /> Volver a la última pregunta
+            </button>
+          </div>
+        ) : (
+          /* ─── VISTA: Filtro Inteligente ─── */
+          <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
+            {/* Header */}
+            <div className="px-5 pt-5 pb-4 shrink-0">
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={() => {
+                    setShowAIOptions(false);
+                    setSelectedInterests([]);
+                  }}
+                  className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight text-foreground leading-none">
+                    Filtro Inteligente
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selecciona los temas que más te importan.
+                  </p>
+                  <p className="text-sm font-medium text-amber-600/90 dark:text-amber-500/90 mt-1.5 flex items-center gap-1">
+                    Las posturas opuestas se reemplazarán automáticamente.
+                  </p>
+                </div>
+
+                {selectedInterests.length > 0 && (
+                  <div className="ml-auto flex items-center gap-2 animate-in fade-in duration-200">
+                    <Button
+                      variant={"outline"}
+                      onClick={() => setSelectedInterests([])}
+                    >
+                      Limpiar
+                    </Button>
+                    <span className="inline-flex items-center bg-primary text-primary-foreground text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                      {selectedInterests.length}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Barra de progreso de selección */}
+              <div className="h-0.5 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${Math.min((selectedInterests.length / 5) * 100, 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Tags — scrollable */}
+            <div className="flex-1 overflow-y-auto px-5 pb-2 min-h-0">
+              <div className="flex flex-col gap-1.5 py-1">
+                {AI_INTERESTS.map((interest, i) => {
+                  const isSelected = selectedInterests.includes(interest.id);
+                  return (
+                    <button
+                      key={interest.id}
+                      onClick={() => toggleInterest(interest.id)}
+                      style={{ animationDelay: `${i * 25}ms` }}
+                      className={`
+                      animate-in fade-in slide-in-from-bottom-2
+                      w-full px-4 py-3 rounded-xl text-sm font-medium text-left
+                      border transition-all duration-150 active:scale-[0.99]
+                      ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                          : "bg-muted/50 text-foreground/70 border-transparent hover:border-border hover:bg-muted hover:text-foreground"
+                      }
+                    `}
+                    >
+                      {interest.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 pt-3 pb-6 shrink-0">
+              <button
+                onClick={() => applyAIFilter(selectedInterests)}
+                disabled={selectedInterests.length === 0}
+                className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 text-sm shadow-md shadow-primary/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <BrainCircuit size={16} />
+                Analizar candidatos
+                {selectedInterests.length > 0 && (
+                  <span className="bg-white/15 text-[11px] font-bold px-1.5 py-0.5 rounded-md">
+                    {selectedInterests.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // ── Saved results view ─────────────────────────────────────────────────────

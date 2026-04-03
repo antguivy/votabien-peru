@@ -37,6 +37,9 @@ import {
   backgroundStatusConfig,
   backgroundTypeConfig,
   DEFAULT_BACKGROUND_CONFIG,
+  SEVERITY_ORDER,
+  TYPE_LABELS,
+  TYPE_LABELS_SINGULAR,
 } from "@/lib/utils/background-config";
 
 const formatCurrency = (amount: string | number) => {
@@ -49,15 +52,6 @@ const formatCurrency = (amount: string | number) => {
     style: "currency",
     currency: "PEN",
   }).format(num);
-};
-
-const SEVERITY_ORDER = ["PENAL", "CIVIL", "ETICA", "ADMINISTRATIVO"];
-
-const TYPE_LABELS: Record<string, string> = {
-  PENAL: "Penales",
-  CIVIL: "Civiles",
-  ETICA: "Ética",
-  ADMINISTRATIVO: "Administrativo",
 };
 
 export default function DetailCandidato({
@@ -267,13 +261,13 @@ export default function DetailCandidato({
 
       {/* ── CONTENIDO PRINCIPAL ── */}
       <div className="container max-w-5xl mx-auto">
-        {/* ── Antecedentes ── */}
+        {/* ── REGISTROS ── */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           {backgroundTypes.length === 0 ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/50">
-              <CheckCircle2 className="w-3 h-3 text-success" />
-              <span className="text-[11px] text-success uppercase tracking-widest">
-                Sin registros
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+              <span className="text-xs font-medium text-success">
+                Sin historial legal
               </span>
             </div>
           ) : (
@@ -281,26 +275,20 @@ export default function DetailCandidato({
               const cfg =
                 backgroundTypeConfig[type] ?? DEFAULT_BACKGROUND_CONFIG;
               const count = byType?.[type] ?? 0;
+              const label =
+                count === 1 ? TYPE_LABELS_SINGULAR[type] : TYPE_LABELS[type];
+
               return (
                 <div
                   key={type}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/40"
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                    cfg.pill,
+                  )}
                 >
-                  <span
-                    className={cn(
-                      "text-[13px] font-medium leading-none",
-                      cfg.badge,
-                    )}
-                  >
-                    {count}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[11px] uppercase tracking-widest leading-none",
-                      cfg.badge,
-                    )}
-                  >
-                    {TYPE_LABELS[type]}
+                  <span className="font-black tabular-nums">{count}</span>
+                  <span className="font-medium opacity-80">
+                    {count === 1 ? `registro ${label}` : `registros ${label}`}
                   </span>
                 </div>
               );

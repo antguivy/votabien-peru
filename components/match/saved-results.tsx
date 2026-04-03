@@ -26,8 +26,8 @@ const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
   "senador_nacional",
   "senador_regional",
-  "diputado_regional",
-  "parlamento_andino",
+  // "diputado_regional",
+  // "parlamento_andino",
 ];
 
 const CATEGORY_CONFIG: Record<
@@ -49,16 +49,16 @@ const CATEGORY_CONFIG: Record<
     color: "#047857",
     border: "rgba(4,120,87,0.25)",
   },
-  diputado_regional: {
-    title: "Diputado Regional",
-    color: "#b91c1c",
-    border: "rgba(185,28,28,0.25)",
-  },
-  parlamento_andino: {
-    title: "Parlamento Andino",
-    color: "#0f766e",
-    border: "rgba(15,118,110,0.25)",
-  },
+  // diputado_regional: {
+  //   title: "Diputado Regional",
+  //   color: "#b91c1c",
+  //   border: "rgba(185,28,28,0.25)",
+  // },
+  // parlamento_andino: {
+  //   title: "Parlamento Andino",
+  //   color: "#0f766e",
+  //   border: "rgba(15,118,110,0.25)",
+  // },
 };
 
 function countCandidates(result: SavedMatchResult): number {

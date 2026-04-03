@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Ellipsis, SquarePen } from "lucide-react";
+import { Bot, Ellipsis, SquarePen } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -230,12 +230,15 @@ export function getColumns({
                 <SquarePen className="size-4" />
                 Actualizar
               </DropdownMenuItem>
-              {/* <DropdownMenuItem
-                onSelect={() => setRowAction({ type: "update-bancada", row })}
+              <DropdownMenuItem
+                onSelect={() =>
+                  setRowAction({ type: "generate-embedding", row })
+                }
+                className="text-blue-600 focus:text-blue-600 focus:bg-blue-50"
               >
-                <ArrowRightLeft className="size-4" />
-                Cambios de Bancada
-              </DropdownMenuItem> */}
+                <Bot className="size-4 mr-2" />
+                Embeddings (IA)
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );

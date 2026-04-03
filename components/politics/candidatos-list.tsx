@@ -51,7 +51,7 @@ const TYPE_CONFIG: Record<
 // AlertBadge
 // ─────────────────────────────────────────────
 
-type AlertVariant = "blue" | "red" | "amber" | "orange";
+type AlertVariant = "blue" | "red" | "amber" | "orange" | "slate";
 
 function AlertBadge({
   children,
@@ -67,6 +67,8 @@ function AlertBadge({
       "bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-300",
     orange:
       "bg-orange-50 text-orange-700 dark:bg-orange-900/25 dark:text-orange-300",
+    slate:
+      "bg-slate-100 text-slate-600 dark:bg-slate-800/50 dark:text-slate-400",
   };
   return (
     <span
@@ -293,10 +295,10 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                   <AlertBadge variant="orange">Con antecedentes</AlertBadge>
                 )} */}
                 {!declaredIncome && (
-                  <AlertBadge variant="orange">No declaró ingresos</AlertBadge>
+                  <AlertBadge variant="slate">No declaró ingresos</AlertBadge>
                 )}
                 {!declaredAssets && (
-                  <AlertBadge variant="orange">No declaró bienes</AlertBadge>
+                  <AlertBadge variant="slate">No declaró bienes</AlertBadge>
                 )}
 
                 {/* REINFO */}

@@ -139,6 +139,8 @@ export interface CandidateCard extends CandidateBase {
   political_party: PoliticalPartyBase;
   electoral_district: ElectoralDistrictBasic | null;
   has_metrics: boolean;
+  ai_score?: number;
+  ai_analysis?: string;
 }
 
 export interface CandidatePresidentials {
@@ -151,6 +153,8 @@ export interface CandidateDetail extends CandidateBase {
   person: PersonWithBackground;
   political_party: PoliticalPartyBase;
   electoral_district: ElectoralDistrictBasic | null;
+  ai_score?: number;
+  ai_analysis?: string;
 }
 
 export interface CreateCandidatePeriodRequest extends CandidateBase {
