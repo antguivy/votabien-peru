@@ -548,124 +548,134 @@ export default function DetailLegislador({
                 <CardHeader className="py-2 bg-warning/20">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <AlertTriangle className="w-4 h-4 text-destructive" />
-                    Antecedentes reportados
+                    Historial Legal
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4 overflow-y-auto">
                   {persona.backgrounds && persona.backgrounds.length > 0 ? (
-                    persona.backgrounds.map((bg, i) => {
-                      const isJNE = bg.source?.toUpperCase() === "JNE";
-                      const config =
-                        backgroundTypeConfig[bg.type?.toUpperCase()] ??
-                        DEFAULT_BACKGROUND_CONFIG;
+                    persona.backgrounds
+                      .slice()
+                      .sort((a, b) => {
+                        if (!a.publication_date) return 1;
+                        if (!b.publication_date) return -1;
+                        return (
+                          new Date(b.publication_date).getTime() -
+                          new Date(a.publication_date).getTime()
+                        );
+                      })
+                      .map((bg, i) => {
+                        const isJNE = bg.source?.toUpperCase() === "JNE";
+                        const config =
+                          backgroundTypeConfig[bg.type?.toUpperCase()] ??
+                          DEFAULT_BACKGROUND_CONFIG;
 
-                      // 1. Extraemos la configuración del estado
-                      const statusConfig = bg.status
-                        ? backgroundStatusConfig[bg.status.toUpperCase()]
-                        : null;
+                        // 1. Extraemos la configuración del estado
+                        const statusConfig = bg.status
+                          ? backgroundStatusConfig[bg.status.toUpperCase()]
+                          : null;
 
-                      return (
-                        <div key={bg.id ?? i} className="flex flex-col gap-2">
-                          {/* Row: badges + fecha */}
-                          <div className="flex items-start sm:items-center justify-between gap-2 flex-col sm:flex-row">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span
-                                className={cn(
-                                  "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
-                                  config.header,
-                                  config.badge,
-                                )}
-                              >
-                                {bg.type}
-                              </span>
-
-                              {/* 2. Agregamos el Badge de Estado Legal */}
-                              {statusConfig && (
+                        return (
+                          <div key={bg.id ?? i} className="flex flex-col gap-2">
+                            {/* Row: badges + fecha */}
+                            <div className="flex items-start sm:items-center justify-between gap-2 flex-col sm:flex-row">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span
                                   className={cn(
-                                    "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
-                                    statusConfig.badge,
+                                    "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
+                                    config.header,
+                                    config.badge,
                                   )}
                                 >
-                                  {bg.status.replace("_", " ")}
+                                  {bg.type}
                                 </span>
-                              )}
 
-                              {isJNE && (
-                                <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border border-border/50">
-                                  JNE
-                                </span>
-                              )}
-                            </div>
-                            {bg.publication_date && (
-                              <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                                {new Intl.DateTimeFormat("es-PE", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                }).format(new Date(bg.publication_date))}
-                              </span>
-                            )}
-                          </div>
+                                {/* 2. Agregamos el Badge de Estado Legal */}
+                                {statusConfig && (
+                                  <span
+                                    className={cn(
+                                      "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
+                                      statusConfig.badge,
+                                    )}
+                                  >
+                                    {bg.status.replace("_", " ")}
+                                  </span>
+                                )}
 
-                          {/* Título y Resumen */}
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-foreground leading-snug">
-                              {bg.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                              {bg.summary}
-                            </p>
-                          </div>
-
-                          {/* 3. Agregamos la Caja de Sanción adaptada a esta Card */}
-                          {bg.sanction && (
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2 flex gap-2 items-start mt-1">
-                              <Gavel className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
-                                  Sanción Impuesta / Fallo
-                                </span>
-                                <p className="text-xs text-foreground/90 font-medium leading-snug">
-                                  {bg.sanction}
-                                </p>
+                                {isJNE && (
+                                  <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border border-border/50">
+                                    JNE
+                                  </span>
+                                )}
                               </div>
+                              {bg.publication_date && (
+                                <span className="text-[11px] text-muted-foreground font-mono shrink-0">
+                                  {new Intl.DateTimeFormat("es-PE", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  }).format(new Date(bg.publication_date))}
+                                </span>
+                              )}
                             </div>
-                          )}
 
-                          {/* 4. Footer con el nuevo botón de Evidencia */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 mt-1">
-                            <span className="text-xs text-muted-foreground">
-                              Fuente:{" "}
-                              <span className="font-medium text-foreground">
-                                {bg.source}
+                            {/* Título y Resumen */}
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-foreground leading-snug">
+                                {bg.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {bg.summary}
+                              </p>
+                            </div>
+
+                            {/* 3. Agregamos la Caja de Sanción adaptada a esta Card */}
+                            {bg.sanction && (
+                              <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2 flex gap-2 items-start mt-1">
+                                <Gavel className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
+                                    Sanción Impuesta / Fallo
+                                  </span>
+                                  <p className="text-xs text-foreground/90 font-medium leading-snug">
+                                    {bg.sanction}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 4. Footer con el nuevo botón de Evidencia */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 mt-1">
+                              <span className="text-xs text-muted-foreground">
+                                Fuente:{" "}
+                                <span className="font-medium text-foreground">
+                                  {bg.source}
+                                </span>
                               </span>
-                            </span>
 
-                            {bg.source_url && (
-                              <Link
-                                href={bg.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
-                              >
-                                <ExternalLink className="w-3 h-3" />
-                                {isJNE
-                                  ? "Revisar documento oficial"
-                                  : `Ver en ${new URL(
-                                      bg.source_url,
-                                    ).hostname.replace("www.", "")}`}
-                              </Link>
+                              {bg.source_url && (
+                                <Link
+                                  href={bg.source_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  {isJNE
+                                    ? "Revisar documento oficial"
+                                    : `Ver en ${new URL(
+                                        bg.source_url,
+                                      ).hostname.replace("www.", "")}`}
+                                </Link>
+                              )}
+                            </div>
+
+                            {/* Separador manual, excepto el último */}
+                            {i < persona.backgrounds.length - 1 && (
+                              <div className="border-t border-dashed border-border/60 mt-2 mb-1" />
                             )}
                           </div>
-
-                          {/* Separador manual, excepto el último */}
-                          {i < persona.backgrounds.length - 1 && (
-                            <div className="border-t border-dashed border-border/60 mt-2 mb-1" />
-                          )}
-                        </div>
-                      );
-                    })
+                        );
+                      })
                   ) : (
                     <div className="py-10 flex flex-col items-center gap-2 text-center">
                       <CheckCircle2 className="w-8 h-8 text-muted-foreground/25" />
@@ -759,31 +769,41 @@ export default function DetailLegislador({
                 <CardContent className="overflow-y-auto">
                   {persona.detailed_biography?.length > 0 ? (
                     <div className="border-l border-border/60 ml-3 space-y-6">
-                      {persona.detailed_biography.map((bio, i) => (
-                        <div key={i} className="relative pl-6">
-                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
-                          <span className="inline-block px-2 py-0.5 rounded text-sm font-bold bg-primary/8 text-primary mb-2">
-                            {bio.date}
-                          </span>
-                          <p className="text-sm text-foreground/80 leading-relaxed">
-                            {bio.description}
-                          </p>
-                          {bio.source_url && (
-                            <Link
-                              href={bio.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground/60 hover:text-primary transition-colors"
-                            >
-                              <ExternalLink size={10} />
-                              {new URL(bio.source_url).hostname.replace(
-                                "www.",
-                                "",
-                              )}
-                            </Link>
-                          )}
-                        </div>
-                      ))}
+                      {persona.detailed_biography
+                        .slice()
+                        .sort((a, b) => {
+                          if (!a.date) return 1;
+                          if (!b.date) return -1;
+                          return (
+                            new Date(b.date).getTime() -
+                            new Date(a.date).getTime()
+                          );
+                        })
+                        .map((bio, i) => (
+                          <div key={i} className="relative pl-6">
+                            <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
+                            <span className="inline-block px-2 py-0.5 rounded text-sm font-bold bg-primary/8 text-primary mb-2">
+                              {bio.date}
+                            </span>
+                            <p className="text-sm text-foreground/80 leading-relaxed">
+                              {bio.description}
+                            </p>
+                            {bio.source_url && (
+                              <Link
+                                href={bio.source_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground/60 hover:text-primary transition-colors"
+                              >
+                                <ExternalLink size={10} />
+                                {new URL(bio.source_url).hostname.replace(
+                                  "www.",
+                                  "",
+                                )}
+                              </Link>
+                            )}
+                          </div>
+                        ))}
                     </div>
                   ) : (
                     <NoDataMessage text="Sin cobertura mediática registrada." />

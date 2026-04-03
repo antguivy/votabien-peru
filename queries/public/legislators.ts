@@ -9,7 +9,6 @@ import { LegislatorVersusCard } from "@/interfaces/legislator-metrics";
 import { ChamberType } from "@/interfaces/politics";
 import { Database } from "@/interfaces/supabase";
 import { createClient } from "@/lib/supabase/server";
-import { getBillStatusGroup } from "@/lib/utils-bill";
 
 interface GetLegislatorsParams {
   active_only?: boolean;
@@ -206,6 +205,10 @@ export async function getLegisladorById(
     `,
     )
     .eq("id", legisladorId)
+    .order("submission_date", {
+      referencedTable: "bill",
+      ascending: false,
+    })
     .order("start_date", {
       referencedTable: "parliamentarymembership",
       ascending: false,

@@ -1,6 +1,5 @@
 "use server";
 
-import { BackgroundStatus } from "@/interfaces/background";
 import {
   CandidacyStatus,
   CandidacyType,
@@ -8,10 +7,8 @@ import {
   CandidateDetail,
   CandidatePresidentials,
 } from "@/interfaces/candidate";
-import { LegislatorDetail } from "@/interfaces/legislator";
 import { RnasSanction } from "@/interfaces/person";
 import { createClient } from "@/lib/supabase/server";
-import { getBillStatusGroup } from "@/lib/utils-bill";
 import { QueryData } from "@supabase/supabase-js";
 
 interface GetCandidatesParams {
