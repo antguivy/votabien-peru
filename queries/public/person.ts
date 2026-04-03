@@ -8,8 +8,7 @@ import {
   PersonWithActivePeriod,
 } from "@/interfaces/person";
 import { createClient } from "@/lib/supabase/server";
-import { getBillStatusGroup } from "@/lib/utils-bill";
-
+import { getBillGroup } from "@/lib/utils/bill-status";
 type RawBill = Omit<BillBasic, "status_group">;
 type RawLegislatorPeriod = Omit<LegislatorDetail, "bill_authorships"> & {
   bill_authorships: RawBill[];
@@ -59,7 +58,7 @@ export async function getPersonaAsLegisladorById(
     // Calculamos el status_group (colores del dashboard)
     bill_authorships: period.bill_authorships?.map((bill) => ({
       ...bill,
-      status_group: getBillStatusGroup(bill.approval_status),
+      status_group: getBillGroup(bill.approval_status),
     })),
     // Ordenamos bancadas por fecha descendente
     parliamentary_memberships: period.parliamentary_memberships?.sort(

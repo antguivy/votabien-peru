@@ -9,14 +9,17 @@ import {
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { BillBasic } from "@/interfaces/bill";
 import { FileText, Filter, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProyectoItem from "./proyect-item";
-import { getBillGroup, BillGroup } from "@/lib/utils/bill-status";
+import {
+  getBillGroup,
+  BillGroup,
+  getBillStatusConfig,
+} from "@/lib/utils/bill-status";
+import { cn } from "@/lib/utils";
 
-// Definimos los grupos para iterar en los botones (ordenados lógicamente)
 const FILTER_GROUPS: BillGroup[] = [
   "PRESENTADO",
   "EN_PROCESO",
@@ -37,10 +40,8 @@ export default function BillsDialog({
   onClose,
 }: BillsDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  // El filtro puede ser un grupo o "todos"
   const [groupFilter, setGroupFilter] = useState<BillGroup | "todos">("todos");
 
-  // 1. Contar proyectos por grupo (Optimizada: O(n))
   const groupCounts = useMemo(() => {
     const counts: Record<string, number> = {
       todos: proyectos.length,
@@ -57,7 +58,6 @@ export default function BillsDialog({
     return counts;
   }, [proyectos]);
 
-  // 2. Filtrado
   const proyectosFiltrados = useMemo(() => {
     return proyectos.filter((p) => {
       const cleanSearch = searchTerm.toLowerCase();
@@ -90,7 +90,6 @@ export default function BillsDialog({
             Explorador de Proyectos ({proyectos.length})
           </CredenzaTitle>
 
-          {/* --- Buscador --- */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -109,7 +108,6 @@ export default function BillsDialog({
             )}
           </div>
 
-          {/* --- Filtros (Chips) --- */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -132,49 +130,47 @@ export default function BillsDialog({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant={groupFilter === "todos" ? "secondary" : "outline"}
+              <button
                 onClick={() => setGroupFilter("todos")}
-                size="sm"
-                className="h-8 rounded-full border-dashed"
+                className={cn(
+                  "h-8 px-3 rounded-full text-xs font-semibold border transition-all",
+                  groupFilter === "todos"
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "text-muted-foreground border-border",
+                )}
               >
                 Todos
-                <Badge
-                  variant="secondary"
-                  className="ml-2 h-5 px-1.5 text-[10px] bg-background"
-                >
-                  {groupCounts.todos}
-                </Badge>
-              </Button>
+                <span className="ml-1.5 opacity-70">({groupCounts.todos})</span>
+              </button>
 
               {FILTER_GROUPS.map((group) => {
-                // Solo mostramos el botón si hay proyectos en ese grupo (Opcional, para limpiar UI)
-                // Si prefieres verlos todos aunque sean 0, quita esta condición.
                 if (groupCounts[group] === 0) return null;
-
                 const isActive = groupFilter === group;
+                // AQUÍ ESTÁ EL CAMBIO: Usamos un mock status para obtener la configuración base del grupo
+                const config = getBillStatusConfig(group);
+
                 return (
-                  <Button
+                  <button
                     key={group}
-                    variant={isActive ? "default" : "outline"}
                     onClick={() => setGroupFilter(group)}
-                    size="sm"
-                    className={`h-8 rounded-full ${isActive ? "" : "text-muted-foreground"}`}
+                    className={cn(
+                      "h-8 px-3 rounded-full text-xs font-semibold border transition-all",
+                      isActive
+                        ? config.twClass
+                        : "text-muted-foreground border-border hover:border-border/80",
+                    )}
                   >
-                    {group.replace("_", " ")}
-                    <span
-                      className={`ml-2 text-xs ${isActive ? "text-primary-foreground/80" : "text-muted-foreground"}`}
-                    >
+                    {config.label}
+                    <span className="ml-1.5 opacity-70">
                       ({groupCounts[group]})
                     </span>
-                  </Button>
+                  </button>
                 );
               })}
             </div>
           </div>
         </CredenzaHeader>
 
-        {/* --- Lista Scrollable --- */}
         <CredenzaBody className="flex-1 overflow-y-auto p-0 sm:p-2 bg-muted/10">
           {proyectosFiltrados.length > 0 ? (
             <div className="space-y-2 p-2 sm:p-0">

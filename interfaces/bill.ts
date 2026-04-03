@@ -53,4 +53,8 @@ export interface BillBasic {
 export interface BillBasic extends BillBase {
   id: string;
   status_group: string;
+  summary: string | null;
+  legislative_session: string | null;
+  committees: string[] | null;
+  coauthors: string | null;
 }

@@ -16,10 +16,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { ChamberType, LegislatorCondition } from "@/interfaces/politics";
-import { BadgeVariant } from "../utils-bill";
 import { BackgroundType } from "@/interfaces/background";
 import { FlowType } from "@/interfaces/party-financing";
 import { CandidacyType } from "@/interfaces/candidate";
+import { BadgeVariant } from "./bill-status";
 
 // Chamber helpers
 export function getCandidateTypeIcon(type: CandidacyType) {
