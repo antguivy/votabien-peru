@@ -13,16 +13,16 @@ export interface MatchResponse {
     presidente: CandidateCard[];
     senador_nacional: CandidateCard[];
     senador_regional: CandidateCard[];
-    diputado_regional: CandidateCard[];
-    parlamento_andino: CandidateCard[];
+    // diputado_regional: CandidateCard[];
+    // parlamento_andino: CandidateCard[];
   };
   count: number;
   count_by_category: {
     presidente: number;
     senador_nacional: number;
     senador_regional: number;
-    diputado_regional: number;
-    parlamento_andino: number;
+    // diputado_regional: number;
+    // parlamento_andino: number;
   };
 }
 
@@ -43,6 +43,9 @@ export interface MatchFormParams {
   born_in_district?: boolean;
   reinfo_clean?: boolean;
   rnas_filter?: RnasFilter;
+
+  apply_ai?: boolean;
+  user_interests?: string;
 }
 
 export type QuestionOptionValue =

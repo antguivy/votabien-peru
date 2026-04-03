@@ -5,9 +5,9 @@ import { CandidateCard } from "@/interfaces/candidate";
 export type CategoryType =
   | "presidente"
   | "senador_nacional"
-  | "senador_regional"
-  | "diputado_regional"
-  | "parlamento_andino";
+  | "senador_regional";
+// | "diputado_regional"
+// | "parlamento_andino";
 
 export interface SavedMatchResult {
   id: string;

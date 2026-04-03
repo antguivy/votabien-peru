@@ -4,7 +4,7 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   {
     id: 1,
     question: "¿Qué edad debería tener tu candidato ideal?",
-    description: "Aplica solo a Senadores, Diputados y Parlamento",
+    description: "Aplica solo a Senadores",
     icon: "Calendar",
     options: [
       {
@@ -14,15 +14,15 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
         paramKey: "age_range",
       },
       {
-        label: "Mediana edad (36–55 años)",
+        label: "Con trayectoria (36+ años)",
         description: "Equilibrio entre energía y experiencia",
-        value: { min: 36, max: 55 },
+        value: { min: 36, max: 99 },
         paramKey: "age_range",
       },
       {
         label: "Maduro (56+ años)",
         description: "Trayectoria larga y consolidada",
-        value: { min: 56, max: 120 },
+        value: { min: 56, max: 99 },
         paramKey: "age_range",
       },
       {
@@ -38,20 +38,14 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
     icon: "ShieldCheck",
     options: [
       {
-        label: "Hoja de vida impecable",
-        description: "Sin antecedentes ni investigaciones activas",
-        value: "CLEAN",
-        paramKey: "legal_record_preference",
-      },
-      {
-        label: "Sin condenas penales",
-        description: "Sanciones administrativas o éticas son aceptables",
+        label: "Sin condenas penales firmes",
+        description: "Excluye a candidatos sentenciados por la justicia",
         value: "NO_PENAL",
         paramKey: "legal_record_preference",
       },
       {
         label: "Puede tener investigaciones en curso",
-        description: "Sin sentencias ni sanciones firmes",
+        description: "Acepto candidatos bajo investigación preliminar",
         value: "INVESTIGATION_OK",
         paramKey: "legal_record_preference",
       },
@@ -167,30 +161,6 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
   },
   {
     id: 7,
-    question: "¿Quieres que haya sido elegido antes por voto popular?",
-    icon: "Vote",
-    description:
-      "Por ejemplo: alcalde, regidor, congresista u otro cargo — aplica a senadores, diputados y parlamento",
-    options: [
-      {
-        label: "Sí — que ya haya sido elegido",
-        value: true,
-        paramKey: "has_electoral_experience",
-      },
-      {
-        label: "No — prefiero alguien sin experiencia electoral",
-        value: false,
-        paramKey: "has_electoral_experience",
-      },
-      {
-        label: "Me es indiferente",
-        value: undefined,
-        paramKey: "has_electoral_experience",
-      },
-    ],
-  },
-  {
-    id: 8,
     question:
       "¿El candidato debería estar libre de vínculos con la minería informal?",
     icon: "HardHat",
@@ -210,7 +180,7 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
     ],
   },
   {
-    id: 9,
+    id: 8,
     question:
       "¿Preferirías que los candidatos abogados tengan una trayectoria profesional limpia?",
     icon: "ShieldAlert",
@@ -235,10 +205,10 @@ export const MATCH_QUESTIONS: QuestionConfig[] = [
     ],
   },
   {
-    id: 10,
+    id: 9,
     question: "¿Tu candidato debe ser de la región que representa?",
     icon: "MapPin",
-    description: "Aplica solo a senadores regionales y diputados",
+    description: "Aplica solo a senadores regionales",
     options: [
       {
         label: "Sí — debe haber nacido en la región",

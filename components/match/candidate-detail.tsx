@@ -15,6 +15,7 @@ import {
 } from "@/interfaces/person";
 import {
   AlertCircle,
+  BrainCircuit,
   Briefcase,
   Calendar,
   CheckCircle2,
@@ -22,8 +23,10 @@ import {
   ExternalLink,
   GraduationCap,
   Home,
+  Info,
   MapPin,
   Shield,
+  Sparkles,
   TrendingUp,
   User,
 } from "lucide-react";
@@ -36,30 +39,56 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from "@/components/ui/credenza";
+import {
+  backgroundTypeConfig,
+  DEFAULT_BACKGROUND_CONFIG,
+  SEVERITY_ORDER,
+  TYPE_LABELS,
+  TYPE_LABELS_SINGULAR,
+} from "@/lib/utils/background-config";
+import { cn } from "@/lib/utils";
+import { MarkdownText } from "./markdown-text";
 
 interface Props {
   candidate: CandidateDetail | null;
   onClose: () => void;
 }
 
-type TabType = "perfil" | "legal" | "bienes" | "posturas";
+type TabType = "ia" | "perfil" | "legal" | "bienes" | "posturas";
 
 export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
-  const [activeTab, setActiveTab] = useState<TabType>("perfil");
-
   const handleOpenChange = (open: boolean) => {
     if (!open) onClose();
   };
 
   const isOpen = candidate !== null;
 
+  const hasAIAplied =
+    candidate?.ai_score && candidate?.type?.toUpperCase() === "PRESIDENTE";
+
+  const [activeTab, setActiveTab] = useState<TabType>(
+    hasAIAplied ? "ia" : "perfil",
+  );
+
   if (!candidate) return null;
 
   const { person, political_party, electoral_district } = candidate;
   const hasBackgrounds = person.backgrounds && person.backgrounds.length > 0;
+
   const age = person.birth_date
     ? new Date().getFullYear() - new Date(person.birth_date).getFullYear()
     : null;
+
+  const byType = person.backgrounds?.reduce(
+    (acc, bg) => {
+      const key = bg.type?.toUpperCase();
+      if (key) acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const backgroundTypes = SEVERITY_ORDER.filter((t) => byType?.[t]);
 
   return (
     <Credenza open={isOpen} onOpenChange={handleOpenChange}>
@@ -68,8 +97,8 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
       </CredenzaHeader>
       <CredenzaContent>
         <CredenzaBody className="overflow-y-auto">
-          {/* ── HERO ── */}
-          <div className="pb-6 border-b border-border">
+          {/* ── HERO ── sin border-b para que fluya directo al alert */}
+          <div className="pb-6">
             <div className="flex flex-col items-center">
               <div className="relative mb-4 mt-4">
                 <div className="w-28 h-28 rounded-full border-4 border-background overflow-hidden ring-2 ring-border">
@@ -102,7 +131,7 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
 
                 {candidate.list_number && (
                   <div className="absolute -bottom-2 -left-2 bg-primary rounded-xl border-2 border-background w-11 h-11 flex items-center justify-center shadow-md">
-                    <span className="text-white text-xl font-black leading-none">
+                    <span className="text-primary-foreground text-xl font-black leading-none">
                       {candidate.list_number}
                     </span>
                   </div>
@@ -170,35 +199,65 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
             </div>
           </div>
 
-          {/* ── BACKGROUND ALERT ── */}
-          {hasBackgrounds && (
-            <div className="py-4 bg-destructive/10 border-l-4 border-destructive rounded-r-2xl flex gap-3">
-              <AlertCircle
-                size={22}
-                className="text-destructive flex-shrink-0 mt-0.5"
-              />
-              <div>
-                <p className="text-destructive font-bold text-sm mb-1">
-                  Antecedentes Registrados
-                </p>
-                <p className="text-destructive/80 text-sm">
-                  Este candidato tiene {person.backgrounds.length} registro(s)
-                  de antecedentes. Revisa la pestaña ❝Legal❞ para más detalles.
-                </p>
+          {/* ── REGISTROS ── */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            {backgroundTypes.length === 0 ? (
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+                <span className="text-xs font-medium text-success">
+                  Sin historial legal
+                </span>
               </div>
-            </div>
-          )}
+            ) : (
+              backgroundTypes.map((type) => {
+                const cfg =
+                  backgroundTypeConfig[type] ?? DEFAULT_BACKGROUND_CONFIG;
+                const count = byType?.[type] ?? 0;
+                const label =
+                  count === 1 ? TYPE_LABELS_SINGULAR[type] : TYPE_LABELS[type];
+
+                return (
+                  <div
+                    key={type}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border",
+                      cfg.pill,
+                    )}
+                  >
+                    <span className="font-black tabular-nums">{count}</span>
+                    <span className="font-medium opacity-80">
+                      {count === 1 ? `registro ${label}` : `registros ${label}`}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
 
           {/* ── TABS ── */}
           <div className="mt-6 pb-8">
-            <div className="flex bg-muted/50 rounded-xl p-1 mb-6">
+            <div className="flex bg-muted/50 rounded-xl p-1 mb-6 overflow-x-auto scrollbar-hide">
+              {hasAIAplied && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("ia")}
+                  className={`flex-1 min-w-[100px] py-2.5 rounded-lg text-sm font-bold transition-colors capitalize flex items-center justify-center gap-1.5 ${
+                    activeTab === "ia"
+                      ? "bg-chart-5 text-white shadow-sm"
+                      : "text-chart-5 hover:bg-chart-5/10"
+                  }`}
+                >
+                  <BrainCircuit size={14} /> IA
+                </button>
+              )}
+
               {(["perfil", "legal", "bienes", "posturas"] as TabType[]).map(
                 (tab) => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors capitalize relative ${
+                    className={`flex-1 min-w-[80px] py-2.5 rounded-lg text-sm font-semibold transition-colors capitalize relative ${
                       activeTab === tab
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -206,13 +265,19 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
                   >
                     {tab}
                     {tab === "legal" && hasBackgrounds && (
-                      <span className="absolute -top-1 -right-0.5 w-2 h-2 bg-destructive rounded-full" />
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
                     )}
                   </button>
                 ),
               )}
             </div>
 
+            {activeTab === "ia" && hasAIAplied && (
+              <TabIA
+                score={candidate.ai_score!}
+                analysis={candidate.ai_analysis!}
+              />
+            )}
             {activeTab === "perfil" && <TabPerfil person={person} />}
             {activeTab === "legal" && (
               <TabLegal backgrounds={person.backgrounds} />
@@ -227,6 +292,56 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
         </CredenzaBody>
       </CredenzaContent>
     </Credenza>
+  );
+};
+
+// ─── TAB: ANÁLISIS IA ─────────────────────────────────────────────────────────
+
+const TabIA = ({ score, analysis }: { score: number; analysis: string }) => {
+  const isHighMatch = score >= 70;
+  const isMediumMatch = score >= 40 && score < 70;
+
+  const colorClass = isHighMatch
+    ? "text-success bg-success/10 border-success/20"
+    : isMediumMatch
+      ? "text-warning bg-warning/10 border-warning/20"
+      : "text-destructive bg-destructive/10 border-destructive/20";
+
+  return (
+    <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
+      <div
+        className={`rounded-2xl border p-6 flex items-center gap-5 ${colorClass}`}
+      >
+        <div className="bg-background rounded-full w-20 h-20 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <span className="text-3xl font-black">{score}%</span>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-1">Compatibilidad</h3>
+          <p className="text-sm opacity-90 leading-snug">
+            {isHighMatch
+              ? "Excelente alineación con tus intereses y posturas éticas."
+              : isMediumMatch
+                ? "Alineación parcial. Revisa los detalles de sus antecedentes."
+                : "Baja compatibilidad. Sus antecedentes o plan difieren de tus ideales."}
+          </p>
+        </div>
+      </div>
+
+      <SectionCard
+        icon={<BrainCircuit size={18} className="text-chart-5" />}
+        title="Análisis de la Inteligencia Artificial"
+      >
+        <MarkdownText content={analysis} />
+        <div className="mt-4 pt-3 border-t border-border/50">
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Info size={13} />
+            Análisis generado evaluando el historial legal y administrativo
+            completo (penal, civil y ético), noticias, entrevistas y el plan de
+            gobierno oficial.
+          </p>
+        </div>
+      </SectionCard>
+    </div>
   );
 };
 
@@ -291,7 +406,7 @@ const TabPerfil = ({ person }: { person: PersonWithBackground }) => (
 
     {person.popular_election?.length > 0 && (
       <SectionCard
-        icon={<TrendingUp size={18} className="text-green-500" />}
+        icon={<TrendingUp size={18} className="text-success" />}
         title="Elecciones Ganadas"
       >
         {person.popular_election.map((elec: PopularElection, i: number) => (
@@ -307,48 +422,56 @@ const TabPerfil = ({ person }: { person: PersonWithBackground }) => (
 const TabLegal = ({ backgrounds }: { backgrounds: BackgroundBase[] }) => (
   <div className="flex flex-col gap-4">
     {backgrounds?.length > 0 ? (
-      backgrounds.map((bg: BackgroundBase, i: number) => (
-        <div
-          key={i}
-          className="bg-destructive/5 rounded-2xl border-l-4 border-destructive overflow-hidden"
-        >
-          <div className="bg-destructive/10 px-4 py-2">
-            <span className="text-xs font-bold text-destructive uppercase tracking-wider">
-              {bg.type}
-            </span>
-          </div>
-          <div className="p-4">
-            <p className="font-bold text-foreground text-base mb-2">
-              {bg.title}
-            </p>
-            <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg border border-border mb-3">
-              {bg.summary}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {bg.sanction && (
-                <div className="flex items-center gap-1 bg-destructive/10 px-3 py-1.5 rounded-full">
-                  <AlertCircle size={13} className="text-destructive" />
-                  <span className="text-destructive text-xs font-semibold">
-                    {bg.sanction}
-                  </span>
-                </div>
-              )}
-              {bg.status && (
-                <div className="bg-muted px-3 py-1.5 rounded-full">
-                  <span className="text-xs font-medium">
-                    {bg.status.replace(/_/g, " ")}
-                  </span>
-                </div>
+      backgrounds.map((bg: BackgroundBase, i: number) => {
+        const cfg =
+          backgroundTypeConfig[bg.type?.toUpperCase() ?? ""] ??
+          DEFAULT_BACKGROUND_CONFIG;
+        return (
+          <div
+            key={i}
+            className={cn(
+              "rounded-2xl border-l-4 overflow-hidden bg-card border border-border",
+              cfg.border,
+            )}
+          >
+            <div className={cn("px-4 py-2", cfg.header)}>
+              <span className="text-xs font-bold text-foreground/70 uppercase tracking-wider">
+                {bg.type}
+              </span>
+            </div>
+            <div className="p-4">
+              <p className="font-bold text-foreground text-base mb-2">
+                {bg.title}
+              </p>
+              <p className="text-sm text-muted-foreground bg-muted/40 p-3 rounded-lg border border-border mb-3">
+                {bg.summary}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {bg.sanction && (
+                  <div className="flex items-center gap-1 bg-destructive/10 px-3 py-1.5 rounded-full">
+                    <AlertCircle size={13} className="text-destructive" />
+                    <span className="text-destructive text-xs font-semibold">
+                      {bg.sanction}
+                    </span>
+                  </div>
+                )}
+                {bg.status && (
+                  <div className="bg-muted px-3 py-1.5 rounded-full">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {bg.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {bg.publication_date && (
+                <p className="text-xs text-muted-foreground mt-3 text-right">
+                  {bg.publication_date}
+                </p>
               )}
             </div>
-            {bg.publication_date && (
-              <p className="text-xs text-muted-foreground mt-3 text-right">
-                {bg.publication_date}
-              </p>
-            )}
           </div>
-        </div>
-      ))
+        );
+      })
     ) : (
       <EmptyState
         title="Información en proceso"
@@ -369,16 +492,16 @@ const TabBienes = ({
 }) => (
   <div className="flex flex-col gap-4">
     {incomes?.length > 0 && (
-      <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6">
+      <div className="bg-success/8 border border-success/20 rounded-2xl p-6">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-green-500/20 rounded-full flex-shrink-0">
-            <DollarSign size={22} className="text-green-500" />
+          <div className="p-3 bg-success/15 rounded-full flex-shrink-0">
+            <DollarSign size={22} className="text-success" />
           </div>
           <div className="flex-1">
             <p className="text-sm text-muted-foreground font-medium mb-1">
               Ingresos Totales (Anual)
             </p>
-            <p className="text-2xl font-black text-green-500">
+            <p className="text-2xl font-black text-success">
               S/ {incomes[0]?.total_income || "0.00"}
             </p>
           </div>
@@ -534,7 +657,7 @@ const EducationItem = ({
 
   return (
     <div className="flex gap-3 items-start">
-      <CheckCircle2 size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
+      <CheckCircle2 size={18} className="text-success flex-shrink-0 mt-0.5" />
       <div className="flex-1">
         <p className="text-xs text-primary font-bold mb-0.5">{type}</p>
         <p className="text-sm font-bold text-foreground leading-tight">

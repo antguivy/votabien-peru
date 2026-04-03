@@ -77,7 +77,7 @@ export function CandidateFormDialog({
     political_party_id: "",
     electoral_district_id: "",
     electoral_process_id: active_process[0]?.id || "",
-    list_number: undefined as unknown as number,
+    list_number: 0,
     active: true,
   };
 
@@ -536,14 +536,11 @@ export function CandidateFormDialog({
                           type="number"
                           placeholder="Ej. 1"
                           {...field}
-                          // TRUCO VISUAL: Si el valor es 0 (nuestro "vacío" lógico), mostramos cadena vacía
-                          value={field.value === 0 ? "" : field.value}
+                          value={field.value ?? ""}
                           onChange={(e) => {
-                            // LÓGICA:
-                            // Si el input está vacío (""), Number lo convierte a 0.
-                            // Si escriben "5", Number lo convierte a 5.
-                            // Enviamos SIEMPRE un número (0 o mayor) para satisfacer a TypeScript.
-                            field.onChange(Number(e.target.value));
+                            const value = e.target.value;
+
+                            field.onChange(value === "" ? 0 : Number(value));
                           }}
                         />
                       </FormControl>

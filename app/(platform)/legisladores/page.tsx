@@ -69,13 +69,16 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
         getDistritos(),
         getParliamentaryGroups(true),
       ]);
+    const filteredDistricts = distritos.filter(
+      (d) => !d.name.toUpperCase().includes("NACIONAL"),
+    );
     return (
       <ContentPlatformLayout>
         <section className="pt-4 px-4 container mx-auto pb-20 lg:pb-0">
           <LegisladoresList
             legisladores={initialLegisladores}
             bancadas={parliamentaryGroups}
-            distritos={distritos}
+            distritos={filteredDistricts}
             currentFilters={currentParams}
           />
         </section>

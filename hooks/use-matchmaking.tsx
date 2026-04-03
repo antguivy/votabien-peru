@@ -29,6 +29,8 @@ const defaultFormState: MatchFormParams = {
   has_electoral_experience: undefined,
   has_political_roles: undefined,
   born_in_district: undefined,
+  apply_ai: undefined,
+  user_interests: undefined,
 };
 
 export const useMatchmaking = () => {
@@ -37,6 +39,8 @@ export const useMatchmaking = () => {
   const [formData, setFormData] = useState<MatchFormParams>(defaultFormState);
   const [results, setResults] = useState<MatchResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [aiStatusText, setAiStatusText] = useState("Iniciando auditoría...");
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
 
@@ -94,6 +98,26 @@ export const useMatchmaking = () => {
     [],
   );
 
+  // Helper interno para limpiar parámetros vacíos
+  const cleanParams = (params: MatchFormParams) => {
+    return Object.entries(params).reduce(
+      (acc, [key, value]) => {
+        const isEmpty =
+          value === undefined ||
+          (Array.isArray(value) && value.length === 0) ||
+          (typeof value === "string" && value.trim() === "");
+
+        if (!isEmpty) {
+          acc[key as keyof MatchFormParams] = value as never;
+        }
+        return acc;
+      },
+      {
+        electoral_district_id: params.electoral_district_id,
+      } as MatchFormParams,
+    );
+  };
+
   const submitMatch = useCallback(
     async (finalOverride?: Partial<MatchFormParams>) => {
       setLoading(true);
@@ -119,7 +143,7 @@ export const useMatchmaking = () => {
 
         const data = await candidateService.getCandidatesMatch(cleanedParams);
         setResults(data);
-        setStep(MATCH_QUESTIONS.length + 1);
+        setStep(MATCH_QUESTIONS.length + 2);
       } catch (err) {
         setError("Error al obtener resultados. Por favor intenta de nuevo.");
         console.error("Error submitting match:", err);
@@ -129,6 +153,106 @@ export const useMatchmaking = () => {
     },
     [formData],
   );
+
+  const applyAIFilter = async (interests: string[]) => {
+    setIsAILoading(true);
+    setAiStatusText("Conectando con el servidor...");
+    setError(null);
+
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const cleanedParams = cleanParams(formData);
+
+      const queryParams = new URLSearchParams();
+      Object.entries(cleanedParams).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((val) => queryParams.append(key, String(val)));
+        } else {
+          queryParams.append(key, String(value));
+        }
+      });
+      queryParams.append("apply_ai", "true");
+      queryParams.append("user_interests", interests.join(", "));
+
+      const response = await fetch(
+        `${baseUrl}/api/v1/candidates/stream?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { Accept: "text/event-stream" },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      if (!response.body) throw new Error("No readable stream");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      // Buffer acumulador: garantiza que procesamos eventos SSE COMPLETOS
+      // aunque el JSON del evento "done" llegue partido en varios chunks TCP.
+      let buffer = "";
+      let done = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+
+        if (value) {
+          // Acumular el nuevo fragmento al buffer
+          buffer += decoder.decode(value, { stream: true });
+
+          // Dividir por el separador de eventos SSE (\n\n)
+          // El último segmento puede ser un evento incompleto → queda en el buffer
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() ?? ""; // último trozo (posiblemente incompleto)
+
+          for (const part of parts) {
+            const line = part.trim();
+            if (!line.startsWith("data: ")) continue;
+
+            try {
+              const jsonStr = line.slice("data: ".length);
+              const data = JSON.parse(jsonStr);
+
+              if (data.status && data.status !== "done") {
+                setAiStatusText(data.status);
+              }
+
+              if (data.status === "done" && data.result) {
+                setResults(data.result);
+                setStep(MATCH_QUESTIONS.length + 2);
+              }
+            } catch (parseErr) {
+              // Solo loguear en desarrollo; nunca debería ocurrir con el buffer
+              console.warn("[SSE] Error parseando evento completo:", parseErr);
+            }
+          }
+        }
+      }
+
+      // Procesar cualquier evento que quedara en el buffer sin \n\n final
+      if (buffer.trim().startsWith("data: ")) {
+        try {
+          const jsonStr = buffer.trim().slice("data: ".length);
+          const data = JSON.parse(jsonStr);
+          if (data.status === "done" && data.result) {
+            setResults(data.result);
+            setStep(MATCH_QUESTIONS.length + 2);
+          }
+        } catch {
+          // ignorar
+        }
+      }
+    } catch (err) {
+      setError("Error en la auditoría de IA. Por favor, intenta de nuevo.");
+      console.error("Error en AI Stream:", err);
+    } finally {
+      setIsAILoading(false);
+    }
+  };
 
   const resetMatch = useCallback(() => {
     setFormData(defaultFormState);
@@ -148,6 +272,8 @@ export const useMatchmaking = () => {
     formData,
     results,
     loading,
+    isAILoading,
+    aiStatusText,
     error,
     step,
     updateAnswer,
@@ -155,6 +281,7 @@ export const useMatchmaking = () => {
     nextStep,
     prevStep,
     submitMatch,
+    applyAIFilter,
     resetMatch,
     canProceed,
   };

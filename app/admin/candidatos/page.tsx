@@ -39,6 +39,7 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
     }),
     getElectoralProcess(true),
   ]);
+
   return (
     <ContentLayout title="Candidatos">
       <Shell className="gap-2 mx-auto">

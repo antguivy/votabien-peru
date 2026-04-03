@@ -11,7 +11,7 @@ const fetchDistritos = unstable_cache(
       .from("electoraldistrict")
       .select("id, name, code, is_national, active")
       .eq("active", true)
-      .eq("is_national", false)
+      // .eq("is_national", false)
       .order("name", { ascending: true });
 
     if (error) return [];

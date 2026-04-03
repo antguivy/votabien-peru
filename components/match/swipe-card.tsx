@@ -1,7 +1,7 @@
 "use client";
 
 import { CandidateCard } from "@/interfaces/candidate";
-import { ThumbsDown, ThumbsUp, Info } from "lucide-react";
+import { ThumbsDown, ThumbsUp, Info, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 
@@ -9,7 +9,7 @@ interface Props {
   candidate: CandidateCard;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
-  onPress: (candidateId: string) => void;
+  onPress: (candidate: CandidateCard) => void;
   isTop: boolean;
 }
 
@@ -83,9 +83,9 @@ export const SwipeCard = ({
 
   const handleCardClick = useCallback(() => {
     if (!didDrag.current) {
-      onPress(candidate.id);
+      onPress(candidate);
     }
-  }, [onPress, candidate.id]);
+  }, [onPress, candidate]);
 
   const swipeOutX = dragX > 0 ? "120vw" : "-120vw";
 
@@ -165,6 +165,13 @@ export const SwipeCard = ({
             >
               <span className="text-white font-black text-sm">NO ME GUSTA</span>
             </div>
+            {candidate.ai_score && (
+              <div className="absolute bottom-2 right-2 bg-chart-5 backdrop-blur-md rounded-xl px-2.5 py-1 border border-chart-5/40 shadow-xl flex items-center gap-1.5 z-20 animate-in fade-in zoom-in duration-300">
+                <span className="text-white font-black text-sm">
+                  {candidate.ai_score}%
+                </span>
+              </div>
+            )}
           </div>
 
           {/* List number */}

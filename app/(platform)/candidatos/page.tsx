@@ -136,6 +136,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
 
   // ── Fetching en paralelo ──
   const distritosPromise = getDistritos();
+
   const partiesPromise = getPartidosList({ active: true, limit: 60 });
   const candidaturasPromise = getCandidatesCards(apiParams);
 
@@ -144,6 +145,9 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     partiesPromise,
   ]);
 
+  const filteredDistricts = distritos.filter(
+    (d) => !d.name.toUpperCase().includes("NACIONAL"),
+  );
   // ── Banner electoral ──
   const fechaElecciones = new Date(procesoActivo.election_date);
   const fechaFormateada = fechaElecciones.toLocaleDateString("es-PE", {
@@ -172,7 +176,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
             currentParty={currentParams.parties[0] ?? ""}
             currentDistrict={currentParams.districts[0] ?? ""}
             currentAlerts={currentParams.alerts}
-            distritos={distritos}
+            distritos={filteredDistricts}
             parties={partiesData.items}
           />
         </div>
@@ -182,7 +186,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
         >
           <CandidatosStream
             candidaturasPromise={candidaturasPromise}
-            distritos={distritos}
+            distritos={filteredDistricts}
             parties={partiesData.items}
             procesoId={procesoActivo.id}
             currentFilters={currentParams}

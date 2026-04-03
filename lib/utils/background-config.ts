@@ -4,46 +4,60 @@ export const backgroundTypeConfig: Record<
     border: string;
     header: string;
     badge: string;
+    pill: string;
   }
 > = {
   PENAL: {
     border: "border-l-destructive",
     header: "bg-destructive/6",
     badge: "text-destructive",
+    pill: "bg-destructive/10 border-destructive/25 text-destructive",
   },
   CIVIL: {
-    border: "border-l-orange-500",
-    header: "bg-orange-500/6",
-    badge: "text-orange-600 dark:text-orange-400",
+    border: "border-l-warning",
+    header: "bg-warning/6",
+    badge: "text-warning",
+    pill: "bg-warning/10 border-warning/25 text-warning",
   },
   ADMINISTRATIVO: {
     border: "border-l-warning",
     header: "bg-warning/6",
     badge: "text-warning",
+    pill: "bg-warning/10 border-warning/25 text-warning",
   },
   ETICA: {
-    border: "border-l-blue-500",
-    header: "bg-blue-500/6",
-    badge: "text-blue-600 dark:text-blue-400",
+    border: "border-l-info",
+    header: "bg-info/6",
+    badge: "text-info",
+    pill: "bg-info/10 border-info/25 text-info",
   },
 };
 
 export const DEFAULT_BACKGROUND_CONFIG = backgroundTypeConfig.ADMINISTRATIVO;
 
-export const backgroundStatusConfig: Record<
-  string,
-  {
-    badge: string;
-  }
-> = {
-  EN_INVESTIGACION: {
-    badge: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  },
-  SENTENCIADO: {
-    badge: "bg-destructive/10 text-destructive dark:text-red-400",
-  },
-  SANCIONADO: { badge: "bg-destructive/10 text-destructive dark:text-red-400" },
-  ARCHIVADO: { badge: "bg-slate-500/10 text-slate-600 dark:text-slate-400" },
-  ABSUELTO: { badge: "bg-green-500/10 text-green-600 dark:text-green-400" },
-  PRESCRITO: { badge: "bg-gray-500/10 text-gray-600 dark:text-gray-400" },
+export const backgroundStatusConfig: Record<string, { badge: string }> = {
+  EN_INVESTIGACION: { badge: "bg-warning/10 text-warning" },
+  SENTENCIADO: { badge: "bg-destructive/10 text-destructive" },
+  SANCIONADO: { badge: "bg-destructive/10 text-destructive" },
+  ARCHIVADO: { badge: "bg-muted text-muted-foreground" },
+  ABSUELTO: { badge: "bg-success/10 text-success" },
+  PRESCRITO: { badge: "bg-muted text-muted-foreground" },
+};
+
+export const SEVERITY_ORDER = ["PENAL", "CIVIL", "ETICA", "ADMINISTRATIVO"];
+
+// Etiquetas en minúsculas para usarse dentro de frases
+export const TYPE_LABELS: Record<string, string> = {
+  PENAL: "penales",
+  CIVIL: "civiles",
+  ETICA: "de ética",
+  ADMINISTRATIVO: "administrativos",
+};
+
+// Singular de cada tipo
+export const TYPE_LABELS_SINGULAR: Record<string, string> = {
+  PENAL: "penal",
+  CIVIL: "civil",
+  ETICA: "de ética",
+  ADMINISTRATIVO: "administrativo",
 };
