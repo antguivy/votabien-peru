@@ -235,7 +235,7 @@ export default function DetailCandidato({
               </div>
 
               {/* ── Actualización + Share integrados bajo las pills ── */}
-              <div className="flex justify-center items-left gap-3 pt-1">
+              <div className="flex justify-center lg:justify-start items-left gap-3 pt-1">
                 {lastUpdated && (
                   <p className="text-xs text-success flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
