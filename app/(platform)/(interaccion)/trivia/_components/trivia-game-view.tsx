@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const SECONDS_PER_QUESTION = 15;
+const SECONDS_PER_QUESTION = 40;
 const EXPLANATION_COLLAPSE_THRESHOLD = 120;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
