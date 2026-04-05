@@ -31,7 +31,7 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Credenza,
   CredenzaBody,
@@ -66,9 +66,15 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
   const hasAIAplied =
     candidate?.ai_score && candidate?.type?.toUpperCase() === "PRESIDENTE";
 
-  const [activeTab, setActiveTab] = useState<TabType>(
-    hasAIAplied ? "ia" : "perfil",
-  );
+  const [activeTab, setActiveTab] = useState<TabType>("perfil");
+
+  useEffect(() => {
+    if (!candidate) return;
+    const shouldShowIA =
+      candidate.ai_score !== undefined &&
+      candidate.type?.toUpperCase() === "PRESIDENTE";
+    setActiveTab(shouldShowIA ? "ia" : "perfil");
+  }, [candidate?.id]);
 
   if (!candidate) return null;
 

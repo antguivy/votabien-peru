@@ -93,6 +93,13 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     [results],
   );
 
+  useEffect(() => {
+    const firstCategory = activeCategories[0];
+    if (!firstCategory) return;
+    const firstCandidate = (results.data[firstCategory] ?? [])[0];
+    if (firstCandidate) openDetail(firstCandidate);
+  }, []);
+
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [cardIndex, setCardIndex] = useState(0);
   const [showFinal, setShowFinal] = useState(false);
