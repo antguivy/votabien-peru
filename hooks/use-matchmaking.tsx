@@ -40,6 +40,7 @@ export const useMatchmaking = () => {
   const [results, setResults] = useState<MatchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAILoading, setIsAILoading] = useState(false);
+  const [aiLiveThoughts, setAiLiveThoughts] = useState<string>("");
   const [aiStatusText, setAiStatusText] = useState("Iniciando auditoría...");
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
@@ -157,6 +158,7 @@ export const useMatchmaking = () => {
   const applyAIFilter = async (interests: string[]) => {
     setIsAILoading(true);
     setAiStatusText("Conectando con el servidor...");
+    setAiLiveThoughts(""); // Reiniciamos los pensamientos al empezar
     setError(null);
 
     try {
@@ -191,23 +193,20 @@ export const useMatchmaking = () => {
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
 
-      // Buffer acumulador: garantiza que procesamos eventos SSE COMPLETOS
-      // aunque el JSON del evento "done" llegue partido en varios chunks TCP.
       let buffer = "";
       let done = false;
 
+      // EL BUCLE WHILE ES CRÍTICO: Mantiene la conexión abierta y lee cada "paquete" que llega
       while (!done) {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
 
         if (value) {
-          // Acumular el nuevo fragmento al buffer
           buffer += decoder.decode(value, { stream: true });
 
-          // Dividir por el separador de eventos SSE (\n\n)
-          // El último segmento puede ser un evento incompleto → queda en el buffer
+          // Partimos por el separador de eventos SSE
           const parts = buffer.split("\n\n");
-          buffer = parts.pop() ?? ""; // último trozo (posiblemente incompleto)
+          buffer = parts.pop() ?? "";
 
           for (const part of parts) {
             const line = part.trim();
@@ -217,23 +216,30 @@ export const useMatchmaking = () => {
               const jsonStr = line.slice("data: ".length);
               const data = JSON.parse(jsonStr);
 
-              if (data.status && data.status !== "done") {
+              // --- LÓGICA DE STREAMING DE TEXTO ---
+              if (data.type === "llm_start") {
+                setAiLiveThoughts("");
+              } else if (data.type === "llm_chunk") {
+                // Actualizamos el estado con el texto que va llegando en tiempo real
+                setAiLiveThoughts((prev) => prev + data.text);
+              } else if (data.status && data.status !== "done") {
+                // Actualizamos el estado general (Fase 1, Fase 2, etc.)
                 setAiStatusText(data.status);
               }
 
+              // --- FIN DEL FLUJO ---
               if (data.status === "done" && data.result) {
                 setResults(data.result);
                 setStep(MATCH_QUESTIONS.length + 2);
               }
             } catch (parseErr) {
-              // Solo loguear en desarrollo; nunca debería ocurrir con el buffer
-              console.warn("[SSE] Error parseando evento completo:", parseErr);
+              console.warn("[SSE] Error parseando evento:", parseErr);
             }
           }
         }
       }
 
-      // Procesar cualquier evento que quedara en el buffer sin \n\n final
+      // Procesar lo que haya quedado en el buffer al final de la conexión
       if (buffer.trim().startsWith("data: ")) {
         try {
           const jsonStr = buffer.trim().slice("data: ".length);
@@ -274,6 +280,7 @@ export const useMatchmaking = () => {
     loading,
     isAILoading,
     aiStatusText,
+    aiLiveThoughts,
     error,
     step,
     updateAnswer,

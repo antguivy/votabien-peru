@@ -40,6 +40,7 @@ export default function MatchScreen({
     loading,
     isAILoading,
     aiStatusText,
+    aiLiveThoughts,
     step,
     updateAnswer,
     setExcludedParties,
@@ -98,7 +99,12 @@ export default function MatchScreen({
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading || isAILoading) {
     if (isAILoading) {
-      return <AILoadingState statusText={aiStatusText} />;
+      return (
+        <AILoadingState
+          statusText={aiStatusText}
+          liveThoughts={aiLiveThoughts}
+        />
+      );
     }
 
     return (
