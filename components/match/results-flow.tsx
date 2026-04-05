@@ -144,6 +144,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
       // Inyectamos el score y análisis de la IA que ya tenemos en memoria
       const fullDetail = {
         ...detailFromDB,
+        type: candidate.type || detailFromDB.type,
         ai_score: candidate.ai_score,
         ai_analysis: candidate.ai_analysis,
       };

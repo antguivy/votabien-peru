@@ -70,9 +70,7 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
 
   useEffect(() => {
     if (!candidate) return;
-    const shouldShowIA =
-      candidate.ai_score !== undefined &&
-      candidate.type?.toUpperCase() === "PRESIDENTE";
+    const shouldShowIA = candidate.ai_score !== undefined;
     setActiveTab(shouldShowIA ? "ia" : "perfil");
   }, [candidate?.id]);
 
