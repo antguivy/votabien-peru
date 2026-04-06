@@ -37,7 +37,6 @@ export function useInvestigacionStream() {
   const iniciarInvestigacion = useCallback(
     async (
       nombreInvestigado: string,
-      apiKey: string,
       modelName: string,
       includeYoutube: boolean,
       includeNews: boolean,
@@ -51,7 +50,6 @@ export function useInvestigacionStream() {
       try {
         const formData = new FormData();
         formData.append("nombre_investigado", nombreInvestigado);
-        formData.append("gemini_api_key", apiKey);
         formData.append("model_name", modelName);
 
         formData.append("include_youtube", String(includeYoutube));

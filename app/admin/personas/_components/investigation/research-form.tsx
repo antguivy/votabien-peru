@@ -30,7 +30,6 @@ interface InvestigacionFormProps {
   // 🚨 Actualizamos la firma para enviar los switches al backend
   onSubmit: (
     nombre: string,
-    apiKey: string,
     modelName: string,
     includeYoutube: boolean,
     includeNews: boolean,
@@ -46,11 +45,7 @@ export function InvestigacionForm({
 }: InvestigacionFormProps) {
   const [nombreInvestigado, setNombreInvestigado] = useState(defaultName ?? "");
   const [modelName, setModelName] = useState("gemini-3-flash-preview");
-  const MODEL_LIST = ["gemini-2.5-flash", "gemini-3-flash-preview"];
-  const [apiKey, setApiKey] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("gemini_api_key_v1") ?? "";
-  });
+  const MODEL_LIST = ["gemini-3-flash-preview", "gemini-3-pro-preview"];
 
   // 🚨 Nuevos estados para las fuentes (Noticias por defecto, YT opcional)
   const [includeNews, setIncludeNews] = useState(true);
@@ -65,7 +60,7 @@ export function InvestigacionForm({
       return;
     }
 
-    onSubmit(nombreInvestigado, apiKey, modelName, includeYoutube, includeNews);
+    onSubmit(nombreInvestigado, modelName, includeYoutube, includeNews);
   };
 
   return (
@@ -180,26 +175,6 @@ export function InvestigacionForm({
             <div className="flex items-center gap-2 mb-1">
               <Cpu className="h-4 w-4 text-primary" />
               <h3 className="font-semibold text-sm">Configuración LLM</h3>
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="apiKey"
-                className="flex items-center gap-1.5 text-[11px] uppercase font-bold text-muted-foreground tracking-wider"
-              >
-                <Key className="h-3 w-3" /> Gemini API Key
-              </Label>
-              <Input
-                id="apiKey"
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                onBlur={() => {
-                  if (apiKey.trim())
-                    localStorage.setItem("gemini_api_key_v1", apiKey.trim());
-                }}
-                placeholder="sk-..."
-                className="bg-background h-9 text-xs"
-              />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-[11px] uppercase font-bold text-muted-foreground tracking-wider">
