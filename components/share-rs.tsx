@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useAnalytics } from "@/hooks/use-analytics";
+// import { useAnalytics } from "@/hooks/use-analytics";
 import Link from "next/link";
 
 interface ShareButtonProps {
@@ -34,30 +34,30 @@ export function ShareButton({
 }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState(false);
-  const { trackCompartir, trackCompartirExitoso, trackCompartirCancelado } =
-    useAnalytics();
+  // const { trackCompartir, trackCompartirExitoso, trackCompartirCancelado } =
+  //   useAnalytics();
   const shareText =
     text ?? `Conoce más sobre ${title} en Vota Bien Perú antes de votar.`;
 
-  const handleShare = async () => {
-    trackCompartir(trackingType, trackingId);
+  // const handleShare = async () => {
+  //   trackCompartir(trackingType, trackingId);
 
-    // Mobile: Web Share API → panel nativo
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title, text: shareText, url });
-        trackCompartirExitoso(trackingType, trackingId);
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") {
-          trackCompartirCancelado(trackingType, trackingId);
-        }
-      }
-      return;
-    }
+  //   // Mobile: Web Share API → panel nativo
+  //   if (typeof navigator !== "undefined" && navigator.share) {
+  //     try {
+  //       await navigator.share({ title, text: shareText, url });
+  //       trackCompartirExitoso(trackingType, trackingId);
+  //     } catch (err: unknown) {
+  //       if (err instanceof Error && err.name === "AbortError") {
+  //         trackCompartirCancelado(trackingType, trackingId);
+  //       }
+  //     }
+  //     return;
+  //   }
 
-    // Desktop: fallback popover con copia de enlace
-    setOpen(true);
-  };
+  //   // Desktop: fallback popover con copia de enlace
+  //   setOpen(true);
+  // };
 
   const handleCopy = async () => {
     try {
@@ -78,7 +78,7 @@ export function ShareButton({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
+        {/* <Button
           variant="outline"
           size="sm"
           onClick={handleShare}
@@ -89,7 +89,7 @@ export function ShareButton({
         >
           <Share2 className="w-4 h-4" />
           Compartir
-        </Button>
+        </Button> */}
       </PopoverTrigger>
 
       {/* Solo se muestra en desktop (isMobile hace early return antes de setOpen) */}
