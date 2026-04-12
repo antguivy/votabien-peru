@@ -27,8 +27,8 @@ export const NAV_MOBILE_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   { href: "/simulador", label: "Simulador", icon: Vote },
-  // { href: "/partidos", label: "Partidos", icon: Flag },
-  { href: "/match", label: "Mi Candidato", icon: Heart },
+  { href: "/partidos", label: "Partidos", icon: Flag },
+  // { href: "/match", label: "Mi Candidato", icon: Heart },
 
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
 ] as const;
@@ -48,16 +48,16 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: Landmark,
   },
-  {
-    type: "dropdown",
-    label: "Aprendiendo",
-    children: [
-      { href: "/comparador", label: "Comparador", icon: Scale },
-      { href: "/trivia", label: "Trivia", icon: HelpCircle },
-      { href: "/match", label: "Mi Candidato", icon: Heart },
-      { href: "/simulador", label: "Simulador", icon: Vote },
-    ],
-  },
+  { type: "link", href: "/simulador", label: "Simulador", icon: Vote },
+  // {
+  //   type: "dropdown",
+  //   label: "Aprendiendo",
+  //   children: [
+  //     { href: "/comparador", label: "Comparador", icon: Scale },
+  //     { href: "/trivia", label: "Trivia", icon: HelpCircle },
+  //     { href: "/match", label: "Mi Candidato", icon: Heart },
+  //   ],
+  // },
   {
     type: "dropdown",
     label: "Nosotros",

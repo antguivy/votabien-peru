@@ -302,13 +302,11 @@ export default function HeroDualSplit({
 
         {/* Subline */}
         <p className="font-medium text-white/40 leading-relaxed mb-8 max-w-[260px] md:max-w-md text-xs md:text-sm">
-          Elecciones Generales Perú 2026 · Cuatro herramientas para votar con
-          confianza.
+          Elecciones Generales Perú 2026
         </p>
 
         {/* Tool cards */}
-        <div className="w-full max-w-xl md:max-w-5xl">
-          {/* Label */}
+        {/* <div className="w-full max-w-xl md:max-w-5xl">
           <div className="flex items-center gap-4 mb-3">
             <div className="flex-1 h-px bg-white/[0.07]" />
             <div className="flex items-center gap-2">
@@ -336,7 +334,7 @@ export default function HeroDualSplit({
               />
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

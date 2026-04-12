@@ -9,6 +9,7 @@ import { SearchableEntity } from "@/interfaces/ui-types";
 import { ComparisonResponse } from "@/interfaces/comparator";
 import { getPartidosListSimple } from "@/queries/public/parties";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import UnderConstruction from "@/components/under-construction";
 
 interface PageProps {
   searchParams: Promise<SearchParams>;
@@ -46,19 +47,23 @@ export default async function ComparatorPage(props: PageProps) {
   const parties = await getPartidosListSimple({ active: true });
 
   return (
-    <ComparatorProvider
-      initialEntities={initialEntities}
-      parties={parties}
-      selectedIds={search.ids}
-    >
-      <ContentPlatformLayout>
-        <section className="container px-4 pt-4 mx-auto pb-20 lg:pb-0">
+    // <ComparatorProvider
+    //   initialEntities={initialEntities}
+    //   parties={parties}
+    //   selectedIds={search.ids}
+    // >
+    <ContentPlatformLayout>
+      {/* <section className="container px-4 pt-4 mx-auto pb-20 lg:pb-0">
           <ComparatorLayout
             data={comparisonData}
             searchAction={performSearch}
           />
-        </section>
-      </ContentPlatformLayout>
-    </ComparatorProvider>
+        </section> */}
+      <UnderConstruction
+        title="La herramienta ya no está disponible"
+        description="VotaBien Perú"
+      />
+    </ContentPlatformLayout>
+    // </ComparatorProvider>
   );
 }
