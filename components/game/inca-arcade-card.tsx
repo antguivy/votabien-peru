@@ -15,7 +15,7 @@ interface IncaArcadeCardProps {
 
 export function IncaArcadeCard({
   score,
-  stars, 
+  stars,
   currentLevel,
   regionTheme,
   featuredQuestion,
@@ -231,12 +231,12 @@ export function IncaArcadeCard({
                       className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
                       style={{ background: "#292524" }}
                     >
-                      <img
+                      {/* <img
                         src={`/api/proxy-image?url=${encodeURIComponent(correctOption.image_url)}`}
                         alt={correctOption.name}
                         className="w-full h-full object-contain"
                         crossOrigin="anonymous"
-                      />
+                      /> */}
                     </div>
                   )}
                   <p
