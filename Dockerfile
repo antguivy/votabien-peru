@@ -1,5 +1,5 @@
 # frontend/Dockerfile
-FROM node:20-alpine AS base
+FROM node:20.11.0-alpine AS base
 # ==========================================
 # FIX: Forzar resolución IPv4 para evitar el delay de 30s de Node en SSR
 # ==========================================
