@@ -3,7 +3,7 @@ FROM node:20-alpine AS base
 # ==========================================
 # FIX: Forzar resolución IPv4 para evitar el delay de 30s de Node en SSR
 # ==========================================
-ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+# ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
 # ==========================================
 # STAGE 1: Dependencies
