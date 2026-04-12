@@ -20,7 +20,7 @@ import {
   SavedMatchResult,
   useSavedResults,
 } from "@/store/saved-match-results";
-import { ShareButton } from "../share-rs";
+// import { ShareButton } from "../share-rs";
 
 const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
@@ -175,7 +175,7 @@ export const SavedResultsView = ({ onClose, onRestartMatch }: Props) => {
           </div>
 
           {/* Share row */}
-          <ShareButton
+          {/* <ShareButton
             title={activeResult.label}
             url={buildShareUrl(activeResult.selections, activeResult.savedAt)}
             text={`Mira mi selección "${activeResult.label}" en VotaBien Perú`}
@@ -183,7 +183,7 @@ export const SavedResultsView = ({ onClose, onRestartMatch }: Props) => {
             trackingId={activeResult.id}
             trackingType="resultado"
             className="w-full justify-center"
-          />
+          /> */}
         </div>
 
         {/* Scrollable list */}

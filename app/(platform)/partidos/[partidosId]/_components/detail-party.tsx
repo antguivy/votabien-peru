@@ -55,7 +55,7 @@ import {
 import { PlanGobiernoFlashcards } from "./flash-cards";
 import { useState, useEffect } from "react";
 import { NoDataMessage } from "@/components/no-data-message";
-import { ShareButton } from "@/components/share-rs";
+// import { ShareButton } from "@/components/share-rs";
 import { getFlowType } from "@/lib/utils/helper-enums";
 import { CandidatePresidentials } from "@/interfaces/candidate";
 import { PoliticalPartyDetail } from "@/interfaces/political-party";
@@ -356,13 +356,13 @@ export default function DetailParty({
                   </span>
                 </div>
               </div>
-              <ShareButton
+              {/* <ShareButton
                 title={`${party.name}`}
                 url={shareUrl}
                 text={`Conoce más sobre ${party.name} en VotaBien Perú`}
                 trackingId={party.id}
                 trackingType="partido"
-              />
+              /> */}
             </div>
           </div>
         </div>

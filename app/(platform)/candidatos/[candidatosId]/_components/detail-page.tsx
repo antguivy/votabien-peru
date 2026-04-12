@@ -24,7 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { NoDataMessage } from "@/components/no-data-message";
-import { ShareButton } from "@/components/share-rs";
+// import { ShareButton } from "@/components/share-rs";
 import {
   CandidateDetail,
   CandidatePresidentials,
@@ -246,13 +246,13 @@ export default function DetailCandidato({
                     })}
                   </p>
                 )}
-                <ShareButton
+                {/* <ShareButton
                   title={`${persona.name} ${persona.lastname}`}
                   url={shareUrl}
                   text={`Conoce más sobre ${persona.fullname} en VotaBien Perú`}
                   trackingId={candidate.id}
                   trackingType="candidato"
-                />
+                /> */}
               </div>
             </div>
           </div>
