@@ -9,7 +9,6 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import PWARegister from "@/components/pwa-register";
-import { PostHogProvider } from "@/lib/posthog-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,7 +61,7 @@ export default async function RootLayout({
           <AuthProvider initialUser={user} initialProfile={profile}>
             <TooltipProvider>
               <NuqsAdapter>
-                <PostHogProvider>{children}</PostHogProvider>
+                {children}
               </NuqsAdapter>
             </TooltipProvider>
             <Toaster />
