@@ -80,18 +80,24 @@ function calcDias(fecha: string) {
   );
 }
 
+function calcDiasSafe(fecha: string) {
+  return Math.max(0, calcDias(fecha));
+}
+
 function useCountdown(fechaElecciones?: string) {
   const [dias, setDias] = useState(() =>
-    fechaElecciones ? calcDias(fechaElecciones) : 0,
+    fechaElecciones ? calcDiasSafe(fechaElecciones) : 0,
   );
+
   useEffect(() => {
     if (!fechaElecciones) return;
     const t = setInterval(
-      () => setDias(calcDias(fechaElecciones)),
+      () => setDias(calcDiasSafe(fechaElecciones)),
       1000 * 60 * 60,
     );
     return () => clearInterval(t);
   }, [fechaElecciones]);
+
   const fechaFormateada = useMemo(
     () =>
       fechaElecciones
@@ -103,6 +109,7 @@ function useCountdown(fechaElecciones?: string) {
         : "",
     [fechaElecciones],
   );
+
   return { dias, fechaFormateada };
 }
 
