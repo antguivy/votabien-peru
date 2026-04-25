@@ -11,13 +11,13 @@ import {
   getPartiesCounts,
 } from "./_lib/data";
 
-import getDistritos from "@/queries/public/electoral-districts";
 import { getPartidosList } from "@/queries/public/parties";
 import { AdminCandidateProvider } from "@/components/context/admin-candidate";
 import { CreateCandidate } from "./_components/buttons";
 import { CandidatesTable } from "./_components/candidate-table";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentLayout } from "@/components/admin/content-layout";
+import { getDistritos } from "@/queries/public/electoral-districts";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;

@@ -1,7 +1,5 @@
 "use server";
-
 import { unstable_noStore as noStore } from "next/cache";
-
 import { createClient } from "@/lib/supabase/server";
 import { type Tables } from "@/interfaces/supabase";
 import { CandidateFormValues, GetCandidateSchema } from "./validation";
@@ -46,7 +44,6 @@ function mapCandidateToResponse(row: CandidateQueryResult): AdminCandidate {
     active: row.active,
     created_at: row.created_at,
 
-    // Datos computados
     person: row.person,
     electoral_process: row.electoral_process,
     political_party: row.political_party,
@@ -57,7 +54,7 @@ function mapCandidateToResponse(row: CandidateQueryResult): AdminCandidate {
 export async function getCandidates(
   input: GetCandidateSchema,
 ): Promise<PaginatedCandidatesResponse> {
-  noStore();
+  noStore(); // <-- CORRECTO: Datos frescos para la tabla
   const supabase = await createClient();
 
   try {
@@ -73,42 +70,26 @@ export async function getCandidates(
         status,
         active,
         created_at,
-        person:person_id!inner(
-          id,
-          fullname
-        ),
-        political_party:political_party_id!inner(
-          id, name, color_hex
-        ),
-        electoral_district:electoral_district_id!inner(
-          id, name
-        ),
+        person:person_id!inner(id, fullname),
+        political_party:political_party_id!inner(id, name, color_hex),
+        electoral_district:electoral_district_id!inner(id, name),
         electoral_process:electoral_process_id!inner(*)
       `,
       { count: "exact" },
     );
-    if (input.fullname) {
+
+    if (input.fullname)
       query = query.ilike("person.fullname", `%${input.fullname}%`);
-    }
-
-    if (input.type && input.type.length > 0) {
+    if (input.type && input.type.length > 0)
       query = query.in("type", input.type);
-    }
-
-    if (input.status && input.status.length > 0) {
+    if (input.status && input.status.length > 0)
       query = query.in("status", input.status);
-    }
-
-    if (input.parties && input.parties.length > 0) {
+    if (input.parties && input.parties.length > 0)
       query = query.in("political_party.name", input.parties);
-    }
 
-    // Orden
     if (input.sort && input.sort.length > 0) {
       const sortItem = input.sort[0];
-
       if (sortItem.id === "fullname") {
-        // Orden por columna computada en SQL
         query = query.order("candidate_fullname", {
           ascending: !sortItem.desc,
         });
@@ -147,21 +128,19 @@ export async function getCandidates(
 async function fetchAllForCounting<K extends keyof Tables<"candidate">>(
   column: K,
 ) {
+  noStore(); // <-- AGREGADO
   const supabase = await createClient();
   const { data } = await supabase.from("candidate").select(column);
   return (data || []) as unknown as Pick<Tables<"candidate">, K>[];
 }
 
 export async function getCandidacyTypeCounts(): Promise<TypeCounts> {
+  noStore(); // <-- AGREGADO
   try {
     const data = await fetchAllForCounting("type");
-
     return data.reduce<TypeCounts>((acc, curr) => {
       const key = curr.type;
-      // Validamos que key no sea null (por si acaso)
-      if (key) {
-        acc[key] = (acc[key] || 0) + 1;
-      }
+      if (key) acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
   } catch (error) {
@@ -171,14 +150,12 @@ export async function getCandidacyTypeCounts(): Promise<TypeCounts> {
 }
 
 export async function getCandidacyStatusCounts(): Promise<StatusCounts> {
+  noStore(); // <-- AGREGADO
   try {
     const data = await fetchAllForCounting("status");
-
     return data.reduce<StatusCounts>((acc, curr) => {
       const key = curr.status;
-      if (key) {
-        acc[key] = (acc[key] || 0) + 1;
-      }
+      if (key) acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
   } catch (error) {
@@ -188,11 +165,10 @@ export async function getCandidacyStatusCounts(): Promise<StatusCounts> {
 }
 
 export async function getPartiesCounts(): Promise<PartyCounts> {
-  noStore();
+  noStore(); // <-- CORRECTO
   const supabase = await createClient();
 
   try {
-    // 1. Obtener proceso activo y ocultar partidos que son parte de una alianza activa
     const { data: activeProcess } = await supabase
       .from("electoralprocess")
       .select("id")
@@ -214,7 +190,6 @@ export async function getPartiesCounts(): Promise<PartyCounts> {
       }
     }
 
-    // 2. Query a politicalparty con conteo de candidatos agregado
     let query = supabase
       .from("politicalparty")
       .select(
@@ -261,7 +236,9 @@ type CandidateForEdit = CandidateFormValues & {
 export async function getCandidateForEdit(
   id: string,
 ): Promise<CandidateForEdit | null> {
+  noStore();
   const supabase = await createClient();
+
   const { data } = await supabase
     .from("candidate")
     .select(

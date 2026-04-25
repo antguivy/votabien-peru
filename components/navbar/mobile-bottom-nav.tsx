@@ -60,7 +60,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
       {/* ── BARRA ── */}
       <div
         className={cn(
-          "fixed bottom-2 left-4 right-4 z-40 lg:hidden",
+          "fixed bottom-0 left-0 right-0 w-full z-40 lg:hidden",
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",
         )}
@@ -70,12 +70,12 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
       >
         <nav
           className={cn(
-            "flex items-center justify-around px-2 pt-0 pb-2.5 rounded-[2rem]",
-            "backdrop-blur-2xl",
-            "bg-white/85 border border-black/[0.07]",
-            "shadow-[0_10px_40px_oklch(0_0_0/0.16),0_2px_8px_oklch(0_0_0/0.08)]",
-            "dark:bg-[oklch(0.14_0.02_240/0.90)] dark:border-white/[0.08]",
-            "dark:shadow-[0_10px_40px_oklch(0_0_0/0.40),0_2px_8px_oklch(0_0_0/0.20)]",
+            "flex items-center justify-around px-2 pt-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))] rounded-none",
+            "backdrop-blur-xl",
+            "bg-white/95 border-t border-border/80",
+            "shadow-[0_-4px_24px_-8px_rgba(0,0,0,0.1)]",
+            "dark:bg-background/95 dark:border-white/[0.08]",
+            "dark:shadow-[0_-4px_24px_-8px_rgba(0,0,0,0.3)]",
           )}
         >
           {NAV_MOBILE_ITEMS.map((item, index) => {
@@ -87,7 +87,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
 
             const sharedClass = cn(
               "relative flex flex-col items-center justify-center gap-1.5",
-              "pt-3 pb-1 w-[60px] rounded-2xl select-none",
+              "pt-3 pb-1 w-[60px] rounded-lg select-none",
               "transition-transform duration-150 active:scale-90",
             );
 
@@ -221,7 +221,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
                   href={item.href || "#"}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-2 rounded-2xl transition-all duration-200 aspect-square border",
+                    "flex flex-col items-center justify-center gap-2 rounded-xl transition-all duration-200 aspect-square border",
                     active
                       ? "bg-brand/10 border-brand/30 text-brand shadow-sm"
                       : "bg-muted/30 border-border/40 hover:bg-muted/60 text-muted-foreground hover:text-foreground hover:scale-[1.02]",

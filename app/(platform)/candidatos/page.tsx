@@ -1,7 +1,6 @@
 import Link from "next/link";
 import StickyElectoralBanner from "@/components/sticky-banner";
 import { getCandidatesCards } from "@/queries/public/candidacies";
-import getDistritos from "@/queries/public/electoral-districts";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getPartidosList } from "@/queries/public/parties";
@@ -10,6 +9,7 @@ import { CandidatosStream } from "@/app/(platform)/candidatos/_components/candid
 import { CandidatosListSkeleton } from "./_components/candidatos-list-skeleton";
 import { TypeBar } from "@/components/politics/type-bar";
 import { NewFilterPanel } from "@/components/ui/filter-panel-candidates";
+import { getDistritos } from "@/queries/public/electoral-districts";
 
 // ─────────────────────────────────────────────
 // SearchParams — districtType eliminado,

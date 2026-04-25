@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
     "/partidos",
     "/comparador",
     "/equipo",
-    "/financiamiento",
+    "/apoyanos",
     "/mision",
     "/contacto",
     "/reportar",

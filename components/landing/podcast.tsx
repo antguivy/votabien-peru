@@ -1,6 +1,6 @@
 "use client";
 
-import { Headphones, Radio, ExternalLink } from "lucide-react";
+import { Headphones, ExternalLink } from "lucide-react";
 
 interface PodcastSectionProps {
   spotifyShowId: string;
@@ -15,17 +15,17 @@ function SpotifyIcon({ className }: { className?: string }) {
 }
 
 function AudioWaveform() {
-  const bars = [3, 8, 14, 10, 18, 6, 12, 20, 9, 15, 5, 11, 17, 7, 13];
+  const bars = [4, 8, 12, 8, 16, 6, 10, 18, 9, 14, 5, 10, 15, 7, 12];
   return (
-    <div className="flex items-center justify-center gap-[3px] h-6">
+    <div className="flex items-center gap-[3px] h-6">
       {bars.map((h, i) => (
         <span
           key={i}
-          className="w-[3px] rounded-full bg-brand/40 animate-pulse"
+          className="w-[3px] rounded-full bg-brand/60 animate-pulse"
           style={{
             height: `${h}px`,
-            animationDelay: `${i * 80}ms`,
-            animationDuration: "1.4s",
+            animationDelay: `${i * 120}ms`,
+            animationDuration: "1.5s",
           }}
         />
       ))}
@@ -49,71 +49,43 @@ function openSpotify(showId: string) {
 
 export default function PodcastSection({ spotifyShowId }: PodcastSectionProps) {
   return (
-    <section className="relative w-full bg-background border-t border-border overflow-hidden px-5 md:px-8 py-16 md:py-20">
-      {/* Decorative background blobs */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-[0.04]"
-        style={{ background: "var(--brand)", filter: "blur(60px)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-16 -left-16 w-56 h-56 rounded-full opacity-[0.03]"
-        style={{ background: "var(--brand)", filter: "blur(50px)" }}
-      />
-
-      <div className="relative max-w-lg mx-auto flex flex-col items-center text-center gap-8">
-        {/* Icon + waveform */}
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="relative w-16 h-16 rounded-2xl flex items-center justify-center border border-border"
-            style={{
-              background: "color-mix(in oklch, var(--brand) 8%, var(--card))",
-            }}
-          >
-            {/* Subtle ring */}
-            <span
-              className="absolute inset-0 rounded-2xl opacity-20 border-2"
-              style={{ borderColor: "var(--brand)" }}
-            />
-            <Headphones
-              className="size-7"
-              style={{ color: "var(--brand)" }}
-              strokeWidth={1.5}
-            />
+    <section className="w-full bg-background border-t border-border px-5 md:px-8 py-16 md:py-24">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-12 bg-card border border-border rounded-2xl p-6 md:p-10 shadow-sm transition-all duration-300 hover:shadow-md">
+        {/* Left side: Icon + Waveform */}
+        <div className="flex-shrink-0 flex flex-col items-center gap-4">
+          <div className="relative w-20 h-20 rounded-xl bg-muted/50 border border-border flex items-center justify-center">
+            <Headphones className="size-8 text-foreground" strokeWidth={1.5} />
+            {/* Subtle glow behind icon */}
+            <div className="absolute inset-0 bg-brand/10 blur-xl rounded-full pointer-events-none" />
           </div>
           <AudioWaveform />
         </div>
 
-        {/* Text */}
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-foreground tracking-tight leading-tight">
-            Decisiones Informadas
+        {/* Right side: Text and Button */}
+        <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4 flex-1">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            <SpotifyIcon className="size-4 text-[#1DB954]" />
+            <span>VotaBien Podcast</span>
+          </div>
+
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight max-w-sm">
+            Análisis profundo de los planes de gobierno
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
-            Escucha los principales temas de los planes de gobierno de cada
-            partido, analizados por expertos.
+
+          <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">
+            Escucha nuestro podcast donde desglosamos las propuestas clave,
+            entrevistamos a expertos y analizamos el panorama político con total
+            neutralidad.
           </p>
+
+          <button
+            onClick={() => openSpotify(spotifyShowId)}
+            className="group mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border bg-background hover:bg-muted font-semibold text-sm text-foreground transition-all active:scale-[0.98]"
+          >
+            Escuchar episodio más reciente
+            <ExternalLink className="size-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          </button>
         </div>
-
-        {/* Spotify Button */}
-        <button
-          onClick={() => openSpotify(spotifyShowId)}
-          className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-150 hover:-translate-y-px active:scale-[0.97] hover:shadow-[0_8px_24px_rgba(29,185,84,0.25)]"
-          style={{ background: "#1DB954", color: "#000" }}
-        >
-          <SpotifyIcon className="size-4 shrink-0" />
-          Escuchar en Spotify
-          <ExternalLink
-            className="size-3.5 opacity-60 group-hover:opacity-100 transition-opacity"
-            strokeWidth={2.5}
-          />
-        </button>
-
-        {/* Footer note */}
-        <p className="text-[11px] text-muted-foreground/60">
-          Abre la app de Spotify o escucha desde el navegador
-        </p>
       </div>
     </section>
   );

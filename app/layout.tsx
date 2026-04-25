@@ -52,21 +52,13 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <PWARegister />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider initialUser={user} initialProfile={profile}>
-            <TooltipProvider>
-              <NuqsAdapter>
-                {children}
-              </NuqsAdapter>
-            </TooltipProvider>
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+
+        <AuthProvider initialUser={user} initialProfile={profile}>
+          <TooltipProvider>
+            <NuqsAdapter>{children}</NuqsAdapter>
+          </TooltipProvider>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

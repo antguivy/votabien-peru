@@ -322,17 +322,17 @@ export default function DetailLegislador({
                   color: "text-foreground",
                 },
                 {
-                  value: stats_proyectos.APROBADO,
-                  label: "Aprobados",
+                  value: stats_proyectos.PUBLICADO,
+                  label: "Publicados",
                   color: "text-success",
                 },
                 {
-                  value: stats_proyectos.ARCHIVADO,
-                  label: "Archivados",
+                  value: stats_proyectos.ARCHIVADO + stats_proyectos.RETIRADO,
+                  label: "Archivados / Retirados",
                   color: "text-destructive",
                 },
                 {
-                  value: `${stats_proyectos.total > 0 ? Math.round((stats_proyectos.APROBADO / stats_proyectos.total) * 100) : 0}%`,
+                  value: `${stats_proyectos.total > 0 ? Math.round((stats_proyectos.PUBLICADO / stats_proyectos.total) * 100) : 0}%`,
                   label: "Efectividad",
                   color: "text-orange-500",
                 },

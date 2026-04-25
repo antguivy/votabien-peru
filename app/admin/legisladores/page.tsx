@@ -13,10 +13,10 @@ import {
 } from "./_lib/data";
 import { CreateLegislator } from "./_components/buttons";
 import { AdminLegislatorProvider } from "@/components/context/admin-legislator";
-import getDistritos from "@/queries/public/electoral-districts";
 import { getPartidosList } from "@/queries/public/parties";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
 import { ContentLayout } from "@/components/admin/content-layout";
+import { getDistritos } from "@/queries/public/electoral-districts";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;

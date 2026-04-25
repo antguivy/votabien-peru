@@ -68,7 +68,7 @@ export default function ProyectoItem({ proyecto }: ProyectoItemProps) {
               {proyecto.approval_date && (
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  Aprobado: {formatterDate(proyecto.approval_date)}
+                  Publicado: {formatterDate(proyecto.approval_date)}
                 </span>
               )}
             </div>
