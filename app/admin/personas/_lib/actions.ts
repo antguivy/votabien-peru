@@ -1,9 +1,16 @@
-"use server";
+"use server"; // <-- ¡Obligatorio para mutaciones!
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { TAGS } from "@/lib/cache-tags"; // <-- Importamos nuestros tags
+
 import { createClient } from "@/lib/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { createId } from "@paralleldrive/cuid2";
-import { type TablesInsert, type TablesUpdate } from "@/interfaces/supabase";
+import {
+  type Database,
+  type TablesInsert,
+  type TablesUpdate,
+} from "@/interfaces/supabase";
 import {
   BiographyDetail,
   CreatePersonRequest,
@@ -18,6 +25,15 @@ import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
 import { limaDateToUtc } from "@/lib/utils/date";
+
+// Helper para detonar todas las cachés relacionadas a una persona
+// Cambiar a una persona afecta sus tarjetas de candidato y legislador
+function revalidatePersonEcosystem() {
+  revalidatePath("/admin/personas");
+  revalidateTag(TAGS.persons);
+  revalidateTag(TAGS.candidates);
+  revalidateTag(TAGS.legislators);
+}
 
 export async function createPerson(data: CreatePersonRequest) {
   const supabase = await createClient();
@@ -48,7 +64,6 @@ export async function createPerson(data: CreatePersonRequest) {
 
     const personId = createId();
 
-    // Preparar datos optimizados para inserción
     const personData: TablesInsert<"person"> = {
       id: personId,
       party_number_rop: toNullIfEmpty(data.party_number_rop),
@@ -63,7 +78,6 @@ export async function createPerson(data: CreatePersonRequest) {
       place_of_birth: toNullIfEmpty(data.place_of_birth),
       profession: toNullIfEmpty(data.profession),
 
-      // Campos JSON - Solo guardar si tienen datos
       secondary_school: data.secondary_school,
       no_university_education: toJsonInsert(data.no_university_education),
       technical_education: toJsonInsert(data.technical_education),
@@ -75,7 +89,6 @@ export async function createPerson(data: CreatePersonRequest) {
       incomes: toJsonInsert(data.incomes),
       assets: toJsonInsert(data.assets),
 
-      // Redes sociales
       facebook_url: toNullIfEmpty(data.facebook_url),
       twitter_url: toNullIfEmpty(data.twitter_url),
       instagram_url: toNullIfEmpty(data.instagram_url),
@@ -93,7 +106,7 @@ export async function createPerson(data: CreatePersonRequest) {
       throw personError;
     }
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, data: person };
   } catch (error) {
     console.error("[createPerson] Error capturado:", error);
@@ -112,13 +125,12 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       throw new Error("ID de la persona es requerido para actualizar");
     }
 
-    // Validar si el DNI ya existe en otra persona
     if (data.dni) {
       const { data: existingPerson, error: checkError } = await supabase
         .from("person")
         .select("id, fullname, dni")
         .eq("dni", data.dni)
-        .neq("id", data.id) // Excluir la persona actual
+        .neq("id", data.id)
         .maybeSingle();
 
       if (checkError) {
@@ -146,7 +158,6 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       place_of_birth: toNullIfEmpty(data.place_of_birth),
       profession: toNullIfEmpty(data.profession),
 
-      // Campos JSON
       secondary_school: data.secondary_school,
       technical_education: toJsonInsert(data.technical_education),
       no_university_education: toJsonInsert(data.no_university_education),
@@ -176,7 +187,7 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       throw personError;
     }
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, data: person };
   } catch (error) {
     console.error("[updatePerson] Error capturado:", error);
@@ -195,7 +206,7 @@ export async function deletePerson(personId: string) {
 
     if (error) throw error;
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, message: "Persona eliminada exitosamente" };
   } catch (error) {
     return {
@@ -216,7 +227,7 @@ export async function bulkDeletePersons(personIds: string[]) {
 
     if (error) throw error;
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return {
       success: true,
       message: `${personIds.length} persona(s) eliminada(s) exitosamente`,
@@ -229,6 +240,7 @@ export async function bulkDeletePersons(personIds: string[]) {
   }
 }
 
+// Funciones de lectura puras (Buscadores / APIs externas) - No requieren invalidar caché
 export async function searchPersonByDNI(dni: string) {
   const supabase = await createClient();
 
@@ -255,7 +267,6 @@ const cleanForDb = (val: string | null | undefined) => {
   return val.trim();
 };
 
-// URLs bloqueadas para nuevos registros
 const BLOCKED_SOURCE_URLS_EXACT = new Set([
   "https://congrezoo.pe/fauna-electoral/2026/02/10/elecciones-2026-postulantes-condicion-de-deudores-alimentarios-morosos/",
   "https://congrezoo.pe/fauna-electoral/2026/01/11/podemos-fuerza-popular-app-peru-libre-mayor-numero-candidatos-con-sentencias-penales/",
@@ -296,7 +307,7 @@ export async function updatePersonBiography(
 
     if (error) throw error;
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥
     return { success: true, data };
   } catch (error) {
     return {
@@ -313,7 +324,6 @@ export async function insertPersonBiography(
   const supabase = await createClient();
 
   try {
-    // Filtro bloqueados — solo aplica cuando viene de research
     const filtered = biography.filter(
       (item) => !isBlockedSourceUrl(item.source_url),
     );
@@ -325,7 +335,7 @@ export async function insertPersonBiography(
 
     if (error) throw error;
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥
     return { success: true, inserted: filtered.length };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
@@ -362,7 +372,7 @@ export async function insertPersonBackgrounds(
     const { error } = await supabase.from("background").insert(insertData);
     if (error) throw new Error(`Error al insertar: ${error.message}`);
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥
     return { success: true, inserted: insertData.length };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
@@ -382,7 +392,6 @@ export async function updatePersonBackgrounds(
     );
     const existingIds = existingItems.map((item) => item.id);
 
-    // 1. Eliminar los que ya no están en el array
     let deleteQuery = supabase
       .from("background")
       .delete()
@@ -391,13 +400,11 @@ export async function updatePersonBackgrounds(
     if (existingIds.length > 0) {
       deleteQuery = deleteQuery.not("id", "in", `(${existingIds.join(",")})`);
     }
-    // Si existingIds está vacío, borra todos los existentes (el usuario los eliminó todos)
 
     const { error: deleteError } = await deleteQuery;
     if (deleteError)
       throw new Error(`Error al eliminar: ${deleteError.message}`);
 
-    // 2. INSERT los nuevos
     if (newItems.length > 0) {
       const insertData = newItems.map((item) => ({
         id: createId(),
@@ -419,7 +426,6 @@ export async function updatePersonBackgrounds(
         throw new Error(`Error al insertar: ${insertError.message}`);
     }
 
-    // 3. UPDATE los existentes
     for (const item of existingItems) {
       const { error: updateError } = await supabase
         .from("background")
@@ -440,7 +446,7 @@ export async function updatePersonBackgrounds(
         throw new Error(`Error al actualizar: ${updateError.message}`);
     }
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥
     return {
       success: true,
       inserted: newItems.length,
@@ -461,12 +467,16 @@ export async function deletePersonBackground(backgroundId: string) {
 
     if (error) throw error;
 
-    revalidatePath("/admin/personas");
+    revalidatePersonEcosystem(); // 🔥
     return { success: true };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }
 }
+
+// ==========================================
+// APIS EXTERNAS - No tocan la base de datos local (solo leen o extraen)
+// ==========================================
 
 export async function fetchCandidateFromJNE(
   jne_mode: string,
@@ -565,7 +575,6 @@ export async function fetchAntecedentesFromJNE(
 
     const data = await response.json();
 
-    // Mapear al formato BackgroundBase que espera el frontend
     const antecedentes: BackgroundBase[] = (data.antecedentes || []).map(
       (item: Record<string, string | null>) => ({
         id: item.id || `new_${crypto.randomUUID()}`,

@@ -9,7 +9,7 @@ import { AdminPerson, BiographyDetail } from "@/interfaces/person";
 export async function getPersonList(
   input: GetPersonSchema,
 ): Promise<PaginatedPersonResponse> {
-  noStore();
+  noStore(); // <-- BIEN: La lista siempre fresca
   const supabase = await createClient();
 
   try {
@@ -71,6 +71,7 @@ export async function getPersonList(
 export async function getPersonForEdit(
   id: string,
 ): Promise<PersonFormValues | null> {
+  noStore(); // <-- CRÍTICO: Agregado para no cargar un formulario con datos viejos
   const supabase = await createClient();
   const { data } = await supabase
     .from("person")
@@ -135,6 +136,7 @@ export async function getPersonBiography(id: string): Promise<{
   fullname: string;
   detailed_biography: BiographyDetail[];
 } | null> {
+  noStore(); // <-- AGREGADO: Para cuando edites la biografía
   const supabase = await createClient();
   const { data } = await supabase
     .from("person")
@@ -153,6 +155,7 @@ export async function getPersonBiography(id: string): Promise<{
 }
 
 export async function getPersonBackgrounds(id: string) {
+  noStore(); // <-- AGREGADO: Para cuando revises los antecedentes penales/judiciales
   const supabase = await createClient();
   const { data } = await supabase
     .from("person")

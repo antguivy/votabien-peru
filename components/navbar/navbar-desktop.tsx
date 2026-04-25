@@ -20,69 +20,72 @@ export const NavbarDesktop = () => {
     return pathname.startsWith(href);
   };
 
-  const isDropdownActive = (children: { href: string }[]) => {
-    return children.some((child) => isActiveLink(child.href));
-  };
+  const isDropdownActive = (children: { href: string }[]) =>
+    children.some((child) => isActiveLink(child.href));
 
   return (
-    <div className="hidden lg:flex items-center gap-1">
-      {MAIN_NAV_ITEMS.slice(1).map((item, index) => {
-        // CASO 1: Renderizar Enlace Directo
+    <nav className="hidden lg:flex items-center gap-0.5">
+      {MAIN_NAV_ITEMS.slice(1).map((item) => {
+        // ── Link directo ──
         if (item.type === "link" && item.href) {
+          const active = isActiveLink(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm flex items-center gap-2",
-                isActiveLink(item.href)
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                "relative px-4 py-2 text-sm font-medium transition-colors duration-150 rounded-lg",
+                active
+                  ? "text-foreground font-bold"
+                  : "text-foreground/60 hover:text-foreground",
               )}
             >
               {item.label}
+              {/* Indicador activo — línea inferior */}
+              {active && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2.5px] w-5 rounded-full bg-brand" />
+              )}
             </Link>
           );
         }
 
-        // CASO 2: Renderizar Dropdown Menu
+        // ── Dropdown ──
         if (item.type === "dropdown" && item.children) {
-          const isActive = isDropdownActive(item.children);
-
+          const active = isDropdownActive(item.children);
           return (
             <DropdownMenu key={item.label}>
               <DropdownMenuTrigger
                 className={cn(
-                  "px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm flex items-center gap-1 outline-none group",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-foreground hover:bg-accent hover:text-accent-foreground",
+                  "relative px-4 py-2 text-sm font-medium transition-colors duration-150 rounded-lg outline-none group flex items-center gap-1",
+                  active
+                    ? "text-foreground font-bold"
+                    : "text-foreground/60 hover:text-foreground",
                 )}
               >
                 {item.label}
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform duration-200 opacity-50",
-                    "group-data-[state=open]:rotate-180",
-                  )}
-                />
+                <ChevronDown className="h-3.5 w-3.5 opacity-50 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                {active && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2.5px] w-5 rounded-full bg-brand" />
+                )}
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="start" className="w-48 p-1">
+              <DropdownMenuContent
+                align="center"
+                sideOffset={12}
+                className="w-44 p-1 rounded-xl shadow-lg border border-border/60"
+              >
                 {item.children.map((child) => (
                   <DropdownMenuItem key={child.href} asChild>
                     <Link
                       href={child.href}
                       className={cn(
-                        "flex items-center gap-2 cursor-pointer w-full font-medium",
-                        isActiveLink(child.href) &&
-                          "bg-accent/80 text-accent-foreground",
+                        "flex items-center gap-2 cursor-pointer w-full text-sm font-medium rounded-lg px-3 py-2",
+                        isActiveLink(child.href)
+                          ? "text-brand bg-brand/6 font-bold"
+                          : "text-foreground/70 hover:text-foreground",
                       )}
                     >
-                      {/* {child.icon && (
-                        <child.icon className="h-4 w-4 text-muted-foreground" />
-                      )} */}
-                      <span>{child.label}</span>
+                      {child.label}
                     </Link>
                   </DropdownMenuItem>
                 ))}
@@ -93,6 +96,6 @@ export const NavbarDesktop = () => {
 
         return null;
       })}
-    </div>
+    </nav>
   );
 };

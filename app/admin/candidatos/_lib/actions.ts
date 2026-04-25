@@ -1,6 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { TAGS } from "@/lib/cache-tags"; // <-- Importamos nuestros tags
+
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createId } from "@paralleldrive/cuid2";
@@ -93,7 +95,7 @@ async function checkCandidacyOverlap(
   if (error) throw new Error(error.message);
 
   if (!existingCandidates || existingCandidates.length === 0) {
-    return; // No hay candidaturas previas, OK
+    return;
   }
 
   // 3. Verificar si ya tiene una candidatura del mismo tipo
@@ -173,6 +175,8 @@ export async function createCandidatePeriod(
     }
 
     revalidatePath("/admin/candidatos");
+    revalidateTag(TAGS.candidates);
+
     return { success: true, data: result };
   } catch (error) {
     return {
@@ -224,6 +228,8 @@ export async function updateCandidatePeriod(
     }
 
     revalidatePath("/admin/candidatos");
+    revalidateTag(TAGS.candidates);
+
     return { success: true, data: result };
   } catch (error) {
     return {
@@ -244,6 +250,8 @@ export async function deleteCandidatePeriod(candidateId: string) {
     if (error) throw error;
 
     revalidatePath("/admin/candidatos");
+    revalidateTag(TAGS.candidates);
+
     return { success: true, data: { deleted_id: candidateId } };
   } catch (error) {
     return handleError(error, "Error al eliminar candidato");
@@ -264,6 +272,7 @@ export async function bulkUpdateCandidates(input: BulkUpdateCandidatesRequest) {
     if (error) throw error;
 
     revalidatePath("/admin/candidatos");
+    revalidateTag(TAGS.candidates);
 
     return {
       data: { count: data.length, message: `Actualizados ${data.length}` },

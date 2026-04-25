@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { Check, Loader2, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { getPartidosSelectorList } from "@/queries/public/parties";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
+import { getPartidosSelectorList } from "@/queries/public/parties-server";
 
 interface PartySelectorProps {
   onSelect: (party: PoliticalPartyBase) => void;

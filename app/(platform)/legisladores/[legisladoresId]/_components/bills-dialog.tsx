@@ -13,17 +13,13 @@ import { BillBasic } from "@/interfaces/bill";
 import { FileText, Filter, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProyectoItem from "./proyect-item";
-import {
-  getBillGroup,
-  BillGroup,
-  getBillStatusConfig,
-} from "@/lib/utils/bill-status";
+import { getBillGroup, BillGroup, GROUP_CONFIG } from "@/lib/utils/bill-status";
 import { cn } from "@/lib/utils";
 
 const FILTER_GROUPS: BillGroup[] = [
   "PRESENTADO",
   "EN_PROCESO",
-  "APROBADO",
+  "PUBLICADO",
   "ARCHIVADO",
   "RETIRADO",
 ];
@@ -47,7 +43,7 @@ export default function BillsDialog({
       todos: proyectos.length,
       PRESENTADO: 0,
       EN_PROCESO: 0,
-      APROBADO: 0,
+      PUBLICADO: 0,
       ARCHIVADO: 0,
       RETIRADO: 0,
     };
@@ -147,7 +143,7 @@ export default function BillsDialog({
                 if (groupCounts[group] === 0) return null;
                 const isActive = groupFilter === group;
                 // AQUÍ ESTÁ EL CAMBIO: Usamos un mock status para obtener la configuración base del grupo
-                const config = getBillStatusConfig(group);
+                const config = GROUP_CONFIG[group];
 
                 return (
                   <button

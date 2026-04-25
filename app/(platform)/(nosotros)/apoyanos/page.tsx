@@ -16,20 +16,14 @@ export default function FinanciamientoPage() {
   return (
     <ContentPlatformLayout>
       <section className="pt-4 container mx-auto pb-20 lg:pb-0">
-        <FundingHero />
+        {/* <FundingHero /> */}
 
         {/* Métodos de Donación */}
-        <section className="container mx-auto px-4 py-16 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Formas de Contribuir</h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            <FundingYape />
-            <FundingPaypal />
-            {/* <FundingPatreon /> */}
-          </div>
-        </section>
+        {/* <section className="container mx-auto px-4 py-16 max-w-6xl"> */}
+        <FundingYape />
+        {/* <FundingPaypal /> */}
+        {/* <FundingPatreon /> */}
+        {/* </section> */}
 
         <FundingTransparency />
         <Footer />

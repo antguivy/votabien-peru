@@ -2,7 +2,7 @@
 export type BillGroup =
   | "PRESENTADO"
   | "EN_PROCESO"
-  | "APROBADO"
+  | "PUBLICADO"
   | "ARCHIVADO"
   | "RETIRADO";
 
@@ -23,7 +23,7 @@ interface BillStatusConfig {
 
 // 2. Grupos de Mapeo (Combinando tu lógica estricta con la de palabras clave)
 const GROUPS_MAPPING = {
-  APROBADO: ["APROBADO", "AUTOGRAFA", "PUBLICADO"],
+  PUBLICADO: ["PUBLICADO"],
   ARCHIVADO: ["AL_ARCHIVO", "DECRETO_ARCHIVO"],
   RETIRADO: ["RETIRADO_POR_AUTOR"],
   EN_PROCESO: [
@@ -35,6 +35,8 @@ const GROUPS_MAPPING = {
     "PENDIENTE_SEGUNDA_VOTACION",
     "EN_RECONSIDERACION",
     "RETORNA_A_COMISION",
+    "APROBADO",
+    "AUTOGRAFA",
   ],
 };
 
@@ -43,7 +45,7 @@ export function getBillGroup(status: string | null): BillGroup {
   if (!status) return "PRESENTADO";
   const s = status.toUpperCase();
 
-  if (GROUPS_MAPPING.APROBADO.some((k) => s.includes(k))) return "APROBADO";
+  if (GROUPS_MAPPING.PUBLICADO.some((k) => s.includes(k))) return "PUBLICADO";
   if (GROUPS_MAPPING.ARCHIVADO.some((k) => s.includes(k))) return "ARCHIVADO";
   if (GROUPS_MAPPING.RETIRADO.some((k) => s.includes(k))) return "RETIRADO";
   if (GROUPS_MAPPING.EN_PROCESO.some((k) => s.includes(k))) return "EN_PROCESO";
@@ -52,7 +54,7 @@ export function getBillGroup(status: string | null): BillGroup {
 }
 
 // 4. Configuración Visual Única y Consistente
-const GROUP_CONFIG: Record<BillGroup, BillStatusConfig> = {
+export const GROUP_CONFIG: Record<BillGroup, BillStatusConfig> = {
   PRESENTADO: {
     group: "PRESENTADO",
     label: "Presentado",
@@ -66,9 +68,9 @@ const GROUP_CONFIG: Record<BillGroup, BillStatusConfig> = {
     twClass:
       "bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200/80",
   },
-  APROBADO: {
-    group: "APROBADO",
-    label: "Aprobado",
+  PUBLICADO: {
+    group: "PUBLICADO",
+    label: "Publicado",
     variant: "success",
     twClass:
       "bg-green-100 text-green-700 border-green-200 hover:bg-green-200/80",
@@ -112,7 +114,7 @@ export function calcBillStats(bills: { approval_status: string }[]) {
   const counts: Record<BillGroup, number> = {
     PRESENTADO: 0,
     EN_PROCESO: 0,
-    APROBADO: 0,
+    PUBLICADO: 0,
     ARCHIVADO: 0,
     RETIRADO: 0,
   };

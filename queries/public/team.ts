@@ -1,26 +1,31 @@
-"use server";
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { TeamBasic } from "@/interfaces/team";
-import { createClient } from "@/lib/supabase/server";
-import { unstable_noStore as noStore } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 
-export async function getTeam(): Promise<TeamBasic[]> {
-  noStore();
-  const supabase = await createClient();
+export const getTeam = cache(
+  unstable_cache(
+    async (): Promise<TeamBasic[]> => {
+      const supabase = createPublicClient();
 
-  const { data, error } = await supabase
-    .from("team")
-    .select(
-      `
-      *
-    `,
-    )
-    .order("is_principal", { ascending: false });
+      const { data, error } = await supabase
+        .from("team")
+        .select("*")
+        .order("is_principal", { ascending: false });
 
-  if (error) {
-    console.error(error);
-    return [];
-  }
+      if (error) {
+        console.error(error);
+        return [];
+      }
 
-  return data as unknown as TeamBasic[];
-}
+      return data as unknown as TeamBasic[];
+    },
+    ["team-list"],
+    {
+      tags: [TAGS.team],
+      revalidate: TTL.static,
+    },
+  ),
+);
