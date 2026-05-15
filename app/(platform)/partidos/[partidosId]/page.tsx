@@ -3,7 +3,7 @@ import DetailParty from "./_components/detail-party";
 import DetailAlliance from "./_components/detail-alliance";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getPrincipalCandidates } from "@/queries/public/candidacies";
-import { getPartidoById } from "@/queries/public/parties-server";
+import { getPartidoById } from "@/queries/public/parties";
 
 interface PageProps {
   params: Promise<{ partidosId: string }>;

@@ -69,7 +69,7 @@ export default function PodcastSection({ spotifyShowId }: PodcastSectionProps) {
           </div>
 
           <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight tracking-tight max-w-sm">
-            Análisis profundo de los planes de gobierno
+            Análisis de los planes de gobierno
           </h2>
 
           <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-md">

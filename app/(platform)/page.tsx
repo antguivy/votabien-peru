@@ -24,6 +24,7 @@ export default async function VotaBienPage() {
           {/* 1 — Hero: Estado actual (conteo / 2da vuelta) */}
           <HeroModern proceso_electoral={proceso_electoral[0]} />
 
+          <PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />
           {/* 2 — Social Proof: fotos destacadas (marquee comentado) */}
           {/* <SocialProof hitos={hitos} /> */}
 

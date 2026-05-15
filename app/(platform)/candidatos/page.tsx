@@ -168,7 +168,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
         daysRemaining={diasRestantes}
       />
       <section className="px-4 md:px-0 pt-4 container mx-auto pb-20 lg:pb-0">
-        <div className="sticky top-0 z-30 space-y-2 mb-4 bg-background border border-brand/20 rounded-2xl p-2">
+        {/*<div className="sticky top-0 z-30 space-y-2 mb-4 bg-background border border-brand/20 rounded-2xl p-2">
           <TypeBar currentType={currentParams.type} />
           <NewFilterPanel
             currentType={currentParams.type}
@@ -179,7 +179,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
             distritos={filteredDistricts}
             parties={partiesData.items}
           />
-        </div>
+        </div>*/}
         <Suspense
           key={`${currentParams.type}-${currentParams.search}-${partiesArray.join(",")}-${districtsArray.join(",")}-${alertsArray.join(",")}`}
           fallback={<CandidatosListSkeleton />}
