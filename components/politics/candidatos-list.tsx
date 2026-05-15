@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Users, Star, MapPinned } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
-import { getCandidatesCards } from "@/queries/public/candidacies";
+import { loadMoreCandidates } from "@/actions/candidate";
 import { getTextColor } from "@/lib/utils/color-utils";
 import { shuffleArray } from "@/lib/utils/arrays";
 import { Badge } from "../ui/badge";
@@ -281,7 +281,9 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
               <div className="h-px bg-border/40" />
               <div className="flex flex-wrap gap-1">
                 {person.is_incumbent && (
-                  <AlertBadge variant="blue">Congresista Actual</AlertBadge>
+                  <AlertBadge variant="blue">
+                    Congresista Último Periodo
+                  </AlertBadge>
                 )}
                 {hasConviction && (
                   <AlertBadge variant="red">
@@ -492,7 +494,7 @@ const CandidatosList = ({
 
     try {
       const nextPage = pageRef.current + 1;
-      const newCandidatos = await getCandidatesCards({
+      const newCandidatos = await loadMoreCandidates({
         electoral_process_id: procesoId,
         page: nextPage,
         pageSize: PAGE_SIZE,

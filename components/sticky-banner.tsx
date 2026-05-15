@@ -19,15 +19,17 @@ const FixedElectoralBanner = ({
     <div className="sticky lg:top-14 left-0 right-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md">
       <div className="container mx-auto px-4 py-2.5">
         <div className="flex items-center justify-center gap-3 md:gap-4 text-xs md:text-sm">
-          <span className="font-semibold inline truncate">{firstTwo}</span>
+          {/*<span className="font-semibold inline truncate">{firstTwo}</span>*/}
+          <span className="font-semibold inline truncate">Segunda Vuelta</span>
 
           <div className="flex items-center gap-3">
             <div className="inline-flex items-center gap-1.5">
               <Calendar className="size-3.5 md:size-4" />
-              <span>{electionDate}</span>
+              {/*<span>{electionDate}</span>*/}
+              <span>07 de Junio de 2026</span>
             </div>
 
-            {daysRemaining > 0 && (
+            {/*{daysRemaining > 0 && (
               <div className="inline-flex items-center gap-1.5 bg-warning/90 rounded-md px-2.5 py-1">
                 <Timer className="size-3.5 md:size-4" />
                 <span className="font-bold">
@@ -37,7 +39,7 @@ const FixedElectoralBanner = ({
                   </span>
                 </span>
               </div>
-            )}
+            )}*/}
           </div>
         </div>
       </div>
