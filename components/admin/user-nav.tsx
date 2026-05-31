@@ -19,7 +19,7 @@ import {
 import { LogoutButton } from "@/components/auth/logout-button";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { UserProfile as User } from "@/lib/auth-actions";
+import { UserProfile as User } from "@/interfaces/user";
 
 interface NavbarUserMenuProps {
   user: User;

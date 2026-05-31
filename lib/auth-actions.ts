@@ -4,21 +4,11 @@ import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { headers } from "next/headers";
 import prisma from "./prisma";
+import { UserRole, UserProfile } from "@/interfaces/user";
 
 // ============================================
 // TIPOS
 // ============================================
-export type UserRole = "user" | "editor" | "admin";
-
-export type UserProfile = {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  image: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 type GetUserResponse = {
   user: UserProfile | null;

@@ -1,18 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { serverLogout } from "@/lib/auth-actions";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+
 interface LogoutButtonProps {
   children?: React.ReactNode;
 }
 
 export const LogoutButton = ({ children }: LogoutButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleLogout = async () => {
     setIsLoading(true);
     try {
-      await serverLogout();
+      await authClient.signOut();
+      router.push("/auth/login");
+      router.refresh();
     } catch (error) {
       console.error("Error durante el cierre de sesión:", error);
     } finally {
@@ -20,9 +25,6 @@ export const LogoutButton = ({ children }: LogoutButtonProps) => {
     }
   };
   return (
-    // <span onClick={handleLogout} className=" w-full">
-    //   {children}
-    // </span>
     <span
       onClick={!isLoading ? handleLogout : undefined}
       className={`w-full cursor-pointer ${isLoading ? "opacity-50" : ""}`}

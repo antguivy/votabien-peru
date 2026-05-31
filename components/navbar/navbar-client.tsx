@@ -7,8 +7,8 @@ import { NavbarDesktop } from "./navbar-desktop";
 import { NavbarUserMenu } from "./navbar-user-menu";
 // import { NavbarThemeToggle } from "./navbar-theme-toggle";
 import { MobileBottomNav } from "./mobile-bottom-nav";
-import type { UserProfile as User } from "@/lib/auth-actions";
-import { UserProfile } from "@/lib/auth-actions";
+import type { UserProfile as User } from "@/interfaces/user";
+import { UserProfile } from "@/interfaces/user";
 
 interface NavbarClientProps {
   user: User | null;

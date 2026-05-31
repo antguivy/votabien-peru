@@ -14,7 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABELS } from "@/interfaces/navbar";
-import { UserProfile as User } from "@/lib/auth-actions";
+import { UserProfile as User } from "@/interfaces/user";
 import { LogoutButton } from "@/components/auth/logout-button";
 import {
   Tooltip,

@@ -14,7 +14,7 @@ export const getHitos = cache(
           orderBy: { index: "desc" },
         });
 
-        return data.map(d => ({
+        return data.map((d: any) => ({
           ...d,
           id: Number(d.id),
           index: d.index ? Number(d.index) : null

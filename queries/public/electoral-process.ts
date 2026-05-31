@@ -27,7 +27,7 @@ export const getElectoralProcess = cache(
         });
 
         // Prisma returns Date for election_date, convert it if ElectoralProcess expects string
-        return data.map(d => ({
+        return data.map((d: any) => ({
           ...d,
           election_date: (d.election_date as unknown as string), // Cast to string if your interface expects it. Prisma gives Date.
         })) as unknown as ElectoralProcess[];

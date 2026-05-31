@@ -16,8 +16,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { UserProfile as User } from "@/lib/auth-actions";
-import type { UserProfile } from "@/lib/auth-actions";
+import type { UserProfile as User } from "@/interfaces/user";
+import type { UserProfile } from "@/interfaces/user";
 import {
   UserCheck,
   Flag,
