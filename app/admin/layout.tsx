@@ -10,15 +10,15 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, profile } = await serverGetUser();
+  const { user } = await serverGetUser();
 
-  if (!user || !profile) {
+  if (!user) {
     redirect("/auth/login?callbackUrl=/admin");
   }
 
   const headersList = await headers();
 
-  const userRole = profile.role || "user";
+  const userRole = user.role || "user";
 
   if (userRole === "user") {
     redirect("/");

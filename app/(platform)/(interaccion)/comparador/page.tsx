@@ -52,6 +52,7 @@ export default async function ComparatorPage(props: PageProps) {
     //   parties={parties}
     //   selectedIds={search.ids}
     // >
+    // </ComparatorProvider>
     <ContentPlatformLayout>
       {/* <section className="container px-4 pt-4 mx-auto pb-20 lg:pb-0">
           <ComparatorLayout
@@ -64,6 +65,5 @@ export default async function ComparatorPage(props: PageProps) {
         description="VotaBien Perú"
       />
     </ContentPlatformLayout>
-    // </ComparatorProvider>
   );
 }

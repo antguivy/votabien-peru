@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { serverLogin } from "@/lib/auth-actions";
+import { authClient } from "@/lib/auth-client";
 import { LoginSchema } from "@/schemas/auth";
 import {
   Form,
@@ -52,13 +52,13 @@ export const LoginForm = () => {
 
     startTransition(async () => {
       try {
-        const loginResult = await serverLogin({
+        const loginResult = await authClient.signIn.email({
           email: values.email,
           password: values.password,
         });
 
         if (loginResult.error) {
-          setError(loginResult.error);
+          setError(loginResult.error.message);
           return;
         }
 

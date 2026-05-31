@@ -1,20 +1,13 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { authClient } from "./auth-client";
 import { UserProfile } from "./auth-actions";
 
 interface AuthContextType {
-  user: User | null;
-  profile: UserProfile | null;
+  user: UserProfile | null;
+  profile: UserProfile | null; // Keep for backward compatibility
   loading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -22,93 +15,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-  initialUser: User | null;
-  initialProfile: UserProfile | null;
-}
-
 export function AuthProvider({
   children,
-  initialUser,
-  initialProfile,
-}: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(initialUser);
-  const [profile, setProfile] = useState<UserProfile | null>(initialProfile);
-  const [loading, setLoading] = useState(!initialUser);
-
+}: { children: React.ReactNode }) {
+  const { data: session, isPending, refetch } = authClient.useSession();
   const router = useRouter();
-  const supabase = createClient();
 
-  // Función para obtener el perfil
-  const fetchProfile = useCallback(
-    async (userId: string) => {
-      if (!userId) return null;
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        // Ignoramos errores si el perfil no existe (PGRST116) o permisos (42501)
-        if (error.code === "PGRST116" || error.code === "42501") {
-          return null;
-        }
-        console.error("Error inesperado al obtener perfil:", error);
-        return null;
-      }
-
-      return data;
-    },
-    [supabase],
-  );
-
-  // Función para refrescar el perfil manualmente
-  const refreshProfile = async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
-    }
-  };
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-
-        // Obtener el perfil cuando hay un usuario
-        if (session.user.id) {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-        }
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
-
-      setLoading(false);
-      router.refresh();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router, supabase, fetchProfile]);
+  const user = session?.user as unknown as UserProfile | null;
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
+    await authClient.signOut();
     router.refresh();
+  };
+
+  const refreshProfile = async () => {
+    await refetch();
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signOut, refreshProfile }}
+      value={{ user, profile: user, loading: isPending, signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

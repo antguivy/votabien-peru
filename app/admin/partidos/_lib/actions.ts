@@ -151,7 +151,7 @@ export async function createPoliticalParty(data: CreatePartyRequest) {
     }
 
     revalidatePath("/admin/partidos");
-    revalidateTag("partidos-list");
+    revalidateTag("partidos-list", "max");
     return { success: true, data: party };
   } catch (error) {
     return handleError(error, "Error al crear partido político");
@@ -397,7 +397,7 @@ export async function updatePoliticalParty(data: Partial<UpdatePartyRequest>) {
     }
 
     revalidatePath("/admin/partidos");
-    revalidateTag("partidos-list");
+    revalidateTag("partidos-list", "max");
     return { success: true, data: party };
   } catch (error) {
     return handleError(error, "Error al actualizar partido político");

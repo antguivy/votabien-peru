@@ -30,9 +30,9 @@ import { limaDateToUtc } from "@/lib/utils/date";
 // Cambiar a una persona afecta sus tarjetas de candidato y legislador
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
-  revalidateTag(TAGS.persons);
-  revalidateTag(TAGS.candidates);
-  revalidateTag(TAGS.legislators);
+  revalidateTag(TAGS.persons, "max");
+  revalidateTag(TAGS.candidates, "max");
+  revalidateTag(TAGS.legislators, "max");
 }
 
 export async function createPerson(data: CreatePersonRequest) {

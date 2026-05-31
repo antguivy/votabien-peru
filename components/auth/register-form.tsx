@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/form-error";
 import { FormSuccess } from "@/components/form-success";
 import { Field } from "@/components/ui/field";
-import { serverRegister } from "@/lib/auth-actions";
+import { authClient } from "@/lib/auth-client";
 
 export const RegisterForm = () => {
 
@@ -43,12 +43,16 @@ export const RegisterForm = () => {
 
     startTransition(async () => {
       try {
-        // Registrar usuario usando tu AuthProvider
-        await serverRegister({
+        const result = await authClient.signUp.email({
           email: values.email,
           password: values.password,
           name: values.name,
         });
+
+        if (result.error) {
+          setError(result.error.message);
+          return;
+        }
 
         // Registro exitoso - mostrar mensaje de verificación
         setSuccess(

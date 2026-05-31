@@ -16,7 +16,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { User } from "@supabase/supabase-js";
+import type { UserProfile as User } from "@/lib/auth-actions";
 import type { UserProfile } from "@/lib/auth-actions";
 import {
   UserCheck,
@@ -30,10 +30,9 @@ import { NavItem } from "@/interfaces/navbar";
 
 interface MobileBottomNavProps {
   user: User | null;
-  profile: UserProfile | null;
 }
 
-export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
+export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -168,12 +167,12 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage
-                    src={profile?.avatar_url || ""}
-                    alt={profile?.full_name || ""}
+                    src={user?.image || ""}
+                    alt={user?.name || ""}
                     className="object-cover"
                   />
                   <AvatarFallback className="bg-brand text-white font-bold text-sm">
-                    {(profile?.full_name || user.email || "U")
+                    {(user?.name || user.email || "U")
                       .split(" ")
                       .map((n: string) => n[0])
                       .join("")
@@ -183,7 +182,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
                 </Avatar>
                 <div className="flex flex-col min-w-0">
                   <p className="text-sm font-semibold leading-tight truncate">
-                    {profile?.full_name ||
+                    {user?.name ||
                       user.email?.split("@")[0] ||
                       "Usuario"}
                   </p>
@@ -193,7 +192,7 @@ export const MobileBottomNav = ({ user, profile }: MobileBottomNavProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {profile?.role && profile.role !== "user" && (
+                {user?.role && user.role !== "user" && (
                   <Link
                     href="/admin"
                     onClick={() => setIsMenuOpen(false)}

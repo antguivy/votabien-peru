@@ -1,8 +1,65 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  });
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  
+  const user = session?.user;
+
+  const url = request.nextUrl.clone();
+  const path = url.pathname;
+
+  const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"];
+
+  const publicRoutes = [
+    "/",
+    "/legisladores",
+    "/candidatos",
+    "/partidos",
+    "/comparador",
+    "/equipo",
+    "/apoyanos",
+    "/mision",
+    "/contacto",
+    "/reportar",
+    "/privacidad",
+    "/terminos",
+    "/api/stats",
+    "/match",
+    "/trivia",
+    "/simulador",
+    "/api/auth", // Very important to allow better-auth API routes
+  ];
+
+  const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
+  const isPublicRoute = publicRoutes.some(
+    (route) => path === route || path.startsWith(route + "/"),
+  );
+
+  if (!user) {
+    if (!isAuthRoute && !isPublicRoute) {
+      url.pathname = "/auth/login";
+      url.searchParams.set("callbackUrl", path);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (user) {
+    if (isAuthRoute) {
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+  
+  response.headers.set("x-current-path", path);
+  return response;
 }
 
 export const config = {

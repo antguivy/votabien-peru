@@ -7,15 +7,14 @@ import { NavbarDesktop } from "./navbar-desktop";
 import { NavbarUserMenu } from "./navbar-user-menu";
 // import { NavbarThemeToggle } from "./navbar-theme-toggle";
 import { MobileBottomNav } from "./mobile-bottom-nav";
-import type { User } from "@supabase/supabase-js";
+import type { UserProfile as User } from "@/lib/auth-actions";
 import { UserProfile } from "@/lib/auth-actions";
 
 interface NavbarClientProps {
   user: User | null;
-  profile: UserProfile | null;
 }
 
-const NavbarClient = memo(({ user, profile }: NavbarClientProps) => {
+const NavbarClient = memo(({ user }: NavbarClientProps) => {
   return (
     <>
       {/* Navbar desktop */}
@@ -42,7 +41,7 @@ const NavbarClient = memo(({ user, profile }: NavbarClientProps) => {
             {/* Acciones derecha */}
             <div className="flex items-center gap-2">
               {/* <NavbarThemeToggle /> */}
-              {user && <NavbarUserMenu user={user} profile={profile} />}
+              {user && <NavbarUserMenu user={user}  />}
 
               {/* Botón Apóyanos — estilo Swiss Solidarity */}
               <Link
@@ -57,7 +56,7 @@ const NavbarClient = memo(({ user, profile }: NavbarClientProps) => {
       </header>
 
       {/* Navegación mobile */}
-      <MobileBottomNav user={user} profile={profile} />
+      <MobileBottomNav user={user}  />
     </>
   );
 });

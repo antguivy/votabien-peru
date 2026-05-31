@@ -19,19 +19,18 @@ import {
 import { LogoutButton } from "@/components/auth/logout-button";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions";
+import { UserProfile as User } from "@/lib/auth-actions";
 
 interface NavbarUserMenuProps {
   user: User;
-  profile: UserProfile | null;
 }
 
-export function UserNav({ user, profile }: NavbarUserMenuProps) {
+export function UserNav({ user }: NavbarUserMenuProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const name = profile?.full_name || user.email?.split("@")[0] || "Usuario";
-  const role = profile?.role || "user";
+  const name = user.name || user.email?.split("@")[0] || "Usuario";
+  const role = user.role || "user";
+  const image = user.image || "/images/avatar.png?height=128&width=128";
 
   return (
     <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -46,7 +45,7 @@ export function UserNav({ user, profile }: NavbarUserMenuProps) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     className="bg-white "
-                    src="/images/avatar.png?height=128&width=128"
+                    src={image}
                     alt={name}
                   />
                   <AvatarFallback>{`${name.charAt(0)}`}</AvatarFallback>

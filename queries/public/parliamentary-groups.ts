@@ -3,37 +3,34 @@ import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 export const getParliamentaryGroups = cache(
   unstable_cache(
     async (active: boolean = true): Promise<ParliamentaryGroupBasic[]> => {
-      const supabase = createPublicClient();
+      try {
+        const whereClause: any = {};
+        if (active) {
+          whereClause.active = true;
+        }
 
-      const TABLE_NAME = "parliamentarygroup";
+        const data = await prisma.parliamentarygroup.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            acronym: true,
+            logo_url: true,
+            color_hex: true,
+          },
+          orderBy: { name: "asc" },
+        });
 
-      let query = supabase.from(TABLE_NAME).select(`
-          id,
-          name,
-          acronym,
-          logo_url, 
-          color_hex  
-        `);
-
-      if (active) {
-        query = query.eq("active", true);
-      }
-
-      query = query.order("name", { ascending: true });
-
-      const { data, error } = await query;
-
-      if (error) {
+        return data as unknown as ParliamentaryGroupBasic[];
+      } catch (error) {
         console.error("Error al obtener grupos parlamentarios:", error);
         return [];
       }
-
-      return data as unknown as ParliamentaryGroupBasic[];
     },
     ["parliamentary-groups-list"],
     {

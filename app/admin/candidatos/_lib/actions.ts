@@ -175,7 +175,7 @@ export async function createCandidatePeriod(
     }
 
     revalidatePath("/admin/candidatos");
-    revalidateTag(TAGS.candidates);
+    revalidateTag(TAGS.candidates, "max");
 
     return { success: true, data: result };
   } catch (error) {
@@ -228,7 +228,7 @@ export async function updateCandidatePeriod(
     }
 
     revalidatePath("/admin/candidatos");
-    revalidateTag(TAGS.candidates);
+    revalidateTag(TAGS.candidates, "max");
 
     return { success: true, data: result };
   } catch (error) {
@@ -250,7 +250,7 @@ export async function deleteCandidatePeriod(candidateId: string) {
     if (error) throw error;
 
     revalidatePath("/admin/candidatos");
-    revalidateTag(TAGS.candidates);
+    revalidateTag(TAGS.candidates, "max");
 
     return { success: true, data: { deleted_id: candidateId } };
   } catch (error) {
@@ -272,7 +272,7 @@ export async function bulkUpdateCandidates(input: BulkUpdateCandidatesRequest) {
     if (error) throw error;
 
     revalidatePath("/admin/candidatos");
-    revalidateTag(TAGS.candidates);
+    revalidateTag(TAGS.candidates, "max");
 
     return {
       data: { count: data.length, message: `Actualizados ${data.length}` },

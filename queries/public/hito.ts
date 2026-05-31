@@ -4,28 +4,29 @@ import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { HitoBasic } from "@/interfaces/hito";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 export const getHitos = cache(
   unstable_cache(
     async (): Promise<HitoBasic[]> => {
-      const supabase = createPublicClient();
+      try {
+        const data = await prisma.hito.findMany({
+          orderBy: { index: "desc" },
+        });
 
-      const { data, error } = await supabase
-        .from("hito")
-        .select("*")
-        .order("index", { ascending: false });
-
-      if (error) {
+        return data.map(d => ({
+          ...d,
+          id: Number(d.id),
+          index: d.index ? Number(d.index) : null
+        })) as unknown as HitoBasic[];
+      } catch (error) {
         console.error(error);
         return [];
       }
-
-      return data as unknown as HitoBasic[];
     },
     ["hitos-list"],
     {
-      tags: [TAGS.hitos], // Asegúrate de tener este tag en tu archivo
+      tags: [TAGS.hitos],
       revalidate: TTL.static,
     },
   ),

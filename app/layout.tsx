@@ -43,8 +43,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user, profile } = await serverGetUser();
-
   return (
     <html lang="es" suppressHydrationWarning>
       <body
@@ -53,11 +51,15 @@ export default async function RootLayout({
       >
         <PWARegister />
 
-        <AuthProvider initialUser={user} initialProfile={profile}>
-          <TooltipProvider>
-            <NuqsAdapter>{children}</NuqsAdapter>
-          </TooltipProvider>
-          <Toaster />
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <NuqsAdapter>
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
+            </NuqsAdapter>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

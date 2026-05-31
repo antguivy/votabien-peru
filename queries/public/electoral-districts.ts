@@ -1,27 +1,34 @@
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { TAGS, TTL } from "@/lib/cache-tags";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 export const getDistritos = cache(
   unstable_cache(
     async (): Promise<ElectoralDistrictBase[]> => {
-      const supabase = await createPublicClient();
-      const { data, error } = await supabase
-        .from("electoraldistrict")
-        .select("id, name, code, is_national, active")
-        .eq("active", true)
-        // .eq("is_national", false)
-        .order("name", { ascending: true });
+      try {
+        const data = await prisma.electoraldistrict.findMany({
+          where: { active: true },
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            is_national: true,
+            active: true,
+          },
+          orderBy: { name: "asc" },
+        });
 
-      if (error) return [];
-      return data as unknown as ElectoralDistrictBase[];
+        return data as ElectoralDistrictBase[];
+      } catch (error) {
+        console.error("Error al obtener distritos:", error);
+        return [];
+      }
     },
-    ["distritos-list"], // Identificador único interno para Next.js
+    ["distritos-list"],
     {
-      // Si en el futuro agregas distritos desde el admin, usarás revalidateTag(TAGS.districts)
-      tags: [TAGS.districts], // Asegúrate de agregar "districts" a tu archivo cache-tags.ts
+      tags: [TAGS.districts],
       revalidate: TTL.static,
     },
   ),

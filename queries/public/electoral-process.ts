@@ -3,37 +3,38 @@ import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { ElectoralProcess } from "@/interfaces/politics";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 export const getElectoralProcess = cache(
   unstable_cache(
     async (active?: boolean | null): Promise<ElectoralProcess[]> => {
-      const supabase = createPublicClient();
+      try {
+        const whereClause: any = {};
+        if (active !== undefined && active !== null) {
+          whereClause.active = active;
+        }
 
-      const TABLE_NAME = "electoralprocess";
+        const data = await prisma.electoralprocess.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            year: true,
+            election_date: true,
+            active: true,
+          },
+          orderBy: { year: "desc" },
+        });
 
-      let query = supabase.from(TABLE_NAME).select(`
-          id,
-          name,
-          year,
-          election_date,
-          active
-        `);
-
-      if (active !== undefined && active !== null) {
-        query = query.eq("active", active);
-      }
-
-      query = query.order("year", { ascending: false });
-
-      const { data, error } = await query;
-
-      if (error) {
+        // Prisma returns Date for election_date, convert it if ElectoralProcess expects string
+        return data.map(d => ({
+          ...d,
+          election_date: (d.election_date as unknown as string), // Cast to string if your interface expects it. Prisma gives Date.
+        })) as unknown as ElectoralProcess[];
+      } catch (error) {
         console.error("Error al obtener procesos electorales:", error);
         return [];
       }
-
-      return data as unknown as ElectoralProcess[];
     },
     ["electoral-process-list"],
     {

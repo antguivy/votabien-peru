@@ -11,8 +11,8 @@ import { adminNavGroups } from "@/components/navbar/navbar-config";
 import { ContentLayout } from "@/components/admin/content-layout";
 
 export default async function AdminDashboardPage() {
-  const { profile } = await serverGetUser();
-  const firstName = profile?.full_name?.split(" ")[0] || "Administrador";
+  const { user } = await serverGetUser();
+  const firstName = user?.name?.split(" ")[0] || "Administrador";
 
   return (
     <ContentLayout title={"Dashboard"}>
