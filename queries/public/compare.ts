@@ -21,224 +21,218 @@ import { CandidacyType } from "@/interfaces/candidate";
 import { TAGS, TTL } from "@/lib/cache-tags";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
-const FORMULA_TYPES = [
-  CandidacyType.PRESIDENTE,
-  CandidacyType.VICEPRESIDENTE_1,
-  CandidacyType.VICEPRESIDENTE_2,
-];
+const FORMULA_TYPES = ["PRESIDENTE", "VICEPRESIDENTE_1", "VICEPRESIDENTE_2"];
 
-const PERSON_SELECT = `
-  id,
-  dni,
-  fullname,
-  image_url,
-  image_candidate_url,
-  profession,
-  detailed_biography,
-  university_education,
-  postgraduate_education,
-  technical_education,
-  no_university_education,
-  work_experience,
-  popular_election,
-  political_role,
-  incomes,
-  assets,
-  secondary_school,
-  backgrounds:background (
-    id,
-    publication_date,
-    type,
-    status,
-    title,
-    summary,
-    sanction,
-    source,
-    source_url
-  )
-`;
-
-/**
- * Recibe IDs de candidaturas presidenciales (candidate.id, NO dni).
- * Devuelve la fórmula completa (presidente + VP1 + VP2) para cada una.
- */
 export const getPresidentialFormulasComparison = cache(
   unstable_cache(
     async (presidentIds: string[]): Promise<FormulaComparison | null> => {
-      const supabase = createPublicClient();
-
       if (!presidentIds || presidentIds.length < 2 || presidentIds.length > 4) {
         return null;
       }
 
       const uniqueIds = Array.from(new Set(presidentIds));
 
-      // PASO 1: Buscar presidentes por candidate.id para obtener party + process
-      const { data: presidents, error: presError } = await supabase
-        .from("candidate")
-        .select(
-          `
-          id,
-          type,
-          political_party_id,
-          electoral_process_id,
-          politicalparty ( id, name, acronym, logo_url, color_hex ),
-          person:person_id!inner ( id, fullname )
-        `,
-        )
-        .in("id", uniqueIds)
-        .eq("type", CandidacyType.PRESIDENTE)
-        .eq("active", true);
-
-      if (presError || !presidents || presidents.length === 0) {
-        console.error("Error fetching presidents:", presError);
-        return null;
-      }
-
-      // PASO 2: Por cada presidente, traer la fórmula completa
-      const items: FormulaCompareItem[] = await Promise.all(
-        uniqueIds.map(async (candidateId) => {
-          const pres = presidents.find((p) => p.id === candidateId);
-
-          if (!pres) {
-            return {
-              president_id: candidateId,
-              president_name: null,
-              status: "not_found" as const,
-              message: `No se encontró candidato presidencial con ID ${candidateId}`,
-              data: null,
-            };
-          }
-
-          const { data: formulaMembers, error: formulaError } = await supabase
-            .from("candidate")
-            .select(
-              `
-              id,
-              type,
-              person:person_id!inner (
-                ${PERSON_SELECT}
-              )
-            `,
-            )
-            .eq("political_party_id", pres.political_party_id)
-            .eq("electoral_process_id", pres.electoral_process_id)
-            .in("type", FORMULA_TYPES)
-            .eq("active", true);
-
-          if (formulaError || !formulaMembers) {
-            console.error(
-              `Error fetching formula for party ${pres.political_party_id}:`,
-              formulaError,
-            );
-            return {
-              president_id: candidateId,
-              president_name: pres.person?.fullname ?? null,
-              status: "not_found" as const,
-              message: "Error al cargar la fórmula",
-              data: null,
-            };
-          }
-
-          const mapMember = (
-            raw: (typeof formulaMembers)[number],
-          ): FormulaMember => ({
-            id: raw.id,
-            type: raw.type as FormulaMember["type"],
-            person: {
-              id: raw.person.id,
-              dni: raw.person.dni,
-              fullname: raw.person.fullname,
-              image_url: raw.person.image_url,
-              image_candidate_url: raw.person.image_candidate_url,
-              profession: raw.person.profession,
-              detailed_biography: toJsonArray<BiographyDetail>(
-                raw.person.detailed_biography,
-              ),
-              hoja_de_vida: {
-                university_education: toJsonArray<UniversityEducation>(
-                  raw.person.university_education,
-                ),
-                postgraduate_education: toJsonArray<PostgraduateEducation>(
-                  raw.person.postgraduate_education,
-                ),
-                technical_education: toJsonArray<TechnicalEducation>(
-                  raw.person.technical_education,
-                ),
-                no_university_education: toJsonArray<NoUniversityEducation>(
-                  raw.person.no_university_education,
-                ),
-                work_experience: toJsonArray<WorkExperience>(
-                  raw.person.work_experience,
-                ),
-                popular_election: toJsonArray<PopularElection>(
-                  raw.person.popular_election,
-                ),
-                political_role: toJsonArray<PoliticalRole>(
-                  raw.person.political_role,
-                ),
-                incomes: toJsonArray<Incomes>(raw.person.incomes),
-                assets: toJsonArray<Assets>(raw.person.assets),
-                secondary_school: raw.person.secondary_school ?? false,
+      try {
+        const presidents = await prisma.candidate.findMany({
+          where: {
+            id: { in: uniqueIds },
+            type: "PRESIDENTE",
+            active: true,
+          },
+          select: {
+            id: true,
+            type: true,
+            political_party_id: true,
+            electoral_process_id: true,
+            politicalparty: {
+              select: {
+                id: true,
+                name: true,
+                acronym: true,
+                logo_url: true,
+                color_hex: true,
               },
             },
-            backgrounds: raw.person.backgrounds as BackgroundBase[],
-          });
+            person: {
+              select: { id: true, fullname: true },
+            },
+          },
+        });
 
-          const presidentMember = formulaMembers.find(
-            (m) => m.type === CandidacyType.PRESIDENTE,
-          );
-          const vp1Member = formulaMembers.find(
-            (m) => m.type === CandidacyType.VICEPRESIDENTE_1,
-          );
-          const vp2Member = formulaMembers.find(
-            (m) => m.type === CandidacyType.VICEPRESIDENTE_2,
-          );
+        if (!presidents || presidents.length === 0) {
+          console.error("Error fetching presidents");
+          return null;
+        }
 
-          if (!presidentMember) {
+        const items: FormulaCompareItem[] = await Promise.all(
+          uniqueIds.map(async (candidateId) => {
+            const pres = presidents.find((p) => p.id === candidateId);
+
+            if (!pres) {
+              return {
+                president_id: candidateId,
+                president_name: null,
+                status: "not_found" as const,
+                message: `No se encontró candidato presidencial con ID ${candidateId}`,
+                data: null,
+              };
+            }
+
+            const formulaMembers = await prisma.candidate.findMany({
+              where: {
+                political_party_id: pres.political_party_id,
+                electoral_process_id: pres.electoral_process_id,
+                type: { in: FORMULA_TYPES as any },
+                active: true,
+              },
+              select: {
+                id: true,
+                type: true,
+                person: {
+                  select: {
+                    id: true,
+                    dni: true,
+                    fullname: true,
+                    image_url: true,
+                    image_candidate_url: true,
+                    profession: true,
+                    detailed_biography: true,
+                    university_education: true,
+                    postgraduate_education: true,
+                    technical_education: true,
+                    no_university_education: true,
+                    work_experience: true,
+                    popular_election: true,
+                    political_role: true,
+                    incomes: true,
+                    assets: true,
+                    secondary_school: true,
+                    background: {
+                      select: {
+                        id: true,
+                        publication_date: true,
+                        type: true,
+                        status: true,
+                        title: true,
+                        summary: true,
+                        sanction: true,
+                        source: true,
+                        source_url: true,
+                      },
+                    },
+                  },
+                },
+              },
+            });
+
+            if (!formulaMembers || formulaMembers.length === 0) {
+              return {
+                president_id: candidateId,
+                president_name: pres.person?.fullname ?? null,
+                status: "not_found" as const,
+                message: "Error al cargar la fórmula",
+                data: null,
+              };
+            }
+
+            const mapMember = (raw: any): FormulaMember => ({
+              id: raw.id,
+              type: raw.type as FormulaMember["type"],
+              person: {
+                id: raw.person.id,
+                dni: raw.person.dni,
+                fullname: raw.person.fullname,
+                image_url: raw.person.image_url,
+                image_candidate_url: raw.person.image_candidate_url,
+                profession: raw.person.profession,
+                detailed_biography: toJsonArray<BiographyDetail>(
+                  raw.person.detailed_biography,
+                ),
+                hoja_de_vida: {
+                  university_education: toJsonArray<UniversityEducation>(
+                    raw.person.university_education,
+                  ),
+                  postgraduate_education: toJsonArray<PostgraduateEducation>(
+                    raw.person.postgraduate_education,
+                  ),
+                  technical_education: toJsonArray<TechnicalEducation>(
+                    raw.person.technical_education,
+                  ),
+                  no_university_education: toJsonArray<NoUniversityEducation>(
+                    raw.person.no_university_education,
+                  ),
+                  work_experience: toJsonArray<WorkExperience>(
+                    raw.person.work_experience,
+                  ),
+                  popular_election: toJsonArray<PopularElection>(
+                    raw.person.popular_election,
+                  ),
+                  political_role: toJsonArray<PoliticalRole>(
+                    raw.person.political_role,
+                  ),
+                  incomes: toJsonArray<Incomes>(raw.person.incomes),
+                  assets: toJsonArray<Assets>(raw.person.assets),
+                  secondary_school: raw.person.secondary_school ?? false,
+                },
+              },
+              backgrounds: raw.person.background as unknown as BackgroundBase[],
+            });
+
+            const presidentMember = formulaMembers.find(
+              (m) => m.type === "PRESIDENTE",
+            );
+            const vp1Member = formulaMembers.find(
+              (m) => m.type === "VICEPRESIDENTE_1",
+            );
+            const vp2Member = formulaMembers.find(
+              (m) => m.type === "VICEPRESIDENTE_2",
+            );
+
+            if (!presidentMember) {
+              return {
+                president_id: candidateId,
+                president_name: pres.person?.fullname ?? null,
+                status: "not_found" as const,
+                message: "No se encontró el presidente en la fórmula",
+                data: null,
+              };
+            }
+
             return {
               president_id: candidateId,
-              president_name: pres.person?.fullname ?? null,
-              status: "not_found" as const,
-              message: "No se encontró el presidente en la fórmula",
-              data: null,
+              president_name: presidentMember.person.fullname,
+              status: "available" as const,
+              message: null,
+              data: {
+                president: mapMember(presidentMember),
+                vp1: vp1Member ? mapMember(vp1Member) : null,
+                vp2: vp2Member ? mapMember(vp2Member) : null,
+                political_party: (pres.politicalparty as any) ?? null,
+                electoral_process_id: pres.electoral_process_id,
+              },
             };
-          }
+          }),
+        );
 
-          return {
-            president_id: candidateId,
-            president_name: presidentMember.person.fullname,
-            status: "available" as const,
-            message: null,
-            data: {
-              president: mapMember(presidentMember),
-              vp1: vp1Member ? mapMember(vp1Member) : null,
-              vp2: vp2Member ? mapMember(vp2Member) : null,
-              political_party: pres.politicalparty ?? null,
-              electoral_process_id: pres.electoral_process_id,
-            },
-          };
-        }),
-      );
+        const totalAvailable = items.filter(
+          (i) => i.status === "available",
+        ).length;
 
-      const totalAvailable = items.filter(
-        (i) => i.status === "available",
-      ).length;
-
-      return {
-        total_requested: uniqueIds.length,
-        total_available: totalAvailable,
-        // Nota: Este timestamp reflejará el momento en que se generó la caché,
-        // no el momento exacto en que el usuario cargó la página.
-        comparison_date: new Date().toISOString(),
-        items,
-      };
+        return {
+          total_requested: uniqueIds.length,
+          total_available: totalAvailable,
+          comparison_date: new Date().toISOString(),
+          items,
+        };
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
     },
     ["presidential-formulas-comparison"],
     {
-      // Usamos ambos tags porque la data involucra tanto a candidatos como a partidos
       tags: [TAGS.candidates, TAGS.parties],
       revalidate: TTL.static,
     },

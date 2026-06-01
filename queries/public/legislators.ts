@@ -8,8 +8,7 @@ import {
 } from "@/interfaces/legislator";
 import { LegislatorVersusCard } from "@/interfaces/legislator-metrics";
 import { ChamberType } from "@/interfaces/politics";
-import { Database } from "@/interfaces/supabase";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 interface GetLegislatorsParams {
   active_only?: boolean;
@@ -35,202 +34,203 @@ export const getLegisladoresCards = cache(
       page = 1,
       pageSize = 30,
     }: GetLegislatorsParams): Promise<LegislatorCard[]> => {
-      const supabase = createPublicClient();
+      const skip = (page - 1) * pageSize;
+      const take = pageSize;
 
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      try {
+        const whereClause: any = {};
 
-      let query = supabase
-        .from("legislator")
-        .select(
-          `
-          id,
-          chamber,
-          condition,
-          active,
-          start_date,
-          end_date,
-          person:person_id!inner ( id, fullname, dni, image_url, image_candidate_url, profession ),
-          electoral_district:electoral_district_id!inner( id, name, code ),
-          elected_by_party:elected_by_party_id ( id, name, acronym ),
-          current_parliamentary_group,
-          
-          parliamentarymembership!inner(
-            id,
-            parliamentarygroup!inner(name)
-          )
-        `,
-        )
-        .range(from, to);
+        if (active_only) whereClause.active = true;
+        if (chamber) whereClause.chamber = chamber;
+        if (ids && ids.length > 0) whereClause.id = { in: ids };
 
-      if (active_only) query = query.eq("active", true);
-      if (chamber) query = query.eq("chamber", chamber);
-      if (ids && ids.length > 0) query = query.in("id", ids);
+        if (search) {
+          whereClause.person = {
+            fullname: { contains: search, mode: "insensitive" },
+          };
+        }
 
-      if (search) {
-        query = query.ilike("person.fullname", `%${search}%`);
-      }
+        if (districts && districts.length > 0) {
+          whereClause.electoraldistrict = {
+            name: { in: districts },
+          };
+        }
 
-      if (districts && districts.length > 0) {
-        query = query.in("electoral_district.name", districts);
-      }
+        if (groups && groups.length > 0) {
+          whereClause.parliamentarymembership = {
+            some: {
+              end_date: null,
+              parliamentarygroup: {
+                name: { in: groups },
+              },
+            },
+          };
+        }
 
-      if (groups && groups.length > 0) {
-        query = query
-          .not("parliamentarymembership.id", "is", null)
-          .is("parliamentarymembership.end_date", null)
-          .or(`name.in.(${groups})`, {
-            foreignTable: "parliamentarymembership.parliamentarygroup",
-          });
-      }
+        const data = await prisma.legislator.findMany({
+          where: whereClause,
+          skip,
+          take,
+          include: {
+            person: {
+              select: {
+                id: true,
+                fullname: true,
+                dni: true,
+                image_url: true,
+                image_candidate_url: true,
+                profession: true,
+              },
+            },
+            electoraldistrict: {
+              select: { id: true, name: true, code: true },
+            },
+            politicalparty: {
+              select: {
+                id: true,
+                name: true,
+                acronym: true,
+                logo_url: true,
+                color_hex: true,
+                active: true,
+                foundation_date: true,
+              },
+            },
+            parliamentarymembership: {
+              where: { end_date: null },
+              include: { parliamentarygroup: true },
+              take: 1,
+            },
+          },
+          orderBy: {
+            person: { lastname: "asc" },
+          },
+        });
 
-      query = query.order("lastname", {
-        foreignTable: "person",
-        ascending: true,
-      });
+        if (!data || data.length === 0) return [];
 
-      const { data, error } = await query;
+        const legislatorIds = data.map((l) => l.id);
+        const metricsData = await prisma.legislatormetrics.findMany({
+          where: { legislator_id: { in: legislatorIds } },
+          select: { legislator_id: true },
+        });
 
-      if (error) {
+        const metricsSet = new Set(metricsData?.map((m) => m.legislator_id));
+
+        const results: LegislatorCard[] = data.map((leg) => {
+          let current_parliamentary_group = null;
+          if (
+            leg.parliamentarymembership &&
+            leg.parliamentarymembership.length > 0
+          ) {
+            const group = leg.parliamentarymembership[0].parliamentarygroup;
+            current_parliamentary_group = {
+              id: group.id,
+              name: group.name,
+              acronym: group.acronym || "",
+              logo_url: group.logo_url,
+              color_hex: group.color_hex || "",
+            };
+          }
+
+          return {
+            id: leg.id,
+            chamber: leg.chamber as unknown as ChamberType,
+            condition: leg.condition as unknown as any,
+            active: leg.active,
+            start_date: leg.start_date as unknown as string,
+            end_date: leg.end_date as unknown as string,
+            person: {
+              id: leg.person.id,
+              fullname: leg.person.fullname,
+              dni: leg.person.dni,
+              image_url: leg.person.image_url,
+              image_candidate_url: leg.person.image_url,
+              profession: leg.person.profession,
+            },
+            elected_by_party: {
+              id: leg.politicalparty.id,
+              name: leg.politicalparty.name,
+              acronym: leg.politicalparty.acronym,
+              logo_url: leg.politicalparty.logo_url ?? null,
+              color_hex: leg.politicalparty.color_hex,
+              active: leg.politicalparty.active,
+              foundation_date:
+                (leg.politicalparty.foundation_date as unknown as string) ??
+                null,
+            },
+            electoral_district: {
+              id: leg.electoraldistrict.id,
+              name: leg.electoraldistrict.name,
+              code: leg.electoraldistrict.code,
+              is_national: (leg.electoraldistrict as any).is_national,
+              active: (leg.electoraldistrict as any).active,
+            },
+            current_parliamentary_group,
+            has_metrics: metricsSet.has(leg.id),
+          };
+        });
+
+        return results;
+      } catch (error) {
         console.error("Error fetching legislators:", error);
         throw new Error("Error al obtener legisladores");
       }
-      const rawLegislators = data as unknown as LegislatorCard[];
-      if (!rawLegislators || rawLegislators.length === 0) return [];
-
-      const legislatorIds = rawLegislators.map((l) => l.id);
-      const { data: metricsData } = await supabase
-        .from("legislatormetrics")
-        .select("legislator_id")
-        .in("legislator_id", legislatorIds);
-
-      const metricsSet = new Set(metricsData?.map((m) => m.legislator_id));
-
-      const results: LegislatorCard[] = rawLegislators.map((leg) => {
-        return {
-          id: leg.id,
-          chamber: leg.chamber,
-          condition: leg.condition,
-          active: leg.active,
-          start_date: leg.start_date,
-          end_date: leg.end_date,
-          person: {
-            id: leg.person.id,
-            fullname: leg.person.fullname,
-            dni: leg.person.dni,
-            image_url: leg.person.image_url,
-            image_candidate_url: leg.person.image_url, // Corregido: image_candidate_url o image_url según corresponda
-            profession: leg.person.profession,
-          },
-          elected_by_party: {
-            id: leg.elected_by_party.id,
-            name: leg.elected_by_party.name,
-            acronym: leg.elected_by_party.acronym,
-            logo_url: leg.elected_by_party.logo_url ?? null,
-            color_hex: leg.elected_by_party.color_hex,
-            active: leg.elected_by_party.active,
-            foundation_date: leg.elected_by_party.foundation_date ?? null,
-          },
-          electoral_district: {
-            id: leg.electoral_district.id,
-            name: leg.electoral_district.name,
-            code: leg.electoral_district.code,
-            is_national: leg.electoral_district.is_national,
-            active: leg.electoral_district.active,
-          },
-          current_parliamentary_group: leg.current_parliamentary_group,
-
-          has_metrics: metricsSet.has(leg.id),
-        };
-      });
-
-      return results;
     },
     ["legislators-cards-list"],
     { tags: [TAGS.legislators], revalidate: TTL.static },
   ),
 );
 
-type PersonRow = Database["public"]["Tables"]["person"]["Row"];
-type MetricsRow = Database["public"]["Tables"]["legislatormetrics"]["Row"];
-
-type LegislatorFromDB = {
-  id: string;
-  chamber: "CONGRESO" | "SENADO";
-  condition: string;
-  start_date: string;
-  active: boolean;
-  person: Pick<
-    PersonRow,
-    "id" | "fullname" | "name" | "lastname" | "image_url" | "profession"
-  >;
-  electoral_district: {
-    id: string;
-    name: string;
-  } | null;
-  elected_by_party: {
-    id: string;
-    name: string;
-    acronym: string | null;
-    logo_url: string | null;
-    color_hex: string | null;
-    active: boolean;
-    foundation_date: string | null;
-  } | null;
-  current_parliamentary_group: {
-    id: string;
-    name: string;
-    acronym: string;
-    color_hex: string;
-    logo_url: string | null;
-  } | null;
-  metrics: MetricsRow | MetricsRow[] | null;
-};
-
 export const getLegisladorById = cache(
   unstable_cache(
     async (
       legisladorId: string,
     ): Promise<LegislatorDetailWithPerson | null> => {
-      const supabase = createPublicClient();
+      try {
+        const data = await prisma.legislator.findUnique({
+          where: { id: legisladorId },
+          include: {
+            politicalparty: true,
+            electoraldistrict: true,
+            bill: {
+              orderBy: { submission_date: "desc" },
+            },
+            attendance: true,
+            parliamentarymembership: {
+              orderBy: { start_date: "desc" },
+              include: { parliamentarygroup: true },
+            },
+            person: {
+              include: { background: true },
+            },
+          },
+        });
 
-      const { data, error } = await supabase
-        .from("legislator")
-        .select(
-          `
-          *,
-          elected_by_party:politicalparty(*),
-          electoral_district:electoraldistrict(*),
-          bill_authorships:bill(*),
-          attendances:attendance(*),
-          parliamentary_memberships:parliamentarymembership(
-            *,
-            parliamentary_group:parliamentarygroup(*)
-          ),
-          person:person_id!inner(
-            *,
-            backgrounds:background(*)
-          )
-        `,
-        )
-        .eq("id", legisladorId)
-        .order("submission_date", {
-          referencedTable: "bill",
-          ascending: false,
-        })
-        .order("start_date", {
-          referencedTable: "parliamentarymembership",
-          ascending: false,
-        })
-        .maybeSingle();
+        if (!data) return null;
 
-      if (error) {
+        // remap to match expected type interface
+        const mappedData = {
+          ...data,
+          elected_by_party: data.politicalparty,
+          electoral_district: data.electoraldistrict,
+          bill_authorships: data.bill,
+          attendances: data.attendance,
+          parliamentary_memberships: data.parliamentarymembership.map((m) => ({
+            ...m,
+            parliamentary_group: m.parliamentarygroup,
+          })),
+          person: {
+            ...data.person,
+            backgrounds: data.person.background,
+          },
+        };
+
+        return mappedData as unknown as LegislatorDetailWithPerson;
+      } catch (error) {
         console.error("Error fetching legislador:", error);
         return null;
       }
-      if (!data) return null;
-
-      return data as unknown as LegislatorDetailWithPerson;
     },
     ["legislator-detail"],
     { tags: [TAGS.legislators], revalidate: TTL.static },
@@ -246,77 +246,105 @@ export const getVersusLegislators = cache(
       limit?: number;
       activeOnly?: boolean;
     }): Promise<LegislatorVersusCard[]> => {
-      const supabase = createPublicClient();
+      try {
+        const whereClause: any = {};
+        if (activeOnly) {
+          whereClause.active = true;
+        }
 
-      let query = supabase
-        .from("legislator")
-        .select(
-          `
-          id, chamber, condition, start_date, active,
-          person:person_id!inner (id, fullname, name, lastname, image_url, profession),
-          electoral_district:electoral_district_id (id, name),
-          elected_by_party:elected_by_party_id (id, name, acronym, logo_url, color_hex, active, foundation_date),
-          current_parliamentary_group,
-          metrics:legislatormetrics (attendance_rate, total_sessions, total_bills, bills_aprobado, total_party_changes, is_defector, penal_records, ethical_records, total_legal_records)
-        `,
-        )
-        .limit(limit);
+        const data = await prisma.legislator.findMany({
+          where: whereClause,
+          take: limit,
+          orderBy: { person: { lastname: "asc" } },
+          include: {
+            person: {
+              select: {
+                id: true,
+                fullname: true,
+                name: true,
+                lastname: true,
+                image_url: true,
+                profession: true,
+              },
+            },
+            electoraldistrict: { select: { id: true, name: true } },
+            politicalparty: {
+              select: {
+                id: true,
+                name: true,
+                acronym: true,
+                logo_url: true,
+                color_hex: true,
+                active: true,
+                foundation_date: true,
+              },
+            },
+            legislatormetrics: true,
+            parliamentarymembership: {
+              where: { end_date: null },
+              include: { parliamentarygroup: true },
+              take: 1,
+            },
+          },
+        });
 
-      if (activeOnly) {
-        query = query.eq("active", true);
-      }
+        if (!data) return [];
 
-      query = query.order("lastname", {
-        referencedTable: "person",
-        ascending: true,
-      });
+        return data.map((leg) => {
+          const metrics = leg.legislatormetrics;
 
-      const { data, error } = await query;
+          let current_parliamentary_group = null;
+          if (
+            leg.parliamentarymembership &&
+            leg.parliamentarymembership.length > 0
+          ) {
+            const group = leg.parliamentarymembership[0].parliamentarygroup;
+            current_parliamentary_group = {
+              id: group.id,
+              name: group.name,
+              acronym: group.acronym || "",
+              color_hex: group.color_hex || "",
+              logo_url: group.logo_url,
+            };
+          }
 
-      if (error) {
+          return {
+            id: leg.id,
+            person_id: leg.person.id,
+            fullname: leg.person.fullname,
+            name: leg.person.name,
+            lastname: leg.person.lastname,
+            image_url: leg.person.image_url,
+            profession: leg.person.profession,
+            chamber: leg.chamber as unknown as ChamberType,
+            condition: leg.condition as unknown as any,
+            start_date: leg.start_date as unknown as string,
+            days_in_office: calculateDaysInOffice(leg.start_date),
+            current_parliamentary_group,
+            electoral_district: leg.electoraldistrict,
+            elected_by_party: {
+              ...leg.politicalparty,
+              foundation_date: leg.politicalparty
+                ?.foundation_date as unknown as string,
+            } as any,
+            stats: buildStats(metrics),
+          };
+        });
+      } catch (error) {
         console.error("Error:", error);
-        throw new Error(`Error al obtener legisladores: ${error.message}`);
+        throw new Error(`Error al obtener legisladores`);
       }
-
-      if (!data) return [];
-
-      return (data as unknown as LegislatorFromDB[]).map((leg) => {
-        const metrics = Array.isArray(leg.metrics)
-          ? leg.metrics[0]
-          : leg.metrics;
-
-        return {
-          id: leg.id,
-          person_id: leg.person.id,
-          fullname: leg.person.fullname,
-          name: leg.person.name,
-          lastname: leg.person.lastname,
-          image_url: leg.person.image_url,
-          profession: leg.person.profession,
-          chamber: leg.chamber,
-          condition: leg.condition,
-          start_date: leg.start_date,
-          days_in_office: calculateDaysInOffice(leg.start_date),
-          current_parliamentary_group: leg.current_parliamentary_group,
-          electoral_district: leg.electoral_district,
-          elected_by_party: leg.elected_by_party,
-          stats: buildStats(metrics),
-        };
-      });
     },
     ["versus-legislators-list"],
     { tags: [TAGS.legislators], revalidate: TTL.static },
   ),
 );
 
-// Las funciones helper (calculateDaysInOffice y buildStats) se quedan igual,
-// no necesitan caché porque son operaciones síncronas muy rápidas.
-
-function calculateDaysInOffice(startDate: string): number {
+function calculateDaysInOffice(startDate: string | Date): number {
   return Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000);
 }
 
-function buildStats(metrics: MetricsRow | null): LegislatorVersusCard["stats"] {
+function buildStats(metrics: any | null): LegislatorVersusCard["stats"] {
   return {
     attendance_percentage: metrics?.attendance_rate ?? 0,
     total_sessions: metrics?.total_sessions ?? 0,

@@ -15,7 +15,12 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   // Para Docker/Dokploy
   output: "standalone",
-  serverExternalPackages: ["better-auth", "kysely", "@prisma/client", "prisma"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "pg",
+    "@prisma/adapter-pg",
+  ],
   images: {
     // Optimización de Next.js desactivada en producción
     // (Cloudflare lo manejará)
@@ -86,7 +91,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  /* config options here */
 };
 
 export default withSerwist(nextConfig);

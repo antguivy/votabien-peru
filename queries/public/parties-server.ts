@@ -4,10 +4,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
-import { createClient } from "@/lib/supabase/server";
+import prisma from "@/lib/prisma";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
-
-// Interfaces internas para mapeo
 
 interface GetPartidosSelectorParams {
   active?: boolean;
@@ -18,24 +16,21 @@ export const getPartidosSelectorList = cache(
     async (
       params: GetPartidosSelectorParams = {},
     ): Promise<PoliticalPartyBase[]> => {
-      // CORREGIDO EL TIPO AQUÍ
-      const supabase = await createClient();
       const { active } = params;
 
       try {
-        const { data: activeProcess } = await supabase
-          .from("electoralprocess")
-          .select("id")
-          .eq("active", true)
-          .single();
+        const activeProcess = await prisma.electoralprocess.findFirst({
+          where: { active: true },
+          select: { id: true },
+        });
 
         let hiddenPartyIds: string[] = [];
 
         if (activeProcess) {
-          const { data: allianceMembers } = await supabase
-            .from("alliancecomposition")
-            .select("child_org_id")
-            .eq("process_id", activeProcess.id);
+          const allianceMembers = await prisma.alliancecomposition.findMany({
+            where: { process_id: activeProcess.id },
+            select: { child_org_id: true },
+          });
 
           if (allianceMembers && allianceMembers.length > 0) {
             hiddenPartyIds = allianceMembers
@@ -44,32 +39,31 @@ export const getPartidosSelectorList = cache(
           }
         }
 
-        let query = supabase
-          .from("politicalparty")
-          .select(
-            "id, name, acronym, logo_url, color_hex, active, foundation_date",
-            { count: "exact" },
-          )
-          .order("name", { ascending: true });
+        const whereClause: any = {};
 
-        // Filtro original
         if (active !== undefined) {
-          query = query.eq("active", active);
+          whereClause.active = active;
         }
 
         if (hiddenPartyIds.length > 0) {
-          const idsString = `(${hiddenPartyIds.join(",")})`;
-          query = query.filter("id", "not.in", idsString);
+          whereClause.id = { notIn: hiddenPartyIds };
         }
 
-        const { data, error, count } = await query;
+        const data = await prisma.politicalparty.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            name: true,
+            acronym: true,
+            logo_url: true,
+            color_hex: true,
+            active: true,
+            foundation_date: true,
+          },
+          orderBy: { name: "asc" },
+        });
 
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(`Error al obtener partidos: ${error.message}`);
-        }
-
-        return data as unknown as PoliticalPartyBase[]; // CORREGIDO EL TIPO AQUÍ
+        return data as unknown as PoliticalPartyBase[];
       } catch (error) {
         console.error("Error en getPartidosSelectorList:", error);
         throw error;

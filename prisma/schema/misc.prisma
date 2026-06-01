@@ -1,0 +1,43 @@
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model hito {
+  id                BigInt   @id(map: "teamphoto_pkey") @default(autoincrement())
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  date              String?
+  location          String?
+  photo_url         String?
+  photo_description String?
+  index             BigInt?
+  quote             String?
+  label             String?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model team {
+  id            String   @id @db.VarChar
+  first_name    String?
+  last_name     String?
+  linkedin_url  String?
+  portfolio_url String?
+  is_principal  Boolean? @default(false)
+  email         String?
+  role          String?
+  image_url     String?
+  phrase        String?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model triviagame {
+  id                 BigInt          @id @default(autoincrement())
+  quote              String?
+  person_id          String?         @db.VarChar
+  options            Json?           @db.Json
+  political_party_id String?         @db.VarChar
+  category           String?
+  difficulty         String?
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  global_index       BigInt
+  explanation        String?
+  source_url         String?
+  person             person?         @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  politicalparty     politicalparty? @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}

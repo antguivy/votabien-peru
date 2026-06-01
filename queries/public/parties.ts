@@ -2,7 +2,7 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 import {
   PoliticalPartyBase,
@@ -16,7 +16,6 @@ import {
   PartyHistory,
   PartyLegalCase,
 } from "@/interfaces/politics";
-import { Database } from "@/interfaces/supabase";
 import {
   FinancingCategory,
   FinancingReport,
@@ -28,17 +27,24 @@ import {
 export const getPartidosListSimple = cache(
   unstable_cache(
     async ({ active }: { active: boolean }): Promise<PoliticalPartyBase[]> => {
-      const supabase = await createPublicClient();
-      const { data, error } = await supabase
-        .from("politicalparty")
-        .select(
-          "id, name, acronym, logo_url, color_hex, active, foundation_date",
-        )
-        .eq("active", active)
-        .order("name", { ascending: true });
-
-      if (error) throw new Error(`Error al obtener partidos: ${error.message}`);
-      return data as unknown as PoliticalPartyBase[];
+      try {
+        const data = await prisma.politicalparty.findMany({
+          where: { active },
+          select: {
+            id: true,
+            name: true,
+            acronym: true,
+            logo_url: true,
+            color_hex: true,
+            active: true,
+            foundation_date: true,
+          },
+          orderBy: { name: "asc" },
+        });
+        return data as unknown as PoliticalPartyBase[];
+      } catch (error: any) {
+        throw new Error(`Error al obtener partidos: ${error.message}`);
+      }
     },
     ["partidos-list-simple"],
     { revalidate: TTL.static, tags: [TAGS.parties] },
@@ -57,24 +63,21 @@ export const getPartidosList = cache(
     async (
       params: GetPartidosListParams = {},
     ): Promise<PoliticalPartyListPaginated> => {
-      const supabase = await createPublicClient();
       const { active, search, limit = 30, offset = 0 } = params;
 
       try {
-        // 1. Lógica para ocultar partidos que son parte de una alianza activa
-        const { data: activeProcess } = await supabase
-          .from("electoralprocess")
-          .select("id")
-          .eq("active", true)
-          .single();
+        const activeProcess = await prisma.electoralprocess.findFirst({
+          where: { active: true },
+          select: { id: true },
+        });
 
         let hiddenPartyIds: string[] = [];
 
         if (activeProcess) {
-          const { data: allianceMembers } = await supabase
-            .from("alliancecomposition")
-            .select("child_org_id")
-            .eq("process_id", activeProcess.id);
+          const allianceMembers = await prisma.alliancecomposition.findMany({
+            where: { process_id: activeProcess.id },
+            select: { child_org_id: true },
+          });
 
           if (allianceMembers && allianceMembers.length > 0) {
             hiddenPartyIds = allianceMembers
@@ -83,44 +86,39 @@ export const getPartidosList = cache(
           }
         }
 
-        // 2. Construcción de la Query
-        let query = supabase
-          .from("politicalparty")
-          .select("*", { count: "exact" })
-          .order("name", { ascending: true });
+        const whereClause: any = {};
 
-        // Filtro de Estado
         if (active !== undefined) {
-          query = query.eq("active", active);
+          whereClause.active = active;
         }
 
-        // Filtro para ocultar partidos
         if (hiddenPartyIds.length > 0) {
-          const idsString = `("${hiddenPartyIds.join('","')}")`;
-          query = query.filter("id", "not.in", idsString);
+          whereClause.id = { notIn: hiddenPartyIds };
         }
 
-        // Búsqueda por texto
         if (search && search.trim() !== "") {
           const searchTerm = search.trim();
-          query = query.or(
-            `name.ilike.%${searchTerm}%,acronym.ilike.%${searchTerm}%`,
-          );
+          whereClause.OR = [
+            { name: { contains: searchTerm, mode: "insensitive" } },
+            { acronym: { contains: searchTerm, mode: "insensitive" } },
+          ];
         }
 
-        // Paginación
-        query = query.range(offset, offset + limit - 1);
-
-        const { data, error, count } = await query;
-
-        if (error) {
-          console.error("Supabase error:", error);
-          throw new Error(`Error al obtener partidos: ${error.message}`);
-        }
+        const [data, count] = await Promise.all([
+          prisma.politicalparty.findMany({
+            where: whereClause,
+            orderBy: { name: "asc" },
+            skip: offset,
+            take: limit,
+          }),
+          prisma.politicalparty.count({
+            where: whereClause,
+          }),
+        ]);
 
         return {
-          items: data || [],
-          total: count || 0,
+          items: data as unknown as PoliticalPartyDetail[],
+          total: count,
           limit,
           offset,
         };
@@ -134,17 +132,27 @@ export const getPartidosList = cache(
   ),
 );
 
-type Tables<T extends keyof Database["public"]["Tables"]> =
-  Database["public"]["Tables"][T]["Row"];
-type Views<T extends keyof Database["public"]["Views"]> =
-  Database["public"]["Views"][T]["Row"];
+type SeatsViewRow = {
+  district_name: string;
+  district_code: string;
+  seats: number;
+  elected_by_party_id: string | null;
+};
+type FinancingReportRow = FinancingReport;
+type FinancingTransactionRow = PartyFinancingBasic;
 
-type SeatsViewRow = Views<"party_seats_by_district">;
-type FinancingReportRow = Tables<"financingreports">;
-type FinancingTransactionRow = Tables<"partyfinancing">;
-
-interface FinancingReportQueryResponse extends FinancingReportRow {
-  transactions: FinancingTransactionRow[];
+interface FinancingReportQueryResponse {
+  id: string;
+  party_id: string;
+  report_name: string;
+  filing_status: string;
+  source_name: string;
+  source_url: string | null;
+  report_date: Date;
+  period_start: Date;
+  period_end: Date;
+  created_at: Date;
+  partyfinancing: any[];
 }
 
 interface LegislatorQueryResponse {
@@ -170,19 +178,19 @@ const mapFinancingReport = (
   filing_status: report.filing_status as FinancingStatus,
   source_name: report.source_name,
   source_url: report.source_url,
-  report_date: report.report_date,
-  period_start: report.period_start,
-  period_end: report.period_end,
-  transactions: (report.transactions || []).map(mapTransaction),
-  created_at: report.created_at,
+  report_date: report.report_date as unknown as string,
+  period_start: report.period_start as unknown as string,
+  period_end: report.period_end as unknown as string,
+  transactions: (report.partyfinancing || []).map(mapTransaction),
+  created_at: report.created_at as unknown as string,
 });
 
-const mapTransaction = (t: FinancingTransactionRow): PartyFinancingBasic => ({
+const mapTransaction = (t: any): PartyFinancingBasic => ({
   id: t.id,
   financing_report_id: t.financing_report_id,
   category: t.category as FinancingCategory,
   flow_type: t.flow_type as FlowType,
-  amount: t.amount,
+  amount: Number(t.amount),
   currency: t.currency,
   notes: t.notes,
 });
@@ -210,99 +218,112 @@ interface AllianceMemberJoin {
 export const getPartidoById = cache(
   unstable_cache(
     async (partidoId: string): Promise<PoliticalPartyDetail> => {
-      const supabase = await createPublicClient();
+      try {
+        const [partidoRes, seatsRes, electosRes, financingRes] =
+          await Promise.all([
+            prisma.politicalparty.findUnique({
+              where: { id: partidoId },
+              include: {
+                childAlliances: {
+                  include: {
+                    parentParty: true,
+                  },
+                },
+                parentAlliances: {
+                  include: {
+                    childParty: {
+                      select: {
+                        id: true,
+                        name: true,
+                        logo_url: true,
+                        government_plan_summary: true,
+                        government_plan_url: true,
+                        government_audio_url: true,
+                      },
+                    },
+                  },
+                },
+              },
+            }),
 
-      const [partidoRes, seatsRes, electosRes, financingRes] =
-        await Promise.all([
-          supabase
-            .from("politicalparty")
-            .select(
-              `
-            *,
-            alliancecomposition!parent_org_id (
-              child_party:child_org_id (*)
-            ),
-            parent_alliance_membership:alliancecomposition!child_org_id (
-               alliance:parent_org_id (
-                  id,
-                  name,
-                  logo_url,
-                  government_plan_summary,
-                  government_plan_url,
-                  government_audio_url
-               )
-            )
-          `,
-            )
-            .eq("id", partidoId)
-            .maybeSingle(),
+            prisma.$queryRaw<SeatsViewRow[]>`
+              SELECT district_name, district_code, seats
+              FROM party_seats_by_district
+              WHERE elected_by_party_id = ${partidoId}
+            `,
 
-          supabase
-            .from("party_seats_by_district")
-            .select("district_name, district_code, seats")
-            .eq("elected_by_party_id", partidoId)
-            .then((res) => ({ ...res, data: res.data as SeatsViewRow[] })),
+            prisma.legislator.findMany({
+              where: {
+                elected_by_party_id: partidoId,
+                active: true,
+                condition: "EN_EJERCICIO",
+              },
+              select: {
+                id: true,
+                person_id: true,
+                condition: true,
+                person: {
+                  select: { fullname: true, image_url: true },
+                },
+                electoraldistrict: {
+                  select: { name: true },
+                },
+              },
+              orderBy: {
+                person: { fullname: "asc" },
+              },
+            }),
 
-          supabase
-            .from("legislator")
-            .select(
-              `
-            id, person_id, condition,
-            person!inner(fullname, image_url),
-            electoraldistrict(name)
-          `,
-            )
-            .eq("elected_by_party_id", partidoId)
-            .eq("active", true)
-            .eq("condition", "EN_EJERCICIO")
-            .order("person(fullname)", { ascending: true }),
+            prisma.financingreports.findMany({
+              where: { party_id: partidoId },
+              include: {
+                partyfinancing: true,
+              },
+              orderBy: { report_date: "desc" },
+            }),
+          ]);
 
-          supabase
-            .from("financingreports")
-            .select(
-              `
-            *,
-            transactions:partyfinancing(*)
-          `,
-            )
-            .eq("party_id", partidoId)
-            .order("report_date", { ascending: false }),
-        ]);
+        if (!partidoRes) throw new Error("Partido no encontrado");
 
-      if (!partidoRes.data) throw new Error("Partido no encontrado");
+        const partido = partidoRes;
 
-      const partido = partidoRes.data;
+        const rawComposition = partido.childAlliances as unknown as
+          | AllianceMemberJoin[]
+          | null;
 
-      const rawComposition = partido.alliancecomposition as unknown as
-        | AllianceMemberJoin[]
-        | null;
+        const parentAllianceRaw = partido.parentAlliances?.[0]?.childParty;
+        const parentAlliance = parentAllianceRaw;
 
-      const parentAllianceRaw =
-        partido.parent_alliance_membership?.[0]?.alliance;
-      const parentAlliance = parentAllianceRaw;
+        const { created_at, updated_at, ...partidoWithoutTimestamps } = partido;
 
-      return {
-        ...partido,
-        composition:
-          rawComposition?.map((item) => ({
-            party: item.child_party,
-          })) || [],
-        parent_alliance:
-          (parentAlliance as unknown as PoliticalPartyDetail["parent_alliance"]) ||
-          null,
-        party_timeline:
-          (partido.party_timeline as unknown as PartyHistory[]) || [],
-        legal_cases: (partido.legal_cases as unknown as PartyLegalCase[]) || [],
-        type: partido.type as OrganizationType,
-        government_plan_summary:
-          (partido.government_plan_summary as unknown as GovernmentPlanSummary[]) ||
-          [],
-        government_plan_url: partido.government_plan_url || null,
-        government_audio_url: partido.government_audio_url || null,
-        seats_by_district: seatsRes.data || [],
-        elected_legislators: electosRes.data?.map(mapLegislator) || [],
-        financing_reports: financingRes.data?.map(mapFinancingReport) || [],
-      };
+        return {
+          ...partidoWithoutTimestamps,
+          foundation_date: partido.foundation_date as unknown as string,
+          composition:
+            rawComposition?.map((item) => ({
+              party: item.child_party,
+            })) || [],
+          parent_alliance:
+            (parentAlliance as unknown as PoliticalPartyDetail["parent_alliance"]) ||
+            null,
+          party_timeline:
+            (partido.party_timeline as unknown as PartyHistory[]) || [],
+          legal_cases:
+            (partido.legal_cases as unknown as PartyLegalCase[]) || [],
+          type: partido.type as OrganizationType,
+          government_plan_summary:
+            (partido.government_plan_summary as unknown as GovernmentPlanSummary[]) ||
+            [],
+          government_plan_url: partido.government_plan_url || null,
+          government_audio_url: partido.government_audio_url || null,
+          seats_by_district: seatsRes || [],
+          elected_legislators: electosRes.map(mapLegislator) || [],
+          financing_reports: financingRes.map(mapFinancingReport) || [],
+        };
+      } catch (error) {
+        console.error("Error fetching party:", error);
+        throw error;
+      }
     },
     ["partido-detail"],
     { revalidate: TTL.static, tags: [TAGS.parties] },

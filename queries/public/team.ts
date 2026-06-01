@@ -3,24 +3,21 @@ import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { TeamBasic } from "@/interfaces/team";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 export const getTeam = cache(
   unstable_cache(
     async (): Promise<TeamBasic[]> => {
-      const supabase = createPublicClient();
+      try {
+        const data = await prisma.team.findMany({
+          orderBy: { is_principal: "desc" },
+        });
 
-      const { data, error } = await supabase
-        .from("team")
-        .select("*")
-        .order("is_principal", { ascending: false });
-
-      if (error) {
+        return data as unknown as TeamBasic[];
+      } catch (error) {
         console.error(error);
         return [];
       }
-
-      return data as unknown as TeamBasic[];
     },
     ["team-list"],
     {
