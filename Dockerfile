@@ -30,6 +30,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Variables Dummy de Prisma para que 'prisma generate' no falle al leer prisma.config.ts
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+
 # Generar cliente de Prisma
 RUN pnpm exec prisma generate
 
