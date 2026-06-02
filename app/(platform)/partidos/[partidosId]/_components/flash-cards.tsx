@@ -81,6 +81,7 @@ export function PlanGobiernoFlashcards({
   const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);

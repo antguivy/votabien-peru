@@ -1,0 +1,13 @@
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model electoraldistrict {
+  id          String       @id @db.VarChar
+  name        String       @unique(map: "ix_electoraldistrict_name") @db.VarChar(100)
+  code        String       @unique @db.VarChar(10)
+  is_national Boolean
+  created_at  DateTime     @db.Timestamptz(6)
+  active      Boolean
+  updated_at  DateTime     @db.Timestamptz(6)
+  ubigeo      String?
+  candidate   candidate[]
+  legislator  legislator[]
+}

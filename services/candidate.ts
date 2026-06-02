@@ -20,7 +20,7 @@ export const candidateService = {
       });
 
       const response = await apiClient<MatchResponse>(
-        `/api/v1/candidates?${searchParams.toString()}`,
+        `/api/candidates?${searchParams.toString()}`,
       );
 
       return response;
@@ -33,7 +33,7 @@ export const candidateService = {
     try {
       // Usamos el ID del candidato, no de la persona
       const response = await apiClient<CandidateDetail>(
-        `/api/v1/candidates/${candidateId}/detail`,
+        `/api/candidates/${candidateId}/detail`,
       );
 
       return response;
@@ -45,7 +45,7 @@ export const candidateService = {
   getCandidatesBulk: async (ids: string[]): Promise<CandidateCard[]> => {
     if (ids.length === 0) return [];
     try {
-      return await apiClient<CandidateCard[]>("/api/v1/candidates/bulk", {
+      return await apiClient<CandidateCard[]>("/api/candidates/bulk", {
         method: "POST",
         body: JSON.stringify({ ids }),
       });

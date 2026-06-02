@@ -13,6 +13,7 @@ export function TypeBar({ currentType }: TypeBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

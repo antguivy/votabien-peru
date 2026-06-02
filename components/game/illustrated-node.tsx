@@ -97,6 +97,7 @@ export function IllustratedNode({
     }
     if (!isCurrent) {
       isCurrentPrev.current = false;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnimClass("");
     }
   }, [isCurrent]);
@@ -104,6 +105,7 @@ export function IllustratedNode({
   useEffect(() => {
     if (!animationTrigger) return;
     const cls = animationTrigger === "bounce" ? "node-bounce-ok" : "node-shake";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAnimClass(cls);
     const t = setTimeout(
       () => setAnimClass(isCurrent ? "node-pulse" : ""),

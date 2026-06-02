@@ -44,6 +44,7 @@ interface Props {
 
 export const QuestionCard = ({ question, onAnswer }: Props) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const IconComponent = question.icon ? ICON_MAP[question.icon] : null;
 
   const handlePress = (opt: QuestionOption, index: number) => {

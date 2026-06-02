@@ -1,7 +1,7 @@
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import MatchScreen from "./_components/match-screen";
+// import MatchScreen from "./_components/match-screen";
 import UnderConstruction from "@/components/under-construction";
-import { getDistritos } from "@/queries/public/electoral-districts";
+// import { getDistritos } from "@/queries/public/electoral-districts";
 
 export default async function MatchPage() {
   // const [districts] = await Promise.all([getDistritos()]);

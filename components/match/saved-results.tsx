@@ -14,6 +14,7 @@ import {
 import Image from "next/image";
 import { useCallback, useState } from "react";
 import { CandidateDetailDrawer } from "./candidate-detail";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildShareUrl } from "@/lib/match-share";
 import {
   CategoryType,

@@ -83,6 +83,7 @@ function useMediaQuery(query: string): boolean {
   useEffect(() => {
     const media = window.matchMedia(query);
     if (media.matches !== matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMatches(media.matches);
     }
     const listener = () => setMatches(media.matches);
@@ -107,6 +108,7 @@ export default function HemicileLegislator({
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

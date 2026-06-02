@@ -1,9 +1,11 @@
+"use server";
+
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { PersonWithActivePeriod } from "@/interfaces/person";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 interface GetPersonasParams {
   search: string;
@@ -18,29 +20,38 @@ export const getPersonas = cache(
       limit = 10,
       skip = 0,
     }: GetPersonasParams): Promise<PersonWithActivePeriod[]> => {
-      const supabase = createPublicClient();
-
       const searchTerm = search.trim();
 
       if (!searchTerm) return [];
 
-      const { data, error } = await supabase
-        .from("person")
-        .select("id, fullname, image_candidate_url, profession")
-        .ilike("fullname", `%${searchTerm}%`)
-        .order("fullname", { ascending: true })
-        .range(skip, skip + limit - 1);
+      try {
+        const data = await prisma.person.findMany({
+          where: {
+            fullname: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+          select: {
+            id: true,
+            fullname: true,
+            image_candidate_url: true,
+            profession: true,
+          },
+          orderBy: { fullname: "asc" },
+          skip,
+          take: limit,
+        });
 
-      if (error) {
+        return data as unknown as PersonWithActivePeriod[];
+      } catch (error) {
         console.error("Error searching personas:", error);
         return [];
       }
-
-      return (data || []) as unknown as PersonWithActivePeriod[];
     },
-    ["personas-search"], // La key base. Next.js le agregará el search, limit y skip automáticamente.
+    ["personas-search"],
     {
-      tags: [TAGS.persons], // Recuerda agregarlo a tu cache-tags.ts
+      tags: [TAGS.persons],
       revalidate: TTL.static,
     },
   ),

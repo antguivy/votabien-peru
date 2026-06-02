@@ -5,7 +5,7 @@ export const partyService = {
   getParties: async (): Promise<PoliticalPartyBase[]> => {
     try {
       const response = await apiClient<{ data: PoliticalPartyBase[] }>(
-        "/api/v1/political_parties",
+        "/api/political-parties",
       );
 
       return response.data;

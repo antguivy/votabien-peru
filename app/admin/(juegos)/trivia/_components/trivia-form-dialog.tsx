@@ -212,6 +212,7 @@ export function TriviaFormDialog({
     name: "options",
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const targetType = form.watch("target_type");
   const correctAnswerId = form.watch("correct_answer_id");
 

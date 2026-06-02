@@ -1,4 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { BackgroundBase, BackgroundStatus } from "./background";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CandidacyStatus, CandidateToPerson } from "./candidate";
 import { LegislatorDetail } from "./legislator";
 

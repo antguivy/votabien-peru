@@ -1,16 +1,16 @@
 import { API_BASE_URL } from "@/lib/config";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const sessionResponse = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-    if (!session) {
+    if (!sessionResponse || !sessionResponse.session) {
       return new Response(
         JSON.stringify({ detail: "No autorizado - Debes iniciar sesión" }),
         {
@@ -19,7 +19,9 @@ export async function POST(request: Request) {
         },
       );
     }
-    const accessToken = session.access_token;
+
+    // Si la API de Python espera el token, le mandamos el ID de sesión de better-auth
+    const accessToken = process.env.API_SECRET_KEY;
     const formData = await request.formData();
 
     const pythonResponse = await fetch(

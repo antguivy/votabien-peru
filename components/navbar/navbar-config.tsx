@@ -4,7 +4,9 @@ import {
   Flag, // Partidos — bandera
   Landmark, // Congresistas — edificio institucional (congreso)
   Scale, // Comparador — balanza, justicia
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   HelpCircle, // Trivia — pregunta
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Heart, // Match — compatibilidad
   Vote, // Simulador — papeleta de voto
   Users, // Equipo
@@ -86,6 +88,7 @@ export const adminNavGroups: NavGroup[] = [
   },
   {
     label: "Sistema",
+    requiresRole: ["admin", "super_admin"],
     links: [
       { href: "/admin/team", label: "Equipo", icon: ShieldCheck },
       { href: "/admin/hito", label: "Hito", icon: Milestone },

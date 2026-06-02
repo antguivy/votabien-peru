@@ -25,7 +25,7 @@ export const embeddingService = {
   getEmbeddings: async (personId: string): Promise<GetEmbeddingsResponse> => {
     try {
       const response = await apiClient<GetEmbeddingsResponse>(
-        `/api/v1/embeddings/${personId}`,
+        `/api/embeddings/${personId}`,
         { method: "GET" },
       );
       return response;
@@ -40,7 +40,7 @@ export const embeddingService = {
   ): Promise<GenerateEmbeddingResponse> => {
     try {
       const response = await apiClient<GenerateEmbeddingResponse>(
-        `/api/v1/embeddings/generate/${personId}`,
+        `/api/embeddings/generate/${personId}`,
         { method: "POST" },
       );
       return response;

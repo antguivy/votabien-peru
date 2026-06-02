@@ -3,14 +3,10 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { TAGS } from "@/lib/cache-tags"; // <-- Importamos nuestros tags
 
-import { createClient } from "@/lib/supabase/server";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { prisma } from "@/lib/prisma";
+import { serverGetUser, serverRequireEditor } from "@/lib/auth-actions";
 import { createId } from "@paralleldrive/cuid2";
-import {
-  type Database,
-  type TablesInsert,
-  type TablesUpdate,
-} from "@/interfaces/supabase";
+
 import {
   BiographyDetail,
   CreatePersonRequest,
@@ -30,26 +26,19 @@ import { limaDateToUtc } from "@/lib/utils/date";
 // Cambiar a una persona afecta sus tarjetas de candidato y legislador
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
-  revalidateTag(TAGS.persons);
-  revalidateTag(TAGS.candidates);
-  revalidateTag(TAGS.legislators);
+  revalidateTag(TAGS.persons, "max");
+  revalidateTag(TAGS.candidates, "max");
+  revalidateTag(TAGS.legislators, "max");
 }
 
 export async function createPerson(data: CreatePersonRequest) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
     if (data.dni) {
-      const { data: existingPerson, error: checkError } = await supabase
-        .from("person")
-        .select("id, fullname, dni")
-        .eq("dni", data.dni)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error("[createPerson] Error al verificar DNI:", checkError);
-        throw checkError;
-      }
+      const existingPerson = await prisma.person.findUnique({
+        where: { dni: data.dni },
+        select: { id: true, fullname: true, dni: true },
+      });
 
       if (existingPerson) {
         console.warn("[createPerson] DNI duplicado encontrado:", {
@@ -64,7 +53,7 @@ export async function createPerson(data: CreatePersonRequest) {
 
     const personId = createId();
 
-    const personData: TablesInsert<"person"> = {
+    const personData = {
       id: personId,
       party_number_rop: toNullIfEmpty(data.party_number_rop),
       dni: toNullIfEmpty(data.dni),
@@ -79,14 +68,23 @@ export async function createPerson(data: CreatePersonRequest) {
       profession: toNullIfEmpty(data.profession),
 
       secondary_school: data.secondary_school,
+
       no_university_education: toJsonInsert(data.no_university_education),
+
       technical_education: toJsonInsert(data.technical_education),
+
       university_education: toJsonInsert(data.university_education),
+
       postgraduate_education: toJsonInsert(data.postgraduate_education),
+
       work_experience: toJsonInsert(data.work_experience),
+
       political_role: toJsonInsert(data.political_role),
+
       popular_election: toJsonInsert(data.popular_election),
+
       incomes: toJsonInsert(data.incomes),
+
       assets: toJsonInsert(data.assets),
 
       facebook_url: toNullIfEmpty(data.facebook_url),
@@ -95,16 +93,7 @@ export async function createPerson(data: CreatePersonRequest) {
       tiktok_url: toNullIfEmpty(data.tiktok_url),
     };
 
-    const { data: person, error: personError } = await supabase
-      .from("person")
-      .insert(personData)
-      .select()
-      .single();
-
-    if (personError) {
-      console.error("[createPerson] Error al insertar persona:", personError);
-      throw personError;
-    }
+    const person = await prisma.person.create({ data: personData });
 
     revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, data: person };
@@ -118,25 +107,17 @@ export async function createPerson(data: CreatePersonRequest) {
 }
 
 export async function updatePerson(data: Partial<UpdatePersonRequest>) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
     if (!data.id) {
       throw new Error("ID de la persona es requerido para actualizar");
     }
 
     if (data.dni) {
-      const { data: existingPerson, error: checkError } = await supabase
-        .from("person")
-        .select("id, fullname, dni")
-        .eq("dni", data.dni)
-        .neq("id", data.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error("[updatePerson] Error al verificar DNI:", checkError);
-        throw checkError;
-      }
+      const existingPerson = await prisma.person.findFirst({
+        where: { dni: data.dni, id: { not: data.id } },
+        select: { id: true, fullname: true, dni: true },
+      });
 
       if (existingPerson) {
         throw new Error(
@@ -145,7 +126,7 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       }
     }
 
-    const personData: TablesUpdate<"person"> = {
+    const personData = {
       party_number_rop: toNullIfEmpty(data.party_number_rop),
       dni: data.dni,
       gender: data.gender,
@@ -159,14 +140,23 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       profession: toNullIfEmpty(data.profession),
 
       secondary_school: data.secondary_school,
+
       technical_education: toJsonInsert(data.technical_education),
+
       no_university_education: toJsonInsert(data.no_university_education),
+
       university_education: toJsonInsert(data.university_education),
+
       postgraduate_education: toJsonInsert(data.postgraduate_education),
+
       work_experience: toJsonInsert(data.work_experience),
+
       political_role: toJsonInsert(data.political_role),
+
       popular_election: toJsonInsert(data.popular_election),
+
       incomes: toJsonInsert(data.incomes),
+
       assets: toJsonInsert(data.assets),
 
       facebook_url: toNullIfEmpty(data.facebook_url),
@@ -175,17 +165,10 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
       tiktok_url: toNullIfEmpty(data.tiktok_url),
     };
 
-    const { data: person, error: personError } = await supabase
-      .from("person")
-      .update(personData)
-      .eq("id", data.id)
-      .select()
-      .single();
-
-    if (personError) {
-      console.error("[updatePerson] Error al actualizar persona:", personError);
-      throw personError;
-    }
+    const person = await prisma.person.update({
+      where: { id: data.id },
+      data: personData,
+    });
 
     revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, data: person };
@@ -199,12 +182,9 @@ export async function updatePerson(data: Partial<UpdatePersonRequest>) {
 }
 
 export async function deletePerson(personId: string) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
-    const { error } = await supabase.from("person").delete().eq("id", personId);
-
-    if (error) throw error;
+    await prisma.person.delete({ where: { id: personId } });
 
     revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return { success: true, message: "Persona eliminada exitosamente" };
@@ -217,15 +197,11 @@ export async function deletePerson(personId: string) {
 }
 
 export async function bulkDeletePersons(personIds: string[]) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
-    const { error } = await supabase
-      .from("person")
-      .delete()
-      .in("id", personIds);
-
-    if (error) throw error;
+    await prisma.person.deleteMany({
+      where: { id: { in: personIds } },
+    });
 
     revalidatePersonEcosystem(); // 🔥 Dispara la actualización global
     return {
@@ -242,16 +218,13 @@ export async function bulkDeletePersons(personIds: string[]) {
 
 // Funciones de lectura puras (Buscadores / APIs externas) - No requieren invalidar caché
 export async function searchPersonByDNI(dni: string) {
-  const supabase = await createClient();
-
   try {
-    const { data, error } = await supabase
-      .from("person")
-      .select("id, dni, fullname, image_url")
-      .eq("dni", dni)
-      .single();
+    const data = await prisma.person.findUnique({
+      where: { dni },
+      select: { id: true, dni: true, fullname: true, image_url: true },
+    });
 
-    if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows found
+    if (!data) throw new Error("No rows found");
 
     return { success: true, data };
   } catch (error) {
@@ -293,19 +266,14 @@ export async function updatePersonBiography(
   personId: string,
   biography: BiographyDetail[],
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
-    const { data, error } = await supabase
-      .from("person")
-      .update({
-        detailed_biography: toJsonInsert(biography),
-      })
-      .eq("id", personId)
-      .select("id, fullname, detailed_biography")
-      .single();
+    const data = await prisma.person.update({
+      where: { id: personId },
 
-    if (error) throw error;
+      data: { detailed_biography: toJsonInsert(biography) },
+      select: { id: true, fullname: true, detailed_biography: true },
+    });
 
     revalidatePersonEcosystem(); // 🔥
     return { success: true, data };
@@ -321,19 +289,17 @@ export async function insertPersonBiography(
   personId: string,
   biography: BiographyDetail[],
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
     const filtered = biography.filter(
       (item) => !isBlockedSourceUrl(item.source_url),
     );
 
-    const { error } = await supabase
-      .from("person")
-      .update({ detailed_biography: toJsonInsert(filtered) })
-      .eq("id", personId);
+    await prisma.person.update({
+      where: { id: personId },
 
-    if (error) throw error;
+      data: { detailed_biography: toJsonInsert(filtered) },
+    });
 
     revalidatePersonEcosystem(); // 🔥
     return { success: true, inserted: filtered.length };
@@ -346,7 +312,7 @@ export async function insertPersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
     const filtered = backgrounds.filter(
       (item) => !isBlockedSourceUrl(item.source_url),
@@ -369,8 +335,7 @@ export async function insertPersonBackgrounds(
       publication_date: cleanForDb(item.publication_date),
     }));
 
-    const { error } = await supabase.from("background").insert(insertData);
-    if (error) throw new Error(`Error al insertar: ${error.message}`);
+    await prisma.background.createMany({ data: insertData });
 
     revalidatePersonEcosystem(); // 🔥
     return { success: true, inserted: insertData.length };
@@ -383,8 +348,7 @@ export async function updatePersonBackgrounds(
   personId: string,
   backgrounds: BackgroundBase[],
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
     const newItems = backgrounds.filter((item) => item.id.startsWith("new_"));
     const existingItems = backgrounds.filter(
@@ -392,18 +356,13 @@ export async function updatePersonBackgrounds(
     );
     const existingIds = existingItems.map((item) => item.id);
 
-    let deleteQuery = supabase
-      .from("background")
-      .delete()
-      .eq("person_id", personId);
-
-    if (existingIds.length > 0) {
-      deleteQuery = deleteQuery.not("id", "in", `(${existingIds.join(",")})`);
-    }
-
-    const { error: deleteError } = await deleteQuery;
-    if (deleteError)
-      throw new Error(`Error al eliminar: ${deleteError.message}`);
+    // Delete what is not in existingIds
+    await prisma.background.deleteMany({
+      where: {
+        person_id: personId,
+        id: existingIds.length > 0 ? { notIn: existingIds } : undefined,
+      },
+    });
 
     if (newItems.length > 0) {
       const insertData = newItems.map((item) => ({
@@ -419,17 +378,13 @@ export async function updatePersonBackgrounds(
         publication_date: cleanForDb(item.publication_date),
       }));
 
-      const { error: insertError } = await supabase
-        .from("background")
-        .insert(insertData);
-      if (insertError)
-        throw new Error(`Error al insertar: ${insertError.message}`);
+      await prisma.background.createMany({ data: insertData });
     }
 
     for (const item of existingItems) {
-      const { error: updateError } = await supabase
-        .from("background")
-        .update({
+      await prisma.background.update({
+        where: { id: item.id }, // person_id is implied unique with id or we just assume id is PK
+        data: {
           type: item.type,
           status: item.status as BackgroundStatus,
           title: item.title,
@@ -438,12 +393,8 @@ export async function updatePersonBackgrounds(
           source: item.source,
           source_url: cleanForDb(item.source_url),
           publication_date: cleanForDb(item.publication_date),
-        })
-        .eq("id", item.id)
-        .eq("person_id", personId);
-
-      if (updateError)
-        throw new Error(`Error al actualizar: ${updateError.message}`);
+        },
+      });
     }
 
     revalidatePersonEcosystem(); // 🔥
@@ -458,14 +409,9 @@ export async function updatePersonBackgrounds(
 }
 
 export async function deletePersonBackground(backgroundId: string) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const { error } = await supabase
-      .from("background")
-      .delete()
-      .eq("id", backgroundId);
-
-    if (error) throw error;
+    await prisma.background.delete({ where: { id: backgroundId } });
 
     revalidatePersonEcosystem(); // 🔥
     return { success: true };
@@ -484,12 +430,9 @@ export async function fetchCandidateFromJNE(
   dni: string,
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { user } = await serverGetUser();
 
-    if (!session) {
+    if (!user) {
       return new Response(
         JSON.stringify({ detail: "No autorizado - Debes iniciar sesión" }),
         {
@@ -498,7 +441,7 @@ export async function fetchCandidateFromJNE(
         },
       );
     }
-    const accessToken = session.access_token;
+    const accessToken = process.env.API_SECRET_KEY; // Mandamos la clave secreta compartida
 
     if (!party_number_rop || !dni) {
       return { success: false, error: "Faltan parámetros" };
@@ -542,12 +485,9 @@ export async function fetchAntecedentesFromJNE(
   dni: string,
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { user } = await serverGetUser();
 
-    if (!session) {
+    if (!user) {
       return { success: false, error: "No autorizado - Debes iniciar sesión" };
     }
 
@@ -561,7 +501,7 @@ export async function fetchAntecedentesFromJNE(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${process.env.API_SECRET_KEY}`,
         },
         body: JSON.stringify({ jne_mode, party_number_rop, dni }),
         cache: "no-store",

@@ -1,0 +1,295 @@
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model alliancecomposition {
+  id               String            @id(map: "alliance_composition_pkey") @db.VarChar
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  parent_org_id    String?           @db.VarChar
+  child_org_id     String?           @db.VarChar
+  process_id       String?           @db.VarChar
+  parentParty      politicalparty?   @relation("AllianceParent", fields: [parent_org_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "alliance_composition_parent_org_id_fkey")
+  childParty       politicalparty?   @relation("AllianceChild", fields: [child_org_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "alliance_composition_child_org_id_fkey")
+  electoralprocess electoralprocess? @relation(fields: [process_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "alliance_composition_process_id_fkey")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model candidate {
+  id                    String            @id @db.VarChar
+  person_id             String            @db.VarChar
+  electoral_process_id  String            @db.VarChar
+  type                  candidacytype
+  political_party_id    String            @db.VarChar
+  electoral_district_id String
+  status                candidacystatus
+  created_at            DateTime          @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  list_number           Int?
+  updated_at            DateTime          @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  active                Boolean
+  electoraldistrict     electoraldistrict @relation(fields: [electoral_district_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  electoralprocess      electoralprocess  @relation(fields: [electoral_process_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  person                person            @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  politicalparty        politicalparty    @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  candidatemetrics      candidatemetrics?
+
+  @@index([electoral_district_id], map: "idx_candidate_district")
+  @@index([political_party_id], map: "idx_candidate_party")
+  @@index([electoral_process_id, type, active], map: "idx_candidate_process_type_active")
+  @@index([electoral_process_id], map: "ix_candidate_electoral_process_id")
+  @@index([person_id], map: "ix_candidate_person_id")
+  @@index([political_party_id], map: "ix_candidate_political_party_id")
+  @@index([type], map: "ix_candidate_type")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model candidatemetrics {
+  candidate_id               String    @id @db.VarChar
+  total_previous_candidacies Int
+  times_elected              Int
+  political_experience_years Int
+  total_parties_belonged     Int
+  years_in_current_party     Float
+  max_academic_level_score   Int
+  has_postgraduate           Boolean
+  declared_income_annual     Float
+  declared_assets_value      Float
+  total_legal_records        Int
+  has_penal_sentences        Boolean
+  has_alimentary_debts       Boolean
+  last_updated               DateTime  @db.Timestamp(6)
+  candidate                  candidate @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model financingreports {
+  id             String           @id @db.VarChar
+  party_id       String           @db.VarChar
+  report_name    String           @db.VarChar
+  filing_status  financingstatus
+  source_name    String           @db.VarChar
+  source_url     String?          @db.VarChar
+  report_date    DateTime         @db.Date
+  period_start   DateTime         @db.Date
+  period_end     DateTime         @db.Date
+  created_at     DateTime         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updated_at     DateTime         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  politicalparty politicalparty   @relation(fields: [party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  partyfinancing partyfinancing[]
+
+  @@unique([party_id, report_name])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model legislator {
+  id                      String                    @id @db.VarChar
+  person_id               String                    @db.VarChar
+  electoral_district_id   String                    @db.VarChar
+  chamber                 chambertype
+  start_date              DateTime                  @db.Timestamptz(6)
+  end_date                DateTime?                 @db.Timestamptz(6)
+  active                  Boolean
+  institutional_email     String?                   @db.VarChar(255)
+  created_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  condition               legislatorcondition       @default(EN_EJERCICIO)
+  updated_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  elected_by_party_id     String                    @db.VarChar
+  attendance              attendance[]
+  bill                    bill[]
+  politicalparty          politicalparty            @relation(fields: [elected_by_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  electoraldistrict       electoraldistrict         @relation(fields: [electoral_district_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  person                  person                    @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  legislatormetrics       legislatormetrics?
+  parliamentarymembership parliamentarymembership[]
+  seatparliamentary       seatparliamentary[]
+
+  @@index([electoral_district_id], map: "ix_legislator_electoral_district_id")
+  @@index([person_id], map: "ix_legislator_person_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model legislatormetrics {
+  legislator_id            String     @id @db.VarChar
+  total_bills              Int
+  bills_presentado         Int
+  bills_en_comision        Int
+  bills_aprobado           Int
+  bills_rechazado          Int
+  bills_retirado_por_autor Int
+  approval_rate            Float?
+  total_sessions           Int
+  sessions_present         Int
+  sessions_absent          Int
+  sessions_justified       Int
+  sessions_license         Int
+  attendance_rate          Float?
+  total_party_changes      Int
+  days_in_current_group    Int?
+  is_defector              Boolean
+  total_legal_records      Int
+  penal_records            Int
+  ethical_records          Int
+  civil_records            Int
+  administrative_records   Int
+  last_updated             DateTime   @db.Timestamptz(6)
+  bills_en_proceso         Int
+  legislator               legislator @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model parliamentarygroup {
+  id                      String                    @id @db.VarChar
+  name                    String                    @unique(map: "ix_parliamentarygroup_name") @db.VarChar(200)
+  acronym                 String?                   @db.VarChar(20)
+  color_hex               String?                   @db.VarChar(7)
+  logo_url                String?                   @db.VarChar
+  description             String?                   @db.VarChar(1000)
+  formation_date          DateTime?                 @db.Timestamptz(6)
+  dissolution_date        DateTime?                 @db.Timestamptz(6)
+  active                  Boolean
+  created_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  rules_url               String?                   @db.VarChar
+  bill                    bill[]
+  parliamentarymembership parliamentarymembership[]
+
+  @@index([acronym], map: "ix_parliamentarygroup_acronym")
+  @@index([active], map: "ix_parliamentarygroup_active")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model parliamentarymembership {
+  id                     String             @id @db.VarChar
+  legislator_id          String             @db.VarChar
+  parliamentary_group_id String             @db.VarChar
+  start_date             DateTime           @db.Timestamptz(6)
+  end_date               DateTime?          @db.Timestamptz(6)
+  change_reason          groupchangereason
+  notes                  String?            @db.VarChar(1000)
+  created_at             DateTime           @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  source_url             String?            @db.VarChar(1000)
+  legislator             legislator         @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parliamentarygroup     parliamentarygroup @relation(fields: [parliamentary_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([change_reason], map: "ix_parliamentarymembership_change_reason")
+  @@index([legislator_id], map: "ix_parliamentarymembership_legislator_id")
+  @@index([parliamentary_group_id], map: "ix_parliamentarymembership_parliamentary_group_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model partyfinancing {
+  id                  String            @id @db.VarChar
+  financing_report_id String            @db.VarChar
+  category            financingcategory @default(INGRESO)
+  flow_type           flowtype          @default(I_FPD)
+  amount              Decimal           @db.Decimal
+  currency            String            @default("PEN") @db.VarChar
+  notes               String?
+  created_at          DateTime          @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updated_at          DateTime          @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  financingreports    financingreports  @relation(fields: [financing_report_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model politicalparty {
+  id                      String                @id @db.VarChar
+  name                    String                @unique(map: "ix_politicalparty_name") @db.VarChar(200)
+  acronym                 String?               @db.VarChar(20)
+  logo_url                String?               @db.VarChar
+  color_hex               String?               @db.VarChar(7)
+  active                  Boolean
+  founder                 String?               @db.VarChar(200)
+  foundation_date         DateTime?             @db.Date
+  ideology                String?               @db.VarChar(200)
+  main_office             String?               @db.VarChar(300)
+  phone                   String?               @db.VarChar(50)
+  email                   String?               @db.VarChar(100)
+  website                 String?               @db.VarChar(200)
+  party_timeline          Json?                 @db.Json
+  facebook_url            String?               @db.VarChar
+  twitter_url             String?               @db.VarChar
+  youtube_url             String?               @db.VarChar
+  tiktok_url              String?               @db.VarChar
+  total_afiliates         Int?
+  created_at              DateTime              @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  updated_at              DateTime              @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  party_president         String?               @db.VarChar(200)
+  purpose                 String?               @db.VarChar
+  core_values             String?               @db.VarChar
+  slogan                  String?               @db.VarChar(200)
+  legal_cases             Json?                 @db.Json
+  government_plan_url     String?
+  government_plan_summary Json?                 @db.Json
+  government_audio_url    String?
+  type                    organizationtype?
+  rop                     String?
+  parentAlliances         alliancecomposition[] @relation("AllianceParent")
+  childAlliances          alliancecomposition[] @relation("AllianceChild")
+  candidate               candidate[]
+  financingreports        financingreports[]
+  legislator              legislator[]
+  triviagame              triviagame[]
+
+  @@index([acronym], map: "ix_politicalparty_acronym")
+}
+
+enum candidacystatus {
+  SOLICITUD_INSCRIPCION
+  INSCRITO
+  TACHADO
+  EXCLUIDO
+  IMPROCEDENTE
+  RENUNCIA
+  APELACION
+}
+
+enum candidacytype {
+  PRESIDENTE
+  VICEPRESIDENTE_1
+  SENADOR
+  DIPUTADO
+  VICEPRESIDENTE_2
+  PARLAMENTO_ANDINO
+}
+
+enum financingcategory {
+  INGRESO
+  GASTO
+  DEUDA
+}
+
+enum financingstatus {
+  DENTRO_DEL_PLAZO
+  FUERA_DEL_PLAZO
+  NO_PRESENTARON
+}
+
+enum flowtype {
+  I_FPD
+  I_F_PRIVADO
+  I_OPERACIONALES
+  G_FONDO_FPD
+  G_FONDO_F_PRIVADO
+  G_OPERACIONALES
+  D_TOTAL
+}
+
+enum groupchangereason {
+  INICIAL
+  CAMBIO_VOLUNTARIO
+  EXPULSION
+  RENUNCIA
+  DISOLUCION_BANCADA
+  CAMBIO_ESTRATEGICO
+  SANCION_DISCIPLINARIA
+  OTRO
+}
+
+enum legislatorcondition {
+  EN_EJERCICIO
+  FALLECIDO
+  SUSPENDIDO
+  LICENCIA
+  DESTITUIDO
+}
+
+enum organizationtype {
+  PARTIDO
+  ALIANZA
+}

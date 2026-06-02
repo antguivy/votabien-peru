@@ -165,6 +165,7 @@ export function CalendarDatePicker({
   };
 
   const handleMonthChange = React.useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (newMonthIndex: number, part: string) => {
       setSelectedRange(null);
       if (part === "from") {
@@ -218,6 +219,7 @@ export function CalendarDatePicker({
       yearTo,
       yearsRange,
       numberOfMonths,
+      // eslint-disable-next-line react-hooks/preserve-manual-memoization
       timeZone,
       onDateSelect,
       setMonthFrom,
@@ -241,6 +243,7 @@ export function CalendarDatePicker({
       );
 
   const handleYearChange = React.useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (newYear: number, part: string) => {
       setSelectedRange(null);
       if (part === "from") {
@@ -296,6 +299,7 @@ export function CalendarDatePicker({
       monthFrom,
       monthTo,
       numberOfMonths,
+      // eslint-disable-next-line react-hooks/preserve-manual-memoization
       timeZone,
       onDateSelect,
       setMonthFrom,

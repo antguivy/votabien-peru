@@ -1,28 +1,29 @@
 "use server";
 
 import { TriviaBasic } from "@/interfaces/trivia";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
 
 export async function getTrivias(): Promise<TriviaBasic[]> {
   noStore();
-  const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("triviagame")
-    .select(
-      `
-      *,
-      person:person_id(id, fullname),
-      political_party:political_party_id(id, name)
-    `,
-    )
-    .order("global_index", { ascending: false });
+  try {
+    const data = await prisma.triviagame.findMany({
+      orderBy: { global_index: "desc" },
+      include: {
+        person: { select: { id: true, fullname: true } },
+        politicalparty: { select: { id: true, name: true } },
+      },
+    });
 
-  if (error) {
+    const mappedData = data.map((item) => ({
+      ...item,
+      political_party: item.politicalparty,
+    }));
+
+    return mappedData as unknown as TriviaBasic[];
+  } catch (error) {
     console.error(error);
     return [];
   }
-
-  return data as unknown as TriviaBasic[];
 }

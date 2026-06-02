@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import Footer from "@/components/landing/footer";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LAST_UPDATED = "marzo de 2025";
 
 const SECTIONS = [

@@ -15,7 +15,9 @@ interface Props {
 // El HTML de la página ya llegó al cliente antes de que esto resuelva
 export async function CandidatosStream({
   candidaturasPromise,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   distritos,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   parties,
   procesoId,
   currentFilters,

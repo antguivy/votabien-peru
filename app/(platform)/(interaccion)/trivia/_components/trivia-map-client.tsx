@@ -156,6 +156,7 @@ export default function TriviaMapClient({
       scrollRef.current?.scrollTo({ top: scrollTarget, behavior: "smooth" });
     }, 400);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levels.length, highestUnlockedLevel]);
 
   // Bug fix: NO cerrar el juego aquí — solo trackear readiness.
@@ -183,6 +184,7 @@ export default function TriviaMapClient({
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const backgroundAsset = REGION_ASSETS[currentTheme.id]?.background;
   const avatarAsset = REGION_ASSETS[currentTheme.id]?.avatar;
 

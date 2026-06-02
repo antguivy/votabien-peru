@@ -1,40 +1,38 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { triviaSchema, type TriviaFormValues } from "./validation";
-import { TablesInsert, TablesUpdate } from "@/interfaces/supabase";
 import { extractErrorMessage } from "@/lib/error-handler";
+import { serverRequireEditor } from "@/lib/auth-actions";
+
+import { Prisma } from "@/prisma/generated/client";
 
 export async function createTrivia(data: TriviaFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
   }
 
   try {
-    const payload: TablesInsert<"triviagame"> = {
+    const payload = {
       quote: data.quote,
       category: data.category,
       difficulty: data.difficulty,
 
-      // Nuevos campos
       global_index: data.global_index,
       explanation: data.explanation || null,
       source_url: data.source_url || null,
 
-      options: data.options,
+      options: data.options as Prisma.InputJsonValue,
 
       person_id: data.target_type === "PERSON" ? data.correct_answer_id : null,
       political_party_id:
         data.target_type === "PARTY" ? data.correct_answer_id : null,
     };
 
-    const { error } = await supabase.from("triviagame").insert(payload);
-
-    if (error) throw error;
+    await prisma.triviagame.create({ data: payload });
 
     revalidatePath("/admin/trivia");
     return { success: true, message: "Trivia creada correctamente" };
@@ -44,37 +42,30 @@ export async function createTrivia(data: TriviaFormValues) {
 }
 
 export async function updateTrivia(id: number, data: TriviaFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
   }
 
   try {
-    const payload: TablesUpdate<"triviagame"> = {
+    const payload = {
       quote: data.quote,
       category: data.category,
       difficulty: data.difficulty,
 
-      // Nuevos campos
       global_index: data.global_index,
       explanation: data.explanation || null,
       source_url: data.source_url || null,
 
-      options: data.options,
+      options: data.options as Prisma.InputJsonValue,
 
       person_id: data.target_type === "PERSON" ? data.correct_answer_id : null,
       political_party_id:
         data.target_type === "PARTY" ? data.correct_answer_id : null,
     };
 
-    const { error } = await supabase
-      .from("triviagame")
-      .update(payload)
-      .eq("id", id);
-
-    if (error) throw error;
+    await prisma.triviagame.update({ where: { id: id }, data: payload });
 
     revalidatePath("/admin/trivia");
     return { success: true, message: "Trivia actualizada correctamente" };
@@ -84,10 +75,9 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
 }
 
 export async function deleteTrivia(id: number) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const { error } = await supabase.from("triviagame").delete().eq("id", id);
-    if (error) throw error;
+    await prisma.triviagame.delete({ where: { id: id } });
     revalidatePath("/admin/trivia");
     return { success: true };
   } catch (error) {

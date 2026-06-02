@@ -1,7 +1,6 @@
 "use server";
 import { unstable_noStore as noStore } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { type Tables } from "@/interfaces/supabase";
+import { prisma } from "@/lib/prisma";
 import { CandidateFormValues, GetCandidateSchema } from "./validation";
 import {
   PaginatedCandidatesResponse,
@@ -16,106 +15,121 @@ import {
 } from "@/interfaces/candidate";
 import { PersonBasicInfo } from "@/interfaces/person";
 
-type PersonRow = Tables<"person">;
-type PartyRow = Tables<"politicalparty">;
-type DistrictRow = Tables<"electoraldistrict">;
-type ProcessRow = Tables<"electoralprocess">;
-
-interface CandidateQueryResult extends Tables<"candidate"> {
-  person: PersonRow | null;
-  political_party: PartyRow | null;
-  electoral_district: DistrictRow | null;
-  electoral_process: ProcessRow | null;
-}
-
-function mapCandidateToResponse(row: CandidateQueryResult): AdminCandidate {
-  const personName = row.person?.fullname || "Sin nombre";
-
-  return {
-    id: row.id,
-    person_id: row.person_id,
-    fullname: personName,
-    political_party_id: row.political_party_id,
-    electoral_district_id: row.electoral_district_id,
-    type: row.type as CandidacyType,
-    status: row.status as CandidacyStatus,
-    electoral_process_id: row.electoral_process_id,
-    list_number: row.list_number,
-    active: row.active,
-    created_at: row.created_at,
-
-    person: row.person,
-    electoral_process: row.electoral_process,
-    political_party: row.political_party,
-    electoral_district: row.electoral_district,
-  };
-}
-
 export async function getCandidates(
   input: GetCandidateSchema,
 ): Promise<PaginatedCandidatesResponse> {
-  noStore(); // <-- CORRECTO: Datos frescos para la tabla
-  const supabase = await createClient();
+  noStore();
 
   try {
-    let query = supabase.from("candidate").select(
-      `
-        id,
-        person_id,
-        political_party_id,
-        electoral_district_id,
-        electoral_process_id,
-        type,
-        list_number,
-        status,
-        active,
-        created_at,
-        person:person_id!inner(id, fullname),
-        political_party:political_party_id!inner(id, name, color_hex),
-        electoral_district:electoral_district_id!inner(id, name),
-        electoral_process:electoral_process_id!inner(*)
-      `,
-      { count: "exact" },
-    );
+    const page = input.page || 1;
+    const pageSize = input.perPage || 10;
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
-    if (input.fullname)
-      query = query.ilike("person.fullname", `%${input.fullname}%`);
-    if (input.type && input.type.length > 0)
-      query = query.in("type", input.type);
-    if (input.status && input.status.length > 0)
-      query = query.in("status", input.status);
-    if (input.parties && input.parties.length > 0)
-      query = query.in("political_party.name", input.parties);
+    const where: Record<string, unknown> = {};
 
+    if (input.fullname) {
+      where.person = {
+        fullname: { contains: input.fullname, mode: "insensitive" },
+      };
+    }
+    if (input.type && input.type.length > 0) {
+      where.type = { in: input.type };
+    }
+    if (input.status && input.status.length > 0) {
+      where.status = { in: input.status };
+    }
+    if (input.parties && input.parties.length > 0) {
+      where.politicalparty = {
+        name: { in: input.parties },
+      };
+    }
+
+    const orderBy: Record<string, unknown> = {};
     if (input.sort && input.sort.length > 0) {
       const sortItem = input.sort[0];
       if (sortItem.id === "fullname") {
-        query = query.order("candidate_fullname", {
-          ascending: !sortItem.desc,
-        });
+        // Prisma cannot sort by nested relation in a generic way easily like this without defining exactly
+        orderBy.person = { fullname: sortItem.desc ? "desc" : "asc" };
       } else {
-        query = query.order(sortItem.id, { ascending: !sortItem.desc });
+        orderBy[sortItem.id] = sortItem.desc ? "desc" : "asc";
       }
     } else {
-      query = query.order("start_date", { ascending: false });
+      orderBy.created_at = "desc";
     }
 
-    const page = input.page || 1;
-    const pageSize = input.perPage || 10;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const [data, count] = await Promise.all([
+      prisma.candidate.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        include: {
+          person: {
+            select: {
+              id: true,
+              fullname: true,
+              image_url: true,
+              image_candidate_url: true,
+              profession: true,
+              dni: true,
+            },
+          },
+          politicalparty: {
+            select: {
+              id: true,
+              name: true,
+              color_hex: true,
+              acronym: true,
+              logo_url: true,
+              active: true,
+              foundation_date: true,
+            },
+          },
+          electoraldistrict: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              is_national: true,
+              active: true,
+            },
+          },
+          electoralprocess: true,
+        },
+      }),
+      prisma.candidate.count({ where }),
+    ]);
 
-    query = query.range(from, to);
+    // Map Prisma result to match the expected interface mapping
 
-    const { data, error, count } = await query;
+    const mappedData = data.map((row) => ({
+      id: row.id,
+      person_id: row.person_id,
+      fullname: row.person?.fullname || "Sin nombre",
+      political_party_id: row.political_party_id,
+      electoral_district_id: row.electoral_district_id,
+      type: row.type as CandidacyType,
+      status: row.status as CandidacyStatus,
+      electoral_process_id: row.electoral_process_id,
+      list_number: row.list_number,
+      active: row.active,
+      created_at: row.created_at.toISOString(),
 
-    if (error) throw error;
-
-    const typedData = (data || []) as unknown as CandidateQueryResult[];
+      person: row.person,
+      electoral_process: row.electoralprocess
+        ? {
+            ...row.electoralprocess,
+            election_date: row.electoralprocess.election_date.toISOString(),
+          }
+        : null,
+      political_party: row.politicalparty, // Map prisma's lowercase relation name
+      electoral_district: row.electoraldistrict, // Map prisma's lowercase relation name
+    }));
 
     return {
-      data: typedData.map(mapCandidateToResponse),
-      total: count || 0,
+      data: mappedData as AdminCandidate[],
+      total: count,
       page: page,
       page_size: pageSize,
     };
@@ -125,22 +139,17 @@ export async function getCandidates(
   }
 }
 
-async function fetchAllForCounting<K extends keyof Tables<"candidate">>(
-  column: K,
-) {
-  noStore(); // <-- AGREGADO
-  const supabase = await createClient();
-  const { data } = await supabase.from("candidate").select(column);
-  return (data || []) as unknown as Pick<Tables<"candidate">, K>[];
-}
-
 export async function getCandidacyTypeCounts(): Promise<TypeCounts> {
-  noStore(); // <-- AGREGADO
+  noStore();
   try {
-    const data = await fetchAllForCounting("type");
+    const data = await prisma.candidate.groupBy({
+      by: ["type"],
+      _count: { type: true },
+    });
+
     return data.reduce<TypeCounts>((acc, curr) => {
       const key = curr.type;
-      if (key) acc[key] = (acc[key] || 0) + 1;
+      if (key) acc[key] = curr._count.type;
       return acc;
     }, {});
   } catch (error) {
@@ -150,12 +159,16 @@ export async function getCandidacyTypeCounts(): Promise<TypeCounts> {
 }
 
 export async function getCandidacyStatusCounts(): Promise<StatusCounts> {
-  noStore(); // <-- AGREGADO
+  noStore();
   try {
-    const data = await fetchAllForCounting("status");
+    const data = await prisma.candidate.groupBy({
+      by: ["status"],
+      _count: { status: true },
+    });
+
     return data.reduce<StatusCounts>((acc, curr) => {
       const key = curr.status;
-      if (key) acc[key] = (acc[key] || 0) + 1;
+      if (key) acc[key] = curr._count.status;
       return acc;
     }, {});
   } catch (error) {
@@ -165,23 +178,21 @@ export async function getCandidacyStatusCounts(): Promise<StatusCounts> {
 }
 
 export async function getPartiesCounts(): Promise<PartyCounts> {
-  noStore(); // <-- CORRECTO
-  const supabase = await createClient();
+  noStore();
 
   try {
-    const { data: activeProcess } = await supabase
-      .from("electoralprocess")
-      .select("id")
-      .eq("active", true)
-      .single();
+    const activeProcess = await prisma.electoralprocess.findFirst({
+      where: { active: true },
+      select: { id: true },
+    });
 
     let hiddenPartyIds: string[] = [];
 
     if (activeProcess) {
-      const { data: allianceMembers } = await supabase
-        .from("alliancecomposition")
-        .select("child_org_id")
-        .eq("process_id", activeProcess.id);
+      const allianceMembers = await prisma.alliancecomposition.findMany({
+        where: { process_id: activeProcess.id },
+        select: { child_org_id: true },
+      });
 
       if (allianceMembers && allianceMembers.length > 0) {
         hiddenPartyIds = allianceMembers
@@ -190,35 +201,29 @@ export async function getPartiesCounts(): Promise<PartyCounts> {
       }
     }
 
-    let query = supabase
-      .from("politicalparty")
-      .select(
-        `
-        id,
-        name,
-        active,
-        candidates:candidate(count)
-      `,
-      )
-      .order("name", { ascending: true })
-      .eq("active", true);
-
-    if (hiddenPartyIds.length > 0) {
-      const idsString = `("${hiddenPartyIds.join('","')}")`;
-      query = query.filter("id", "not.in", idsString);
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    if (!data) return {};
+    const parties = await prisma.politicalparty.findMany({
+      where: {
+        active: true,
+        ...(hiddenPartyIds.length > 0 && {
+          id: { notIn: hiddenPartyIds },
+        }),
+      },
+      select: {
+        id: true,
+        name: true,
+        active: true,
+        _count: {
+          select: { candidate: true },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
 
     const counts: PartyCounts = {};
-    data.forEach((party) => {
+    parties.forEach((party) => {
       counts[party.id] = {
         name: party.name,
-        count:
-          (party.candidates as unknown as { count: number }[])[0]?.count ?? 0,
+        count: party._count.candidate,
       };
     });
 
@@ -237,26 +242,29 @@ export async function getCandidateForEdit(
   id: string,
 ): Promise<CandidateForEdit | null> {
   noStore();
-  const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("candidate")
-    .select(
-      `
-      id,
-      person_id,
-      political_party_id,
-      electoral_district_id,
-      electoral_process_id,
-      type,
-      list_number,
-      status,
-      active,
-      person:person_id(id, fullname, image_candidate_url, profession)
-    `,
-    )
-    .eq("id", id)
-    .single();
+  const data = await prisma.candidate.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      person_id: true,
+      political_party_id: true,
+      electoral_district_id: true,
+      electoral_process_id: true,
+      type: true,
+      list_number: true,
+      status: true,
+      active: true,
+      person: {
+        select: {
+          id: true,
+          fullname: true,
+          image_candidate_url: true,
+          profession: true,
+        },
+      },
+    },
+  });
 
   if (!data) return null;
 

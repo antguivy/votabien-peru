@@ -135,6 +135,7 @@ function OptionCard({
         className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 transition-all ${photoRing}`}
       >
         {option.image_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={option.image_url}
             alt={option.name}
@@ -188,10 +189,10 @@ function Explanation({ text }: { text: string }) {
 
 // ── Results screen ────────────────────────────────────────────────────────
 function ResultsScreen({
-  correctCount,
-  total,
+  correctCount: _correctCount,
+  total: _total,
   stars,
-  xpGained,
+  xpGained: _xpGained,
   score,
   levelId,
   questions,
@@ -409,6 +410,19 @@ export function TriviaGameView({
       timerRef.current = null;
     }
   };
+  // ── Reveal ───────────────────────────────────────────────────────────────
+  const doReveal = (chosenId: string | null) => {
+    stopTimer();
+    const isCorrect =
+      chosenId !== null && chosenId === question?.correct_answer_id;
+    const gained = scoreForAnswer(timeLeftRef.current, isCorrect);
+    setSelectedId(chosenId);
+    setRevealed(true);
+    setScore((s) => s + gained);
+    setStreak((str) => (isCorrect ? str + 1 : 0));
+    setAnswers((a) => [...a, isCorrect]);
+  };
+
   const startTimer = () => {
     stopTimer();
     revealedRef.current = false;
@@ -428,23 +442,11 @@ export function TriviaGameView({
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (phase === "question") startTimer();
     return stopTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx, phase]);
-
-  // ── Reveal ───────────────────────────────────────────────────────────────
-  const doReveal = (chosenId: string | null) => {
-    stopTimer();
-    const isCorrect =
-      chosenId !== null && chosenId === question?.correct_answer_id;
-    const gained = scoreForAnswer(timeLeftRef.current, isCorrect);
-    setSelectedId(chosenId);
-    setRevealed(true);
-    setScore((s) => s + gained);
-    setStreak((str) => (isCorrect ? str + 1 : 0));
-    setAnswers((a) => [...a, isCorrect]);
-  };
 
   const handleSelect = (id: string) => {
     if (revealed || revealedRef.current) return;

@@ -14,8 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABELS } from "@/interfaces/navbar";
-import { User } from "@supabase/supabase-js";
-import { UserProfile } from "@/lib/auth-actions"; // Asegúrate de importar esto
+import { UserProfile as User } from "@/interfaces/user";
 import { LogoutButton } from "@/components/auth/logout-button";
 import {
   Tooltip,
@@ -26,15 +25,13 @@ import {
 
 interface NavbarUserMenuProps {
   user: User;
-  profile: UserProfile | null;
 }
 
-export const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
-  // LÓGICA DE DATOS: Prioridad al perfil de base de datos
-  const name = profile?.full_name || user.email?.split("@")[0] || "Usuario";
+export const NavbarUserMenu = ({ user }: NavbarUserMenuProps) => {
+  const name = user.name || user.email?.split("@")[0] || "Usuario";
   const email = user.email || "";
-  const role = profile?.role || "user";
-  const image = profile?.avatar_url || "";
+  const role = user.role || "user";
+  const image = user.image || "";
 
   const getInitials = (nameStr: string) => {
     if (!nameStr) return "U";
@@ -73,7 +70,7 @@ export const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={image} // Ya no ponemos fallback de imagen rota, dejamos que AvatarFallback actúe
+                    src={image}
                     alt={name}
                     className="object-cover"
                   />
@@ -111,7 +108,6 @@ export const NavbarUserMenu = ({ user, profile }: NavbarUserMenuProps) => {
           </div>
         </DropdownMenuLabel>
 
-        {/* Solo mostramos config si es super_admin (o admin, según prefieras) */}
         {role !== "user" && (
           <>
             <DropdownMenuSeparator />

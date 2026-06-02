@@ -162,11 +162,11 @@ export const useMatchmaking = () => {
     setError(null);
 
     try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
       const cleanedParams = cleanParams(formData);
 
       const queryParams = new URLSearchParams();
+
+      // Mapear campos que son arreglos (por ahora solo excluded_party_ids)
       Object.entries(cleanedParams).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           value.forEach((val) => queryParams.append(key, String(val)));
@@ -178,10 +178,12 @@ export const useMatchmaking = () => {
       queryParams.append("user_interests", interests.join(", "));
 
       const response = await fetch(
-        `${baseUrl}/api/v1/candidates/stream?${queryParams.toString()}`,
+        `/api/candidates/stream?${queryParams.toString()}`,
         {
           method: "GET",
-          headers: { Accept: "text/event-stream" },
+          headers: {
+            Accept: "text/event-stream",
+          },
         },
       );
 

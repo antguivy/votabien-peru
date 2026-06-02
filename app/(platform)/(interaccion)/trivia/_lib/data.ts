@@ -1,13 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
 export interface TriviaQuestion {
   id: number;
   quote: string | null;
-  category: string | null; //"POLEMICO" | "HISTORIA" | "PROPUESTA" | "CORRUPCION" |
-  difficulty: string | null; // "FACIL" | "MEDIO" | "DIFICIL";
-  correct_answer_id: string | null; // person_id o political_party_id
+  category: string | null;
+  difficulty: string | null;
+  correct_answer_id: string | null;
   options: {
     option_id: string;
     name: string;
@@ -16,45 +16,39 @@ export interface TriviaQuestion {
 }
 
 export async function getPlayableTrivias(): Promise<TriviaQuestion[]> {
-  const supabase = await createClient();
+  try {
+    const data = await prisma.triviagame.findMany({
+      take: 20,
+    });
 
-  // Obtenemos preguntas aleatorias
-  const { data, error } = await supabase
-    .from("triviagame")
-    .select("*")
-    .limit(20);
+    const questions: TriviaQuestion[] = data.map((item) => {
+      const correctId = item.person_id || item.political_party_id;
 
-  if (error || !data) {
+      let parsedOptions: TriviaQuestion["options"] = [];
+      try {
+        parsedOptions =
+          typeof item.options === "string"
+            ? JSON.parse(item.options)
+            : Array.isArray(item.options)
+              ? item.options
+              : [];
+      } catch (_e) {
+        console.error("Error parsing options for trivia", item.id);
+      }
+
+      return {
+        id: Number(item.id),
+        quote: item.quote,
+        category: item.category,
+        difficulty: item.difficulty,
+        correct_answer_id: correctId,
+        options: parsedOptions,
+      };
+    });
+
+    return questions.sort(() => Math.random() - 0.5);
+  } catch (error) {
     console.error("Error fetching trivia:", error);
     return [];
   }
-
-  // Mapeamos y limpiamos los datos
-  const questions: TriviaQuestion[] = data.map((item) => {
-    // 1. Determinar el ID correcto
-    const correctId = item.person_id || item.political_party_id;
-
-    // 2. Parsear las opciones que vienen como string JSON
-    let parsedOptions = [];
-    try {
-      parsedOptions =
-        typeof item.options === "string"
-          ? JSON.parse(item.options)
-          : item.options;
-    } catch (e) {
-      console.error("Error parsing options for trivia", item.id);
-    }
-
-    return {
-      id: item.id,
-      quote: item.quote,
-      category: item.category,
-      difficulty: item.difficulty,
-      correct_answer_id: correctId,
-      options: parsedOptions,
-    };
-  });
-
-  // Barajar el array de preguntas (Fisher-Yates simple)
-  return questions.sort(() => Math.random() - 0.5);
 }

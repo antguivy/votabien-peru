@@ -46,6 +46,7 @@ function buildEmbedUrl(url: string, platform: Platform): string | null {
       const urlObj = new URL(url);
       const t = urlObj.searchParams.get("t");
       startParam = parseYouTubeTime(t);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // Fallback por si la URL falla al parsearse
       const tMatch = url.match(/[?&]t=([^&]+)/);

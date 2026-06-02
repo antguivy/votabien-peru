@@ -270,6 +270,7 @@ export default function PeruReadinessSection() {
   const { raw, progress, isReady, completedCount, isFullyReady } =
     useReadiness();
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   const safe = mounted ? completedCount : 0;

@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
 
 import { ChamberType, SeatParliamentary } from "@/interfaces/politics";
-import { createPublicClient } from "@/lib/supabase/public";
+import prisma from "@/lib/prisma";
 
 export const getSeatParliamentary = cache(
   unstable_cache(
@@ -12,49 +12,82 @@ export const getSeatParliamentary = cache(
         throw new Error("Solo se permite consultar escaños del congreso");
       }
 
-      const supabase = createPublicClient();
+      try {
+        const data = await prisma.seatparliamentary.findMany({
+          where: {
+            chamber: chamber,
+          },
+          include: {
+            legislator: {
+              include: {
+                politicalparty: {
+                  select: {
+                    id: true,
+                    name: true,
+                    acronym: true,
+                  },
+                },
+                parliamentarymembership: {
+                  where: {
+                    end_date: null,
+                  },
+                  include: {
+                    parliamentarygroup: true,
+                  },
+                  take: 1,
+                },
+              },
+            },
+          },
+          orderBy: [{ row: "asc" }, { number_seat: "asc" }],
+        });
 
-      const TABLE_NAME = "seatparliamentary";
+        // Map Prisma payload to match SeatParliamentary interface (especially the computed column)
+        const mappedData = data.map((seat) => {
+          let current_parliamentary_group = null;
+          if (
+            seat.legislator &&
+            seat.legislator.parliamentarymembership &&
+            seat.legislator.parliamentarymembership.length > 0
+          ) {
+            const group =
+              seat.legislator.parliamentarymembership[0].parliamentarygroup;
+            current_parliamentary_group = {
+              id: group.id,
+              name: group.name,
+              acronym: group.acronym,
+              logo_url: group.logo_url,
+              color_hex: group.color_hex,
+            };
+          }
 
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .select(
-          `
-          id,
-          chamber,
-          number_seat,
-          row,
-          
-          legislator:legislator (
-            id,
-            person_id,
-            chamber,
-            condition,
-            active,
-            
-            elected_by_party:politicalparty (
-              id, name, acronym
-            ),
-            
-            current_parliamentary_group
-          )
-        `,
-        )
-        .eq("chamber", chamber)
-        .order("row", { ascending: true })
-        .order("number_seat", { ascending: true });
+          return {
+            id: seat.id,
+            chamber: seat.chamber,
+            number_seat: seat.number_seat,
+            row: seat.row,
+            legislator: seat.legislator
+              ? {
+                  id: seat.legislator.id,
+                  person_id: seat.legislator.person_id,
+                  chamber: seat.legislator.chamber,
+                  condition: seat.legislator.condition,
+                  active: seat.legislator.active,
+                  elected_by_party: seat.legislator.politicalparty,
+                  current_parliamentary_group,
+                }
+              : null,
+          };
+        });
 
-      if (error) {
+        return mappedData as unknown as SeatParliamentary[];
+      } catch (error) {
         console.error("Error al obtener escaños:", error);
         return [];
       }
-
-      return data as unknown as SeatParliamentary[];
     },
-    ["seat-parliamentary-list"], // Next.js agregará el argumento 'chamber' automáticamente a la key
+    ["seat-parliamentary-list"],
     {
-      // Usamos ambos tags para mantener el mapa de escaños sincronizado
-      // con cualquier cambio en la tabla de legisladores
       tags: [TAGS.seats, TAGS.legislators],
       revalidate: TTL.static,
     },

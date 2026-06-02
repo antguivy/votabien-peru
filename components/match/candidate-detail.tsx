@@ -26,6 +26,7 @@ import {
   Info,
   MapPin,
   Shield,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Sparkles,
   TrendingUp,
   User,
@@ -71,7 +72,10 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
   useEffect(() => {
     if (!candidate) return;
     const shouldShowIA = candidate.ai_score !== undefined;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveTab(shouldShowIA ? "ia" : "perfil");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [candidate?.id]);
 
   if (!candidate) return null;

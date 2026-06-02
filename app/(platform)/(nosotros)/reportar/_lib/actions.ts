@@ -1,12 +1,10 @@
-// app/reportar/_lib/actions.ts
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import fs from "fs/promises";
+import path from "path";
 
 export async function submitReportAction(formData: FormData) {
-  // Usamos el cliente de servidor → tiene service_role → bypasea RLS
-  const supabase = await createClient();
-
   try {
     const type = formData.get("type") as string;
     const email = (formData.get("email") as string) || null;
@@ -32,7 +30,7 @@ export async function submitReportAction(formData: FormData) {
     if (type === "correccion_candidato" && !correctionField)
       return { success: false, error: "Indica qué campo está incorrecto." };
 
-    // ─── Upload de imagen (server-side, bypasea RLS) ──────────────────────────
+    // ─── Upload de imagen (Local / S3 Ready) ──────────────────────────
     let imageUrl: string | null = null;
 
     if (imageFile && imageFile.size > 0) {
@@ -46,29 +44,25 @@ export async function submitReportAction(formData: FormData) {
       const ext = (imageFile.name.split(".").pop() ?? "jpg")
         .toLowerCase()
         .replace(/[^a-z]/g, "");
-      const filePath = `reports/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-      const arrayBuffer = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      try {
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("report-screenshots")
-        .upload(filePath, buffer, {
-          contentType: imageFile.type,
-          upsert: false,
-        });
+        // TODO: En producción, cambia esto para usar AWS S3 o Cloudflare R2
+        const uploadDir = path.join(process.cwd(), "public", "reports");
 
-      if (uploadError) {
+        // Crear carpeta si no existe
+        await fs.mkdir(uploadDir, { recursive: true });
+
+        const filePath = path.join(uploadDir, fileName);
+        await fs.writeFile(filePath, buffer);
+
+        imageUrl = `/reports/${fileName}`;
+      } catch (uploadError) {
         console.error("[ACTION] Error upload imagen:", uploadError);
-        // No bloqueamos el envío si falla la imagen — guardamos el reporte igual
         console.warn("[ACTION] Continuando sin imagen...");
-      } else {
-        const {
-          data: { publicUrl },
-        } = supabase.storage
-          .from("report-screenshots")
-          .getPublicUrl(uploadData.path);
-        imageUrl = publicUrl;
       }
     }
 
@@ -88,14 +82,7 @@ export async function submitReportAction(formData: FormData) {
       source_url: sourceUrl,
     };
 
-    const { error: dbError } = await supabase
-      .from("userfeedback")
-      .insert([payload]);
-
-    if (dbError) {
-      console.error("[ACTION] Error DB:", dbError);
-      throw dbError;
-    }
+    await prisma.userfeedback.create({ data: payload });
 
     return { success: true };
   } catch (error: unknown) {

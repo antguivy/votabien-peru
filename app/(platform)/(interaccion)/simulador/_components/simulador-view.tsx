@@ -5,20 +5,23 @@ import dynamic from "next/dynamic";
 import {
   ChevronLeft,
   ChevronRight,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  X,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  Play,
   RotateCcw,
-  Pen,
-  Crosshair,
-  CheckCircle2,
-  XCircle,
-  Square,
-  AlertTriangle,
-  Lightbulb,
-  Trophy,
-  ArrowRight,
   List,
-  Minus,
+  ArrowRight,
   Check,
-  House,
+  Crosshair,
+  Lightbulb,
+  Minus,
+  Trophy,
+  CheckCircle2,
+  Square,
+  XCircle,
+  AlertTriangle,
+  Pen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {

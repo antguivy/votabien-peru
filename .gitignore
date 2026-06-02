@@ -83,3 +83,11 @@ yarn.lock
 package-lock.json
 # Si usas npm o yarn, cambia según corresponda
 # pnpm-lock.yaml
+
+prisma/generated
+
+# =========================================
+# Local Scripts
+# =========================================
+/scripts
+

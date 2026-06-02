@@ -6,7 +6,6 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { SearchableEntity } from "@/interfaces/ui-types";
 
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { X, Plus, Search, CheckCircle2 } from "lucide-react";
@@ -73,21 +72,32 @@ export default function PresidentialSelector({
     [initialSelected],
   );
 
-  useEffect(() => {
-    const currentIds = selectedItems
-      .map((i) => i.id)
-      .sort()
-      .join(",");
-    if (initialIds !== currentIds) setSelectedItems(initialSelected);
-  }, [initialIds, initialSelected]);
+  const [prevInitialIds, setPrevInitialIds] = useState(initialIds);
+  if (initialIds !== prevInitialIds) {
+    setSelectedItems(initialSelected);
+    setPrevInitialIds(initialIds);
+  }
 
   useEffect(() => {
     if (!isOpen || allCandidates.length > 0) return;
-    setIsLoading(true);
-    onSearch("").then((results) => {
-      setAllCandidates(results);
-      setIsLoading(false);
-    });
+    let ignore = false;
+    const fetchCandidates = async () => {
+      setIsLoading(true);
+      try {
+        const results = await onSearch("");
+        if (!ignore) {
+          setAllCandidates(results);
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchCandidates();
+    return () => {
+      ignore = true;
+    };
   }, [isOpen, allCandidates.length, onSearch]);
 
   const displayCandidates = useMemo(() => {

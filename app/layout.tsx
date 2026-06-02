@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-provider";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { serverGetUser } from "@/lib/auth-actions";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -43,8 +44,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user, profile } = await serverGetUser();
-
   return (
     <html lang="es" suppressHydrationWarning>
       <body
@@ -53,11 +52,15 @@ export default async function RootLayout({
       >
         <PWARegister />
 
-        <AuthProvider initialUser={user} initialProfile={profile}>
-          <TooltipProvider>
-            <NuqsAdapter>{children}</NuqsAdapter>
-          </TooltipProvider>
-          <Toaster />
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <NuqsAdapter>
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
+            </NuqsAdapter>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

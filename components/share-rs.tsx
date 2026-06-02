@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Share2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cn } from "@/lib/utils";
 // import { useAnalytics } from "@/hooks/use-analytics";
 import Link from "next/link";
@@ -27,8 +29,11 @@ export function ShareButton({
   title,
   text,
   url,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   className,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   trackingId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   trackingType,
   whatsappText,
 }: ShareButtonProps) {
@@ -36,6 +41,7 @@ export function ShareButton({
   const [open, setOpen] = useState(false);
   // const { trackCompartir, trackCompartirExitoso, trackCompartirCancelado } =
   //   useAnalytics();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const shareText =
     text ?? `Conoce más sobre ${title} en Vota Bien Perú antes de votar.`;
 

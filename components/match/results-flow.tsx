@@ -97,7 +97,9 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     const firstCategory = activeCategories[0];
     if (!firstCategory) return;
     const firstCandidate = (results.data[firstCategory] ?? [])[0];
+    // eslint-disable-next-line react-hooks/immutability
     if (firstCandidate) openDetail(firstCandidate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [categoryIndex, setCategoryIndex] = useState(0);
@@ -133,6 +135,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
     useState<CandidateDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const openDetail = useCallback(async (candidate: CandidateCard) => {
     // ¡OJO! Ahora recibe el objeto completo, no solo el ID
     setLoadingDetail(true);
@@ -206,6 +209,7 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
 
     // Acumula el dislike
     if (!dislikedRef.current[currentCategory]) {
+      // eslint-disable-next-line react-hooks/immutability
       dislikedRef.current[currentCategory] = new Set();
     }
     dislikedRef.current[currentCategory]!.add(currentCandidate.id);

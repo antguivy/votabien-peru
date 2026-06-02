@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { serverLogin } from "@/lib/auth-actions";
+import { authClient } from "@/lib/auth-client";
 import { LoginSchema } from "@/schemas/auth";
 import {
   Form,
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormError } from "@/components/form-error";
+import { FormSuccess } from "@/components/form-success";
 
 export const LoginForm = () => {
   const router = useRouter();
@@ -29,8 +31,14 @@ export const LoginForm = () => {
     searchParams.get("error") === "OAuthAccountNotLinked"
       ? "¡El correo ya está en uso con otro proveedor!"
       : "";
+  const isVerified = searchParams.get("verified") === "true";
 
   const [error, setError] = useState<string | undefined>("");
+  const [success] = useState<string | undefined>(
+    isVerified
+      ? "¡Cuenta verificada exitosamente! Por favor inicia sesión."
+      : undefined,
+  );
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<z.infer<typeof LoginSchema>>({
@@ -52,13 +60,13 @@ export const LoginForm = () => {
 
     startTransition(async () => {
       try {
-        const loginResult = await serverLogin({
+        const loginResult = await authClient.signIn.email({
           email: values.email,
           password: values.password,
         });
 
         if (loginResult.error) {
-          setError(loginResult.error);
+          setError(loginResult.error.message);
           return;
         }
 
@@ -108,7 +116,17 @@ export const LoginForm = () => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contraseña</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Contraseña</FormLabel>
+                  <Button
+                    size="sm"
+                    variant="link"
+                    asChild
+                    className="px-0 font-normal"
+                  >
+                    <Link href="/auth/reset">¿Olvidaste tu contraseña?</Link>
+                  </Button>
+                </div>
                 <FormControl>
                   <Input
                     {...field}
@@ -124,6 +142,7 @@ export const LoginForm = () => {
           />
 
           <FormError message={error || urlError} />
+          <FormSuccess message={success} />
 
           <Button type="submit" disabled={isPending} className="w-full">
             {isPending ? "Iniciando sesión..." : "Iniciar sesión"}

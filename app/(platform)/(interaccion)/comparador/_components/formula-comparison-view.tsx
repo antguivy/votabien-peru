@@ -352,86 +352,67 @@ function BiographyCard({ entry }: { entry: BiographyDetail }) {
 
 // ─── Hoja de vida ─────────────────────────────────────────────────────────────
 
-function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
-  const [openSection, setOpenSection] = useState<string | null>(null);
-
-  const eduTotal =
-    (hoja.postgraduate_education?.length ?? 0) +
-    (hoja.university_education?.length ?? 0) +
-    (hoja.technical_education?.length ?? 0) +
-    (hoja.no_university_education?.length ?? 0) +
-    (hoja.secondary_school ? 1 : 0);
-  const workTotal = hoja.work_experience?.length ?? 0;
-  const politicalTotal =
-    (hoja.popular_election?.length ?? 0) + (hoja.political_role?.length ?? 0);
-  const patrimonyTotal =
-    (hoja.incomes?.length ?? 0) + (hoja.assets?.length ?? 0);
-
-  if (eduTotal + workTotal + politicalTotal + patrimonyTotal === 0) {
-    return <NoDataMessage text="No se encontró información de hoja de vida" />;
-  }
-
-  const HvAccordion = ({
-    id,
-    title,
-    count,
-    children,
-  }: {
-    id: string;
-    title: string;
-    count: number;
-    children: React.ReactNode;
-  }) => {
-    const isOpen = openSection === id;
-    if (count === 0) {
-      return (
-        <div className="flex justify-between items-center py-2.5 border-b border-border/50">
-          <span className="text-xs font-semibold text-muted-foreground/60">
-            {title}
-          </span>
-          <span className="text-[11px] text-muted-foreground/40">
-            Sin registros
-          </span>
-        </div>
-      );
-    }
+function HvAccordion({
+  title,
+  count,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  id?: string;
+  title: string;
+  count: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  if (count === 0) {
     return (
-      <Collapsible
-        open={isOpen}
-        onOpenChange={() => setOpenSection(isOpen ? null : id)}
-      >
-        <CollapsibleTrigger className="w-full flex justify-between items-center py-2.5 border-b border-border/50 hover:text-foreground transition-colors">
-          <span className="text-xs font-semibold text-foreground">{title}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground">
-              {count} registro{count > 1 ? "s" : ""}
-            </span>
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
-                isOpen && "rotate-180",
-              )}
-            />
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="pt-2 pb-3 space-y-1.5">{children}</div>
-        </CollapsibleContent>
-      </Collapsible>
+      <div className="flex justify-between items-center py-2.5 border-b border-border/50">
+        <span className="text-xs font-semibold text-muted-foreground/60">
+          {title}
+        </span>
+        <span className="text-[11px] text-muted-foreground/40">
+          Sin registros
+        </span>
+      </div>
     );
-  };
+  }
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <CollapsibleTrigger className="w-full flex justify-between items-center py-2.5 border-b border-border/50 hover:text-foreground transition-colors">
+        <span className="text-xs font-semibold text-foreground">{title}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">
+            {count} registro{count > 1 ? "s" : ""}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200",
+              isOpen && "rotate-180",
+            )}
+          />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="pt-2 pb-3 space-y-1.5">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
-  const EduItem = ({
-    label,
-    sub,
-    year,
-    concluded,
-  }: {
-    label: string;
-    sub?: string;
-    year?: string;
-    concluded?: string;
-  }) => (
+function EduItem({
+  label,
+  sub,
+  year,
+  concluded,
+}: {
+  label: string;
+  sub?: string;
+  year?: string;
+  concluded?: string;
+}) {
+  return (
     <div className="flex justify-between items-start gap-2 py-1.5">
       <div className="min-w-0">
         <p className="text-xs font-semibold leading-tight">{label}</p>
@@ -454,18 +435,20 @@ function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
       </div>
     </div>
   );
+}
 
-  const ListItem = ({
-    main,
-    sub,
-    extra,
-    badge,
-  }: {
-    main: string;
-    sub?: string;
-    extra?: string;
-    badge?: string;
-  }) => (
+function ListItem({
+  main,
+  sub,
+  extra,
+  badge,
+}: {
+  main: string;
+  sub?: string;
+  extra?: string;
+  badge?: string;
+}) {
+  return (
     <div className="py-1.5">
       <div className="flex justify-between items-start gap-2">
         <p className="text-xs font-semibold leading-tight">{main}</p>
@@ -481,10 +464,36 @@ function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
       )}
     </div>
   );
+}
+
+function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const eduTotal =
+    (hoja.postgraduate_education?.length ?? 0) +
+    (hoja.university_education?.length ?? 0) +
+    (hoja.technical_education?.length ?? 0) +
+    (hoja.no_university_education?.length ?? 0) +
+    (hoja.secondary_school ? 1 : 0);
+  const workTotal = hoja.work_experience?.length ?? 0;
+  const politicalTotal =
+    (hoja.popular_election?.length ?? 0) + (hoja.political_role?.length ?? 0);
+  const patrimonyTotal =
+    (hoja.incomes?.length ?? 0) + (hoja.assets?.length ?? 0);
+
+  if (eduTotal + workTotal + politicalTotal + patrimonyTotal === 0) {
+    return <NoDataMessage text="No se encontró información de hoja de vida" />;
+  }
 
   return (
     <div className="space-y-0">
-      <HvAccordion id="edu" title="Educación" count={eduTotal}>
+      <HvAccordion
+        id="edu"
+        title="Educación"
+        count={eduTotal}
+        isOpen={openSection === "edu"}
+        onToggle={() => setOpenSection(openSection === "edu" ? null : "edu")}
+      >
         {hoja.postgraduate_education?.map((e, i) => (
           <EduItem
             key={`pg-${i}`}
@@ -523,7 +532,13 @@ function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
           <EduItem label="Educación Secundaria" concluded="SI" />
         )}
       </HvAccordion>
-      <HvAccordion id="work" title="Experiencia laboral" count={workTotal}>
+      <HvAccordion
+        id="work"
+        title="Experiencia laboral"
+        count={workTotal}
+        isOpen={openSection === "work"}
+        onToggle={() => setOpenSection(openSection === "work" ? null : "work")}
+      >
         {hoja.work_experience?.map((e, i) => (
           <ListItem
             key={i}
@@ -537,6 +552,10 @@ function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
         id="politics"
         title="Trayectoria política"
         count={politicalTotal}
+        isOpen={openSection === "politics"}
+        onToggle={() =>
+          setOpenSection(openSection === "politics" ? null : "politics")
+        }
       >
         {hoja.popular_election?.map((e, i) => (
           <ListItem
@@ -560,6 +579,10 @@ function HojaDeVidaSection({ hoja }: { hoja: HojaDeVida }) {
         id="patrimony"
         title="Patrimonio declarado"
         count={patrimonyTotal}
+        isOpen={openSection === "patrimony"}
+        onToggle={() =>
+          setOpenSection(openSection === "patrimony" ? null : "patrimony")
+        }
       >
         {hoja.incomes && hoja.incomes.length > 0 && (
           <div className="bg-muted/30 rounded-lg p-3 space-y-1.5 mb-2">

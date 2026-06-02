@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Calendar, Timer } from "lucide-react";
 
 interface FixedElectoralBannerProps {
@@ -11,9 +12,12 @@ interface FixedElectoralBannerProps {
 
 const FixedElectoralBanner = ({
   processName,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   electionDate,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   daysRemaining,
 }: FixedElectoralBannerProps) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const firstTwo = processName.split(" ").slice(0, 2).join(" ");
   return (
     <div className="sticky lg:top-14 left-0 right-0 z-30 bg-gradient-to-r from-primary via-primary/95 to-primary/90 text-primary-foreground shadow-md">

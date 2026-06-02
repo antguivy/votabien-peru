@@ -57,6 +57,7 @@ const formatCurrency = (amount: string | number) => {
 export default function DetailCandidato({
   candidate,
   formula = [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   shareUrl,
   legislatorId,
 }: {

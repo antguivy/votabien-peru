@@ -9,10 +9,18 @@ import { fromZonedTime } from "date-fns-tz";
  *
  * También admite fechas inválidas (devuelve "Fecha no disponible").
  */
-export function formatFechaJsonable(fechaStr?: string | null): string {
+export function formatFechaJsonable(fechaStr?: string | Date | null): string {
   if (!fechaStr) return "Fecha no disponible";
 
-  const [year, month, day] = fechaStr.split("-").map((v) => parseInt(v, 10));
+  let year, month, day;
+
+  if (fechaStr instanceof Date) {
+    year = fechaStr.getFullYear();
+    month = fechaStr.getMonth() + 1;
+    day = fechaStr.getDate();
+  } else {
+    [year, month, day] = fechaStr.split("-").map((v) => parseInt(v, 10));
+  }
 
   // Solo año disponible
   if (month === 0 || isNaN(month))
@@ -34,11 +42,19 @@ export function formatFechaJsonable(fechaStr?: string | null): string {
  * Formatea una fecha en español de Perú.
  * Ejemplo: "domingo, 12 de abril de 2026"
  */
-export function formatFechaPeru(fechaISO: string) {
+export function formatFechaPeru(fechaISO: string | Date) {
   if (!fechaISO) return "Fecha no disponible";
 
-  const fechaSolo = fechaISO.split("T")[0];
-  const [year, month, day] = fechaSolo.split("-").map(Number);
+  let year, month, day;
+
+  if (fechaISO instanceof Date) {
+    year = fechaISO.getFullYear();
+    month = fechaISO.getMonth() + 1;
+    day = fechaISO.getDate();
+  } else {
+    const fechaSolo = fechaISO.split("T")[0];
+    [year, month, day] = fechaSolo.split("-").map(Number);
+  }
 
   const fecha = new Date(year, month - 1, day);
 
@@ -53,11 +69,19 @@ export function formatFechaPeru(fechaISO: string) {
 /**
  * Calcula días restantes entre ahora y una fecha futura.
  */
-export function calcularDiasRestantes(fechaISO: string): number {
+export function calcularDiasRestantes(fechaISO: string | Date): number {
   if (!fechaISO) return 0;
 
-  const fechaSolo = fechaISO.split("T")[0];
-  const [year, month, day] = fechaSolo.split("-").map(Number);
+  let year, month, day;
+
+  if (fechaISO instanceof Date) {
+    year = fechaISO.getFullYear();
+    month = fechaISO.getMonth() + 1;
+    day = fechaISO.getDate();
+  } else {
+    const fechaSolo = fechaISO.split("T")[0];
+    [year, month, day] = fechaSolo.split("-").map(Number);
+  }
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
