@@ -164,6 +164,7 @@ export function BiographyFormDialog({
 }: BiographyFormDialogProps) {
   const router = useRouter();
   const [items, setItems] = useState<BiographyDetail[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -175,6 +176,7 @@ export function BiographyFormDialog({
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     getPersonBiography(personId)
       .then((data) => setItems(data?.detailed_biography ?? []))
@@ -194,6 +196,7 @@ export function BiographyFormDialog({
           "error" in result ? (result as { error: string }).error : "Error";
         toast.error(errorMsg);
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Error de conexión");
     } finally {

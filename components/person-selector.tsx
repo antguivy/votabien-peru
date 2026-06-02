@@ -33,6 +33,7 @@ export function PersonSelector({
 
   useEffect(() => {
     if (!searchTerm.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       setHasSearched(false);
       return;

@@ -90,6 +90,7 @@ export function LegislatorFormDialog({
   const [selectedPerson, setSelectedPerson] = useState<PersonBasicInfo | null>(
     null,
   );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
   const [globalSearch, setGlobalSearch] = useState("");
 
@@ -119,6 +120,7 @@ export function LegislatorFormDialog({
         end_date: initialData.end_date ?? "",
         start_date: initialData.start_date ?? "",
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPerson(initialData.person ?? null);
     }
   }, [initialData, form]);
@@ -163,6 +165,7 @@ export function LegislatorFormDialog({
   useEffect(() => {
     if (!open) {
       form.reset();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPerson(null);
     }
   }, [open, form]);

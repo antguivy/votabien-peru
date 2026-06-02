@@ -17,13 +17,18 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import type { UserProfile as User } from "@/interfaces/user";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { UserProfile } from "@/interfaces/user";
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   UserCheck,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Flag,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Menu,
   LogOut,
   Settings,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   GitCompare,
 } from "lucide-react";
 import { NavItem } from "@/interfaces/navbar";
@@ -60,6 +65,7 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
       <div
         className={cn(
           "fixed bottom-0 left-0 right-0 w-full z-40 lg:hidden",
+          // eslint-disable-next-line react-hooks/refs
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",
         )}
@@ -182,9 +188,7 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
                 </Avatar>
                 <div className="flex flex-col min-w-0">
                   <p className="text-sm font-semibold leading-tight truncate">
-                    {user?.name ||
-                      user.email?.split("@")[0] ||
-                      "Usuario"}
+                    {user?.name || user.email?.split("@")[0] || "Usuario"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {user.email}

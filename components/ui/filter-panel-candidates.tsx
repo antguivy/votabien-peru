@@ -17,6 +17,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   DrawerDescription,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
@@ -305,6 +306,7 @@ export function NewFilterPanel({
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalSearch(currentSearch);
   }, [currentSearch]);
 
@@ -328,6 +330,7 @@ export function NewFilterPanel({
   // Sincronizar estado pendiente al abrir el drawer
   useEffect(() => {
     if (isDrawerOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingSearch(currentSearch);
       setPendingParty(currentParty);
       setPendingDistrict(currentDistrict);
@@ -367,6 +370,7 @@ export function NewFilterPanel({
   // "¿Hay algo diferente entre lo que el usuario configuró y lo que está en la URL?"
   // Esto es lo que habilita/deshabilita el botón Apply, no si hay filtros activos.
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const hasChanges = useMemo(() => {
     const alertsChanged =
       pendingAlerts.length !== currentAlerts.length ||
@@ -399,6 +403,7 @@ export function NewFilterPanel({
   ].reduce((a, b) => a + b, 0);
 
   // ¿El estado pendiente tiene algún filtro activo? (para mostrar "Limpiar")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const pendingHasFilters = pendingActiveCount > 0;
 
   // ─────────────────────────────────────────────

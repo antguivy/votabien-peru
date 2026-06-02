@@ -242,6 +242,7 @@ function ReasoningLine({ line }: { line: string }) {
 
   if (isArrow) {
     const content = line.slice(1).trim();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const colonIdx = content.lastIndexOf("→");
     return (
       <span className="block font-mono text-[11px] leading-[1.9]">

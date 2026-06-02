@@ -1,13 +1,14 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { prisma } from "@/lib/prisma";
 import { hitoSchema, type HitoFormValues } from "./validation";
 import { extractErrorMessage } from "@/lib/error-handler";
+import { serverRequireAdmin } from "@/lib/auth-actions";
+import { TAGS } from "@/lib/cache-tags";
 
 export async function createTeamPhoto(data: HitoFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireAdmin();
   const validation = hitoSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -15,28 +16,30 @@ export async function createTeamPhoto(data: HitoFormValues) {
 
   try {
     const payload = {
+      title: data.title,
       date: data.date,
-      location: data.location,
-      photo_url: data.photo_url || null,
-      photo_description: data.photo_description,
-      index: data.index,
-      quote: data.quote,
+      description: data.description || null,
+      location: data.location || null,
       label: data.label || null,
+      photo_url: data.photo_url || null,
+      registration_url: data.registration_url || null,
+      is_published: data.is_published,
+      index: data.index || 0,
     };
 
-    const { error } = await supabase.from("hito").insert(payload);
-    if (error) throw error;
+    await prisma.hito.create({ data: payload });
 
     revalidatePath("/admin/hito");
-    return { success: true, message: "Hito creado correctamente" };
+    // @ts-expect-error Next.js 16 revalidateTag typing bug
+    revalidateTag(TAGS.hitos);
+    return { success: true, message: "Evento creado correctamente" };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }
 }
 
 export async function updateTeamPhoto(id: number, data: HitoFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireAdmin();
   const validation = hitoSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -44,33 +47,36 @@ export async function updateTeamPhoto(id: number, data: HitoFormValues) {
 
   try {
     const payload = {
+      title: data.title,
       date: data.date,
-      location: data.location,
-      photo_url: data.photo_url || null,
-      photo_description: data.photo_description,
-      index: data.index,
-      quote: data.quote,
+      description: data.description || null,
+      location: data.location || null,
       label: data.label || null,
+      photo_url: data.photo_url || null,
+      registration_url: data.registration_url || null,
+      is_published: data.is_published,
+      index: data.index || 0,
     };
 
-    const { error } = await supabase.from("hito").update(payload).eq("id", id);
-
-    if (error) throw error;
+    await prisma.hito.update({ where: { id: id }, data: payload });
 
     revalidatePath("/admin/hito");
-    return { success: true, message: "Hito actualizada correctamente" };
+    // @ts-expect-error Next.js 16 revalidateTag typing bug
+    revalidateTag(TAGS.hitos);
+    return { success: true, message: "Evento actualizado correctamente" };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }
 }
 
 export async function deleteHito(id: number) {
-  const supabase = await createClient();
+  await serverRequireAdmin();
   try {
-    const { error } = await supabase.from("hito").delete().eq("id", id);
-    if (error) throw error;
+    await prisma.hito.delete({ where: { id: id } });
 
     revalidatePath("/admin/hito");
+    // @ts-expect-error Next.js 16 revalidateTag typing bug
+    revalidateTag(TAGS.hitos);
     return { success: true };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };

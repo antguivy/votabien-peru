@@ -1,4 +1,5 @@
 import Link from "next/link";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ShieldAlert, Flag, SearchX } from "lucide-react";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 

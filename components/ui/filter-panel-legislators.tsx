@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Check,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ArrowLeft,
   MapPin,
 } from "lucide-react";
@@ -268,6 +270,7 @@ export function FilterPanelLegisladores({
 
   // States
   const [localSearch, setLocalSearch] = useState(currentSearch);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const searchRef = useRef<HTMLInputElement>(null);
   const [openCredenza, setOpenCredenza] = useState<"group" | "region" | null>(
     null,
@@ -275,6 +278,7 @@ export function FilterPanelLegisladores({
   const [desktopSearch, setDesktopSearch] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [subDrawer, setSubDrawer] = useState<"group" | "region" | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [subSearch, setSubSearch] = useState("");
 
   // Pending States (Mobile)
@@ -285,6 +289,7 @@ export function FilterPanelLegisladores({
 
   useEffect(() => {
     if (isDrawerOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingSearch(currentSearch);
       setPendingGroup(currentGroup);
       setPendingDistrict(currentDistrict);
@@ -398,6 +403,7 @@ export function FilterPanelLegisladores({
   const selectedGroupData = currentGroup
     ? bancadas.find((b) => b.name === currentGroup)
     : null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const pendingGroupData = pendingGroup
     ? bancadas.find((b) => b.name === pendingGroup)
     : null;

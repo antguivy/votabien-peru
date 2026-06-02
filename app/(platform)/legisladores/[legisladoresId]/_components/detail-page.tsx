@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import {
   FileText,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Mail,
   Check,
   GraduationCap,
@@ -60,8 +61,10 @@ export default function DetailLegislador({
 
   const persona = legislador.person;
   const periodoActivo = legislador;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const proyectos = periodoActivo?.bill_authorships || [];
   const bancadas = periodoActivo?.parliamentary_memberships || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const asistencias = periodoActivo?.attendances || [];
   const bancadaActual = bancadas.length > 0 ? bancadas[0] : null;
 

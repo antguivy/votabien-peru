@@ -1,14 +1,16 @@
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model hito {
-  id                BigInt   @id(map: "teamphoto_pkey") @default(autoincrement())
-  created_at        DateTime @default(now()) @db.Timestamptz(6)
-  date              String?
-  location          String?
-  photo_url         String?
-  photo_description String?
-  index             BigInt?
-  quote             String?
-  label             String?
+  id               BigInt   @id(map: "teamphoto_pkey") @default(autoincrement())
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  title            String
+  date             DateTime @db.Timestamptz(6)
+  description      String?
+  location         String?
+  label            String?
+  photo_url        String?
+  registration_url String?
+  is_published     Boolean  @default(false)
+  index            BigInt?
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

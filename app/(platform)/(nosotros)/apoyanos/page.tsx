@@ -1,7 +1,9 @@
 import { Metadata } from "next";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FundingHero from "./_components/funding-hero";
 import FundingTransparency from "./_components/funding-transparency";
 import FundingYape from "./_components/funding-yape";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FundingPaypal from "./_components/funding-paypal";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";

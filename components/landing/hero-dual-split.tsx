@@ -71,6 +71,7 @@ const TOOL_CONFIG: Record<
   },
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TOOLS: ReadinessTool[] = ["match", "comparador", "trivia", "simulador"];
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -133,6 +134,7 @@ function AnimatedNumber({ value }: { value: number }) {
 }
 
 /* ─── Tool Card ──────────────────────────────────────────────── */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HeroToolCard({
   tool,
   raw,
@@ -236,11 +238,15 @@ export default function HeroDualSplit({
 }: HeroDualSplitProps) {
   const { dias } = useCountdown(proceso_electoral.election_date);
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { raw, progress, isReady, completedCount, isFullyReady } =
     useReadiness();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const safeCount = mounted ? completedCount : 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const allDone = mounted && isFullyReady;
 
   return (

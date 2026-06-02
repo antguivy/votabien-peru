@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Smartphone, Copy, Check, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function FundingYape() {

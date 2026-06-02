@@ -44,7 +44,7 @@ export async function serverGetUser(): Promise<GetUserResponse> {
     });
 
     if (!dbUser) {
-       return { user: null, error: "User not found in DB" };
+      return { user: null, error: "User not found in DB" };
     }
 
     const profile: UserProfile = {
@@ -121,11 +121,11 @@ export async function serverUpdateUserRole(
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { role: newRole }
+      data: { role: newRole },
     });
     return { success: true };
-  } catch (error: any) {
-    return { error: error.message };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Algo salió mal" };
   }
 }
 
@@ -146,12 +146,12 @@ export async function serverUpdateProfile(
       where: { id: user.id },
       data: {
         name: updates.name,
-        image: updates.image
-      }
+        image: updates.image,
+      },
     });
     return { success: true };
-  } catch(error: any) {
-    return { error: error.message };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Algo salió mal" };
   }
 }
 
@@ -163,11 +163,14 @@ export async function serverGetAllUsers() {
 
   try {
     const users = await prisma.user.findMany({
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
     return { profiles: users, error: null };
-  } catch(error: any) {
+  } catch (error) {
     console.error("Error fetching users:", error);
-    return { profiles: [], error: error.message };
+    return {
+      profiles: [],
+      error: error instanceof Error ? error.message : "Algo salió mal",
+    };
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { CandidateCard } from "@/interfaces/candidate";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ThumbsDown, ThumbsUp, Info, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";

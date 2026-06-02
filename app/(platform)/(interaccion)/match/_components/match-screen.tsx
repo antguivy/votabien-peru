@@ -57,7 +57,7 @@ export default function MatchScreen({
 
   const currentQuestionIndex = step - 1;
   const currentQuestion = MATCH_QUESTIONS[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === MATCH_QUESTIONS.length - 1;
+  const _isLastQuestion = currentQuestionIndex === MATCH_QUESTIONS.length - 1;
 
   const handleDistrictSelect = useCallback(
     (id: string) => updateAnswer("electoral_district_id", id),

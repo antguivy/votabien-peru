@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState, useRef } from "react";
+// import { useEffect, useMemo, useState, useRef } from "react";
 
 interface ElectoralProcess {
   election_date?: string;
@@ -10,61 +10,61 @@ interface HeroModernProps {
   proceso_electoral: ElectoralProcess;
 }
 
-function calcDias(fecha: string) {
-  return Math.ceil(
-    (new Date(fecha).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-  );
-}
+// function calcDias(fecha: string) {
+//   return Math.ceil(
+//     (new Date(fecha).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+//   );
+// }
 
-function useCountdown(fechaElecciones?: string) {
-  const [dias, setDias] = useState(() =>
-    fechaElecciones ? calcDias(fechaElecciones) : 0,
-  );
-  useEffect(() => {
-    if (!fechaElecciones) return;
-    const t = setInterval(
-      () => setDias(calcDias(fechaElecciones)),
-      1000 * 60 * 60,
-    );
-    return () => clearInterval(t);
-  }, [fechaElecciones]);
-  const fechaFormateada = useMemo(
-    () =>
-      fechaElecciones
-        ? new Date(fechaElecciones).toLocaleDateString("es-PE", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
-        : "",
-    [fechaElecciones],
-  );
-  return { dias, fechaFormateada };
-}
+// function useCountdown(fechaElecciones?: string) {
+//   const [dias, setDias] = useState(() =>
+//     fechaElecciones ? calcDias(fechaElecciones) : 0,
+//   );
+//   useEffect(() => {
+//     if (!fechaElecciones) return;
+//     const t = setInterval(
+//       () => setDias(calcDias(fechaElecciones)),
+//       1000 * 60 * 60,
+//     );
+//     return () => clearInterval(t);
+//   }, [fechaElecciones]);
+//   const fechaFormateada = useMemo(
+//     () =>
+//       fechaElecciones
+//         ? new Date(fechaElecciones).toLocaleDateString("es-PE", {
+//             year: "numeric",
+//             month: "long",
+//             day: "numeric",
+//           })
+//         : "",
+//     [fechaElecciones],
+//   );
+//   return { dias, fechaFormateada };
+// }
 
-function AnimatedNumber({ value }: { value: number }) {
-  const [displayed, setDisplayed] = useState(0);
-  const prevRef = useRef(0);
-  useEffect(() => {
-    if (value === 0) return;
-    const start = prevRef.current;
-    const startTime = performance.now();
-    const tick = (now: number) => {
-      const p = Math.min((now - startTime) / 1400, 1);
-      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-      setDisplayed(Math.round(start + (value - start) * eased));
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    prevRef.current = value;
-  }, [value]);
-  return <>{displayed}</>;
-}
+// function AnimatedNumber({ value }: { value: number }) {
+//   const [displayed, setDisplayed] = useState(0);
+//   const prevRef = useRef(0);
+//   useEffect(() => {
+//     if (value === 0) return;
+//     const start = prevRef.current;
+//     const startTime = performance.now();
+//     const tick = (now: number) => {
+//       const p = Math.min((now - startTime) / 1400, 1);
+//       const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+//       setDisplayed(Math.round(start + (value - start) * eased));
+//       if (p < 1) requestAnimationFrame(tick);
+//     };
+//     requestAnimationFrame(tick);
+//     prevRef.current = value;
+//   }, [value]);
+//   return <>{displayed}</>;
+// }
 
 export default function HeroModern({ proceso_electoral }: HeroModernProps) {
-  const { dias } = useCountdown(proceso_electoral.election_date);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // const { dias } = useCountdown(proceso_electoral.election_date);
+  // const [mounted, setMounted] = useState(false);
+  // useEffect(() => setMounted(true), []);
 
   return (
     <section className="w-full bg-background px-0 md:px-6 lg:px-8 pt-16 md:pt-6 pb-8 md:pb-12">
@@ -110,12 +110,6 @@ export default function HeroModern({ proceso_electoral }: HeroModernProps) {
               >
                 Apóyanos
               </Link>
-              {/* <Link
-                href="/apoyanos"
-                className="inline-flex items-center justify-center px-6 py-2.5 rounded-full border-2 border-brand bg-brand text-white text-sm font-semibold hover:bg-brand/85 hover:border-brand/85 transition-colors duration-200"
-              >
-                Apóyanos
-              </Link> */}
             </div>
           </div>
         </div>

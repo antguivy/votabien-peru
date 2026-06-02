@@ -3,6 +3,7 @@
 import { REGION_ASSETS } from "@/constants/game-assets";
 import { RegionTheme } from "@/constants/regions-data";
 import { TriviaQuestion } from "@/interfaces/game-types";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Image from "next/image";
 
 interface IncaArcadeCardProps {
@@ -14,6 +15,7 @@ interface IncaArcadeCardProps {
 }
 
 export function IncaArcadeCard({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   score,
   stars,
   currentLevel,

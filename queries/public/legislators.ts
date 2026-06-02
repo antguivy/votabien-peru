@@ -9,6 +9,7 @@ import {
 import { LegislatorVersusCard } from "@/interfaces/legislator-metrics";
 import { ChamberType } from "@/interfaces/politics";
 import prisma from "@/lib/prisma";
+import { Prisma, legislatormetrics } from "@/prisma/generated/client";
 
 interface GetLegislatorsParams {
   active_only?: boolean;
@@ -38,7 +39,7 @@ export const getLegisladoresCards = cache(
       const take = pageSize;
 
       try {
-        const whereClause: any = {};
+        const whereClause: Prisma.legislatorWhereInput = {};
 
         if (active_only) whereClause.active = true;
         if (chamber) whereClause.chamber = chamber;
@@ -83,7 +84,13 @@ export const getLegisladoresCards = cache(
               },
             },
             electoraldistrict: {
-              select: { id: true, name: true, code: true },
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                is_national: true,
+                active: true,
+              },
             },
             politicalparty: {
               select: {
@@ -136,7 +143,7 @@ export const getLegisladoresCards = cache(
           return {
             id: leg.id,
             chamber: leg.chamber as unknown as ChamberType,
-            condition: leg.condition as unknown as any,
+            condition: leg.condition as LegislatorCard["condition"],
             active: leg.active,
             start_date: leg.start_date as unknown as string,
             end_date: leg.end_date as unknown as string,
@@ -163,8 +170,8 @@ export const getLegisladoresCards = cache(
               id: leg.electoraldistrict.id,
               name: leg.electoraldistrict.name,
               code: leg.electoraldistrict.code,
-              is_national: (leg.electoraldistrict as any).is_national,
-              active: (leg.electoraldistrict as any).active,
+              is_national: leg.electoraldistrict.is_national,
+              active: leg.electoraldistrict.active,
             },
             current_parliamentary_group,
             has_metrics: metricsSet.has(leg.id),
@@ -247,7 +254,7 @@ export const getVersusLegislators = cache(
       activeOnly?: boolean;
     }): Promise<LegislatorVersusCard[]> => {
       try {
-        const whereClause: any = {};
+        const whereClause: Prisma.legislatorWhereInput = {};
         if (activeOnly) {
           whereClause.active = true;
         }
@@ -317,7 +324,7 @@ export const getVersusLegislators = cache(
             image_url: leg.person.image_url,
             profession: leg.person.profession,
             chamber: leg.chamber as unknown as ChamberType,
-            condition: leg.condition as unknown as any,
+            condition: leg.condition as LegislatorCard["condition"],
             start_date: leg.start_date as unknown as string,
             days_in_office: calculateDaysInOffice(leg.start_date),
             current_parliamentary_group,
@@ -326,7 +333,7 @@ export const getVersusLegislators = cache(
               ...leg.politicalparty,
               foundation_date: leg.politicalparty
                 ?.foundation_date as unknown as string,
-            } as any,
+            } as unknown as LegislatorVersusCard["elected_by_party"],
             stats: buildStats(metrics),
           };
         });
@@ -344,7 +351,9 @@ function calculateDaysInOffice(startDate: string | Date): number {
   return Math.floor((Date.now() - new Date(startDate).getTime()) / 86400000);
 }
 
-function buildStats(metrics: any | null): LegislatorVersusCard["stats"] {
+function buildStats(
+  metrics: legislatormetrics | null,
+): LegislatorVersusCard["stats"] {
   return {
     attendance_percentage: metrics?.attendance_rate ?? 0,
     total_sessions: metrics?.total_sessions ?? 0,

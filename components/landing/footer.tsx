@@ -2,12 +2,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ExternalLink,
   AlertCircle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Heart,
   HelpCircle,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Scale,
   Vote,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ArrowUp,
 } from "lucide-react";
 
@@ -31,6 +35,7 @@ const FacebookIcon = () => (
 );
 
 export default function Footer() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

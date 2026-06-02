@@ -2,7 +2,7 @@
 
 import { unstable_noStore as noStore } from "next/cache";
 import type { GetPersonSchema, PersonFormValues } from "./validation";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { PaginatedPersonResponse, PersonResponse } from "./types";
 import { AdminPerson, BiographyDetail } from "@/interfaces/person";
 
@@ -10,55 +10,52 @@ export async function getPersonList(
   input: GetPersonSchema,
 ): Promise<PaginatedPersonResponse> {
   noStore(); // <-- BIEN: La lista siempre fresca
-  const supabase = await createClient();
 
   try {
-    let query = supabase.from("person").select(
-      `
-    id,
-    fullname,
-    dni,
-    birth_date,
-    place_of_birth,
-    profession,
-    gender
-  `,
-      { count: "exact" },
-    );
-
-    if (input.fullname) {
-      query = query.ilike("fullname", `%${input.fullname}%`);
-    }
-
-    // Orden
-    if (input.sort && input.sort.length > 0) {
-      const sortItem = input.sort[0];
-
-      query = query.order(sortItem.id, {
-        ascending: !sortItem.desc,
-      });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
     const page = input.page || 1;
     const pageSize = input.perPage || 10;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
-    query = query.range(from, to);
+    const where: Record<string, unknown> = {};
+    if (input.fullname) {
+      where.fullname = { contains: input.fullname, mode: "insensitive" };
+    }
 
-    const { data, error, count } = await query;
+    const orderBy: Record<string, unknown> = {};
+    if (input.sort && input.sort.length > 0) {
+      const sortItem = input.sort[0];
+      orderBy[sortItem.id] = sortItem.desc ? "desc" : "asc";
+    } else {
+      orderBy.created_at = "desc";
+    }
 
-    if (error) throw error;
+    const [data, count] = await Promise.all([
+      prisma.person.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        select: {
+          id: true,
+          fullname: true,
+          dni: true,
+          birth_date: true,
+          place_of_birth: true,
+          profession: true,
+          gender: true,
+        },
+      }),
+      prisma.person.count({ where }),
+    ]);
 
-    const typedData = (data || []) as unknown as PersonResponse[];
+    const typedData = data as unknown as PersonResponse[];
 
     return {
       data: typedData.map((party) => ({
         ...party,
       })) as AdminPerson[],
-      total: count || 0,
+      total: count,
       page: page,
       page_size: pageSize,
     };
@@ -72,21 +69,38 @@ export async function getPersonForEdit(
   id: string,
 ): Promise<PersonFormValues | null> {
   noStore(); // <-- CRÍTICO: Agregado para no cargar un formulario con datos viejos
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("person")
-    .select(
-      `
-      id, fullname, name, lastname, dni, gender, party_number_rop,
-      image_url, image_candidate_url, birth_date, place_of_birth, profession,
-      secondary_school, technical_education, no_university_education,
-      university_education, postgraduate_education, work_experience,
-      political_role, popular_election, incomes, assets,
-      facebook_url, twitter_url, instagram_url, tiktok_url
-    `,
-    )
-    .eq("id", id)
-    .single();
+
+  const data = await prisma.person.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      fullname: true,
+      name: true,
+      lastname: true,
+      dni: true,
+      gender: true,
+      party_number_rop: true,
+      image_url: true,
+      image_candidate_url: true,
+      birth_date: true,
+      place_of_birth: true,
+      profession: true,
+      secondary_school: true,
+      technical_education: true,
+      no_university_education: true,
+      university_education: true,
+      postgraduate_education: true,
+      work_experience: true,
+      political_role: true,
+      popular_election: true,
+      incomes: true,
+      assets: true,
+      facebook_url: true,
+      twitter_url: true,
+      instagram_url: true,
+      tiktok_url: true,
+    },
+  });
 
   if (!data) return null;
 
@@ -100,30 +114,35 @@ export async function getPersonForEdit(
     fullname: data.fullname ?? "",
     image_url: data.image_url ?? null,
     image_candidate_url: data.image_candidate_url ?? "",
-    birth_date: data.birth_date ?? null,
+    birth_date: data.birth_date
+      ? new Date(data.birth_date).toISOString()
+      : null, // keep type match
     place_of_birth: data.place_of_birth ?? null,
     profession: data.profession ?? null,
     secondary_school: data.secondary_school ?? false,
     technical_education:
-      (data.technical_education as PersonFormValues["technical_education"]) ??
+      (data.technical_education as unknown as PersonFormValues["technical_education"]) ??
       [],
     no_university_education:
-      (data.no_university_education as PersonFormValues["no_university_education"]) ??
+      (data.no_university_education as unknown as PersonFormValues["no_university_education"]) ??
       [],
     university_education:
-      (data.university_education as PersonFormValues["university_education"]) ??
+      (data.university_education as unknown as PersonFormValues["university_education"]) ??
       [],
     postgraduate_education:
-      (data.postgraduate_education as PersonFormValues["postgraduate_education"]) ??
+      (data.postgraduate_education as unknown as PersonFormValues["postgraduate_education"]) ??
       [],
     work_experience:
-      (data.work_experience as PersonFormValues["work_experience"]) ?? [],
+      (data.work_experience as unknown as PersonFormValues["work_experience"]) ??
+      [],
     political_role:
-      (data.political_role as PersonFormValues["political_role"]) ?? [],
+      (data.political_role as unknown as PersonFormValues["political_role"]) ??
+      [],
     popular_election:
-      (data.popular_election as PersonFormValues["popular_election"]) ?? [],
-    incomes: (data.incomes as PersonFormValues["incomes"]) ?? [],
-    assets: (data.assets as PersonFormValues["assets"]) ?? [],
+      (data.popular_election as unknown as PersonFormValues["popular_election"]) ??
+      [],
+    incomes: (data.incomes as unknown as PersonFormValues["incomes"]) ?? [],
+    assets: (data.assets as unknown as PersonFormValues["assets"]) ?? [],
     facebook_url: data.facebook_url ?? null,
     twitter_url: data.twitter_url ?? null,
     instagram_url: data.instagram_url ?? null,
@@ -137,18 +156,16 @@ export async function getPersonBiography(id: string): Promise<{
   detailed_biography: BiographyDetail[];
 } | null> {
   noStore(); // <-- AGREGADO: Para cuando edites la biografía
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("person")
-    .select("id, fullname, detailed_biography")
-    .eq("id", id)
-    .single();
+  const data = await prisma.person.findUnique({
+    where: { id },
+    select: { id: true, fullname: true, detailed_biography: true },
+  });
 
   if (!data) return null;
 
   return {
     id: data.id,
-    fullname: data.fullname,
+    fullname: data.fullname || "",
     detailed_biography:
       (data.detailed_biography as unknown as BiographyDetail[]) ?? [],
   };
@@ -156,18 +173,26 @@ export async function getPersonBiography(id: string): Promise<{
 
 export async function getPersonBackgrounds(id: string) {
   noStore(); // <-- AGREGADO: Para cuando revises los antecedentes penales/judiciales
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("person")
-    .select(
-      `
-      id, fullname, party_number_rop, dni,
-      backgrounds:background(*)
-    `,
-    )
-    .eq("id", id)
-    .single();
+  const data = await prisma.person.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      fullname: true,
+      party_number_rop: true,
+      dni: true,
+      background: true,
+    },
+  });
 
   if (!data) return null;
-  return data;
+  return {
+    ...data,
+
+    backgrounds: data.background.map((bg) => ({
+      ...bg,
+      publication_date: bg.publication_date,
+      created_at: bg.created_at?.toISOString(),
+      updated_at: bg.updated_at?.toISOString(),
+    })),
+  };
 }

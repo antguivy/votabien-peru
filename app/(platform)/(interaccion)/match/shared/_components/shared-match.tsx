@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { candidateService } from "@/services/candidate";
 import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { decodeSharePayload, SharePayload } from "@/lib/match-share";
 import { CandidateDetailDrawer } from "@/components/match/candidate-detail";
 import {
@@ -73,55 +74,43 @@ export default function SharedMatch() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    const encoded = searchParams.get("d");
-    if (!encoded) {
-      setStatus("error");
-      return;
-    }
-
-    const payload = decodeSharePayload(encoded);
-    if (!payload) {
-      setStatus("error");
-      return;
-    }
-
-    setSharedAt(payload.at);
-
-    async function fetchAll(payload: SharePayload) {
-      // Flatten all IDs from all categories and remember which category each belongs to
-      const allIds: string[] = [];
-      const categoryForId: Record<string, CategoryType> = {};
-
-      CATEGORY_ORDER.forEach((cat) => {
-        (payload.s[cat] ?? []).forEach((id) => {
-          allIds.push(id);
-          categoryForId[id] = cat;
-        });
-      });
-
-      if (allIds.length === 0) {
-        setSelections({});
-        setStatus("ready");
+    let ignore = false;
+    const load = async () => {
+      const encoded = searchParams.get("d");
+      if (!encoded) {
+        if (!ignore) setStatus("error");
         return;
       }
 
-      // ── Single POST /candidates/bulk — one round-trip for all IDs ──────────
-      const cards = await candidateService.getCandidatesBulk(allIds);
+      const payload = decodeSharePayload(encoded);
+      if (!payload) {
+        if (!ignore) setStatus("error");
+        return;
+      }
 
-      // Re-group by category (order is preserved by the backend)
-      const grouped: Partial<Record<CategoryType, CandidateCard[]>> = {};
-      cards.forEach((card) => {
-        const cat = categoryForId[card.id];
-        if (!cat) return;
-        if (!grouped[cat]) grouped[cat] = [];
-        grouped[cat]!.push(card);
-      });
+      if (!ignore) setSharedAt(payload.at);
 
-      setSelections(grouped);
-      setStatus("ready");
-    }
-
-    fetchAll(payload).catch(() => setStatus("error"));
+      try {
+        const groups: Partial<Record<CategoryType, CandidateCard[]>> = {};
+        for (const cat of CATEGORY_ORDER) {
+          const ids = payload.s[cat];
+          if (ids && ids.length > 0) {
+            groups[cat] = await candidateService.getCandidatesBulk(ids);
+          }
+        }
+        if (!ignore) {
+          setSelections(groups);
+          setStatus("ready");
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        if (!ignore) setStatus("error");
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
   }, [searchParams]);
 
   const totalCount = CATEGORY_ORDER.reduce(

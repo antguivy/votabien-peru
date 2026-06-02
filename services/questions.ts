@@ -16,7 +16,7 @@ function addLettersToOptions(questions: TriviaQuestion[]): TriviaQuestion[] {
 export const questionsService = {
   async getQuestions(): Promise<TriviaQuestion[]> {
     const response = await apiClient<QuestionsResponse>(
-      "/api/v1/triviagame/questions",
+      "/api/trivia-game/questions",
     );
 
     return addLettersToOptions(response.questions);

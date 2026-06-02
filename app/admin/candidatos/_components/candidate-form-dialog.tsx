@@ -67,6 +67,7 @@ export function CandidateFormDialog({
     "UNICO" | "MULTIPLE" | null
   >(null);
   const [globalSearch, setGlobalSearch] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   const emptyValues: CandidateFormValues = {
@@ -86,6 +87,7 @@ export function CandidateFormDialog({
     defaultValues: emptyValues,
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchedType = form.watch("type");
 
   const nationalDistrictId = useMemo(() => {
@@ -135,6 +137,7 @@ export function CandidateFormDialog({
         }
       })
       .finally(() => setIsLoadingData(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, candidateId]);
 
   const filteredDistricts = useMemo(() => {

@@ -16,7 +16,9 @@ export async function searchPresidentialCandidates(
   extras?: SearchExtras,
 ): Promise<SearchableEntity[]> {
   try {
-    const procesos = (await getElectoralProcess(true)) as ElectoralProcess[];
+    const procesos = (await getElectoralProcess({
+      active: true,
+    })) as ElectoralProcess[];
     const procesoId = procesos[0]?.id;
 
     const response = await getCandidatesCards({

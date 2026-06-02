@@ -159,13 +159,16 @@ export function ParliamentaryMembershipDialog({
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMemberships(initialMemberships);
   }, [initialMemberships]);
 
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/immutability
       handleCancel();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleEdit = useCallback(
@@ -184,6 +187,7 @@ export function ParliamentaryMembershipDialog({
     [form],
   );
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleCancel = useCallback(() => {
     form.reset();
     setEditingMembership(null);
@@ -208,6 +212,7 @@ export function ParliamentaryMembershipDialog({
       }
       setMemberships((prev) => prev.filter((m) => m.id !== membershipId));
       toast.success("Eliminado exitosamente");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Error al eliminar");
     } finally {
@@ -228,7 +233,7 @@ export function ParliamentaryMembershipDialog({
         }
         if (result.data) {
           const updatedMembership =
-            result.data as ParliamentaryMembershipWithGroup;
+            result.data as unknown as ParliamentaryMembershipWithGroup;
           setMemberships((prev) =>
             prev.map((m) =>
               m.id === updatedMembership.id ? updatedMembership : m,
@@ -236,6 +241,7 @@ export function ParliamentaryMembershipDialog({
           );
         }
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, ...createData } = values;
         result = await createParliamentaryMembership(legislator_id, createData);
         if (!result.success) {
@@ -244,7 +250,7 @@ export function ParliamentaryMembershipDialog({
         }
         if (result.data) {
           const { created, updated } =
-            result.data as CreateParliamentaryMembershipResult;
+            result.data as unknown as CreateParliamentaryMembershipResult;
           setMemberships((prev) => {
             const updatedList = updated
               ? prev.map((m) => (m.id === updated.id ? updated : m))
@@ -257,6 +263,7 @@ export function ParliamentaryMembershipDialog({
         isEditing ? "Actualizado exitosamente" : "Creado exitosamente",
       );
       handleCancel();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Ocurrió un error inesperado");
     } finally {

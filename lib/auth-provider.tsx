@@ -1,5 +1,6 @@
 "use client";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "./auth-client";
@@ -15,9 +16,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-}: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: session, isPending, refetch } = authClient.useSession();
   const router = useRouter();
 
@@ -34,7 +33,13 @@ export function AuthProvider({
 
   return (
     <AuthContext.Provider
-      value={{ user, profile: user, loading: isPending, signOut, refreshProfile }}
+      value={{
+        user,
+        profile: user,
+        loading: isPending,
+        signOut,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

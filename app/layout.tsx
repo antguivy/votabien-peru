@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-provider";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { serverGetUser } from "@/lib/auth-actions";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";

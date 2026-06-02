@@ -24,6 +24,7 @@ interface ReadinessStore {
 
 export const useReadinessStore = create<ReadinessStore>()(
   persist(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (set, get) => ({
       matchInteractions: 0,
       triviaRegionsCompleted: [],

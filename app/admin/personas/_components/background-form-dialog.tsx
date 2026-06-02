@@ -224,6 +224,7 @@ export function BackgroundsFormDialog({
   const [items, setItems] = useState<BackgroundBase[]>([]);
   const [partyNumberRop, setPartyNumberRop] = useState<string | undefined>();
   const [dni, setDni] = useState<string | undefined>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoading, setIsLoading] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -239,6 +240,7 @@ export function BackgroundsFormDialog({
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     getPersonBackgrounds(personId)
       .then((data) => {

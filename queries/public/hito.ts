@@ -11,13 +11,14 @@ export const getHitos = cache(
     async (): Promise<HitoBasic[]> => {
       try {
         const data = await prisma.hito.findMany({
-          orderBy: { index: "desc" },
+          where: { is_published: true },
+          orderBy: { date: "asc" },
         });
 
-        return data.map((d: any) => ({
+        return data.map((d) => ({
           ...d,
           id: Number(d.id),
-          index: d.index ? Number(d.index) : null
+          index: d.index ? Number(d.index) : null,
         })) as unknown as HitoBasic[];
       } catch (error) {
         console.error(error);

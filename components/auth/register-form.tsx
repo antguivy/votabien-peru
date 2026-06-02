@@ -23,7 +23,6 @@ import { Field } from "@/components/ui/field";
 import { authClient } from "@/lib/auth-client";
 
 export const RegisterForm = () => {
-
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
   const [isPending, startTransition] = useTransition();
@@ -47,6 +46,7 @@ export const RegisterForm = () => {
           email: values.email,
           password: values.password,
           name: values.name,
+          callbackURL: "/auth/login?verified=true",
         });
 
         if (result.error) {
@@ -57,7 +57,7 @@ export const RegisterForm = () => {
         // Registro exitoso - mostrar mensaje de verificación
         setSuccess(
           "¡Cuenta creada exitosamente! Hemos enviado un enlace de verificación a tu correo electrónico. " +
-            "Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta."
+            "Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.",
         );
 
         // Limpiar el formulario

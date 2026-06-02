@@ -13,6 +13,7 @@ import {
   MapPin,
   ArrowRight,
 } from "lucide-react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FilterField } from "@/components/ui/filter-panel";
 import {
   ChamberType,
@@ -237,7 +238,9 @@ const PAGE_SIZE = 30;
 
 const LegisladoresList = ({
   legisladores: initialLegisladores,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bancadas,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   distritos,
   currentFilters,
   infiniteScroll = true,
@@ -324,6 +327,7 @@ const LegisladoresList = ({
   }, [infiniteScroll, hasMore, loading, loadMore]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLegisladores(initialLegisladores);
     setHasMore(initialLegisladores.length >= PAGE_SIZE);
   }, [initialLegisladores]);

@@ -355,6 +355,7 @@ function drawCandidateSilhouette(
 
 // ─── Wrap text ────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,

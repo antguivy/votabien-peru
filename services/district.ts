@@ -5,7 +5,7 @@ export const districtService = {
   getDistricts: async (): Promise<ElectoralDistrictBase[]> => {
     try {
       const response = await apiClient<{ data: ElectoralDistrictBase[] }>(
-        "/api/v1/electoral_districts",
+        "/api/districts",
       );
 
       return response.data;

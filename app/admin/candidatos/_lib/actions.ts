@@ -1,16 +1,10 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { TAGS } from "@/lib/cache-tags"; // <-- Importamos nuestros tags
+import { TAGS } from "@/lib/cache-tags";
 
-import { createClient } from "@/lib/supabase/server";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { prisma } from "@/lib/prisma";
 import { createId } from "@paralleldrive/cuid2";
-import {
-  type Database,
-  type TablesInsert,
-  type TablesUpdate,
-} from "@/interfaces/supabase";
 import { BulkUpdateCandidatesRequest } from "./types";
 import {
   CandidacyType,
@@ -18,6 +12,7 @@ import {
   UpdateCandidatePeriodRequest,
 } from "@/interfaces/candidate";
 import { extractErrorMessage } from "@/lib/error-handler";
+import { serverRequireEditor } from "@/lib/auth-actions";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -64,35 +59,29 @@ function isCombinationAllowed(
 
 // ============= VALIDACIONES =============
 async function checkCandidacyOverlap(
-  supabase: SupabaseClient<Database>,
   personId: string,
   processId: string,
   type: CandidacyType,
   districtId: string,
   excludeCandidateId?: string,
 ) {
-  const { data: nationalDistrict } = await supabase
-    .from("electoraldistrict")
-    .select("id")
-    .ilike("name", "%nacional%")
-    .single();
+  const nationalDistrict = await prisma.electoraldistrict.findFirst({
+    where: { name: { contains: "nacional", mode: "insensitive" } },
+    select: { id: true },
+  });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const nationalDistrictId = nationalDistrict?.id || "";
 
-  let query = supabase
-    .from("candidate")
-    .select("id, type, electoral_district_id")
-    .eq("active", true)
-    .eq("person_id", personId)
-    .eq("electoral_process_id", processId);
-
-  if (excludeCandidateId) {
-    query = query.neq("id", excludeCandidateId);
-  }
-
-  const { data: existingCandidates, error } = await query;
-
-  if (error) throw new Error(error.message);
+  const existingCandidates = await prisma.candidate.findMany({
+    where: {
+      active: true,
+      person_id: personId,
+      electoral_process_id: processId,
+      ...(excludeCandidateId ? { id: { not: excludeCandidateId } } : {}),
+    },
+    select: { id: true, type: true, electoral_district_id: true },
+  });
 
   if (!existingCandidates || existingCandidates.length === 0) {
     return;
@@ -125,21 +114,19 @@ async function checkCandidacyOverlap(
 export async function createCandidatePeriod(
   data: CreateCandidatePeriodRequest,
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
     await checkCandidacyOverlap(
-      supabase,
       data.person_id,
       data.electoral_process_id,
       data.type,
       data.electoral_district_id,
     );
 
-    const { data: districtExists } = await supabase
-      .from("electoraldistrict")
-      .select("id")
-      .eq("id", data.electoral_district_id)
-      .single();
+    const districtExists = await prisma.electoraldistrict.findUnique({
+      where: { id: data.electoral_district_id },
+      select: { id: true },
+    });
 
     if (!districtExists) {
       throw new Error(
@@ -147,7 +134,7 @@ export async function createCandidatePeriod(
       );
     }
 
-    const dbData: TablesInsert<"candidate"> = {
+    const dbData = {
       id: createId(),
       person_id: data.person_id,
       type: data.type,
@@ -159,26 +146,23 @@ export async function createCandidatePeriod(
       electoral_process_id: data.electoral_process_id,
     };
 
-    const { data: result, error } = await supabase
-      .from("candidate")
-      .insert(dbData)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "23503") {
-        throw new Error(
-          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
-        );
-      }
-      throw error;
-    }
+    const result = await prisma.candidate.create({
+      data: dbData,
+    });
 
     revalidatePath("/admin/candidatos");
     revalidateTag(TAGS.candidates, "max");
 
     return { success: true, data: result };
-  } catch (error) {
+  } catch (error: unknown) {
+    // Basic catch for foreign key failures
+    if ((error as { code?: string })?.code === "P2003") {
+      return {
+        success: false,
+        error:
+          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
+      };
+    }
     return {
       success: false,
       error: extractErrorMessage(error),
@@ -189,7 +173,7 @@ export async function createCandidatePeriod(
 export async function updateCandidatePeriod(
   data: UpdateCandidatePeriodRequest,
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
     const { id, ...updateBody } = data;
 
@@ -200,38 +184,32 @@ export async function updateCandidatePeriod(
       updateBody.electoral_district_id
     ) {
       await checkCandidacyOverlap(
-        supabase,
         updateBody.person_id,
         updateBody.electoral_process_id,
-        updateBody.type,
+        updateBody.type as CandidacyType,
         updateBody.electoral_district_id,
         id,
       );
     }
 
-    const payload: TablesUpdate<"candidate"> = updateBody;
+    const result = await prisma.candidate.update({
+      where: { id: id },
 
-    const { data: result, error } = await supabase
-      .from("candidate")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === "23503") {
-        throw new Error(
-          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
-        );
-      }
-      throw error;
-    }
+      data: updateBody,
+    });
 
     revalidatePath("/admin/candidatos");
     revalidateTag(TAGS.candidates, "max");
 
     return { success: true, data: result };
-  } catch (error) {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === "P2003") {
+      return {
+        success: false,
+        error:
+          "Uno de los datos seleccionados no es válido. Verifique el distrito electoral, partido político y proceso electoral.",
+      };
+    }
     return {
       success: false,
       error: extractErrorMessage(error),
@@ -240,14 +218,9 @@ export async function updateCandidatePeriod(
 }
 
 export async function deleteCandidatePeriod(candidateId: string) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const { error } = await supabase
-      .from("candidate")
-      .delete()
-      .eq("id", candidateId);
-
-    if (error) throw error;
+    await prisma.candidate.delete({ where: { id: candidateId } });
 
     revalidatePath("/admin/candidatos");
     revalidateTag(TAGS.candidates, "max");
@@ -259,23 +232,20 @@ export async function deleteCandidatePeriod(candidateId: string) {
 }
 
 export async function bulkUpdateCandidates(input: BulkUpdateCandidatesRequest) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const payload: TablesUpdate<"candidate"> = { active: input.active };
+    const payload = { active: input.active };
 
-    const { data, error } = await supabase
-      .from("candidate")
-      .update(payload)
-      .in("id", input.ids)
-      .select();
-
-    if (error) throw error;
+    const data = await prisma.candidate.updateMany({
+      where: { id: { in: input.ids } },
+      data: payload,
+    });
 
     revalidatePath("/admin/candidatos");
     revalidateTag(TAGS.candidates, "max");
 
     return {
-      data: { count: data.length, message: `Actualizados ${data.length}` },
+      data: { count: data.count, message: `Actualizados ${data.count}` },
       error: null,
     };
   } catch (error) {

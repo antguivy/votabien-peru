@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
+import { Prisma, partyfinancing } from "@/prisma/generated/client";
 
 import prisma from "@/lib/prisma";
 
@@ -42,8 +43,10 @@ export const getPartidosListSimple = cache(
           orderBy: { name: "asc" },
         });
         return data as unknown as PoliticalPartyBase[];
-      } catch (error: any) {
-        throw new Error(`Error al obtener partidos: ${error.message}`);
+      } catch (error) {
+        throw new Error(
+          `Error al obtener partidos: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     },
     ["partidos-list-simple"],
@@ -86,7 +89,7 @@ export const getPartidosList = cache(
           }
         }
 
-        const whereClause: any = {};
+        const whereClause: Prisma.politicalpartyWhereInput = {};
 
         if (active !== undefined) {
           whereClause.active = active;
@@ -138,8 +141,6 @@ type SeatsViewRow = {
   seats: number;
   elected_by_party_id: string | null;
 };
-type FinancingReportRow = FinancingReport;
-type FinancingTransactionRow = PartyFinancingBasic;
 
 interface FinancingReportQueryResponse {
   id: string;
@@ -152,7 +153,7 @@ interface FinancingReportQueryResponse {
   period_start: Date;
   period_end: Date;
   created_at: Date;
-  partyfinancing: any[];
+  partyfinancing: partyfinancing[];
 }
 
 interface LegislatorQueryResponse {
@@ -185,7 +186,7 @@ const mapFinancingReport = (
   created_at: report.created_at as unknown as string,
 });
 
-const mapTransaction = (t: any): PartyFinancingBasic => ({
+const mapTransaction = (t: partyfinancing): PartyFinancingBasic => ({
   id: t.id,
   financing_report_id: t.financing_report_id,
   category: t.category as FinancingCategory,
@@ -294,7 +295,11 @@ export const getPartidoById = cache(
         const parentAllianceRaw = partido.parentAlliances?.[0]?.childParty;
         const parentAlliance = parentAllianceRaw;
 
-        const { created_at, updated_at, ...partidoWithoutTimestamps } = partido;
+        const {
+          created_at: _created_at,
+          updated_at: _updated_at,
+          ...partidoWithoutTimestamps
+        } = partido;
 
         return {
           ...partidoWithoutTimestamps,

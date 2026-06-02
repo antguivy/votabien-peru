@@ -1,10 +1,12 @@
 export interface HitoBasic {
   id: number;
-  date: string | null;
+  title: string;
+  date: Date;
+  description: string | null;
   location: string | null;
   photo_url: string | null;
-  photo_description: string | null;
+  registration_url: string | null;
+  is_published: boolean;
   index: number | null;
-  quote: string | null;
   label: string | null;
 }

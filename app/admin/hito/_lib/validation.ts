@@ -1,13 +1,25 @@
 import * as z from "zod";
 
 export const hitoSchema = z.object({
-  date: z.string().min(1, "La fecha es obligatoria"),
-  location: z.string().min(2, "La ubicación es obligatoria"),
-  photo_url: z.string().url("URL inválida").optional().or(z.literal("")),
-  photo_description: z.string().min(2, "La descripción es obligatoria"),
-  index: z.number(),
-  quote: z.string().min(2, "La cita es obligatoria"),
-  label: z.string().optional(),
+  title: z.string().min(2, "El título es obligatorio"),
+  date: z.date(),
+  description: z.string().optional().or(z.literal("")),
+  location: z.string().optional().or(z.literal("")),
+  label: z.string().optional().or(z.literal("")),
+  photo_url: z
+    .string()
+    .url("URL inválida")
+    .optional()
+    .or(z.literal(""))
+    .nullable(),
+  registration_url: z
+    .string()
+    .url("URL inválida")
+    .optional()
+    .or(z.literal(""))
+    .nullable(),
+  is_published: z.boolean(),
+  index: z.number().optional().nullable(),
 });
 
 export type HitoFormValues = z.infer<typeof hitoSchema>;

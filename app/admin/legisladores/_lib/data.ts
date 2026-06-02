@@ -8,153 +8,119 @@ import type {
   DistrictCounts,
   ConditionCounts,
 } from "./types";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { AdminLegislator } from "@/interfaces/legislator";
-import { type Tables } from "@/interfaces/supabase";
 import {
   ChamberType,
   GroupChangeReason,
   LegislatorCondition,
 } from "@/interfaces/politics";
 
-type PersonRow = Tables<"person">;
-type PartyRow = Tables<"politicalparty">;
-type DistrictRow = Tables<"electoraldistrict">;
-type GroupRow = Tables<"parliamentarygroup">;
-
-type MembershipWithGroupRow = Tables<"parliamentarymembership"> & {
-  parliamentary_group: GroupRow | null;
-};
-
-interface LegislatorQueryResult extends Tables<"legislator"> {
-  person: PersonRow | null;
-  political_party: PartyRow | null;
-  electoral_district: DistrictRow | null;
-  current_parliamentary_group: GroupRow | null;
-  parliamentarymembership: MembershipWithGroupRow[];
-}
-
-function mapLegislatorToResponse(row: LegislatorQueryResult): AdminLegislator {
-  const personName = row.person?.fullname || "Sin nombre";
-
-  return {
-    id: row.id,
-    person_id: row.person_id,
-    fullname: personName,
-    elected_by_party_id: row.elected_by_party_id,
-    electoral_district_id: row.electoral_district_id,
-    chamber: row.chamber as ChamberType,
-    condition: row.condition as LegislatorCondition,
-    start_date: row.start_date,
-    end_date: row.end_date,
-    active: row.active,
-    institutional_email: row.institutional_email,
-    created_at: row.created_at,
-
-    // Datos computados
-    person: row.person,
-    current_parliamentary_group: row.current_parliamentary_group,
-    elected_by_party: row.political_party,
-    electoral_district: row.electoral_district,
-
-    // Lista histórica mapeada
-    parliamentary_memberships: (row.parliamentarymembership || []).map(
-      (pm) => ({
-        ...pm,
-        change_reason: pm.change_reason as GroupChangeReason,
-        parliamentary_group: pm.parliamentary_group || undefined,
-      }),
-    ),
-  };
-}
-
 export async function getLegislators(
   input: GetLegislatorSchema,
 ): Promise<PaginatedLegislatorsResponse> {
   noStore();
-  const supabase = await createClient();
 
   try {
-    let query = supabase.from("legislator").select(
-      `
-        id,
-        person_id,
-        elected_by_party_id,
-        electoral_district_id,
-        chamber,
-        condition,
-        start_date,
-        end_date,
-        active,
-        institutional_email,
-        created_at,
-        person:person_id!inner(
-          id,
-          fullname
-        ),
-        political_party:elected_by_party_id(
-          id, name, acronym, color_hex
-        ),
-        electoral_district:electoral_district_id!inner(
-          id, name, code
-        ),
-        current_parliamentary_group,
-        parliamentarymembership(
-          *,
-          parliamentary_group:parliamentary_group_id(*)
-        )
-      `,
-      { count: "exact" },
-    );
-
-    if (input.fullname) {
-      query = query.ilike("person.fullname", `%${input.fullname}%`);
-    }
-
-    if (input.chamber && input.chamber.length > 0) {
-      query = query.in("chamber", input.chamber);
-    }
-
-    if (input.condition && input.condition.length > 0) {
-      query = query.in("condition", input.condition);
-    }
-
-    if (input.electoral_district && input.electoral_district.length > 0) {
-      query = query.in("electoral_district.name", input.electoral_district);
-    }
-
-    // Orden
-    if (input.sort && input.sort.length > 0) {
-      const sortItem = input.sort[0];
-
-      if (sortItem.id === "fullname") {
-        // Orden por columna computada en SQL
-        query = query.order("legislator_fullname", {
-          ascending: !sortItem.desc,
-        });
-      } else {
-        query = query.order(sortItem.id, { ascending: !sortItem.desc });
-      }
-    } else {
-      query = query.order("start_date", { ascending: false });
-    }
-
     const page = input.page || 1;
     const pageSize = input.perPage || 10;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
-    query = query.range(from, to);
+    const where: Record<string, unknown> = {};
 
-    const { data, error, count } = await query;
+    if (input.fullname) {
+      where.person = {
+        fullname: { contains: input.fullname, mode: "insensitive" },
+      };
+    }
+    if (input.chamber && input.chamber.length > 0) {
+      where.chamber = { in: input.chamber };
+    }
+    if (input.condition && input.condition.length > 0) {
+      where.condition = { in: input.condition };
+    }
+    if (input.electoral_district && input.electoral_district.length > 0) {
+      where.electoraldistrict = {
+        name: { in: input.electoral_district },
+      };
+    }
 
-    if (error) throw error;
+    const orderBy: Record<string, unknown> = {};
+    if (input.sort && input.sort.length > 0) {
+      const sortItem = input.sort[0];
+      if (sortItem.id === "fullname") {
+        orderBy.person = { fullname: sortItem.desc ? "desc" : "asc" };
+      } else {
+        orderBy[sortItem.id] = sortItem.desc ? "desc" : "asc";
+      }
+    } else {
+      orderBy.start_date = "desc";
+    }
 
-    const typedData = (data || []) as unknown as LegislatorQueryResult[];
+    const [data, count] = await Promise.all([
+      prisma.legislator.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        include: {
+          person: { select: { id: true, fullname: true } },
+          politicalparty: {
+            select: { id: true, name: true, acronym: true, color_hex: true },
+          },
+          electoraldistrict: { select: { id: true, name: true, code: true } },
+          parliamentarymembership: {
+            include: {
+              parliamentarygroup: true,
+            },
+          },
+        },
+      }),
+      prisma.legislator.count({ where }),
+    ]);
+
+    const mappedData = data.map((row) => {
+      // Find current parliamentary group
+
+      const currentMembership = row.parliamentarymembership.find(
+        (pm) => pm.end_date === null || pm.end_date >= new Date(),
+      );
+      const current_parliamentary_group =
+        currentMembership?.parliamentarygroup || null;
+
+      return {
+        id: row.id,
+        person_id: row.person_id,
+        fullname: row.person?.fullname || "Sin nombre",
+        elected_by_party_id: row.elected_by_party_id,
+        electoral_district_id: row.electoral_district_id,
+        chamber: row.chamber as ChamberType,
+        condition: row.condition as LegislatorCondition,
+        start_date: row.start_date,
+        end_date: row.end_date,
+        active: row.active,
+        institutional_email: row.institutional_email,
+        created_at: row.created_at,
+
+        person: row.person,
+        current_parliamentary_group: current_parliamentary_group,
+        elected_by_party: row.politicalparty,
+        electoral_district: row.electoraldistrict,
+
+        parliamentary_memberships: (row.parliamentarymembership || []).map(
+          (pm) => ({
+            ...pm,
+            change_reason: pm.change_reason as GroupChangeReason,
+            parliamentary_group: pm.parliamentarygroup || undefined,
+          }),
+        ),
+      };
+    });
 
     return {
-      data: typedData.map(mapLegislatorToResponse),
-      total: count || 0,
+      data: mappedData as unknown as AdminLegislator[],
+      total: count,
       page: page,
       page_size: pageSize,
     };
@@ -164,24 +130,16 @@ export async function getLegislators(
   }
 }
 
-async function fetchAllForCounting<K extends keyof Tables<"legislator">>(
-  column: K,
-) {
-  const supabase = await createClient();
-  const { data } = await supabase.from("legislator").select(column);
-  return (data || []) as unknown as Pick<Tables<"legislator">, K>[];
-}
-
 export async function getChamberTypeCounts(): Promise<ChamberCounts> {
   try {
-    const data = await fetchAllForCounting("chamber");
+    const data = await prisma.legislator.groupBy({
+      by: ["chamber"],
+      _count: { chamber: true },
+    });
 
     return data.reduce<ChamberCounts>((acc, curr) => {
       const key = curr.chamber;
-      // Validamos que key no sea null (por si acaso)
-      if (key) {
-        acc[key] = (acc[key] || 0) + 1;
-      }
+      if (key) acc[key] = curr._count.chamber;
       return acc;
     }, {});
   } catch (error) {
@@ -192,13 +150,14 @@ export async function getChamberTypeCounts(): Promise<ChamberCounts> {
 
 export async function getLegislatorConditionCounts(): Promise<ConditionCounts> {
   try {
-    const data = await fetchAllForCounting("condition");
+    const data = await prisma.legislator.groupBy({
+      by: ["condition"],
+      _count: { condition: true },
+    });
 
     return data.reduce<ConditionCounts>((acc, curr) => {
       const key = curr.condition;
-      if (key) {
-        acc[key] = (acc[key] || 0) + 1;
-      }
+      if (key) acc[key] = curr._count.condition;
       return acc;
     }, {});
   } catch (error) {
@@ -207,30 +166,22 @@ export async function getLegislatorConditionCounts(): Promise<ConditionCounts> {
   }
 }
 
-interface DistrictCountQueryRow {
-  electoral_district_id: string;
-  electoral_district: {
-    id: string;
-    name: string;
-  } | null;
-}
-
 export async function getDistrictsCounts(): Promise<DistrictCounts> {
   noStore();
-  const supabase = await createClient();
   try {
-    const { data } = await supabase.from("legislator").select(`
-        electoral_district_id,
-        electoral_district:electoral_district_id(id, name)
-      `);
+    const data = await prisma.legislator.findMany({
+      select: {
+        electoral_district_id: true,
+        electoraldistrict: {
+          select: { id: true, name: true },
+        },
+      },
+    });
 
-    if (!data) return {};
-
-    const typedData = data as unknown as DistrictCountQueryRow[];
     const counts: DistrictCounts = {};
 
-    typedData.forEach((item) => {
-      const dist = item.electoral_district;
+    data.forEach((item) => {
+      const dist = item.electoraldistrict;
       if (dist && dist.id) {
         if (!counts[dist.id]) {
           counts[dist.id] = { name: dist.name, count: 0 };

@@ -3,18 +3,18 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+  const url = request.nextUrl.clone();
+  const path = url.pathname;
+
+  // Clonar headers e inyectar la ruta actual para que los Server Components puedan leerla
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-current-path", path);
 
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  
-  const user = session?.user;
 
-  const url = request.nextUrl.clone();
-  const path = url.pathname;
+  const user = session?.user;
 
   const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"];
 
@@ -32,6 +32,7 @@ export async function proxy(request: NextRequest) {
     "/privacidad",
     "/terminos",
     "/api/stats",
+    "/api/proxy-image", // Permite cargar fotos externas sin estar logueado
     "/match",
     "/trivia",
     "/simulador",
@@ -57,9 +58,13 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
-  
-  response.headers.set("x-current-path", path);
-  return response;
+
+  // Continuar la petición enviando los headers modificados en el request
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

@@ -12,13 +12,12 @@ export default async function VotaBienPage() {
   try {
     const [hitos, proceso_electoral] = await Promise.all([
       getHitos(),
-      getElectoralProcess(true),
+      getElectoralProcess({ active: true }),
     ]);
     const currentProcess =
       proceso_electoral && proceso_electoral.length > 0
         ? proceso_electoral[0]
         : null;
-
     return (
       <>
         {/* Mobile Header (sticky top) solo para la landing en mobile */}
@@ -27,7 +26,6 @@ export default async function VotaBienPage() {
         <ContentPlatformLayout>
           {/* 1 — Hero: Estado actual (conteo / 2da vuelta) */}
           {currentProcess && <HeroModern proceso_electoral={currentProcess} />}
-
           <PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />
           {/* 2 — Social Proof: fotos destacadas */}
           <SocialProof hitos={hitos} />

@@ -2,8 +2,7 @@
 
 import { unstable_noStore as noStore } from "next/cache";
 import type { GetPartySchema } from "./validation";
-import { createClient } from "@/lib/supabase/server";
-import { type Tables } from "@/interfaces/supabase";
+import { prisma } from "@/lib/prisma";
 import { AdminPoliticalParty } from "@/interfaces/political-party";
 import {
   ActivePartiesCounts,
@@ -15,75 +14,90 @@ export async function getParties(
   input: GetPartySchema,
 ): Promise<PaginatedPartiesResponse> {
   noStore();
-  const supabase = await createClient();
 
   try {
-    let query = supabase.from("politicalparty").select(
-      `
-        *,
-        financing_reports:financingreports(
-          id,
-          party_id,
-          report_name,
-          filing_status,
-          source_name,
-          source_url,
-          report_date,
-          period_start,
-          period_end,
-          created_at,
-          updated_at,
-          transactions:partyfinancing(
-            id,
-            financing_report_id,
-            category,
-            flow_type,
-            amount,
-            currency,
-            notes
-          )
-        )
-      `,
-      { count: "exact" },
-    );
-
-    if (input.name) {
-      query = query.ilike("name", `%${input.name}%`);
-    }
-
-    if (input.active !== null) {
-      query = query.eq("active", input.active);
-    }
-
-    // Orden
-    if (input.sort && input.sort.length > 0) {
-      const sortItem = input.sort[0];
-
-      query = query.order(sortItem.id, {
-        ascending: !sortItem.desc,
-      });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
     const page = input.page || 1;
     const pageSize = input.perPage || 10;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
 
-    query = query.range(from, to);
+    const where: Record<string, unknown> = {};
+    if (input.name) {
+      where.name = { contains: input.name, mode: "insensitive" };
+    }
+    if (input.active !== null) {
+      where.active = input.active;
+    }
 
-    const { data, error, count } = await query;
+    const orderBy: Record<string, unknown> = {};
+    if (input.sort && input.sort.length > 0) {
+      const sortItem = input.sort[0];
+      orderBy[sortItem.id] = sortItem.desc ? "desc" : "asc";
+    } else {
+      orderBy.created_at = "desc";
+    }
 
-    if (error) throw error;
+    const [data, count] = await Promise.all([
+      prisma.politicalparty.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        include: {
+          financingreports: {
+            select: {
+              id: true,
+              party_id: true,
+              report_name: true,
+              filing_status: true,
+              source_name: true,
+              source_url: true,
+              report_date: true,
+              period_start: true,
+              period_end: true,
+              created_at: true,
+              updated_at: true,
+              partyfinancing: {
+                select: {
+                  id: true,
+                  financing_report_id: true,
+                  category: true,
+                  flow_type: true,
+                  amount: true,
+                  currency: true,
+                  notes: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.politicalparty.count({ where }),
+    ]);
 
-    const typedData = (data || []) as unknown as PartyResponse[];
+    // Map relations to match old Supabase shape
+    const mappedData = data.map((party) => {
+      const { financingreports, ...rest } = party as Record<string, unknown> & {
+        financingreports: Array<
+          Record<string, unknown> & { partyfinancing: unknown }
+        >;
+      };
+      return {
+        ...rest,
+
+        financing_reports: financingreports.map((report) => {
+          const { partyfinancing, ...reportRest } = report;
+          return {
+            ...reportRest,
+            transactions: partyfinancing,
+          };
+        }),
+      };
+    }) as unknown as PartyResponse[];
 
     return {
-      data: typedData.map((party) => ({
-        ...party,
-      })) as AdminPoliticalParty[],
-      total: count || 0,
+      data: mappedData as unknown as AdminPoliticalParty[],
+      total: count,
       page: page,
       page_size: pageSize,
     };
@@ -93,28 +107,22 @@ export async function getParties(
   }
 }
 
-async function fetchAllForCounting<K extends keyof Tables<"politicalparty">>(
-  column: K,
-) {
-  const supabase = await createClient();
-  const { data } = await supabase.from("politicalparty").select(column);
-  return (data || []) as unknown as Pick<Tables<"politicalparty">, K>[];
-}
-
 export async function getActivePartiesCounts(): Promise<ActivePartiesCounts> {
   try {
-    const data = await fetchAllForCounting("active");
+    const data = await prisma.politicalparty.groupBy({
+      by: ["active"],
+      _count: {
+        active: true,
+      },
+    });
 
     return data.reduce<ActivePartiesCounts>((acc, curr) => {
-      const key = curr.active.toString();
-      // Validamos que key no sea null (por si acaso)
-      if (key) {
-        acc[key] = (acc[key] || 0) + 1;
-      }
+      const key = String(curr.active);
+      acc[key] = curr._count.active;
       return acc;
     }, {});
   } catch (error) {
-    console.error("Error chamber type counts:", error);
+    console.error("Error active party counts:", error);
     return {};
   }
 }

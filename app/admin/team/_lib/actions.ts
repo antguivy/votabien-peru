@@ -1,21 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { teamSchema, type TeamFormValues } from "./validation";
-import { extractErrorMessage } from "@/lib/error-handler"; // Asumo que tienes esto
+import { extractErrorMessage } from "@/lib/error-handler";
 import { createId } from "@paralleldrive/cuid2";
+import { serverRequireAdmin } from "@/lib/auth-actions";
 
 export async function createTeam(data: TeamFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireAdmin();
   const validation = teamSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
   }
 
   try {
-    // Convertir strings vacíos a null para la BD
     const payload = {
       id: createId(),
       first_name: data.first_name,
@@ -29,11 +28,9 @@ export async function createTeam(data: TeamFormValues) {
       is_principal: data.is_principal,
     };
 
-    const { error } = await supabase.from("team").insert(payload);
+    await prisma.team.create({ data: payload });
 
-    if (error) throw error;
-
-    revalidatePath("/admin/team"); // Ajusta la ruta si es diferente
+    revalidatePath("/admin/team");
     return { success: true, message: "Miembro creado correctamente" };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
@@ -41,8 +38,7 @@ export async function createTeam(data: TeamFormValues) {
 }
 
 export async function updateTeam(id: string, data: TeamFormValues) {
-  const supabase = await createClient();
-
+  await serverRequireAdmin();
   const validation = teamSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -61,9 +57,7 @@ export async function updateTeam(id: string, data: TeamFormValues) {
       is_principal: data.is_principal,
     };
 
-    const { error } = await supabase.from("team").update(payload).eq("id", id);
-
-    if (error) throw error;
+    await prisma.team.update({ where: { id: id }, data: payload });
 
     revalidatePath("/admin/team");
     return { success: true, message: "Miembro actualizado correctamente" };
@@ -73,10 +67,9 @@ export async function updateTeam(id: string, data: TeamFormValues) {
 }
 
 export async function deleteTeam(id: string) {
-  const supabase = await createClient();
+  await serverRequireAdmin();
   try {
-    const { error } = await supabase.from("team").delete().eq("id", id);
-    if (error) throw error;
+    await prisma.team.delete({ where: { id: id } });
     revalidatePath("/admin/team");
     return { success: true };
   } catch (error) {

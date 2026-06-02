@@ -80,7 +80,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
   };
 
   // ── Proceso electoral activo ──
-  const procesosActivos = await getElectoralProcess(true);
+  const procesosActivos = await getElectoralProcess({ active: true });
 
   if (!procesosActivos || procesosActivos.length === 0) {
     return (

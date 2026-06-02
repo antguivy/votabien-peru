@@ -9,6 +9,7 @@ import { RnasSanction } from "@/interfaces/person";
 import { TAGS, TTL } from "@/lib/cache-tags";
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { Prisma } from "@/prisma/generated/client";
 import { cache } from "react";
 
 interface GetCandidatesParams {
@@ -61,7 +62,7 @@ export const getCandidatesCards = cache(
         const skip = isPresidente || hasSearch ? 0 : (page - 1) * pageSize;
         const take = isPresidente || hasSearch ? 100 : pageSize;
 
-        const whereClause: any = { active: true };
+        const whereClause: Prisma.candidateWhereInput = { active: true };
 
         if (electoral_process_id)
           whereClause.electoral_process_id = electoral_process_id;
@@ -328,6 +329,7 @@ export const getFormulaPorPartido = cache(
           orderBy: { list_number: "asc" },
         });
         return data as unknown as CandidatePresidentials[];
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return [];
       }
@@ -346,6 +348,7 @@ export const getActiveLegislatorId = cache(
           select: { id: true },
         });
         return data ? data.id : null;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         return null;
       }

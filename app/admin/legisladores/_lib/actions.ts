@@ -1,21 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { prisma } from "@/lib/prisma";
+import { Prisma, groupchangereason } from "@/prisma/generated/client";
 import { BulkUpdateLegislatorsRequest } from "./types";
 import {
   CreateLegislatorPeriodRequest,
   UpdateLegislatorPeriodRequest,
 } from "@/interfaces/legislator";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ChamberType, GroupChangeReason } from "@/interfaces/politics";
 import { createId } from "@paralleldrive/cuid2";
-import {
-  type Database,
-  type TablesInsert,
-  type TablesUpdate,
-} from "@/interfaces/supabase";
 import z from "zod";
+import { serverRequireEditor } from "@/lib/auth-actions";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -28,29 +25,20 @@ const handleError = (error: unknown, msg: string) => {
 
 // ============= LEGISLADORES =============
 async function checkLegislatorOverlap(
-  supabase: SupabaseClient<Database>,
   personId: string,
   chamber: ChamberType | undefined,
   startDate: string | undefined,
   endDate: string | null | undefined,
   excludeId?: string,
 ) {
-  let query = supabase
-    .from("legislator")
-    .select("start_date, end_date")
-    .eq("person_id", personId);
-
-  if (chamber) {
-    query = query.eq("chamber", chamber);
-  }
-
-  if (excludeId) {
-    query = query.neq("id", excludeId);
-  }
-
-  const { data: existingPeriods, error } = await query;
-
-  if (error) throw error;
+  const existingPeriods = await prisma.legislator.findMany({
+    where: {
+      person_id: personId,
+      ...(chamber ? { chamber: chamber } : {}),
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { start_date: true, end_date: true },
+  });
 
   if (existingPeriods && existingPeriods.length > 0) {
     if (!startDate) {
@@ -79,40 +67,33 @@ async function checkLegislatorOverlap(
 export async function createLegislatorPeriod(
   data: CreateLegislatorPeriodRequest,
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
     await checkLegislatorOverlap(
-      supabase,
       data.person_id,
       data.chamber,
       data.start_date,
       data.end_date,
     );
 
-    // Tipado estricto para el insert
-    const now = new Date().toISOString();
-    const dbData: TablesInsert<"legislator"> = {
+    const now = new Date();
+
+    const dbData = {
       id: createId(),
       person_id: data.person_id,
       chamber: data.chamber,
       electoral_district_id: data.electoral_district_id,
       elected_by_party_id: data.elected_by_party_id,
       condition: data.condition,
-      start_date: data.start_date,
-      end_date: data.end_date,
+      start_date: new Date(data.start_date),
+      end_date: data.end_date ? new Date(data.end_date) : null,
       institutional_email: data.institutional_email,
       active: data.active,
       created_at: now,
       updated_at: now,
     };
 
-    const { data: result, error } = await supabase
-      .from("legislator")
-      .insert(dbData)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const result = await prisma.legislator.create({ data: dbData });
 
     revalidatePath("/admin/legisladores");
     return { success: true, data: result };
@@ -124,11 +105,10 @@ export async function createLegislatorPeriod(
 export async function updateLegislatorPeriod(
   data: UpdateLegislatorPeriodRequest,
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
     if (data.person_id) {
       await checkLegislatorOverlap(
-        supabase,
         data.person_id,
         data.chamber,
         data.start_date,
@@ -138,17 +118,27 @@ export async function updateLegislatorPeriod(
     }
     const { id, ...updateBody } = data;
 
-    // Casting parcial seguro para update
-    const payload: TablesUpdate<"legislator"> = updateBody;
+    const payload = {
+      ...updateBody,
+      start_date: updateBody.start_date
+        ? new Date(updateBody.start_date)
+        : undefined,
+      end_date:
+        updateBody.end_date === null
+          ? null
+          : updateBody.end_date
+            ? new Date(updateBody.end_date)
+            : undefined,
+    };
+    Object.keys(payload).forEach((key) => {
+      const k = key as keyof typeof payload;
+      if (payload[k] === undefined) delete payload[k];
+    });
 
-    const { data: result, error } = await supabase
-      .from("legislator")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const result = await prisma.legislator.update({
+      where: { id: id },
+      data: payload,
+    });
 
     revalidatePath("/admin/legisladores");
     return { success: true, data: result };
@@ -158,14 +148,9 @@ export async function updateLegislatorPeriod(
 }
 
 export async function deleteLegislatorPeriod(legislatorId: string) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const { error } = await supabase
-      .from("legislator")
-      .delete()
-      .eq("id", legislatorId);
-
-    if (error) throw error;
+    await prisma.legislator.delete({ where: { id: legislatorId } });
 
     revalidatePath("/admin/legisladores");
     return { success: true, data: { deleted_id: legislatorId } };
@@ -177,22 +162,19 @@ export async function deleteLegislatorPeriod(legislatorId: string) {
 export async function bulkUpdateLegislators(
   input: BulkUpdateLegislatorsRequest,
 ) {
-  const supabase = await createClient();
+  await serverRequireEditor();
   try {
-    const payload: TablesUpdate<"legislator"> = { active: input.active };
+    const payload = { active: input.active };
 
-    const { data, error } = await supabase
-      .from("legislator")
-      .update(payload)
-      .in("id", input.ids)
-      .select();
-
-    if (error) throw error;
+    const data = await prisma.legislator.updateMany({
+      where: { id: { in: input.ids } },
+      data: payload,
+    });
 
     revalidatePath("/admin/legisladores");
 
     return {
-      data: { count: data.length, message: `Actualizados ${data.length}` },
+      data: { count: data.count, message: `Actualizados ${data.count}` },
       error: null,
     };
   } catch (error) {
@@ -202,21 +184,50 @@ export async function bulkUpdateLegislators(
 
 // ============= MEMBRESIAS PARLAMENTARIAS =============
 
+const GroupChangeReasonEnum = z.enum([
+  "INICIAL",
+  "CAMBIO_VOLUNTARIO",
+  "EXPULSION",
+  "RENUNCIA",
+  "DISOLUCION_BANCADA",
+  "CAMBIO_ESTRATEGICO",
+  "SANCION_DISCIPLINARIA",
+  "OTRO",
+]);
+
 const createSchema = z.object({
   parliamentary_group_id: z.string(),
   start_date: z.string(),
-  change_reason: z.enum(GroupChangeReason),
+  change_reason: GroupChangeReasonEnum,
   source_url: z.string().optional(),
 });
 
 type CreateMembershipInput = z.infer<typeof createSchema>;
 
+const stringifyDates = (
+  obj: {
+    start_date?: Date | null;
+    end_date?: Date | null;
+    created_at?: Date | null;
+    updated_at?: Date | null;
+    [key: string]: unknown;
+  } | null,
+) => {
+  if (!obj) return obj;
+  return {
+    ...obj,
+    start_date: obj.start_date?.toISOString(),
+    end_date: obj.end_date?.toISOString(),
+    created_at: obj.created_at?.toISOString(),
+    updated_at: obj.updated_at?.toISOString(),
+  };
+};
+
 export async function createParliamentaryMembership(
   legislator_id: string,
   rawData: CreateMembershipInput,
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   const validation = createSchema.safeParse(rawData);
   if (!validation.success) {
     return {
@@ -227,59 +238,58 @@ export async function createParliamentaryMembership(
   const data = validation.data;
 
   try {
-    const { data: currentMembership } = await supabase
-      .from("parliamentarymembership")
-      .select("id")
-      .eq("legislator_id", legislator_id)
-      .is("end_date", null)
-      .maybeSingle();
+    const currentMembership = await prisma.parliamentarymembership.findFirst({
+      where: {
+        legislator_id: legislator_id,
+        end_date: null,
+      },
+      select: { id: true },
+    });
 
     let updatedRecord = null;
 
     if (currentMembership) {
-      const { data: updated, error: updateError } = await supabase
-        .from("parliamentarymembership")
-        .update({ end_date: data.start_date })
-        .eq("id", currentMembership.id)
-        // Usamos el alias correcto para que el frontend reciba 'parliamentary_group'
-        .select("*, parliamentary_group:parliamentarygroup(*)")
-        .single();
-
-      if (updateError)
-        throw new Error(
-          "Error al cerrar bancada anterior: " + updateError.message,
-        );
-      updatedRecord = updated;
+      updatedRecord = await prisma.parliamentarymembership.update({
+        where: { id: currentMembership.id },
+        data: { end_date: new Date(data.start_date) },
+        include: {
+          parliamentarygroup: true,
+        },
+      });
     }
 
-    const payload: TablesInsert<"parliamentarymembership"> = {
+    const payload: Prisma.parliamentarymembershipUncheckedCreateInput = {
       id: createId(),
       legislator_id: legislator_id,
       parliamentary_group_id: data.parliamentary_group_id,
-      start_date: data.start_date,
-      change_reason: data.change_reason,
+      start_date: new Date(data.start_date),
+      change_reason: data.change_reason as groupchangereason,
       source_url: data.source_url || null,
       end_date: null,
     };
 
-    const { data: createdRecord, error: createError } = await supabase
-      .from("parliamentarymembership")
-      .insert(payload)
-      .select("*, parliamentary_group:parliamentarygroup(*)")
-      .single();
-
-    if (createError) {
-      console.error("Supabase Create Error:", createError);
-      throw new Error(createError.message);
-    }
+    const createdRecord = await prisma.parliamentarymembership.create({
+      data: payload,
+      include: { parliamentarygroup: true },
+    });
 
     revalidatePath(`/admin/legisladores`);
 
     return {
       success: true,
       data: {
-        created: createdRecord,
-        updated: updatedRecord,
+        created: stringifyDates({
+          ...createdRecord,
+          parliamentary_group: stringifyDates(createdRecord.parliamentarygroup),
+        }),
+        updated: updatedRecord
+          ? stringifyDates({
+              ...updatedRecord,
+              parliamentary_group: stringifyDates(
+                updatedRecord.parliamentarygroup,
+              ),
+            })
+          : null,
       },
     };
   } catch (error: unknown) {
@@ -299,7 +309,7 @@ const updateSchema = z.object({
   parliamentary_group_id: z.string(),
   start_date: z.string(),
   end_date: z.string().nullable().optional(),
-  change_reason: z.enum(GroupChangeReason),
+  change_reason: GroupChangeReasonEnum,
   source_url: z.union([z.string(), z.literal(""), z.null()]).optional(),
 });
 
@@ -307,8 +317,7 @@ export async function updateParliamentaryMembership(
   legislator_id: string,
   rawData: z.infer<typeof updateSchema>,
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   const validation = updateSchema.safeParse(rawData);
   if (!validation.success) {
     return {
@@ -319,28 +328,34 @@ export async function updateParliamentaryMembership(
   const data = validation.data;
 
   try {
-    const payload: TablesUpdate<"parliamentarymembership"> = {
+    const payload: Prisma.parliamentarymembershipUncheckedUpdateInput = {
       parliamentary_group_id: data.parliamentary_group_id,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      change_reason: data.change_reason,
+      start_date: new Date(data.start_date),
+      end_date: data.end_date ? new Date(data.end_date) : null,
+      change_reason: data.change_reason as groupchangereason,
       source_url: data.source_url || null,
     };
 
-    const { data: result, error } = await supabase
-      .from("parliamentarymembership")
-      .update(payload)
-      .eq("id", data.id)
-      .eq("legislator_id", legislator_id)
-      // alias parliamentary_group para el frontend
-      .select("*, parliamentary_group:parliamentarygroup(*)")
-      .single();
-
-    if (error) throw error;
+    const result = await prisma.parliamentarymembership.update({
+      where: {
+        id: data.id,
+        legislator_id: legislator_id, // Verify it belongs
+      },
+      data: payload,
+      include: {
+        parliamentarygroup: true,
+      },
+    });
 
     revalidatePath("/admin/legisladores");
 
-    return { success: true, data: result };
+    return {
+      success: true,
+      data: stringifyDates({
+        ...result,
+        parliamentary_group: stringifyDates(result.parliamentarygroup),
+      }),
+    };
   } catch (error: unknown) {
     console.error("Error updating membership:", error);
     return {
@@ -354,40 +369,37 @@ export async function deleteParliamentaryMembership(
   legislator_id: string,
   membership_id: string,
 ) {
-  const supabase = await createClient();
-
+  await serverRequireEditor();
   try {
-    const { data: membershipToDelete, error: fetchError } = await supabase
-      .from("parliamentarymembership")
-      .select("start_date, end_date")
-      .eq("id", membership_id)
-      .single();
+    const membershipToDelete = await prisma.parliamentarymembership.findFirst({
+      where: { id: membership_id },
+      select: { start_date: true, end_date: true },
+    });
 
-    if (fetchError) throw new Error("No se encontró el registro a eliminar");
+    if (!membershipToDelete)
+      throw new Error("No se encontró el registro a eliminar");
 
-    const { error: deleteError } = await supabase
-      .from("parliamentarymembership")
-      .delete()
-      .eq("id", membership_id)
-      .eq("legislator_id", legislator_id);
+    await prisma.parliamentarymembership.delete({
+      where: {
+        id: membership_id,
+        legislator_id: legislator_id,
+      },
+    });
 
-    if (deleteError) throw deleteError;
-
-    // Reabrir el anterior si el eliminado era el actual
     if (!membershipToDelete.end_date) {
-      const { data: previousMembership } = await supabase
-        .from("parliamentarymembership")
-        .select("id")
-        .eq("legislator_id", legislator_id)
-        .order("start_date", { ascending: false })
-        .limit(1)
-        .single();
+      const previousMembership = await prisma.parliamentarymembership.findFirst(
+        {
+          where: { legislator_id: legislator_id },
+          orderBy: { start_date: "desc" },
+          select: { id: true },
+        },
+      );
 
       if (previousMembership) {
-        await supabase
-          .from("parliamentarymembership")
-          .update({ end_date: null })
-          .eq("id", previousMembership.id);
+        await prisma.parliamentarymembership.update({
+          where: { id: previousMembership.id },
+          data: { end_date: null },
+        });
       }
     }
 

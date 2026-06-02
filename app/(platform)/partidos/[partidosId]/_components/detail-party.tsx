@@ -118,6 +118,7 @@ const TimelineList = ({ items }: { items: PartyHistory[] }) => {
 export default function DetailParty({
   party,
   principalCandidates,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   shareUrl,
 }: {
   party: PoliticalPartyDetail;

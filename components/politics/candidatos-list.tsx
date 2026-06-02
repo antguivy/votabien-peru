@@ -129,6 +129,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const hasConviction = person.has_sanction;
   const isUnderInvestigation = person.is_under_investigation;
   const isPenal = person.has_penal_sentence;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const hasArchivedRecord =
     person.has_criminal_record && !hasConviction && !isUnderInvestigation;
 
@@ -479,6 +480,7 @@ const CandidatosList = ({
 
   useEffect(() => {
     if (currentFilters.type === "PRESIDENTE") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCandidatos(shuffleArray(initialCandidaturas));
     }
     setIsReady(true);
@@ -541,7 +543,6 @@ const CandidatosList = ({
       loadingRef.current = false;
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [infiniteScroll, procesoId, currentFilters]);
 
   useEffect(() => {

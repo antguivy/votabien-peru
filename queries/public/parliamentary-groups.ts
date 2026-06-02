@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
+import { Prisma } from "@/prisma/generated/client";
 
 import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
 import prisma from "@/lib/prisma";
@@ -9,7 +10,7 @@ export const getParliamentaryGroups = cache(
   unstable_cache(
     async (active: boolean = true): Promise<ParliamentaryGroupBasic[]> => {
       try {
-        const whereClause: any = {};
+        const whereClause: Prisma.parliamentarygroupWhereInput = {};
         if (active) {
           whereClause.active = true;
         }

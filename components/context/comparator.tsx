@@ -31,6 +31,7 @@ export function ComparatorProvider({
   const [entities, setEntities] = useState<SearchableEntity[]>(initialEntities);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEntities(initialEntities);
   }, [initialEntities]);
 

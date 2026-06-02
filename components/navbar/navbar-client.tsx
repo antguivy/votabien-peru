@@ -8,6 +8,7 @@ import { NavbarUserMenu } from "./navbar-user-menu";
 // import { NavbarThemeToggle } from "./navbar-theme-toggle";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import type { UserProfile as User } from "@/interfaces/user";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { UserProfile } from "@/interfaces/user";
 
 interface NavbarClientProps {
@@ -41,7 +42,7 @@ const NavbarClient = memo(({ user }: NavbarClientProps) => {
             {/* Acciones derecha */}
             <div className="flex items-center gap-2">
               {/* <NavbarThemeToggle /> */}
-              {user && <NavbarUserMenu user={user}  />}
+              {user && <NavbarUserMenu user={user} />}
 
               {/* Botón Apóyanos — estilo Swiss Solidarity */}
               <Link
@@ -56,7 +57,7 @@ const NavbarClient = memo(({ user }: NavbarClientProps) => {
       </header>
 
       {/* Navegación mobile */}
-      <MobileBottomNav user={user}  />
+      <MobileBottomNav user={user} />
     </>
   );
 });

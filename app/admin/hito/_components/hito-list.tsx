@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -26,9 +26,10 @@ import {
   MapPin,
   Calendar,
   Image as ImageIcon,
-  Quote,
   Tag,
   Hash,
+  Link as LinkIcon,
+  EyeOff,
 } from "lucide-react";
 import { HitoFormDialog } from "./hito-form-dialog";
 import { deleteHito } from "../_lib/actions";
@@ -53,7 +54,7 @@ export function HitosList({ hitos }: HitosListProps) {
       success: () => {
         setDeleteId(null);
         router.refresh();
-        return "Foto eliminada correctamente";
+        return "Evento eliminado correctamente";
       },
       error: "Error al eliminar",
     });
@@ -63,11 +64,9 @@ export function HitosList({ hitos }: HitosListProps) {
     return (
       <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/10">
         <div className="flex justify-center mb-4">
-          <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+          <Calendar className="h-10 w-10 text-muted-foreground/50" />
         </div>
-        <p className="text-muted-foreground">
-          No hay fotos del equipo creadas aún.
-        </p>
+        <p className="text-muted-foreground">No hay eventos creados aún.</p>
       </div>
     );
   }
@@ -102,10 +101,9 @@ export function HitosList({ hitos }: HitosListProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la foto{" "}
+              Esta acción no se puede deshacer. Se eliminará el evento{" "}
               <span className="font-bold text-foreground">
-                {hitos.find((t) => t.id === deleteId)?.label ||
-                  hitos.find((t) => t.id === deleteId)?.photo_description}
+                {hitos.find((t) => t.id === deleteId)?.title}
               </span>{" "}
               permanentemente.
             </AlertDialogDescription>
@@ -136,22 +134,37 @@ function TeamPhotoItem({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [isFuture, setIsFuture] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsFuture(new Date(item.date).getTime() > Date.now());
+    }, 1);
+    return () => clearTimeout(timer);
+  }, [item.date]);
+
   return (
     <Card className="flex flex-col h-full hover:shadow-md transition-shadow overflow-hidden pt-0">
-      <CardHeader className="p-0">
+      <CardHeader className="p-0 relative">
         {/* IMAGEN PREVIEW */}
         {item.photo_url ? (
           <div className="relative w-full aspect-video bg-muted overflow-hidden">
             <Image
               src={item.photo_url}
-              alt={item.photo_description || "Foto del equipo"}
-              className="object-contain"
+              alt={item.title || "Evento"}
+              className="object-cover"
               fill
             />
             {item.index !== null && (
-              <div className="absolute top-2 right-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+              <div className="absolute top-2 right-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
                 <Hash className="w-3 h-3" />
                 {item.index}
+              </div>
+            )}
+            {!item.is_published && (
+              <div className="absolute top-2 left-2 bg-yellow-500/90 text-black text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
+                <EyeOff className="w-3 h-3" />
+                Oculto
               </div>
             )}
           </div>
@@ -164,39 +177,48 @@ function TeamPhotoItem({
                 {item.index}
               </div>
             )}
+            {!item.is_published && (
+              <div className="absolute top-2 left-2 bg-yellow-500/90 text-black text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
+                <EyeOff className="w-3 h-3" />
+                Oculto
+              </div>
+            )}
           </div>
         )}
-        <CardTitle className="text-base flex items-center justify-between gap-2 flex-wrap pt-0">
-          {item.label && (
-            <Badge
-              variant="secondary"
-              className="text-[10px] px-1.5 h-5 gap-1 shrink-0"
-            >
-              <Tag className="w-3 h-3" />
-              {item.label}
-            </Badge>
-          )}
-        </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-3 pt-0">
+      <CardContent className="flex-1 space-y-3 pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg leading-tight">{item.title}</CardTitle>
+          {isFuture && (
+            <Badge
+              variant="default"
+              className="shrink-0 text-[10px] uppercase font-bold tracking-wider bg-green-600 hover:bg-green-700"
+            >
+              Próximo
+            </Badge>
+          )}
+        </div>
+
+        {item.label && (
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-1.5 h-5 gap-1 inline-flex"
+          >
+            <Tag className="w-3 h-3" />
+            {item.label}
+          </Badge>
+        )}
+
         {/* DESCRIPCIÓN */}
-        {item.photo_description && (
+        {item.description && (
           <p className="text-sm text-muted-foreground line-clamp-2">
-            {item.photo_description}
+            {item.description}
           </p>
         )}
 
-        {/* CITA */}
-        {item.quote && (
-          <div className="relative pl-3 border-l-2 border-primary/20 italic text-sm text-muted-foreground/90">
-            <Quote className="absolute -top-1 -left-2 w-3 h-3 text-primary/20 fill-current transform -scale-x-100" />
-            &quot;{item.quote}&quot;
-          </div>
-        )}
-
         {/* METADATA */}
-        <div className="space-y-1.5 text-sm pt-1">
+        <div className="space-y-1.5 text-sm pt-2 border-t border-dashed mt-3">
           {item.date && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="w-4 h-4 shrink-0" />
@@ -215,10 +237,23 @@ function TeamPhotoItem({
               <span className="truncate">{item.location}</span>
             </div>
           )}
+          {item.registration_url && (
+            <div className="flex items-center gap-2 text-blue-600">
+              <LinkIcon className="w-4 h-4 shrink-0" />
+              <a
+                href={item.registration_url}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate hover:underline"
+              >
+                {item.registration_url}
+              </a>
+            </div>
+          )}
         </div>
       </CardContent>
 
-      <CardFooter className="border-t flex justify-end gap-2 bg-muted/5 h-10">
+      <CardFooter className="border-t flex justify-end gap-2 bg-muted/5 h-12">
         <Button variant="outline" size="sm" onClick={onEdit} className="h-8">
           <Edit className="w-3.5 h-3.5 mr-1.5" />
           Editar

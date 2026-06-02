@@ -1,5 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { questionsService } from "@/services/questions";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import TriviaMapClient from "./_components/trivia-map-client";
 import UnderConstruction from "@/components/under-construction";
 

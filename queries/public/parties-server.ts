@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { TAGS, TTL } from "@/lib/cache-tags";
+import { Prisma } from "@/prisma/generated/client";
 
 import prisma from "@/lib/prisma";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
@@ -39,7 +40,7 @@ export const getPartidosSelectorList = cache(
           }
         }
 
-        const whereClause: any = {};
+        const whereClause: Prisma.politicalpartyWhereInput = {};
 
         if (active !== undefined) {
           whereClause.active = active;

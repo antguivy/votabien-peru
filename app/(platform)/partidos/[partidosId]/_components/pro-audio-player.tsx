@@ -20,6 +20,7 @@ function useSimulatedWaveform(bars: number = 50) {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWaveform(
       Array.from({ length: bars }, () =>
         Math.max(30, Math.floor(Math.random() * 100)),

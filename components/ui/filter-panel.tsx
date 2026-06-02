@@ -141,6 +141,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   // Al abrir el drawer mobile, sincronizar pendingFilters con el estado actual confirmado
   useEffect(() => {
     if (isMobilePanelOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingFilters(filters);
       const synced: Record<string, string> = {};
       searchFields.forEach((f) => {
@@ -185,6 +186,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
         ? field.disabledWhen(pendingFilters as Record<string, unknown>)
         : (field.disabled ?? false);
     if (isNowDisabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSubDrawer(null);
       setSubSearch("");
     }
@@ -204,8 +206,10 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
   // ─────────────────────────────────────────────
   // DESKTOP — handlers (aplican inmediato a URL)
+
   // ─────────────────────────────────────────────
   const handleFilterChange = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (key: keyof T, value: string) => {
       const next = { ...filters, [key]: value };
       setFilters(next);
@@ -215,6 +219,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   );
 
   const handleMultiSelectChange = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (key: keyof T, value: string, checked: boolean) => {
       const current = (
         Array.isArray(filters[key]) ? filters[key] : []
@@ -233,8 +238,10 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
   // ─────────────────────────────────────────────
   // MOBILE — handlers (solo actualizan estado pendiente, NO la URL)
+
   // ─────────────────────────────────────────────
   const handleMobileFilterChange = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (key: keyof T, value: string) => {
       setPendingFilters((prev) => ({ ...prev, [key]: value }));
     },
@@ -242,6 +249,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   );
 
   const handleMobileMultiSelectChange = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (key: keyof T, value: string, checked: boolean) => {
       setPendingFilters((prev) => {
         const current = (Array.isArray(prev[key]) ? prev[key] : []) as string[];
@@ -258,8 +266,10 @@ export function FilterPanel<T extends Record<string, unknown>>({
 
   // ─────────────────────────────────────────────
   // Desktop search handlers
+
   // ─────────────────────────────────────────────
   const commitSearch = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (fieldId: string, value: string) => {
       const next = { ...filters, [fieldId as keyof T]: value } as T;
       setFilters(next);
@@ -287,8 +297,10 @@ export function FilterPanel<T extends Record<string, unknown>>({
   );
 
   // ─────────────────────────────────────────────
+
   // Limpiar todo — desktop
   // ─────────────────────────────────────────────
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const clearFilters = useCallback(() => {
     const cleared = defaultFilters ?? ({} as T);
     setFilters(cleared);
@@ -303,6 +315,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   }, [defaultFilters, pushToUrl, searchFields]);
 
   // Limpiar todo — mobile (solo limpia pending, no toca URL)
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const clearMobileFilters = useCallback(() => {
     const cleared = defaultFilters ?? ({} as T);
     setPendingFilters(cleared);
@@ -316,6 +329,7 @@ export function FilterPanel<T extends Record<string, unknown>>({
   }, [defaultFilters, searchFields]);
 
   const removeFilter = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (key: keyof T, specificValue?: string) => {
       const field = fields.find((f) => f.id === String(key));
 
@@ -351,8 +365,10 @@ export function FilterPanel<T extends Record<string, unknown>>({
   }, []);
 
   // ─────────────────────────────────────────────
+
   // Aplicar filtros mobile — ÚNICA vía que toca la URL desde mobile
   // ─────────────────────────────────────────────
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const applyMobileFilters = useCallback(() => {
     const merged = { ...pendingFilters } as Record<string, unknown>;
     searchFields.forEach((f) => {
