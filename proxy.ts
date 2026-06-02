@@ -33,6 +33,7 @@ export async function proxy(request: NextRequest) {
     "/terminos",
     "/api/stats",
     "/api/proxy-image", // Permite cargar fotos externas sin estar logueado
+    "/api/candidates", // Hacer pública la API de candidatos
     "/match",
     "/trivia",
     "/simulador",
