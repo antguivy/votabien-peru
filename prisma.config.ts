@@ -1,6 +1,6 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-import { defineConfig } from "prisma/config";
+// prisma.config.ts (raíz del proyecto, junto a package.json)
+import "dotenv/config"; // Lee .env (no .env.local!)
+import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({
   schema: "prisma/schema",
@@ -8,6 +8,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // El CLI de Prisma usa la conexión DIRECTA (sin pooler)
+    url: env("DIRECT_URL"),
   },
 });

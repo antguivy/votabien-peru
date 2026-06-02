@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Users, Star, MapPinned } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
-import { loadMoreCandidates } from "@/actions/candidate";
 import { getTextColor } from "@/lib/utils/color-utils";
 import { shuffleArray } from "@/lib/utils/arrays";
 import { Badge } from "../ui/badge";
@@ -205,6 +204,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                   src={person.image_candidate_url}
                   alt={person.fullname}
                   fill
+                  sizes="56px"
                   className="object-contain transition-transform duration-500 group-hover:scale-110"
                 />
               ) : (
@@ -223,6 +223,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                       src={political_party.logo_url}
                       alt={political_party.name}
                       fill
+                      sizes="30px"
                       className="object-contain p-0.5"
                     />
                   </div>
@@ -450,11 +451,11 @@ interface CandidatosListProps {
   infiniteScroll?: boolean;
 }
 
-const PAGE_SIZE = 40;
+// ─────────────────────────────────────────────
+// Auxiliares de renderizado de candidato
+// ─────────────────────────────────────────────
 
-// ─────────────────────────────────────────────
-// Componente principal
-// ─────────────────────────────────────────────
+const PAGE_SIZE = 40;
 
 const CandidatosList = ({
   candidaturas: initialCandidaturas,
@@ -496,22 +497,35 @@ const CandidatosList = ({
 
     try {
       const nextPage = pageRef.current + 1;
-      const newCandidatos = await loadMoreCandidates({
-        electoral_process_id: procesoId,
-        page: nextPage,
-        pageSize: PAGE_SIZE,
-        search: currentFilters.search,
-        type: currentFilters.type,
-        parties: currentFilters.parties?.length
-          ? currentFilters.parties
-          : undefined,
-        districts: currentFilters.districts?.length
-          ? currentFilters.districts
-          : undefined,
-        alerts: currentFilters.alerts?.length
-          ? currentFilters.alerts
-          : undefined,
+
+      const response = await fetch("/api/candidates/list", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          electoral_process_id: procesoId,
+          page: nextPage,
+          pageSize: PAGE_SIZE,
+          search: currentFilters.search,
+          type: currentFilters.type,
+          parties: currentFilters.parties?.length
+            ? currentFilters.parties
+            : undefined,
+          districts: currentFilters.districts?.length
+            ? currentFilters.districts
+            : undefined,
+          alerts: currentFilters.alerts?.length
+            ? currentFilters.alerts
+            : undefined,
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error("Error fetching candidates via API");
+      }
+
+      const newCandidatos = (await response.json()) as CandidateCard[];
 
       if (!newCandidatos || newCandidatos.length === 0) {
         hasMoreRef.current = false;
