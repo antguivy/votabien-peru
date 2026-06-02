@@ -321,7 +321,15 @@ export const getPartidoById = cache(
             [],
           government_plan_url: partido.government_plan_url || null,
           government_audio_url: partido.government_audio_url || null,
-          seats_by_district: seatsRes || [],
+          seats_by_district: seatsRes
+            ? seatsRes.map((seat) => ({
+                ...seat,
+                seats:
+                  typeof seat.seats === "bigint"
+                    ? Number(seat.seats)
+                    : seat.seats,
+              }))
+            : [],
           elected_legislators: electosRes.map(mapLegislator) || [],
           financing_reports: financingRes.map(mapFinancingReport) || [],
         };

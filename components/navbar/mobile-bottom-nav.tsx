@@ -247,8 +247,6 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
               );
             })}
           </div>
-
-          <MobileThemeToggle theme={theme} setTheme={setTheme} />
         </DrawerContent>
       </Drawer>
     </>
