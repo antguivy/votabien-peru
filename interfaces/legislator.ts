@@ -58,6 +58,11 @@ export interface LegislatorInSeat {
   active: boolean;
   elected_by_party: PoliticalPartyBase;
   current_parliamentary_group: ParliamentaryGroupBasic | null;
+  person?: {
+    name: string;
+    lastname: string;
+    image_url: string | null;
+  };
 }
 
 export interface LegislatorCard {

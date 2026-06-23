@@ -1,6 +1,6 @@
 import {
   Home, // Inicio
-  UserCheck, // Candidatos — persona con check de verificación
+  // Candidatos — persona con check de verificación
   Flag, // Partidos — bandera
   Landmark, // Congresistas — edificio institucional (congreso)
   Scale, // Comparador — balanza, justicia
@@ -8,7 +8,7 @@ import {
   HelpCircle, // Trivia — pregunta
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Heart, // Match — compatibilidad
-  Vote, // Simulador — papeleta de voto
+  // Simulador — papeleta de voto
   Users, // Equipo
   Target, // Misión y Visión — objetivo/meta
   Mail, // Contacto
@@ -21,14 +21,17 @@ import {
   Trophy, // Trivia admin — juego/logro
   ShieldCheck, // Equipo admin — roles/permisos
   Milestone, // Hito — punto en línea de tiempo
+  UsersRound, // Asientos
+  CalendarDays, // Periodos
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
 
 export const NAV_MOBILE_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/candidatos", label: "Candidatos", icon: UserCheck },
-  { href: "/simulador", label: "Simulador", icon: Vote },
+  // { href: "/candidatos", label: "Candidatos", icon: UserCheck },
+  // { href: "/simulador", label: "Simulador", icon: Vote },
+  { href: "/legisladores", label: "Congresistas", icon: Landmark },
   { href: "/partidos", label: "Partidos", icon: Flag },
   // { href: "/match", label: "Mi Candidato", icon: Heart },
 
@@ -37,12 +40,12 @@ export const NAV_MOBILE_ITEMS = [
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Inicio", icon: Home },
-  {
-    type: "link",
-    href: "/candidatos",
-    label: "Candidatos 2026",
-    icon: UserCheck,
-  },
+  // {
+  //   type: "link",
+  //   href: "/candidatos",
+  //   label: "Candidatos 2026",
+  //   icon: UserCheck,
+  // },
   { type: "link", href: "/partidos", label: "Partidos", icon: Flag },
   {
     type: "link",
@@ -50,7 +53,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: Landmark,
   },
-  { type: "link", href: "/simulador", label: "Simulador", icon: Vote },
+  // { type: "link", href: "/simulador", label: "Simulador", icon: Vote },
   // {
   //   type: "dropdown",
   //   label: "Aprendiendo",
@@ -76,10 +79,13 @@ export const adminNavGroups: NavGroup[] = [
   {
     label: "Gestión",
     links: [
-      { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
-      { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
+      { href: "/admin/periodos", label: "Periodos", icon: CalendarDays },
       { href: "/admin/partidos", label: "Partidos", icon: FlagTriangleRight },
+      { href: "/admin/bancadas", label: "Bancadas", icon: Users },
+      { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
+      { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
+      { href: "/admin/seats", label: "Asientos", icon: UsersRound },
     ],
   },
   {

@@ -89,7 +89,12 @@ export async function getParties(
           const { partyfinancing, ...reportRest } = report;
           return {
             ...reportRest,
-            transactions: partyfinancing,
+            transactions: (partyfinancing as Record<string, unknown>[]).map(
+              (tx) => ({
+                ...tx,
+                amount: tx.amount ? Number(tx.amount) : 0,
+              }),
+            ),
           };
         }),
       };

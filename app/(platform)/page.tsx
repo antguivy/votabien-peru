@@ -7,17 +7,36 @@ import HeroModern from "@/components/landing/hero-modern";
 import PodcastSection from "@/components/landing/podcast";
 import SocialProof from "@/components/landing/social-proof";
 import LandingMobileHeader from "@/components/landing/mobile-header";
+import HemicileLegislator from "@/components/landing/hemicicle";
+import { getSeatParliamentary } from "@/queries/public/seats";
+import { ChamberType } from "@/interfaces/politics";
 
 export default async function VotaBienPage() {
   try {
-    const [hitos, proceso_electoral] = await Promise.all([
-      getHitos(),
-      getElectoralProcess({ active: true }),
-    ]);
+    const [hitos, proceso_electoral, seatsDiputados, seatsSenado] =
+      await Promise.all([
+        getHitos(),
+        getElectoralProcess({ active: true }),
+        getSeatParliamentary(ChamberType.DIPUTADOS),
+        getSeatParliamentary(ChamberType.SENADO),
+      ]);
     const currentProcess =
       proceso_electoral && proceso_electoral.length > 0
         ? proceso_electoral[0]
         : null;
+
+    // Si diputados está vacío pero hay datos en el CONGRESO (legacy), usamos ese
+    const fallbackSeats =
+      seatsDiputados.length > 0
+        ? []
+        : await getSeatParliamentary(ChamberType.CONGRESO);
+    console.log("fallbackSeats", fallbackSeats);
+
+    const finalSeats =
+      seatsDiputados.length > 0
+        ? [...seatsDiputados, ...seatsSenado]
+        : fallbackSeats;
+    console.log("finalSeats", finalSeats);
     return (
       <>
         {/* Mobile Header (sticky top) solo para la landing en mobile */}
@@ -26,6 +45,14 @@ export default async function VotaBienPage() {
         <ContentPlatformLayout>
           {/* 1 — Hero: Estado actual (conteo / 2da vuelta) */}
           {currentProcess && <HeroModern proceso_electoral={currentProcess} />}
+
+          {/* Componente del Hemiciclo */}
+          {finalSeats && finalSeats.length > 0 && (
+            <div className="mt-8 mb-16 px-4 md:px-0">
+              <HemicileLegislator seatsData={finalSeats} />
+            </div>
+          )}
+
           <PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />
           {/* 2 — Social Proof: fotos destacadas */}
           <SocialProof hitos={hitos} />
