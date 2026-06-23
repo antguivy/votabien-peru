@@ -7,19 +7,41 @@ import prisma from "@/lib/prisma";
 
 export const getSeatParliamentary = cache(
   unstable_cache(
-    async (chamber: ChamberType): Promise<SeatParliamentary[]> => {
-      if (chamber !== "CONGRESO") {
-        throw new Error("Solo se permite consultar escaños del congreso");
-      }
-
+    async (
+      chamber: ChamberType,
+      activePeriodOnly: boolean = true,
+    ): Promise<SeatParliamentary[]> => {
       try {
+        let periodFilter = {};
+        if (activePeriodOnly) {
+          const activePeriod = await prisma.legislativeperiod.findFirst({
+            where: { active: true },
+          });
+          if (activePeriod) {
+            periodFilter = { legislative_period_id: activePeriod.id };
+          } else {
+            // Si no hay periodo activo, pero queremos que funcione la vista antigua,
+            // podemos simplemente no aplicar filtro (retrocompatibilidad para data antigua sin periodo).
+            periodFilter = { legislative_period_id: null };
+          }
+        }
+
         const data = await prisma.seatparliamentary.findMany({
           where: {
             chamber: chamber,
+            ...periodFilter,
           },
           include: {
+            parliamentarygroup: true,
             legislator: {
               include: {
+                person: {
+                  select: {
+                    name: true,
+                    lastname: true,
+                    image_url: true,
+                  },
+                },
                 politicalparty: {
                   select: {
                     id: true,
@@ -42,7 +64,7 @@ export const getSeatParliamentary = cache(
           orderBy: [{ row: "asc" }, { number_seat: "asc" }],
         });
 
-        // Map Prisma payload to match SeatParliamentary interface (especially the computed column)
+        // Map Prisma payload to match SeatParliamentary interface
         const mappedData = data.map((seat) => {
           let current_parliamentary_group = null;
           if (
@@ -66,6 +88,16 @@ export const getSeatParliamentary = cache(
             chamber: seat.chamber,
             number_seat: seat.number_seat,
             row: seat.row,
+            parliamentary_group_id: seat.parliamentary_group_id,
+            parliamentarygroup: seat.parliamentarygroup
+              ? {
+                  id: seat.parliamentarygroup.id,
+                  name: seat.parliamentarygroup.name,
+                  acronym: seat.parliamentarygroup.acronym,
+                  logo_url: seat.parliamentarygroup.logo_url,
+                  color_hex: seat.parliamentarygroup.color_hex,
+                }
+              : null,
             legislator: seat.legislator
               ? {
                   id: seat.legislator.id,
@@ -75,6 +107,7 @@ export const getSeatParliamentary = cache(
                   active: seat.legislator.active,
                   elected_by_party: seat.legislator.politicalparty,
                   current_parliamentary_group,
+                  person: seat.legislator.person,
                 }
               : null,
           };

@@ -6,7 +6,9 @@ import { getTrivias } from "./_lib/data";
 export default async function TriviaPage() {
   const [trivias] = await Promise.all([getTrivias()]);
   const maxIndex =
-    trivias.length > 0 ? Math.max(...trivias.map((t) => t.global_index)) : 0;
+    trivias.length > 0
+      ? Math.max(...trivias.map((t) => Number(t.global_index)))
+      : 0;
 
   const nextAvailableIndex = maxIndex + 1;
 

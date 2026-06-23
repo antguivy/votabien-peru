@@ -2,6 +2,7 @@
 
 import { LegislatorInSeat } from "./legislator";
 import { PersonBasicInfo } from "./person";
+import { ParliamentaryGroupBasic } from "./parliamentary-membership";
 
 export enum ChamberType {
   CONGRESO = "CONGRESO",
@@ -104,12 +105,24 @@ export interface Executive extends ExecutiveBase {
 
 // ============= ESCAÑOS =============
 
+export interface LegislativePeriod {
+  id: string;
+  name: string;
+  start_date: Date;
+  end_date: Date;
+  active: boolean;
+}
+
 export interface SeatParliamentary {
   id: string;
   chamber: string;
   number_seat: number;
   row: number;
   legislator: LegislatorInSeat | null;
+  parliamentary_group_id?: string | null;
+  parliamentarygroup?: ParliamentaryGroupBasic | null;
+  legislative_period_id?: string | null;
+  legislativeperiod?: LegislativePeriod | null;
 }
 
 // ============= FILTROS Y OPCIONES =============

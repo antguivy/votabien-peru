@@ -87,11 +87,20 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Fecha de Nac." />
       ),
       cell: ({ row }) => {
-        const brith_date = row.original.birth_date;
+        const brith_date = row.original.birth_date as unknown as
+          | Date
+          | string
+          | null;
+        const display_date =
+          brith_date instanceof Date
+            ? brith_date.toLocaleDateString()
+            : brith_date
+              ? new Date(brith_date).toLocaleDateString()
+              : "";
 
         return (
           <div className="flex items-center">
-            <span className="capitalize">{brith_date}</span>
+            <span className="capitalize">{display_date}</span>
           </div>
         );
       },

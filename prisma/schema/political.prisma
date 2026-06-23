@@ -148,6 +148,7 @@ model parliamentarygroup {
   rules_url               String?                   @db.VarChar
   bill                    bill[]
   parliamentarymembership parliamentarymembership[]
+  seatparliamentary       seatparliamentary[]
 
   @@index([acronym], map: "ix_parliamentarygroup_acronym")
   @@index([active], map: "ix_parliamentarygroup_active")

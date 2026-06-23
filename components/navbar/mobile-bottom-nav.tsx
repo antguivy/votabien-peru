@@ -4,10 +4,10 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
+
 import { cn } from "@/lib/utils";
 import { MAIN_NAV_ITEMS, NAV_MOBILE_ITEMS } from "./navbar-config";
-import { MobileThemeToggle } from "./navbar-theme-toggle";
+
 import { LogoutButton } from "@/components/auth/logout-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -39,7 +39,7 @@ interface MobileBottomNavProps {
 
 export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasAnimated = useRef(false);
 

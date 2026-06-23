@@ -61,7 +61,9 @@ interface HeroModernProps {
 //   return <>{displayed}</>;
 // }
 
-export default function HeroModern({ proceso_electoral }: HeroModernProps) {
+export default function HeroModern({
+  proceso_electoral: _proceso_electoral,
+}: HeroModernProps) {
   // const { dias } = useCountdown(proceso_electoral.election_date);
   // const [mounted, setMounted] = useState(false);
   // useEffect(() => setMounted(true), []);
