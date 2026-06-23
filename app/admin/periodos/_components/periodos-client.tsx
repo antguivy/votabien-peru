@@ -28,6 +28,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { formatCalendarDate, toISODateString } from "@/lib/utils";
 import {
   type electoralprocess,
   type legislativeperiod,
@@ -69,7 +70,7 @@ export function PeriodosClient({
       setElecForm({
         name: p.name,
         year: p.year,
-        election_date: new Date(p.election_date).toISOString().split("T")[0],
+        election_date: toISODateString(p.election_date),
         active: p.active,
       });
     } else {
@@ -123,8 +124,8 @@ export function PeriodosClient({
       setEditingId(p.id);
       setLegForm({
         name: p.name,
-        start_date: new Date(p.start_date).toISOString().split("T")[0],
-        end_date: new Date(p.end_date).toISOString().split("T")[0],
+        start_date: toISODateString(p.start_date),
+        end_date: toISODateString(p.end_date),
         active: p.active,
       });
     } else {
@@ -213,12 +214,8 @@ export function PeriodosClient({
                 {legislative.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>
-                      {new Date(p.start_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(p.end_date).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{formatCalendarDate(p.start_date)}</TableCell>
+                    <TableCell>{formatCalendarDate(p.end_date)}</TableCell>
                     <TableCell>
                       {p.active ? (
                         <span className="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
@@ -275,9 +272,7 @@ export function PeriodosClient({
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell>{p.year}</TableCell>
-                    <TableCell>
-                      {new Date(p.election_date).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{formatCalendarDate(p.election_date)}</TableCell>
                     <TableCell>
                       {p.active ? (
                         <span className="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">

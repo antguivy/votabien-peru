@@ -15,6 +15,7 @@ import {
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Separator } from "@/components/ui/separator";
 import { AdminPerson } from "@/interfaces/person";
+import { formatCalendarDate } from "@/lib/utils";
 
 interface GetColumnsProps {
   setRowAction: React.Dispatch<
@@ -91,12 +92,7 @@ export function getColumns({
           | Date
           | string
           | null;
-        const display_date =
-          brith_date instanceof Date
-            ? brith_date.toLocaleDateString()
-            : brith_date
-              ? new Date(brith_date).toLocaleDateString()
-              : "";
+        const display_date = formatCalendarDate(brith_date);
 
         return (
           <div className="flex items-center">
