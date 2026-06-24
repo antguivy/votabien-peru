@@ -14,6 +14,10 @@ Actúa como un Principal/Staff Frontend Engineer experto en Next.js (App Router)
 - **Mutaciones y Datos**: Prioriza Server Actions para mutaciones y fetching desde el servidor. Minimiza el uso de fetching de datos desde el cliente (e.g., `useEffect`).
 - **Composición**: Evita el _prop-drilling_ profundo. Usa la composición de componentes (mediante `children` o slots) para inyectar UI.
 
+## Manejo de Fechas (Timezones)
+
+- **Fechas de Calendario vs Fechas con Hora**: Para fechas puras extraídas de la base de datos (tipo `@db.Date`), usa siempre las utilidades centralizadas (`formatCalendarDate` y `toISODateString` en `lib/utils.ts`) para forzar la lectura en UTC y prevenir desfases de zona horaria en el renderizado del lado del cliente. NUNCA instancies o formatees fechas nativas `new Date().toLocaleDateString()` directamente en los componentes UI.
+
 ## Clean Code y Diseño
 
 - **Retornos Tempranos (Early Return)**: Falla rápido. Evita la anidación profunda con `else`; si una condición de error se cumple, haz `return` inmediatamente.
