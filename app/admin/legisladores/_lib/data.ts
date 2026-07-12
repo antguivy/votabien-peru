@@ -45,6 +45,9 @@ export async function getLegislators(
         name: { in: input.electoral_district },
       };
     }
+    if (input.legislative_period && input.legislative_period.length > 0) {
+      where.legislative_period_id = { in: input.legislative_period };
+    }
 
     const orderBy: Record<string, unknown> = {};
     if (input.sort && input.sort.length > 0) {
@@ -74,6 +77,9 @@ export async function getLegislators(
             include: {
               parliamentarygroup: true,
             },
+          },
+          legislativeperiod: {
+            select: { id: true, name: true },
           },
         },
       }),
@@ -107,6 +113,7 @@ export async function getLegislators(
         current_parliamentary_group: current_parliamentary_group,
         elected_by_party: row.politicalparty,
         electoral_district: row.electoraldistrict,
+        legislative_period: row.legislativeperiod,
 
         parliamentary_memberships: (row.parliamentarymembership || []).map(
           (pm) => ({

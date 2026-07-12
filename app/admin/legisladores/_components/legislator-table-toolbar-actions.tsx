@@ -1,13 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { type Table } from "@tanstack/react-table";
 import { PiMicrosoftExcelLogoFill } from "react-icons/pi";
+import { Upload } from "lucide-react";
 
 import { exportTableToCSV } from "../_lib/export";
 import { Button } from "@/components/ui/button";
 import { AdminLegislator } from "@/interfaces/legislator";
-
-// import { DeleteTasksDialog } from "./delete-tasks-dialog"
+import { LegislatorImportDialog } from "./legislator-import-dialog";
 
 interface LegislatorTableToolbarActionsProps {
   table: Table<AdminLegislator>;
@@ -16,16 +17,20 @@ interface LegislatorTableToolbarActionsProps {
 export function LegislatorsTableToolbarActions({
   table,
 }: LegislatorTableToolbarActionsProps) {
+  const [importOpen, setImportOpen] = useState(false);
+
   return (
     <div className="flex items-center gap-2">
-      {/* {table.getFilteredSelectedRowModel().rows.length > 0 ? (
-        <DeleteTasksDialog
-          tasks={table
-            .getFilteredSelectedRowModel()
-            .rows.map((row) => row.original)}
-          onSuccess={() => table.toggleAllRowsSelected(false)}
-        />
-      ) : null} */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setImportOpen(true)}
+        className="gap-2"
+      >
+        <Upload className="size-4" aria-hidden="true" />
+        Importar
+      </Button>
+
       <Button
         variant="outline"
         size="sm"
@@ -37,17 +42,14 @@ export function LegislatorsTableToolbarActions({
         }
         className="gap-2"
       >
-        {/* <Download className="size-4" aria-hidden="true" /> */}
         <PiMicrosoftExcelLogoFill
           className="size-6 text-green-600"
           aria-hidden="true"
         />
         Descargar
       </Button>
-      {/**
-       * Other actions can be added here.
-       * For example, import, view, etc.
-       */}
+
+      <LegislatorImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }

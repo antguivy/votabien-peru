@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { TAGS } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
 import { Prisma, groupchangereason } from "@/prisma/generated/client";
 import { BulkUpdateLegislatorsRequest } from "./types";
@@ -89,6 +90,7 @@ export async function createLegislatorPeriod(
       end_date: data.end_date ? new Date(data.end_date) : null,
       institutional_email: data.institutional_email,
       active: data.active,
+      legislative_period_id: data.legislative_period_id || null,
       created_at: now,
       updated_at: now,
     };
@@ -96,6 +98,7 @@ export async function createLegislatorPeriod(
     const result = await prisma.legislator.create({ data: dbData });
 
     revalidatePath("/admin/legisladores");
+    revalidateTag(TAGS.legislators, "max");
     return { success: true, data: result };
   } catch (error) {
     return handleError(error, "Error al crear periodo legislativo");
@@ -141,6 +144,7 @@ export async function updateLegislatorPeriod(
     });
 
     revalidatePath("/admin/legisladores");
+    revalidateTag(TAGS.legislators, "max");
     return { success: true, data: result };
   } catch (error) {
     return handleError(error, "Error al actualizar periodo legislativo");
@@ -153,6 +157,7 @@ export async function deleteLegislatorPeriod(legislatorId: string) {
     await prisma.legislator.delete({ where: { id: legislatorId } });
 
     revalidatePath("/admin/legisladores");
+    revalidateTag(TAGS.legislators, "max");
     return { success: true, data: { deleted_id: legislatorId } };
   } catch (error) {
     return handleError(error, "Error al eliminar periodo legislativo");
@@ -172,6 +177,7 @@ export async function bulkUpdateLegislators(
     });
 
     revalidatePath("/admin/legisladores");
+    revalidateTag(TAGS.legislators, "max");
 
     return {
       data: { count: data.count, message: `Actualizados ${data.count}` },
@@ -274,6 +280,7 @@ export async function createParliamentaryMembership(
     });
 
     revalidatePath(`/admin/legisladores`);
+    revalidateTag(TAGS.legislators, "max");
 
     return {
       success: true,
@@ -348,6 +355,7 @@ export async function updateParliamentaryMembership(
     });
 
     revalidatePath("/admin/legisladores");
+    revalidateTag(TAGS.legislators, "max");
 
     return {
       success: true,
@@ -404,6 +412,7 @@ export async function deleteParliamentaryMembership(
     }
 
     revalidatePath(`/admin/legisladores/${legislator_id}`);
+    revalidateTag(TAGS.legislators, "max");
 
     return { success: true, message: "Eliminado exitosamente" };
   } catch (error: unknown) {

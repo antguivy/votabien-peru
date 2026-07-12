@@ -13,6 +13,7 @@ interface Props {
     districts: string[] | undefined;
     skip: number;
     limit: number;
+    legislative_period_id?: string;
   };
   distritos: ElectoralDistrictBase[];
   bancadas: ParliamentaryGroupBasic[];

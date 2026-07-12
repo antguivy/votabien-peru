@@ -30,9 +30,13 @@ interface LegislatorsTableProps {
       DistrictCounts,
     ]
   >;
+  legislativePeriods: { id: string; name: string }[];
 }
 
-export function LegislatorsTable({ promises }: LegislatorsTableProps) {
+export function LegislatorsTable({
+  promises,
+  legislativePeriods,
+}: LegislatorsTableProps) {
   const [
     { data, total, page_size },
     chamberCounts,
@@ -76,6 +80,14 @@ export function LegislatorsTable({ promises }: LegislatorsTableProps) {
         label: name,
         value: name,
         count,
+      })),
+    },
+    {
+      id: "legislative_period" as keyof AdminLegislator,
+      label: "Periodo",
+      options: legislativePeriods.map((p) => ({
+        label: p.name,
+        value: p.id,
       })),
     },
   ];
