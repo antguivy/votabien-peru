@@ -180,7 +180,7 @@ const SENADO_CONFIG = {
   viewBox: "0 0 800 600",
   cx: 400,
   cy: 530,
-  bubbleRadius: 45,
+  bubbleRadius: 30,
   rows: [
     { radius: 400, count: 16 },
     { radius: 310, count: 14 },
@@ -368,7 +368,6 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                 hoveredGroup && bubble.group?.name !== hoveredGroup;
 
               const color = bubble.group?.color || "transparent";
-              const hasLegislator = !!bubble.seat.legislator;
               const logoUrl = bubble.group?.logo_url;
 
               return (
@@ -405,14 +404,6 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                         preserveAspectRatio="xMidYMid slice"
                       />
                     </g>
-                  )}
-                  {hasLegislator && (
-                    <circle
-                      cx={bubble.x}
-                      cy={bubble.y}
-                      r={svgConfig.bubbleRadius * 0.35}
-                      className="fill-white/80 dark:fill-white/90"
-                    />
                   )}
                 </g>
               );
@@ -468,7 +459,7 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden relative border border-slate-700 flex-shrink-0">
                       <Image
-                        src={`/api/proxy-image?url=${encodeURIComponent(activeBubble.seat.legislator.person?.image_url || "")}`}
+                        src={`/api/proxy-image?url=${encodeURIComponent(activeBubble.seat.legislator.person?.image_candidate_url || activeBubble.seat.legislator.person?.image_url || "")}`}
                         alt="Legislador"
                         fill
                         className="object-cover"

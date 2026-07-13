@@ -40,6 +40,7 @@ export const getSeatParliamentary = cache(
                     name: true,
                     lastname: true,
                     image_url: true,
+                    image_candidate_url: true,
                   },
                 },
                 politicalparty: {
