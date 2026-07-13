@@ -177,27 +177,27 @@ export default function HemicileLegislator({
 // ---- CONFIG ----
 
 const SENADO_CONFIG = {
-  viewBox: "0 0 800 600",
+  viewBox: "0 0 800 750",
   cx: 400,
-  cy: 530,
-  bubbleRadius: 30,
+  cy: 610,
+  bubbleRadius: 42,
   rows: [
-    { radius: 400, count: 16 },
-    { radius: 310, count: 14 },
-    { radius: 225, count: 12 },
-    { radius: 145, count: 10 },
-    { radius: 75, count: 8 },
+    { radius: 490, count: 16 },
+    { radius: 370, count: 14 },
+    { radius: 255, count: 12 },
+    { radius: 155, count: 10 },
+    { radius: 65, count: 8 },
   ],
 };
 
 const DIPUTADOS_CONFIG = {
-  viewBox: "0 0 800 600",
+  viewBox: "0 0 800 680",
   cx: 400,
-  cy: 520,
-  bubbleRadius: 21,
+  cy: 560,
+  bubbleRadius: 20,
   rows: [
-    { radius: 390, count: 26 },
-    { radius: 348, count: 22 },
+    { radius: 395, count: 26 },
+    { radius: 350, count: 22 },
     { radius: 306, count: 19 },
     { radius: 264, count: 17 },
     { radius: 222, count: 15 },
@@ -397,11 +397,11 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                     <g clipPath={`url(#clip-${bubble.seat.id})`}>
                       <image
                         href={logoUrl}
-                        x={bubble.x - svgConfig.bubbleRadius}
-                        y={bubble.y - svgConfig.bubbleRadius}
-                        width={svgConfig.bubbleRadius * 2}
-                        height={svgConfig.bubbleRadius * 2}
-                        preserveAspectRatio="xMidYMid slice"
+                        x={bubble.x - svgConfig.bubbleRadius * 0.8}
+                        y={bubble.y - svgConfig.bubbleRadius * 0.8}
+                        width={svgConfig.bubbleRadius * 1.6}
+                        height={svgConfig.bubbleRadius * 1.6}
+                        preserveAspectRatio="xMidYMid meet"
                       />
                     </g>
                   )}
