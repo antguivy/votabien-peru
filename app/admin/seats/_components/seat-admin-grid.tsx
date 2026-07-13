@@ -216,56 +216,67 @@ export function SeatAdminGrid({
   };
 
   const svgConfig = useMemo(() => {
-    const isCongress = chamber === "CONGRESO" && filteredSeats.length <= 60;
-    if (isCongress) {
+    if (chamber === "SENADO" || filteredSeats.length <= 65) {
       return {
-        viewBox: "0 0 800 450",
-        cx: 400,
-        cy: 400,
-        bubbleRadius: 20,
+        viewBox: "0 0 840 500",
+        cx: 420,
+        cy: 430,
+        bubbleRadius: 25,
         rows: [
-          { radius: 320, count: 25 },
-          { radius: 270, count: 20 },
-          { radius: 220, count: 15 },
+          { radius: 360, count: 16 },
+          { radius: 302, count: 14 },
+          { radius: 244, count: 12 },
+          { radius: 186, count: 10 },
+          { radius: 128, count: 8 },
         ],
       };
     }
-    if (chamber === "SENADO") {
+    if (chamber === "CONGRESO" || filteredSeats.length > 140) {
       return {
-        viewBox: "0 0 800 520",
-        cx: 400,
-        cy: 470,
-        bubbleRadius: 28,
+        viewBox: "0 0 840 500",
+        cx: 420,
+        cy: 430,
+        bubbleRadius: 13.2,
         rows: [
-          { radius: 350, count: 16 },
-          { radius: 300, count: 14 },
-          { radius: 255, count: 12 },
-          { radius: 215, count: 10 },
-          { radius: 175, count: 8 },
-        ],
-      };
-    } else {
-      return {
-        viewBox: "0 0 800 540",
-        cx: 400,
-        cy: 480,
-        bubbleRadius: 12,
-        rows: [
-          { radius: 380, count: 26 },
-          { radius: 345, count: 22 },
-          { radius: 310, count: 19 },
-          { radius: 278, count: 17 },
-          { radius: 248, count: 15 },
-          { radius: 222, count: 13 },
-          { radius: 198, count: 10 },
-          { radius: 175, count: 8 },
+          { radius: 380, count: 31 },
+          { radius: 347, count: 29 },
+          { radius: 314, count: 27 },
+          { radius: 281, count: 25 },
+          { radius: 248, count: 23 },
+          { radius: 215, count: 20 },
+          { radius: 182, count: 18 },
+          { radius: 149, count: 17 },
         ],
       };
     }
+    return {
+      viewBox: "0 0 840 500",
+      cx: 420,
+      cy: 430,
+      bubbleRadius: 16,
+      rows: [
+        { radius: 374, count: 24 },
+        { radius: 336, count: 22 },
+        { radius: 298, count: 20 },
+        { radius: 260, count: 18 },
+        { radius: 222, count: 16 },
+        { radius: 184, count: 16 },
+        { radius: 146, count: 14 },
+      ],
+    };
   }, [chamber, filteredSeats.length]);
 
   const bubbles = useMemo(() => {
     const sortedSeats = [...filteredSeats].sort((a, b) => {
+      const groupA =
+        a.parliamentarygroup?.name ||
+        a.legislator?.parliamentarymembership?.[0]?.parliamentarygroup?.name ||
+        "ZZZ";
+      const groupB =
+        b.parliamentarygroup?.name ||
+        b.legislator?.parliamentarymembership?.[0]?.parliamentarygroup?.name ||
+        "ZZZ";
+      if (groupA !== groupB) return groupA.localeCompare(groupB);
       if (a.row !== b.row) return a.row - b.row;
       return a.number_seat - b.number_seat;
     });
@@ -429,14 +440,24 @@ export function SeatAdminGrid({
               style={{ overflow: "visible" }}
             >
               {/* Escritorio Directivo */}
-              <rect
-                x={svgConfig.cx - 60}
-                y={svgConfig.cy + 15}
-                width="120"
-                height="20"
-                rx="4"
-                className="fill-slate-200 dark:fill-slate-800"
-              />
+              <g transform={`translate(${svgConfig.cx}, ${svgConfig.cy + 15})`}>
+                <rect
+                  x={-70}
+                  y={0}
+                  width={140}
+                  height={18}
+                  rx={9}
+                  className="fill-slate-200 dark:fill-slate-800 stroke-slate-300 dark:stroke-slate-700 stroke-1"
+                />
+                <rect
+                  x={-45}
+                  y={-8}
+                  width={90}
+                  height={12}
+                  rx={6}
+                  className="fill-slate-300 dark:fill-slate-700"
+                />
+              </g>
 
               {bubbles.map((bubble, _i) => {
                 const isSelected = selectedSeatIds.has(bubble.seat.id);
