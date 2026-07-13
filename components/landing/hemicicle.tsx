@@ -180,7 +180,7 @@ const SENADO_CONFIG = {
   viewBox: "0 0 840 500",
   cx: 420,
   cy: 430,
-  bubbleRadius: 22,
+  bubbleRadius: 25,
   rows: [
     { radius: 360, count: 16 },
     { radius: 302, count: 14 },
@@ -194,7 +194,7 @@ const DIPUTADOS_CONFIG = {
   viewBox: "0 0 840 500",
   cx: 420,
   cy: 430,
-  bubbleRadius: 14.5,
+  bubbleRadius: 16,
   rows: [
     { radius: 374, count: 24 },
     { radius: 336, count: 22 },
@@ -210,7 +210,7 @@ const CONGRESO_CONFIG = {
   viewBox: "0 0 840 500",
   cx: 420,
   cy: 430,
-  bubbleRadius: 12,
+  bubbleRadius: 13.2,
   rows: [
     { radius: 380, count: 31 },
     { radius: 347, count: 29 },
@@ -535,10 +535,7 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
 
       {/* BANCADAS SUMMARY - Below the hemiciclo */}
       <div className="w-full max-w-5xl mx-auto">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4 text-center">
-          Bancadas ({parliamentaryGroups.length})
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           {parliamentaryGroups.map((group) => (
             <div
               key={group.mainPartyId}
