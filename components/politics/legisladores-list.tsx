@@ -134,19 +134,22 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
           {legislador.person.image_candidate_url ||
           legislador.person.image_url ? (
             <Image
-              src={
+              src={`/api/proxy-image?url=${encodeURIComponent(
                 legislador.person.image_candidate_url ||
-                legislador.person.image_url!
-              }
+                  legislador.person.image_url!,
+              )}`}
               alt={legislador.person.fullname}
               fill
+              unoptimized
               className={cn(
                 "object-cover object-top transition-transform duration-700 group-hover:scale-105",
                 (legislador.condition === LegislatorCondition.FALLECIDO ||
                   legislador.condition === LegislatorCondition.DESTITUIDO) &&
                   "grayscale opacity-80",
               )}
-              sizes="(max-width: 768px) 80px, 80px"
+              onError={(e) => {
+                e.currentTarget.src = "/images/placeholder-user.png";
+              }}
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center">

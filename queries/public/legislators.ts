@@ -156,7 +156,7 @@ export const getLegisladoresCards = cache(
               fullname: leg.person.fullname,
               dni: leg.person.dni,
               image_url: leg.person.image_url,
-              image_candidate_url: leg.person.image_url,
+              image_candidate_url: leg.person.image_candidate_url,
               profession: leg.person.profession,
             },
             elected_by_party: {
