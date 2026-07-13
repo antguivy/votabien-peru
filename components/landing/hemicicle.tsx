@@ -177,47 +177,49 @@ export default function HemicileLegislator({
 // ---- CONFIG ----
 
 const SENADO_CONFIG = {
-  viewBox: "0 0 800 750",
-  cx: 400,
-  cy: 610,
-  bubbleRadius: 42,
+  viewBox: "0 0 840 500",
+  cx: 420,
+  cy: 430,
+  bubbleRadius: 22,
   rows: [
-    { radius: 490, count: 16 },
-    { radius: 370, count: 14 },
-    { radius: 255, count: 12 },
-    { radius: 155, count: 10 },
-    { radius: 65, count: 8 },
+    { radius: 360, count: 16 },
+    { radius: 302, count: 14 },
+    { radius: 244, count: 12 },
+    { radius: 186, count: 10 },
+    { radius: 128, count: 8 },
   ],
 };
 
 const DIPUTADOS_CONFIG = {
-  viewBox: "0 0 800 680",
-  cx: 400,
-  cy: 560,
-  bubbleRadius: 20,
+  viewBox: "0 0 840 500",
+  cx: 420,
+  cy: 430,
+  bubbleRadius: 14.5,
   rows: [
-    { radius: 395, count: 26 },
-    { radius: 350, count: 22 },
-    { radius: 306, count: 19 },
-    { radius: 264, count: 17 },
-    { radius: 222, count: 15 },
-    { radius: 180, count: 13 },
-    { radius: 138, count: 10 },
-    { radius: 96, count: 8 },
+    { radius: 374, count: 24 },
+    { radius: 336, count: 22 },
+    { radius: 298, count: 20 },
+    { radius: 260, count: 18 },
+    { radius: 222, count: 16 },
+    { radius: 184, count: 16 },
+    { radius: 146, count: 14 },
   ],
 };
 
-const MOBILE_CONFIG = {
-  viewBox: "0 0 1000 550",
-  cx: 500,
-  cy: 480,
-  bubbleRadius: 30,
+const CONGRESO_CONFIG = {
+  viewBox: "0 0 840 500",
+  cx: 420,
+  cy: 430,
+  bubbleRadius: 12,
   rows: [
-    { radius: 450, count: 26 },
-    { radius: 400, count: 22 },
-    { radius: 350, count: 19 },
-    { radius: 300, count: 17 },
-    { radius: 250, count: 15 },
+    { radius: 380, count: 31 },
+    { radius: 347, count: 29 },
+    { radius: 314, count: 27 },
+    { radius: 281, count: 25 },
+    { radius: 248, count: 23 },
+    { radius: 215, count: 20 },
+    { radius: 182, count: 18 },
+    { radius: 149, count: 17 },
   ],
 };
 
@@ -225,8 +227,6 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [activeBubble, setActiveBubble] = useState<Bubble | null>(null);
-
-  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -239,15 +239,16 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   );
 
   const totalSeats = seatsData.length;
-  const occupiedSeats = seatsData.filter(
-    (s) => s.legislator || s.parliamentary_group_id,
-  ).length;
 
   const svgConfig = useMemo(() => {
-    if (isMobile) return MOBILE_CONFIG;
-    if (seatsData.every((s) => s.chamber === "SENADO")) return SENADO_CONFIG;
+    if (totalSeats <= 65 || seatsData.every((s) => s.chamber === "SENADO")) {
+      return SENADO_CONFIG;
+    }
+    if (totalSeats > 140) {
+      return CONGRESO_CONFIG;
+    }
     return DIPUTADOS_CONFIG;
-  }, [isMobile, seatsData]);
+  }, [seatsData, totalSeats]);
 
   const bubbles: Bubble[] = useMemo(() => {
     const sortedSeats = [...seatsData].sort((a, b) => {
@@ -334,32 +335,57 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
             style={{ overflow: "visible" }}
           >
             <defs>
-              {bubbles.map((bubble) => {
+              <filter
+                id="seat-shadow"
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+              >
+                <feDropShadow
+                  dx="0"
+                  dy="1.5"
+                  stdDeviation="1.5"
+                  floodOpacity="0.12"
+                />
+              </filter>
+              {bubbles.map((bubble, idx) => {
                 if (!bubble.group?.logo_url) return null;
+                const strokeW = Math.max(2.2, svgConfig.bubbleRadius * 0.16);
+                const innerRadius = Math.max(
+                  1,
+                  svgConfig.bubbleRadius - strokeW / 2 - 0.5,
+                );
                 return (
                   <clipPath
-                    key={`clip-${bubble.seat.id}`}
-                    id={`clip-${bubble.seat.id}`}
+                    key={`clip-${bubble.seat.id || idx}`}
+                    id={`clip-${bubble.seat.id || idx}`}
                   >
-                    <circle
-                      cx={bubble.x}
-                      cy={bubble.y}
-                      r={svgConfig.bubbleRadius}
-                    />
+                    <circle cx={bubble.x} cy={bubble.y} r={innerRadius} />
                   </clipPath>
                 );
               })}
             </defs>
 
             {/* Escritorio Directivo */}
-            <rect
-              x={svgConfig.cx - 60}
-              y={svgConfig.cy + 20}
-              width="120"
-              height="20"
-              rx="4"
-              className="fill-slate-200 dark:fill-slate-800"
-            />
+            <g transform={`translate(${svgConfig.cx}, ${svgConfig.cy + 15})`}>
+              <rect
+                x={-70}
+                y={0}
+                width={140}
+                height={18}
+                rx={9}
+                className="fill-slate-200 dark:fill-slate-800 stroke-slate-300 dark:stroke-slate-700 stroke-1"
+              />
+              <rect
+                x={-45}
+                y={-8}
+                width={90}
+                height={12}
+                rx={6}
+                className="fill-slate-300 dark:fill-slate-700"
+              />
+            </g>
 
             {bubbles.map((bubble, i) => {
               const isHoveredGroup =
@@ -367,8 +393,11 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
               const isDimmed =
                 hoveredGroup && bubble.group?.name !== hoveredGroup;
 
-              const color = bubble.group?.color || "transparent";
+              const color = bubble.group?.color || "#cbd5e1";
               const logoUrl = bubble.group?.logo_url;
+              const R = svgConfig.bubbleRadius;
+              const strokeW = Math.max(2.2, R * 0.16);
+              const logoSize = R * 1.48;
 
               return (
                 <g
@@ -377,33 +406,45 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                   onMouseLeave={() => setActiveBubble(null)}
                   className="transition-all duration-300 cursor-pointer"
                   style={{
-                    opacity: isDimmed ? 0.2 : 1,
-                    transform: isHoveredGroup ? "scale(1.1)" : "scale(1)",
+                    opacity: isDimmed ? 0.22 : 1,
+                    transform: isHoveredGroup ? "scale(1.15)" : "scale(1)",
                     transformOrigin: `${bubble.x}px ${bubble.y}px`,
                   }}
                 >
-                  <circle
-                    cx={bubble.x}
-                    cy={bubble.y}
-                    r={svgConfig.bubbleRadius}
-                    fill={color}
-                    className={
-                      !bubble.group
-                        ? "stroke-slate-300 dark:stroke-slate-700 stroke-[1.5px]"
-                        : "stroke-white/20"
-                    }
-                  />
-                  {logoUrl && (
-                    <g clipPath={`url(#clip-${bubble.seat.id})`}>
-                      <image
-                        href={logoUrl}
-                        x={bubble.x - svgConfig.bubbleRadius * 0.8}
-                        y={bubble.y - svgConfig.bubbleRadius * 0.8}
-                        width={svgConfig.bubbleRadius * 1.6}
-                        height={svgConfig.bubbleRadius * 1.6}
-                        preserveAspectRatio="xMidYMid meet"
+                  {logoUrl ? (
+                    <>
+                      <circle
+                        cx={bubble.x}
+                        cy={bubble.y}
+                        r={R}
+                        fill="#ffffff"
+                        stroke={color}
+                        strokeWidth={strokeW}
+                        filter="url(#seat-shadow)"
                       />
-                    </g>
+                      <g clipPath={`url(#clip-${bubble.seat.id || i})`}>
+                        <image
+                          href={logoUrl}
+                          x={bubble.x - logoSize / 2}
+                          y={bubble.y - logoSize / 2}
+                          width={logoSize}
+                          height={logoSize}
+                          preserveAspectRatio="xMidYMid meet"
+                        />
+                      </g>
+                    </>
+                  ) : (
+                    <circle
+                      cx={bubble.x}
+                      cy={bubble.y}
+                      r={R}
+                      fill={color}
+                      stroke={
+                        bubble.group ? "rgba(255,255,255,0.45)" : "#cbd5e1"
+                      }
+                      strokeWidth={1.5}
+                      filter="url(#seat-shadow)"
+                    />
                   )}
                 </g>
               );
@@ -411,12 +452,12 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
           </svg>
 
           {/* TOTALES EN EL CENTRO */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none">
-            <span className="text-5xl font-extrabold text-slate-800 dark:text-slate-100 block mb-1">
+          <div className="absolute bottom-[13%] left-1/2 -translate-x-1/2 text-center pointer-events-none flex flex-col items-center justify-center">
+            <span className="text-4xl sm:text-5xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight block">
               {totalSeats}
             </span>
-            <span className="text-sm font-semibold tracking-wider text-slate-500 uppercase flex items-center gap-2 justify-center">
-              <Users className="w-4 h-4" />
+            <span className="text-xs sm:text-sm font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5 justify-center mt-0.5">
+              <Users className="w-3.5 h-3.5" />
               Escaños
             </span>
           </div>
