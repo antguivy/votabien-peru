@@ -527,13 +527,13 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
 
       {/* BANCADAS SUMMARY - Below the hemiciclo */}
       <div className="w-full max-w-5xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
           {parliamentaryGroups.map((group) => (
             <div
               key={group.mainPartyId}
               onMouseEnter={() => setHoveredGroup(group.name)}
               onMouseLeave={() => setHoveredGroup(null)}
-              className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3
+              className={`min-w-0 p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-2 sm:gap-3
                 ${
                   hoveredGroup === group.name
                     ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800/50 scale-[1.02]"
@@ -541,7 +541,7 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                 }
               `}
             >
-              <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-sm">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden relative flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-sm">
                 {group.logo_url ? (
                   <Image
                     src={group.logo_url}
@@ -556,14 +556,18 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                   />
                 )}
               </div>
-              <span className="font-medium text-sm text-slate-700 dark:text-slate-300 flex-1 leading-tight">
+
+              {/* clave: min-w-0 + flex-1 permite que el texto se comprima y haga wrap/clamp en vez de empujar la card */}
+              <span className="min-w-0 flex-1 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
                 {group.name}
               </span>
-              <div className="flex flex-col items-end">
-                <span className="font-bold text-lg leading-tight text-slate-900 dark:text-white">
+
+              {/* clave: flex-shrink-0 + whitespace-nowrap asegura que el número nunca se corte */}
+              <div className="flex flex-col items-end flex-shrink-0">
+                <span className="font-bold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">
                   {group.seats}
                 </span>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
                   {((group.seats / totalSeats) * 100).toFixed(1)}%
                 </span>
               </div>
