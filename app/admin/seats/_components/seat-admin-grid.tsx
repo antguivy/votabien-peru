@@ -311,15 +311,6 @@ export function SeatAdminGrid({
 
   const bubbles = useMemo(() => {
     const sortedSeats = [...filteredSeats].sort((a, b) => {
-      const groupA =
-        a.parliamentarygroup?.name ||
-        a.legislator?.parliamentarymembership?.[0]?.parliamentarygroup?.name ||
-        "ZZZ";
-      const groupB =
-        b.parliamentarygroup?.name ||
-        b.legislator?.parliamentarymembership?.[0]?.parliamentarygroup?.name ||
-        "ZZZ";
-      if (groupA !== groupB) return groupA.localeCompare(groupB);
       if (a.row !== b.row) return a.row - b.row;
       return a.number_seat - b.number_seat;
     });
