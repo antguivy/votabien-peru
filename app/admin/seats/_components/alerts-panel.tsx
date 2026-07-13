@@ -9,7 +9,7 @@ type Alert = {
   status: string;
   title: string;
   message: string;
-  metadata: Record<string, unknown> | null;
+  metadata: unknown;
   created_at: Date;
 };
 
