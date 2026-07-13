@@ -30,13 +30,12 @@ export default async function VotaBienPage() {
       seatsDiputados.length > 0
         ? []
         : await getSeatParliamentary(ChamberType.CONGRESO);
-    console.log("fallbackSeats", fallbackSeats);
 
     const finalSeats =
       seatsDiputados.length > 0
         ? [...seatsDiputados, ...seatsSenado]
         : fallbackSeats;
-    console.log("finalSeats", finalSeats);
+
     return (
       <>
         {/* Mobile Header (sticky top) solo para la landing en mobile */}

@@ -216,10 +216,8 @@ export function SeatAdminGrid({
   };
 
   const svgConfig = useMemo(() => {
-    const isSmallChamber =
-      chamber === "SENADO" ||
-      (chamber === "CONGRESO" && filteredSeats.length <= 60);
-    if (isSmallChamber) {
+    const isCongress = chamber === "CONGRESO" && filteredSeats.length <= 60;
+    if (isCongress) {
       return {
         viewBox: "0 0 800 450",
         cx: 400,
@@ -231,18 +229,36 @@ export function SeatAdminGrid({
           { radius: 220, count: 15 },
         ],
       };
+    }
+    if (chamber === "SENADO") {
+      return {
+        viewBox: "0 0 800 520",
+        cx: 400,
+        cy: 470,
+        bubbleRadius: 28,
+        rows: [
+          { radius: 350, count: 16 },
+          { radius: 300, count: 14 },
+          { radius: 255, count: 12 },
+          { radius: 215, count: 10 },
+          { radius: 175, count: 8 },
+        ],
+      };
     } else {
       return {
-        viewBox: "0 0 800 500",
+        viewBox: "0 0 800 540",
         cx: 400,
-        cy: 450,
-        bubbleRadius: 14,
+        cy: 480,
+        bubbleRadius: 12,
         rows: [
-          { radius: 380, count: 32 },
-          { radius: 340, count: 29 },
-          { radius: 300, count: 26 },
-          { radius: 260, count: 23 },
-          { radius: 220, count: 20 },
+          { radius: 380, count: 26 },
+          { radius: 345, count: 22 },
+          { radius: 310, count: 19 },
+          { radius: 278, count: 17 },
+          { radius: 248, count: 15 },
+          { radius: 222, count: 13 },
+          { radius: 198, count: 10 },
+          { radius: 175, count: 8 },
         ],
       };
     }
@@ -415,7 +431,7 @@ export function SeatAdminGrid({
               {/* Escritorio Directivo */}
               <rect
                 x={svgConfig.cx - 60}
-                y={svgConfig.cy + 10}
+                y={svgConfig.cy + 15}
                 width="120"
                 height="20"
                 rx="4"

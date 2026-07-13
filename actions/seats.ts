@@ -162,11 +162,11 @@ export async function generateSeatsForPeriod(
 
     // Configuración típica de escaños
     let totalSeats = 130;
-    let rowsConfig = [32, 29, 26, 23, 20]; // Diputados/Congreso
+    let rowsConfig = [26, 22, 19, 17, 15, 13, 10, 8]; // Diputados/Congreso: 8 filas
 
     if (chamber === "SENADO") {
       totalSeats = 60;
-      rowsConfig = [25, 20, 15]; // Senado
+      rowsConfig = [16, 14, 12, 10, 8]; // Senado: 5 filas
     }
 
     let seatNumber = 1;
