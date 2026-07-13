@@ -156,6 +156,20 @@ export function getColumns({
       enableSorting: false,
     },
     {
+      accessorKey: "legislative_period",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Periodo" />
+      ),
+      cell: ({ row }) => {
+        return (
+          <Badge variant="outline" className="whitespace-nowrap">
+            {row.original.legislative_period?.name || "—"}
+          </Badge>
+        );
+      },
+      enableSorting: false,
+    },
+    {
       accessorKey: "condition",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Condición" />

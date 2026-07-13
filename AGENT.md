@@ -34,9 +34,3 @@ Actúa como un Principal/Staff Frontend Engineer experto en Next.js (App Router)
 
 - **Directo al Código**: Sin preámbulos, saludos, ni cháchara. Entrega las modificaciones o el bloque de código exacto.
 - **Correcciones Arquitectónicas**: Si detectas una mala práctica en la petición, indica brevemente (1 o 2 oraciones) por qué es incorrecto y aplica la solución de _Staff Engineer_.
-
-<!--Fase 2: Automatización y Métricas (El panorama a futuro - Punto 2)
-Ya que tengo visibilidad de tus scripts de Python, la arquitectura ideal para automatizar esto (cuando decidamos atacarlo) sería centralizarlo en tu votabien-api (FastAPI):
-- Proyectos de Ley: Migraremos la lógica de tu page_scraper.py + IA (generador) hacia FastAPI. Podríamos configurar un "CRON job" (ej. usando GitHub Actions o un scheduler de Python) que ejecute un endpoint en tu FastAPI una vez a la semana. FastAPI hará el scraping, generará el resumen con IA y escribirá directamente en la base de datos de Prisma usando un endpoint seguro.
-- Asistencias (OCR): Ya tienes page_ocr.py. Al procesar PDFs pesados, FastAPI es ideal. Crearemos un proceso en background que descargue el PDF del estado, aplique tu lógica de OCR y actualice el attendance_rate.
-- Detector de Tránsfugas (Bancadas): Haremos un pequeño script en FastAPI que haga peticiones diarias a la URL del Congreso. Como es del Estado y puede fallar o cambiar el HTML, en lugar de actualizar la BD automáticamente (lo cual es riesgoso), haremos que el script genere una "Alerta" en tu panel de Admin. Así entras, verificas la noticia, y apruebas el cambio de bancada y reasignas su asiento en /admin/seats.-->

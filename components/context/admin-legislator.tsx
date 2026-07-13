@@ -2,12 +2,14 @@
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { ParliamentaryGroupBasic } from "@/interfaces/parliamentary-membership";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
+import { legislativeperiod } from "@/prisma/generated/client";
 import React, { createContext, ReactNode } from "react";
 
 type AdminLegislatorContextProps = {
   districts: ElectoralDistrictBase[];
   parties: PoliticalPartyBase[];
   parliamentaryGroups: ParliamentaryGroupBasic[];
+  legislativePeriods: Pick<legislativeperiod, "id" | "name">[];
 };
 
 const AdminLegislatorContext = createContext<AdminLegislatorContextProps>(
@@ -19,6 +21,7 @@ interface AdminLegislatorProviderProps {
   districts: ElectoralDistrictBase[];
   parties: PoliticalPartyBase[];
   parliamentaryGroups: ParliamentaryGroupBasic[];
+  legislativePeriods: Pick<legislativeperiod, "id" | "name">[];
 }
 
 const AdminLegislatorProvider: React.FC<AdminLegislatorProviderProps> = ({
@@ -26,6 +29,7 @@ const AdminLegislatorProvider: React.FC<AdminLegislatorProviderProps> = ({
   districts,
   parties,
   parliamentaryGroups,
+  legislativePeriods,
 }) => {
   return (
     <AdminLegislatorContext.Provider
@@ -33,6 +37,7 @@ const AdminLegislatorProvider: React.FC<AdminLegislatorProviderProps> = ({
         districts,
         parties,
         parliamentaryGroups,
+        legislativePeriods,
       }}
     >
       {children}

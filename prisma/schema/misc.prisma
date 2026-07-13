@@ -43,3 +43,31 @@ model triviagame {
   person             person?         @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   politicalparty     politicalparty? @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
+
+model systemalert {
+  id         String      @id @default(cuid()) @db.VarChar
+  type       alerttype
+  status     alertstatus @default(PENDING)
+  title      String      @db.VarChar(255)
+  message    String
+  metadata   Json?       @db.Json
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at DateTime    @default(now()) @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([type])
+  @@index([created_at])
+}
+
+enum alerttype {
+  TRANSFUGA_DETECTED
+  SCRAPER_ERROR
+  SYSTEM_INFO
+}
+
+enum alertstatus {
+  PENDING
+  RESOLVED
+  IGNORED
+  SNOOZED
+}

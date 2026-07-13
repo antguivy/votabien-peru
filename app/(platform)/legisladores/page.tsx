@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getDistritos } from "@/queries/public/electoral-districts";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
 import { ChamberType } from "@/interfaces/politics";
+import { prisma } from "@/lib/prisma";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 
 // Importamos el nuevo panel y el Stream
@@ -76,14 +77,24 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
   try {
     // 4. AQUÍ SOLO CARGAMOS DATOS PARA LOS FILTROS
     // La carga de los legisladores (getLegisladoresCards) ahora la hace el Stream
-    const [distritos, parliamentaryGroups] = await Promise.all([
+    const [distritos, parliamentaryGroups, activePeriod] = await Promise.all([
       getDistritos(),
       getParliamentaryGroups(true),
+      prisma.legislativeperiod.findFirst({
+        where: { active: true },
+        select: { id: true },
+      }),
     ]);
 
     const filteredDistricts = distritos.filter(
       (d) => !d.name.toUpperCase().includes("NACIONAL"),
     );
+
+    // Pasar el legislative_period_id activo si existe
+    const apiParamsWithPeriod = {
+      ...apiParams,
+      legislative_period_id: activePeriod?.id,
+    };
 
     return (
       <ContentPlatformLayout>
@@ -107,7 +118,7 @@ export default async function LegisladoresPage({ searchParams }: PageProps) {
             fallback={<LegisladoresListSkeleton />}
           >
             <LegisladoresStream
-              apiParams={apiParams}
+              apiParams={apiParamsWithPeriod}
               bancadas={parliamentaryGroups}
               distritos={filteredDistricts}
               currentFilters={currentParams}

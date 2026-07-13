@@ -93,6 +93,7 @@ export interface AdminLegislator {
   institutional_email?: string | null;
   current_parliamentary_group: ParliamentaryGroupBasic | null;
   parliamentary_memberships: ParliamentaryMembershipWithGroup[] | undefined;
+  legislative_period?: { id: string; name: string } | null;
   created_at: string;
   // Relaciones populadas
   person: PersonBasicInfo | null;
@@ -111,6 +112,7 @@ export interface CreateLegislatorPeriodRequest {
   active: boolean;
   institutional_email?: string;
   parliamentary_group?: string;
+  legislative_period_id?: string;
 }
 export interface LegislatorTableRow {
   id: string;

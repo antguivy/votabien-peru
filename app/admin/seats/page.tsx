@@ -3,6 +3,7 @@ import { Shell } from "@/components/shell";
 import React, { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import { SeatAdminGrid } from "./_components/seat-admin-grid";
+import { AlertsPanel } from "./_components/alerts-panel";
 
 export default async function AdminSeatsPage() {
   const periods = await prisma.legislativeperiod.findMany({
@@ -43,6 +44,11 @@ export default async function AdminSeatsPage() {
     orderBy: { name: "asc" },
   });
 
+  const alerts = await prisma.systemalert.findMany({
+    where: { status: "PENDING" },
+    orderBy: { created_at: "desc" },
+  });
+
   return (
     <ContentLayout title="Asientos (Hemiciclo)">
       <Shell className="gap-2 mx-auto">
@@ -52,6 +58,7 @@ export default async function AdminSeatsPage() {
             parlamentario.
           </p>
         </div>
+        <AlertsPanel initialAlerts={alerts} />
         <Suspense fallback={<div>Cargando hemiciclo...</div>}>
           <SeatAdminGrid
             initialSeats={seats}

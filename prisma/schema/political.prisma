@@ -90,6 +90,7 @@ model legislator {
   condition               legislatorcondition       @default(EN_EJERCICIO)
   updated_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
   elected_by_party_id     String                    @db.VarChar
+  legislative_period_id   String?                   @db.VarChar
   attendance              attendance[]
   bill                    bill[]
   politicalparty          politicalparty            @relation(fields: [elected_by_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -98,6 +99,7 @@ model legislator {
   legislatormetrics       legislatormetrics?
   parliamentarymembership parliamentarymembership[]
   seatparliamentary       seatparliamentary[]
+  legislativeperiod       legislativeperiod?        @relation(fields: [legislative_period_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([electoral_district_id], map: "ix_legislator_electoral_district_id")
   @@index([person_id], map: "ix_legislator_person_id")

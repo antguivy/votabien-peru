@@ -29,6 +29,7 @@ export const searchParamsCache = createSearchParamsCache({
   //   from: parseAsString.withDefault(""),
   //   to: parseAsString.withDefault(""),
   electoral_district: parseAsArrayOf(parseAsString).withDefault([]),
+  legislative_period: parseAsArrayOf(parseAsString).withDefault([]),
 });
 
 export type GetLegislatorSchema = Awaited<

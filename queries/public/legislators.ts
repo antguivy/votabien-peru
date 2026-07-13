@@ -21,6 +21,7 @@ interface GetLegislatorsParams {
   page?: number;
   pageSize?: number;
   limit?: number;
+  legislative_period_id?: string;
 }
 
 export const getLegisladoresCards = cache(
@@ -34,6 +35,7 @@ export const getLegisladoresCards = cache(
       ids,
       page = 1,
       pageSize = 30,
+      legislative_period_id,
     }: GetLegislatorsParams): Promise<LegislatorCard[]> => {
       const skip = (page - 1) * pageSize;
       const take = pageSize;
@@ -42,6 +44,8 @@ export const getLegisladoresCards = cache(
         const whereClause: Prisma.legislatorWhereInput = {};
 
         if (active_only) whereClause.active = true;
+        if (legislative_period_id)
+          whereClause.legislative_period_id = legislative_period_id;
         if (chamber) whereClause.chamber = chamber;
         if (ids && ids.length > 0) whereClause.id = { in: ids };
 

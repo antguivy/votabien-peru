@@ -17,6 +17,7 @@ import { getPartidosList } from "@/queries/public/parties";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
 import { ContentLayout } from "@/components/admin/content-layout";
 import { getDistritos } from "@/queries/public/electoral-districts";
+import { prisma } from "@/lib/prisma";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;
@@ -30,14 +31,19 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
     getLegislatorConditionCounts(),
     getDistrictsCounts(),
   ]);
-  const [districts, parties, parliamentaryGroups] = await Promise.all([
-    getDistritos(),
-    getPartidosList({
-      active: true,
-      limit: 100,
-    }),
-    getParliamentaryGroups(true),
-  ]);
+  const [districts, parties, parliamentaryGroups, legislativePeriods] =
+    await Promise.all([
+      getDistritos(),
+      getPartidosList({
+        active: true,
+        limit: 100,
+      }),
+      getParliamentaryGroups(true),
+      prisma.legislativeperiod.findMany({
+        select: { id: true, name: true },
+        orderBy: { start_date: "desc" },
+      }),
+    ]);
   return (
     <ContentLayout title="Legisladores">
       <Shell className="gap-2 mx-auto">
@@ -45,6 +51,7 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
           districts={districts}
           parties={parties.items}
           parliamentaryGroups={parliamentaryGroups}
+          legislativePeriods={legislativePeriods}
         >
           {/* <FeatureFlagsProvider> */}
           <Suspense fallback={<Skeleton className="h-7 w-52" />}>
@@ -76,7 +83,10 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
               />
             }
           >
-            <LegislatorsTable promises={promises} />
+            <LegislatorsTable
+              promises={promises}
+              legislativePeriods={legislativePeriods}
+            />
           </Suspense>
           {/* </FeatureFlagsProvider> */}
         </AdminLegislatorProvider>

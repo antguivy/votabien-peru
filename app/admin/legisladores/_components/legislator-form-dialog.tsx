@@ -68,6 +68,7 @@ const legislatorPeriodSchema = z.object({
     .union([z.email({ message: "Email inválido" }), z.literal("")])
     .optional(),
   active: z.boolean(),
+  legislative_period_id: z.string().optional(),
 });
 
 type LegislatorPeriodFormValues = z.infer<typeof legislatorPeriodSchema>;
@@ -86,7 +87,9 @@ export function LegislatorFormDialog({
   mode = "create",
   initialData,
 }: LegislatorFormDialogProps) {
-  const { districts, parties } = useContext(AdminLegislatorContext);
+  const { districts, parties, legislativePeriods } = useContext(
+    AdminLegislatorContext,
+  );
   const [selectedPerson, setSelectedPerson] = useState<PersonBasicInfo | null>(
     null,
   );
@@ -107,6 +110,7 @@ export function LegislatorFormDialog({
       end_date: "",
       institutional_email: "",
       active: true,
+      legislative_period_id: initialData?.legislative_period?.id || "",
     },
   });
 
@@ -487,6 +491,35 @@ export function LegislatorFormDialog({
                   )}
                 />
               </div>
+
+              {/* Periodo Legislativo */}
+              <FormField
+                control={form.control}
+                name="legislative_period_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Periodo Legislativo</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar periodo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {legislativePeriods?.map((period) => (
+                          <SelectItem key={period.id} value={period.id}>
+                            {period.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Estado Activo */}
               <FormField
