@@ -107,8 +107,10 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
     CONDITION_CONFIG[LegislatorCondition.EN_EJERCICIO];
 
   const ConditionIcon = condition.icon;
-  const chamberKey = "CONGRESO"; // O la lógica para Senador/Diputado
-  const chamber = CHAMBER_CONFIG[chamberKey as keyof typeof CHAMBER_CONFIG];
+  const chamberKey = legislador.chamber || ChamberType.CONGRESO;
+  const chamber =
+    CHAMBER_CONFIG[chamberKey as keyof typeof CHAMBER_CONFIG] ??
+    CHAMBER_CONFIG.CONGRESO;
 
   const partyColor =
     legislador.current_parliamentary_group?.color_hex || "#94a3b8";
@@ -129,9 +131,13 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
       <div className="flex justify-between items-start mb-5">
         {/* Avatar del candidato */}
         <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-muted flex-shrink-0 border-2 border-background shadow-sm">
-          {legislador.person.image_url ? (
+          {legislador.person.image_candidate_url ||
+          legislador.person.image_url ? (
             <Image
-              src={legislador.person.image_url}
+              src={
+                legislador.person.image_candidate_url ||
+                legislador.person.image_url!
+              }
               alt={legislador.person.fullname}
               fill
               className={cn(

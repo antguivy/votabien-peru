@@ -48,8 +48,6 @@ function processSeatsForHemiciclo(
   >();
 
   seats.forEach((seat) => {
-    // Si el asiento tiene asignado un grupo (por bloque), usamos eso.
-    // Sino, si tiene un legislador con grupo, usamos eso.
     let group = null;
     if (seat.parliamentarygroup) {
       group = seat.parliamentarygroup;
@@ -124,7 +122,7 @@ export default function HemicileLegislator({
     <div className="w-full flex flex-col items-center">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-3">
-          Composición del Hemiciclo
+          Composición del Congreso de la República 2026
         </h2>
         <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl mx-auto">
           Distribución actual de las bancadas parlamentarias.
@@ -176,6 +174,53 @@ export default function HemicileLegislator({
 
 // ========== COMPONENTE RENDERIZADOR ESPECIFICO ==========
 
+// ---- CONFIG ----
+
+const SENADO_CONFIG = {
+  viewBox: "0 0 800 600",
+  cx: 400,
+  cy: 530,
+  bubbleRadius: 45,
+  rows: [
+    { radius: 400, count: 16 },
+    { radius: 310, count: 14 },
+    { radius: 225, count: 12 },
+    { radius: 145, count: 10 },
+    { radius: 75, count: 8 },
+  ],
+};
+
+const DIPUTADOS_CONFIG = {
+  viewBox: "0 0 800 600",
+  cx: 400,
+  cy: 520,
+  bubbleRadius: 21,
+  rows: [
+    { radius: 390, count: 26 },
+    { radius: 348, count: 22 },
+    { radius: 306, count: 19 },
+    { radius: 264, count: 17 },
+    { radius: 222, count: 15 },
+    { radius: 180, count: 13 },
+    { radius: 138, count: 10 },
+    { radius: 96, count: 8 },
+  ],
+};
+
+const MOBILE_CONFIG = {
+  viewBox: "0 0 1000 550",
+  cx: 500,
+  cy: 480,
+  bubbleRadius: 30,
+  rows: [
+    { radius: 450, count: 26 },
+    { radius: 400, count: 22 },
+    { radius: 350, count: 19 },
+    { radius: 300, count: 17 },
+    { radius: 250, count: 15 },
+  ],
+};
+
 function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -194,62 +239,18 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   );
 
   const totalSeats = seatsData.length;
-  // Un asiento está ocupado si tiene un legislador o un parliamentary_group asignado en bloque
   const occupiedSeats = seatsData.filter(
     (s) => s.legislator || s.parliamentary_group_id,
   ).length;
 
   const svgConfig = useMemo(() => {
-    if (isMobile) {
-      return {
-        viewBox: "0 0 1000 550",
-        cx: 500,
-        cy: 480,
-        bubbleRadius: 18,
-        rows: [
-          { radius: 450, count: 32 },
-          { radius: 400, count: 29 },
-          { radius: 350, count: 26 },
-          { radius: 300, count: 23 },
-          { radius: 250, count: 20 },
-        ],
-      };
-    }
-    // Optimizado para Senadores (60) vs Diputados (130)
-    const isSmallChamber = seatsData.length <= 60;
-
-    if (isSmallChamber) {
-      return {
-        viewBox: "0 0 800 450",
-        cx: 400,
-        cy: 400,
-        bubbleRadius: 20,
-        rows: [
-          { radius: 320, count: 25 },
-          { radius: 270, count: 20 },
-          { radius: 220, count: 15 },
-        ],
-      };
-    } else {
-      return {
-        viewBox: "0 0 800 500",
-        cx: 400,
-        cy: 450,
-        bubbleRadius: 14,
-        rows: [
-          { radius: 380, count: 32 },
-          { radius: 340, count: 29 },
-          { radius: 300, count: 26 },
-          { radius: 260, count: 23 },
-          { radius: 220, count: 20 },
-        ],
-      };
-    }
-  }, [isMobile, seatsData.length]);
+    if (isMobile) return MOBILE_CONFIG;
+    if (seatsData.every((s) => s.chamber === "SENADO")) return SENADO_CONFIG;
+    return DIPUTADOS_CONFIG;
+  }, [isMobile, seatsData]);
 
   const bubbles: Bubble[] = useMemo(() => {
     const sortedSeats = [...seatsData].sort((a, b) => {
-      // Orden por grupo para agrupar colores, luego por fila/numero
       const groupA =
         a.parliamentarygroup?.name ||
         a.legislator?.current_parliamentary_group?.name ||
@@ -273,7 +274,6 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
         if (seatIndex >= sortedSeats.length) break;
 
         const seat = sortedSeats[seatIndex];
-        // En un hemiciclo real el ángulo empieza en PI (izquierda) y va a 0 (derecha)
         const angle = Math.PI - i * angleStep;
 
         const x = svgConfig.cx + rowConfig.radius * Math.cos(angle);
@@ -324,70 +324,37 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 w-full">
-      {/* LEYENDA */}
-      <div className="w-full lg:w-1/3 order-2 lg:order-1 flex flex-col gap-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 sticky top-0 bg-white dark:bg-[#0B1120] py-2">
-          Bancadas
-        </h3>
-
-        <div className="space-y-2 pb-4">
-          {parliamentaryGroups.map((group) => (
-            <div
-              key={group.mainPartyId}
-              onMouseEnter={() => setHoveredGroup(group.name)}
-              onMouseLeave={() => setHoveredGroup(null)}
-              className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between
-                ${
-                  hoveredGroup === group.name
-                    ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800/50 scale-[1.02]"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40"
-                }
-              `}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
-                  style={{ backgroundColor: group.color }}
-                />
-                <span className="font-medium text-sm text-slate-700 dark:text-slate-300">
-                  {group.name}
-                </span>
-              </div>
-              <span className="font-bold text-lg text-slate-900 dark:text-white">
-                {group.seats}
-              </span>
-            </div>
-          ))}
-
-          {totalSeats - occupiedSeats > 0 && (
-            <div className="p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/20 flex justify-between items-center text-slate-500">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-transparent flex-shrink-0" />
-                <span className="font-medium text-sm">
-                  Escaños vacíos / por definir
-                </span>
-              </div>
-              <span className="font-bold text-lg">
-                {totalSeats - occupiedSeats}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-8 w-full">
       {/* HEMICICLO */}
-      <div className="w-full lg:w-2/3 order-1 lg:order-2 flex flex-col items-center justify-center relative">
+      <div className="w-full flex flex-col items-center justify-center relative">
         <div className="w-full max-w-3xl relative">
           <svg
             viewBox={svgConfig.viewBox}
             className="w-full h-auto drop-shadow-sm"
             style={{ overflow: "visible" }}
           >
+            <defs>
+              {bubbles.map((bubble) => {
+                if (!bubble.group?.logo_url) return null;
+                return (
+                  <clipPath
+                    key={`clip-${bubble.seat.id}`}
+                    id={`clip-${bubble.seat.id}`}
+                  >
+                    <circle
+                      cx={bubble.x}
+                      cy={bubble.y}
+                      r={svgConfig.bubbleRadius}
+                    />
+                  </clipPath>
+                );
+              })}
+            </defs>
+
             {/* Escritorio Directivo */}
             <rect
               x={svgConfig.cx - 60}
-              y={svgConfig.cy + 10}
+              y={svgConfig.cy + 20}
               width="120"
               height="20"
               rx="4"
@@ -402,6 +369,7 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
 
               const color = bubble.group?.color || "transparent";
               const hasLegislator = !!bubble.seat.legislator;
+              const logoUrl = bubble.group?.logo_url;
 
               return (
                 <g
@@ -420,15 +388,29 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                     cy={bubble.y}
                     r={svgConfig.bubbleRadius}
                     fill={color}
-                    className={`
-                      ${!bubble.group ? "stroke-slate-300 dark:stroke-slate-700 stroke-[1.5px]" : "stroke-white/20"}
-                    `}
+                    className={
+                      !bubble.group
+                        ? "stroke-slate-300 dark:stroke-slate-700 stroke-[1.5px]"
+                        : "stroke-white/20"
+                    }
                   />
+                  {logoUrl && (
+                    <g clipPath={`url(#clip-${bubble.seat.id})`}>
+                      <image
+                        href={logoUrl}
+                        x={bubble.x - svgConfig.bubbleRadius}
+                        y={bubble.y - svgConfig.bubbleRadius}
+                        width={svgConfig.bubbleRadius * 2}
+                        height={svgConfig.bubbleRadius * 2}
+                        preserveAspectRatio="xMidYMid slice"
+                      />
+                    </g>
+                  )}
                   {hasLegislator && (
                     <circle
                       cx={bubble.x}
                       cy={bubble.y}
-                      r={svgConfig.bubbleRadius * 0.4}
+                      r={svgConfig.bubbleRadius * 0.35}
                       className="fill-white/80 dark:fill-white/90"
                     />
                   )}
@@ -460,12 +442,23 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
             >
               <div className="bg-slate-900/95 backdrop-blur-md text-white p-3 rounded-xl shadow-xl border border-slate-700/50 flex flex-col gap-2 min-w-[200px] animate-in fade-in zoom-in-95">
                 <div className="flex items-center gap-2 border-b border-slate-700/50 pb-2">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{
-                      backgroundColor: activeBubble.group?.color || "#ccc",
-                    }}
-                  />
+                  <div className="w-7 h-7 rounded-full overflow-hidden relative flex-shrink-0 bg-slate-800 border border-slate-700">
+                    {activeBubble.group?.logo_url ? (
+                      <Image
+                        src={activeBubble.group.logo_url}
+                        alt={activeBubble.group.name}
+                        fill
+                        className="object-contain p-0.5"
+                      />
+                    ) : (
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                          backgroundColor: activeBubble.group?.color || "#ccc",
+                        }}
+                      />
+                    )}
+                  </div>
                   <span className="font-semibold text-sm line-clamp-1">
                     {activeBubble.group?.name || "Sin Bancada"}
                   </span>
@@ -505,6 +498,56 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* BANCADAS SUMMARY - Below the hemiciclo */}
+      <div className="w-full max-w-5xl mx-auto">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4 text-center">
+          Bancadas ({parliamentaryGroups.length})
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {parliamentaryGroups.map((group) => (
+            <div
+              key={group.mainPartyId}
+              onMouseEnter={() => setHoveredGroup(group.name)}
+              onMouseLeave={() => setHoveredGroup(null)}
+              className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3
+                ${
+                  hoveredGroup === group.name
+                    ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800/50 scale-[1.02]"
+                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40"
+                }
+              `}
+            >
+              <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-sm">
+                {group.logo_url ? (
+                  <Image
+                    src={group.logo_url}
+                    alt={group.name}
+                    fill
+                    className="object-contain p-1"
+                  />
+                ) : (
+                  <div
+                    className="w-full h-full"
+                    style={{ backgroundColor: group.color }}
+                  />
+                )}
+              </div>
+              <span className="font-medium text-sm text-slate-700 dark:text-slate-300 flex-1 leading-tight">
+                {group.name}
+              </span>
+              <div className="flex flex-col items-end">
+                <span className="font-bold text-lg leading-tight text-slate-900 dark:text-white">
+                  {group.seats}
+                </span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  {((group.seats / totalSeats) * 100).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
