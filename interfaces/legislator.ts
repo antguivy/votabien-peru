@@ -62,6 +62,7 @@ export interface LegislatorInSeat {
     name: string;
     lastname: string;
     image_url: string | null;
+    image_candidate_url: string | null;
   };
 }
 
