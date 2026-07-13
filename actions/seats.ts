@@ -41,7 +41,10 @@ export async function batchAssignGroupToSeats(
   try {
     await prisma.seatparliamentary.updateMany({
       where: { id: { in: seatIds } },
-      data: { parliamentary_group_id: groupId },
+      data: {
+        parliamentary_group_id: groupId,
+        legislator_id: null, // Limpiar legislador al repintar bancada para permitir autoasignación limpia
+      },
     });
 
     revalidatePath("/", "layout");
@@ -78,7 +81,6 @@ export async function autoAssignLegislators(
     }
 
     // 2. Obtener legisladores de este grupo que NO tienen asiento
-    // Primero obtenemos todos los que están en el grupo
     const groupMemberships = await prisma.parliamentarymembership.findMany({
       where: {
         parliamentary_group_id: groupId,
@@ -93,7 +95,6 @@ export async function autoAssignLegislators(
 
     const memberIds = groupMemberships.map((m) => m.legislator_id);
 
-    // Luego, filtrar aquellos que ya están en algún asiento en el periodo
     const occupiedSeats = await prisma.seatparliamentary.findMany({
       where: {
         legislator_id: { in: memberIds },
@@ -160,13 +161,13 @@ export async function generateSeatsForPeriod(
 
     const seatsToCreate = [];
 
-    // Configuración típica de escaños
+    // Configuración alineada con el hemiciclo de 8 filas (Diputados) y 5 filas (Senado)
     let totalSeats = 130;
-    let rowsConfig = [26, 22, 19, 17, 15, 13, 10, 8]; // Diputados/Congreso: 8 filas
+    let rowsConfig = [22, 20, 18, 17, 15, 14, 13, 11]; // Diputados: 8 filas = 130 escaños
 
     if (chamber === "SENADO") {
       totalSeats = 60;
-      rowsConfig = [16, 14, 12, 10, 8]; // Senado: 5 filas
+      rowsConfig = [16, 14, 12, 10, 8]; // Senado: 5 filas = 60 escaños
     }
 
     let seatNumber = 1;
@@ -196,5 +197,44 @@ export async function generateSeatsForPeriod(
   } catch (error) {
     console.error("Error generating seats:", error);
     return { success: false, error: "Error generating seats" };
+  }
+}
+
+// 4. Limpiar todas las asignaciones (bancada y legislador) de los escaños del periodo y cámara
+export async function clearSeatsAssignments(
+  periodId: string,
+  chamber: "SENADO" | "DIPUTADOS" | "CONGRESO",
+) {
+  try {
+    const res = await prisma.seatparliamentary.updateMany({
+      where: { legislative_period_id: periodId, chamber },
+      data: {
+        parliamentary_group_id: null,
+        legislator_id: null,
+      },
+    });
+
+    revalidatePath("/", "layout");
+    return { success: true, count: res.count };
+  } catch (error) {
+    console.error("Error clearing seat assignments:", error);
+    return { success: false, error: "Error clearing seat assignments" };
+  }
+}
+
+// 5. Regenerar escaños del periodo y cámara (elimina y vuelve a generar con estructura de filas nueva)
+export async function regenerateSeatsForPeriod(
+  periodId: string,
+  chamber: "SENADO" | "DIPUTADOS" | "CONGRESO",
+) {
+  try {
+    await prisma.seatparliamentary.deleteMany({
+      where: { legislative_period_id: periodId, chamber },
+    });
+
+    return await generateSeatsForPeriod(periodId, chamber);
+  } catch (error) {
+    console.error("Error regenerating seats:", error);
+    return { success: false, error: "Error regenerating seats" };
   }
 }

@@ -6,6 +6,8 @@ import {
   batchAssignGroupToSeats,
   autoAssignLegislators,
   generateSeatsForPeriod,
+  clearSeatsAssignments,
+  regenerateSeatsForPeriod,
 } from "@/actions/seats";
 import { toast } from "sonner";
 import {
@@ -16,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Wand2, Paintbrush } from "lucide-react";
+import { Wand2, Paintbrush, RotateCcw, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -129,6 +131,8 @@ export function SeatAdminGrid({
               ...s,
               parliamentary_group_id: paintModeGroup,
               parliamentarygroup: selectedGroupObj || null,
+              legislator_id: null,
+              legislator: null,
             };
           }
           return s;
@@ -215,6 +219,44 @@ export function SeatAdminGrid({
     setIsPending(false);
   };
 
+  const handleClearAssignments = async () => {
+    if (!selectedPeriod) return;
+    if (
+      !window.confirm(
+        `¿Estás seguro de limpiar todas las asignaciones de escaños en ${chamber}? Podrás volver a pintar desde cero.`,
+      )
+    )
+      return;
+    setIsPending(true);
+    const result = await clearSeatsAssignments(selectedPeriod, chamber);
+    if (result.success) {
+      toast.success("Asignaciones limpiadas.");
+      window.location.reload();
+    } else {
+      toast.error(result.error || "Error al limpiar asignaciones");
+    }
+    setIsPending(false);
+  };
+
+  const handleRegenerateSeats = async () => {
+    if (!selectedPeriod) return;
+    if (
+      !window.confirm(
+        `¿Estás seguro de regenerar todos los escaños de ${chamber}? Se eliminarán los escaños actuales y se crearán de nuevo con la estructura de filas actualizada.`,
+      )
+    )
+      return;
+    setIsPending(true);
+    const result = await regenerateSeatsForPeriod(selectedPeriod, chamber);
+    if (result.success) {
+      toast.success(`${result.count} escaños regenerados con éxito.`);
+      window.location.reload();
+    } else {
+      toast.error(result.error || "Error al regenerar escaños");
+    }
+    setIsPending(false);
+  };
+
   const svgConfig = useMemo(() => {
     if (chamber === "SENADO" || filteredSeats.length <= 65) {
       return {
@@ -253,15 +295,16 @@ export function SeatAdminGrid({
       viewBox: "0 0 840 500",
       cx: 420,
       cy: 430,
-      bubbleRadius: 16,
+      bubbleRadius: 14.5,
       rows: [
-        { radius: 374, count: 24 },
-        { radius: 336, count: 22 },
-        { radius: 298, count: 20 },
-        { radius: 260, count: 18 },
-        { radius: 222, count: 16 },
-        { radius: 184, count: 16 },
-        { radius: 146, count: 14 },
+        { radius: 380, count: 22 },
+        { radius: 346, count: 20 },
+        { radius: 312, count: 18 },
+        { radius: 278, count: 17 },
+        { radius: 244, count: 15 },
+        { radius: 210, count: 14 },
+        { radius: 176, count: 13 },
+        { radius: 142, count: 11 },
       ],
     };
   }, [chamber, filteredSeats.length]);
@@ -415,6 +458,31 @@ export function SeatAdminGrid({
               </div>
             )}
           </div>
+
+          {filteredSeats.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-3 border-t mt-3 justify-end">
+              <Button
+                onClick={handleClearAssignments}
+                disabled={isPending}
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-amber-600 hover:text-amber-700 border-amber-300 dark:border-amber-800"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Limpiar Asignaciones
+                (Empezar de nuevo)
+              </Button>
+              <Button
+                onClick={handleRegenerateSeats}
+                disabled={isPending}
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-destructive hover:text-destructive"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Regenerar Escaños (Recrear
+                Filas)
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* SVG RENDERER */}
