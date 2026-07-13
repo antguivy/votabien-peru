@@ -122,11 +122,8 @@ export default function HemicileLegislator({
     <div className="w-full flex flex-col items-center">
       <div className="text-center mb-6">
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-3">
-          Composición del Congreso de la República 2026
+          Congreso de la República 2026
         </h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-2xl mx-auto">
-          Distribución actual de las bancadas parlamentarias.
-        </p>
       </div>
 
       {hasDiputados || hasSenado || hasCongreso ? (
@@ -447,10 +444,6 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
           <div className="absolute bottom-[13%] left-1/2 -translate-x-1/2 text-center pointer-events-none flex flex-col items-center justify-center">
             <span className="text-4xl sm:text-5xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight block">
               {totalSeats}
-            </span>
-            <span className="text-xs sm:text-sm font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5 justify-center mt-0.5">
-              <Users className="w-3.5 h-3.5" />
-              Escaños
             </span>
           </div>
 

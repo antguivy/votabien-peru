@@ -143,7 +143,7 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
               unoptimized
               sizes="(max-width: 640px) 64px, 80px"
               className={cn(
-                "object-cover object-[center_18%] scale-[1.15] transition-transform duration-700 group-hover:scale-[1.2]",
+                "object-cover object-center scale-125 transition-transform duration-700 group-hover:scale-[1.3]",
                 (legislador.condition === LegislatorCondition.FALLECIDO ||
                   legislador.condition === LegislatorCondition.DESTITUIDO) &&
                   "grayscale opacity-80",
