@@ -52,7 +52,7 @@ export default async function VotaBienPage() {
             </div>
           )}
 
-          <PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />
+          {/*<PodcastSection spotifyShowId="71ik7vUl8kN0g23hX4gl18" />*/}
           {/* 2 — Social Proof: fotos destacadas */}
           <SocialProof hitos={hitos} />
 
