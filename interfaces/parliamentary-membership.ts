@@ -6,6 +6,7 @@ export interface ParliamentaryGroupBasic {
   acronym: string | null;
   color_hex: string | null;
   logo_url: string | null;
+  government_audio_url: string | null;
 }
 
 export interface ParliamentaryMembershipBase {

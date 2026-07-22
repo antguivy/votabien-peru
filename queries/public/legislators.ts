@@ -141,6 +141,7 @@ export const getLegisladoresCards = cache(
               acronym: group.acronym || "",
               logo_url: group.logo_url,
               color_hex: group.color_hex || "",
+              government_audio_url: group.government_audio_url,
             };
           }
 
@@ -316,6 +317,7 @@ export const getVersusLegislators = cache(
               acronym: group.acronym || "",
               color_hex: group.color_hex || "",
               logo_url: group.logo_url,
+              government_audio_url: group.government_audio_url,
             };
           }
 

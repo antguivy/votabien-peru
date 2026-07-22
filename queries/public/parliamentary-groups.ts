@@ -23,6 +23,7 @@ export const getParliamentaryGroups = cache(
             acronym: true,
             logo_url: true,
             color_hex: true,
+            government_audio_url: true,
           },
           orderBy: { name: "asc" },
         });

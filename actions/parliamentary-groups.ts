@@ -8,6 +8,7 @@ export interface ParliamentaryGroupData {
   acronym: string | null;
   color_hex: string | null;
   logo_url: string | null;
+  government_audio_url: string | null;
   description: string | null;
   active?: boolean;
 }
@@ -21,6 +22,7 @@ export async function createParliamentaryGroup(data: ParliamentaryGroupData) {
         acronym: data.acronym,
         color_hex: data.color_hex,
         logo_url: data.logo_url,
+        government_audio_url: data.government_audio_url,
         description: data.description,
         active: data.active ?? true,
       },
@@ -46,6 +48,7 @@ export async function updateParliamentaryGroup(
         acronym: data.acronym,
         color_hex: data.color_hex,
         logo_url: data.logo_url,
+        government_audio_url: data.government_audio_url,
         description: data.description,
         active: data.active,
       },
