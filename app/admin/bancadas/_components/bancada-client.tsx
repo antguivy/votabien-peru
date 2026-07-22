@@ -43,6 +43,7 @@ export function BancadaClient({
     acronym: "",
     color_hex: "#000000",
     logo_url: "",
+    government_audio_url: "",
     description: "",
     active: true,
   });
@@ -54,6 +55,7 @@ export function BancadaClient({
       acronym: "",
       color_hex: "#000000",
       logo_url: "",
+      government_audio_url: "",
       description: "",
       active: true,
     });
@@ -67,6 +69,7 @@ export function BancadaClient({
       acronym: b.acronym || "",
       color_hex: b.color_hex || "#000000",
       logo_url: b.logo_url || "",
+      government_audio_url: b.government_audio_url || "",
       description: b.description || "",
       active: b.active,
     });
@@ -242,6 +245,21 @@ export function BancadaClient({
                 value={formData.logo_url}
                 onChange={(e) =>
                   setFormData({ ...formData, logo_url: e.target.value })
+                }
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                URL Audio Resumen (Opcional)
+              </label>
+              <Input
+                value={formData.government_audio_url}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    government_audio_url: e.target.value,
+                  })
                 }
                 placeholder="https://..."
               />

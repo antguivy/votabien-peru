@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Users } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Play, Pause } from "lucide-react";
 import Image from "next/image";
 
 import { SeatParliamentary } from "@/interfaces/politics";
@@ -13,6 +13,7 @@ interface ParliamentaryGroup {
   color: string;
   mainPartyId: string;
   logo_url: string;
+  government_audio_url: string | null;
   composition: [];
 }
 
@@ -31,7 +32,7 @@ interface Bubble {
 
 // ========== UTILIDADES ==========
 
-function processSeatsForHemiciclo(
+export function processSeatsForHemiciclo(
   seats: SeatParliamentary[],
 ): ParliamentaryGroup[] {
   const groupMap = new Map<
@@ -43,6 +44,7 @@ function processSeatsForHemiciclo(
         name: string;
         color_hex?: string | null;
         logo_url?: string | null;
+        government_audio_url?: string | null;
       };
     }
   >();
@@ -78,28 +80,12 @@ function processSeatsForHemiciclo(
       color: groupData.groupInfo.color_hex || "#94a3b8",
       mainPartyId: groupData.groupInfo.id,
       logo_url: groupData.groupInfo.logo_url || "",
+      government_audio_url: groupData.groupInfo.government_audio_url || null,
       composition: [],
     });
   });
 
   return parliamentaryGroups.sort((a, b) => b.seats - a.seats);
-}
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMatches(media.matches);
-    }
-    const listener = () => setMatches(media.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, [matches, query]);
-
-  return matches;
 }
 
 // ========== COMPONENTE PRINCIPAL ==========
@@ -225,11 +211,59 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [activeBubble, setActiveBubble] = useState<Bubble | null>(null);
+  const [activeAudioGroupId, setActiveAudioGroupId] = useState<string | null>(
+    null,
+  );
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioGroupIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeAudioGroupIdRef.current = activeAudioGroupId;
+  }, [activeAudioGroupId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setActiveAudioGroupId(null);
+    };
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("ended", onEnded);
+    return () => {
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, []);
+
+  const handleAudioToggle = (groupId: string, audioUrl: string) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const currentGroup = activeAudioGroupIdRef.current;
+    // Check if this same audio is already playing by reading the DOM element directly
+    const isCurrentlyPlaying = !audio.paused;
+
+    if (currentGroup === groupId && isCurrentlyPlaying) {
+      audio.pause();
+    } else if (currentGroup === groupId) {
+      audio.play().catch(() => {});
+    } else {
+      audio.src = audioUrl;
+      audio.load();
+      setActiveAudioGroupId(groupId);
+      audio.play().catch(() => {});
+    }
+  };
 
   const parliamentaryGroups = useMemo(
     () => processSeatsForHemiciclo(seatsData),
@@ -277,6 +311,8 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
             color: seat.parliamentarygroup.color_hex || "#ccc",
             mainPartyId: seat.parliamentarygroup.id,
             logo_url: seat.parliamentarygroup.logo_url || "",
+            government_audio_url:
+              seat.parliamentarygroup.government_audio_url || null,
             composition: [],
           };
         } else if (seat.legislator?.current_parliamentary_group) {
@@ -287,6 +323,7 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
             color: legGrp.color_hex || "#ccc",
             mainPartyId: legGrp.id,
             logo_url: legGrp.logo_url || "",
+            government_audio_url: legGrp.government_audio_url || null,
             composition: [],
           };
         }
@@ -315,6 +352,8 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
 
   return (
     <div className="flex flex-col gap-8 w-full">
+      <audio ref={audioRef} preload="none" className="hidden" />
+
       {/* HEMICICLO */}
       <div className="w-full flex flex-col items-center justify-center relative">
         <div className="w-full max-w-3xl relative">
@@ -521,51 +560,115 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
       {/* BANCADAS SUMMARY - Below the hemiciclo */}
       <div className="w-full max-w-5xl mx-auto">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-          {parliamentaryGroups.map((group) => (
-            <div
-              key={group.mainPartyId}
-              onMouseEnter={() => setHoveredGroup(group.name)}
-              onMouseLeave={() => setHoveredGroup(null)}
-              className={`min-w-0 p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-2 sm:gap-3
-                ${
-                  hoveredGroup === group.name
-                    ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800/50 scale-[1.02]"
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40"
+          {parliamentaryGroups.map((group) => {
+            const hasAudio = !!group.government_audio_url;
+            const isAudioActive = activeAudioGroupId === group.mainPartyId;
+
+            const waveformBars = Array.from({ length: 24 }, (_, i) => {
+              const seed =
+                group.mainPartyId.charCodeAt(i % group.mainPartyId.length) +
+                i * 7;
+              return 15 + (seed % 85);
+            });
+
+            return (
+              <div
+                key={group.mainPartyId}
+                onMouseEnter={() => setHoveredGroup(group.name)}
+                onMouseLeave={() => setHoveredGroup(null)}
+                onClick={
+                  hasAudio
+                    ? (e) => {
+                        e.stopPropagation();
+                        handleAudioToggle(
+                          group.mainPartyId,
+                          group.government_audio_url!,
+                        );
+                      }
+                    : undefined
                 }
-              `}
-            >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden relative flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-sm">
-                {group.logo_url ? (
-                  <Image
-                    src={group.logo_url}
-                    alt={group.name}
-                    fill
-                    className="object-contain p-1"
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{ backgroundColor: group.color }}
-                  />
+                className={`min-w-0 p-2.5 sm:p-3 rounded-xl border transition-all flex items-center gap-2 sm:gap-3 relative overflow-hidden
+                  ${hasAudio ? "cursor-pointer" : ""}
+                  ${
+                    hoveredGroup === group.name
+                      ? "border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-slate-800/50 scale-[1.02]"
+                      : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40"
+                  }
+                  ${isAudioActive && isPlaying ? "ring-1 ring-primary/30" : ""}
+                `}
+              >
+                {hasAudio && (
+                  <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
+                    <div className="flex items-end justify-center gap-[2px] w-full h-full px-2 pb-2">
+                      {waveformBars.map((h, i) => (
+                        <div
+                          key={i}
+                          className="w-full rounded-full transition-all duration-500"
+                          style={{
+                            height: `${h}%`,
+                            backgroundColor: group.color,
+                            opacity: isAudioActive && isPlaying ? 0.15 : 0.09,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </div>
 
-              {/* clave: min-w-0 + flex-1 permite que el texto se comprima y haga wrap/clamp en vez de empujar la card */}
-              <span className="min-w-0 flex-1 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-tight line-clamp-2">
-                {group.name}
-              </span>
+                <div
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden relative flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-sm ${
+                    hasAudio ? "group/logo" : ""
+                  }`}
+                >
+                  {group.logo_url ? (
+                    <Image
+                      src={group.logo_url}
+                      alt={group.name}
+                      fill
+                      className="object-contain p-1"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ backgroundColor: group.color }}
+                    />
+                  )}
+                  {hasAudio && (
+                    <div
+                      className={`absolute inset-0 flex items-center justify-center rounded-full transition-opacity
+                        ${
+                          isAudioActive && isPlaying
+                            ? "opacity-100 bg-black/40"
+                            : "opacity-0 group-hover/logo:opacity-100 bg-black/40"
+                        }`}
+                    >
+                      {isAudioActive && isPlaying ? (
+                        <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow" />
+                      ) : (
+                        <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white drop-shadow ml-0.5" />
+                      )}
+                    </div>
+                  )}
+                  {isAudioActive && isPlaying && (
+                    <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30 pointer-events-none" />
+                  )}
+                </div>
 
-              {/* clave: flex-shrink-0 + whitespace-nowrap asegura que el número nunca se corte */}
-              <div className="flex flex-col items-end flex-shrink-0">
-                <span className="font-bold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">
-                  {group.seats}
+                <span className="min-w-0 flex-1 font-medium text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-tight line-clamp-2 relative z-[1]">
+                  {group.name}
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                  {((group.seats / totalSeats) * 100).toFixed(1)}%
-                </span>
+
+                <div className="flex flex-col items-end flex-shrink-0 relative z-[1]">
+                  <span className="font-bold text-base sm:text-lg leading-tight text-slate-900 dark:text-white">
+                    {group.seats}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                    {((group.seats / totalSeats) * 100).toFixed(1)}%
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

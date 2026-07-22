@@ -141,6 +141,7 @@ model parliamentarygroup {
   acronym                 String?                   @db.VarChar(20)
   color_hex               String?                   @db.VarChar(7)
   logo_url                String?                   @db.VarChar
+  government_audio_url    String?                   @db.VarChar
   description             String?                   @db.VarChar(1000)
   formation_date          DateTime?                 @db.Timestamptz(6)
   dissolution_date        DateTime?                 @db.Timestamptz(6)

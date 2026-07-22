@@ -81,6 +81,7 @@ export const getSeatParliamentary = cache(
               acronym: group.acronym,
               logo_url: group.logo_url,
               color_hex: group.color_hex,
+              government_audio_url: group.government_audio_url,
             };
           }
 
@@ -97,6 +98,8 @@ export const getSeatParliamentary = cache(
                   acronym: seat.parliamentarygroup.acronym,
                   logo_url: seat.parliamentarygroup.logo_url,
                   color_hex: seat.parliamentarygroup.color_hex,
+                  government_audio_url:
+                    seat.parliamentarygroup.government_audio_url,
                 }
               : null,
             legislator: seat.legislator
