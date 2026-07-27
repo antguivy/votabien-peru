@@ -8,6 +8,7 @@ import {
 } from "@/interfaces/legislator";
 import { LegislatorVersusCard } from "@/interfaces/legislator-metrics";
 import { ChamberType } from "@/interfaces/politics";
+import { RnasSanction } from "@/interfaces/person";
 import prisma from "@/lib/prisma";
 import { Prisma, legislatormetrics } from "@/prisma/generated/client";
 
@@ -85,6 +86,10 @@ export const getLegisladoresCards = cache(
                 image_url: true,
                 image_candidate_url: true,
                 profession: true,
+                has_sanction: true,
+                has_penal_sentence: true,
+                is_incumbent: true,
+                rnas_sanctions: true,
               },
             },
             electoraldistrict: {
@@ -159,6 +164,12 @@ export const getLegisladoresCards = cache(
               image_url: leg.person.image_url,
               image_candidate_url: leg.person.image_candidate_url,
               profession: leg.person.profession,
+              has_sanction: leg.person.has_sanction,
+              has_penal_sentence: leg.person.has_penal_sentence,
+              is_incumbent: leg.person.is_incumbent,
+              rnas_sanctions:
+                (leg.person.rnas_sanctions as unknown as RnasSanction[]) ??
+                null,
             },
             elected_by_party: {
               id: leg.politicalparty.id,

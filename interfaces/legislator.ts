@@ -9,7 +9,7 @@ import {
   ParliamentaryGroupBasic,
   ParliamentaryMembershipWithGroup,
 } from "./parliamentary-membership";
-import { PersonBase, PersonBasicInfo } from "./person";
+import { PersonBase, PersonBasicInfo, RnasSanction } from "./person";
 import { PoliticalPartyBase } from "./political-party";
 import { ChamberType, LegislatorCondition } from "./politics";
 
@@ -74,7 +74,12 @@ export interface LegislatorCard {
   active: boolean;
   start_date: string;
   end_date: string;
-  person: PersonBasicInfo;
+  person: PersonBasicInfo & {
+    has_sanction: boolean;
+    has_penal_sentence: boolean;
+    is_incumbent: boolean | null;
+    rnas_sanctions: RnasSanction[] | null;
+  };
   elected_by_party: PoliticalPartyBase;
   electoral_district: ElectoralDistrictBase;
   has_metrics: boolean;
