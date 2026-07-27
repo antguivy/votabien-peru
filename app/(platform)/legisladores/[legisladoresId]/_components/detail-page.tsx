@@ -20,6 +20,9 @@ import {
   Newspaper,
   Copy,
   Gavel,
+  DollarSign,
+  Car,
+  Building2,
 } from "lucide-react";
 import { SlSocialFacebook, SlSocialTwitter } from "react-icons/sl";
 import { PiTiktokLogo } from "react-icons/pi";
@@ -33,6 +36,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { formatFechaJsonable } from "@/lib/utils/date";
@@ -49,15 +53,31 @@ import {
   TYPE_LABELS_SINGULAR,
 } from "@/lib/utils/background-config";
 import { LegislatorDetailWithPerson } from "@/interfaces/legislator";
+import { BillBasic } from "@/interfaces/bill";
 import { calcBillStats } from "@/lib/utils/bill-status";
+
+const formatCurrency = (amount: string | number) => {
+  if (!amount) return "S/ 0.00";
+  const num =
+    typeof amount === "string"
+      ? parseFloat(amount.replace(/[^\d.-]/g, ""))
+      : amount;
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+  }).format(num);
+};
 
 export default function DetailLegislador({
   legislador,
+  approvedBills = [],
 }: {
   legislador: LegislatorDetailWithPerson;
+  approvedBills?: BillBasic[];
 }) {
   const { copyToClipboard, isCopied } = useCopyToClipboard();
   const [openBills, setOpenBills] = useState(false);
+  const [openApprovedBills, setOpenApprovedBills] = useState(false);
 
   const persona = legislador.person;
   const periodoActivo = legislador;
@@ -67,6 +87,8 @@ export default function DetailLegislador({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const asistencias = periodoActivo?.attendances || [];
   const bancadaActual = bancadas.length > 0 ? bancadas[0] : null;
+  const incomeData = persona.incomes?.[0];
+  const hasAssets = (persona.assets?.length || 0) > 0;
 
   const PREVIEW_LIMIT = 4; // Mostramos un poco más porque hay más espacio
 
@@ -162,7 +184,11 @@ export default function DetailLegislador({
             <div className="relative shrink-0">
               <div className="w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-background shadow-xl overflow-hidden bg-muted relative">
                 <Image
-                  src={persona.image_url || "/images/default-avatar.svg"}
+                  src={
+                    persona.image_url ||
+                    persona.image_candidate_url ||
+                    "/images/default-avatar.svg"
+                  }
                   alt={persona.fullname}
                   fill
                   className="object-cover object-top"
@@ -200,6 +226,29 @@ export default function DetailLegislador({
                   {periodoActivo.electoral_district?.name || "Perú"}
                 </span>
               </div>
+
+              {persona.is_incumbent && (
+                <Badge variant="secondary" className="text-xs mr-2">
+                  Reelegido
+                </Badge>
+              )}
+
+              <Badge
+                className={cn(
+                  "text-xs",
+                  periodoActivo.chamber === "SENADO"
+                    ? "bg-role-senator/90 text-white"
+                    : periodoActivo.chamber === "DIPUTADOS"
+                      ? "bg-role-deputy/90 text-white"
+                      : "bg-primary/90",
+                )}
+              >
+                {periodoActivo.chamber === "SENADO"
+                  ? "Senador"
+                  : periodoActivo.chamber === "DIPUTADOS"
+                    ? "Diputado"
+                    : "Congresista"}
+              </Badge>
 
               {periodoActivo.institutional_email && (
                 <Button
@@ -300,15 +349,11 @@ export default function DetailLegislador({
         </div>
         <Tabs defaultValue="labor" className="w-full">
           {/* LISTA DE PESTAÑAS */}
-          <TabsList className="grid grid-cols-3">
+          <TabsList className="grid grid-cols-4">
             <TabsTrigger value="labor">Legislativo</TabsTrigger>
-            <TabsTrigger
-              value="politica"
-              // className="data-[state=active]:text-destructive"zz
-            >
-              Trayectoria
-            </TabsTrigger>
+            <TabsTrigger value="politica">Historial Legal</TabsTrigger>
             <TabsTrigger value="perfil">Perfil</TabsTrigger>
+            <TabsTrigger value="noticias">Noticias</TabsTrigger>
           </TabsList>
 
           {/* --- TAB 1: LABOR LEGISLATIVA (Core) --- */}
@@ -368,8 +413,8 @@ export default function DetailLegislador({
                 <Card className="border-l-4 border-l-primary shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-primary" /> Producción
-                      Legislativa
+                      <FileText className="w-5 h-5 text-primary" />
+                      Proyectos 2026-2031
                     </CardTitle>
                     <CardDescription>
                       Proyectos de ley presentados en el periodo actual
@@ -396,11 +441,101 @@ export default function DetailLegislador({
                     )}
                   </CardContent>
                 </Card>
+
+                {approvedBills.length > 0 && (
+                  <Card className="border-l-4 border-l-green-500 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        Proyectos Aprobados (2021-2026)
+                      </CardTitle>
+                      <CardDescription>
+                        Proyectos de ley aprobados en el periodo anterior
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {approvedBills.slice(0, PREVIEW_LIMIT).map((proyecto) => (
+                        <ProyectoItem
+                          key={`approved-${proyecto.id}`}
+                          proyecto={proyecto}
+                        />
+                      ))}
+                      {approvedBills.length > PREVIEW_LIMIT && (
+                        <Button
+                          onClick={() => setOpenApprovedBills(true)}
+                          variant="outline"
+                          className="w-full"
+                        >
+                          Ver los {approvedBills.length} proyectos aprobados
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
-              {/* Columna Derecha: Asistencia (1/3 ancho) */}
-              <div className="lg:col-span-1">
-                <Card className="h-full shadow-sm">
+              {/* Columna Derecha: Bancadas + Asistencia (1/3 ancho) */}
+              <div className="lg:col-span-1 space-y-4">
+                <Card className="shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <ArrowRightLeft className="w-4 h-4 text-orange-500" />
+                      Historial de Bancadas
+                    </CardTitle>
+                    <CardDescription>
+                      Cambios de grupo parlamentario
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {bancadas.length > 0 ? (
+                      <div className="relative border-l-2 border-border ml-3 space-y-6 py-2">
+                        {bancadas.map((b, i) => (
+                          <div key={b.id} className="pl-6 relative">
+                            <div
+                              className={cn(
+                                "absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 bg-background",
+                                i === 0
+                                  ? "border-orange-500"
+                                  : "border-muted-foreground",
+                              )}
+                            />
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-bold text-foreground text-sm">
+                                  {b.parliamentary_group?.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFechaJsonable(b.start_date)} —{" "}
+                                  {b.end_date
+                                    ? formatFechaJsonable(b.end_date)
+                                    : "Actualidad"}
+                                </p>
+                              </div>
+                              {b.parliamentary_group?.logo_url && (
+                                <Image
+                                  src={b.parliamentary_group.logo_url}
+                                  alt="Logo"
+                                  width={32}
+                                  height={32}
+                                  className="rounded object-contain opacity-80"
+                                />
+                              )}
+                            </div>
+                            {b.change_reason && i !== bancadas.length - 1 && (
+                              <div className="mt-2 bg-muted/50 p-2 rounded text-xs italic text-muted-foreground border border-border/50">
+                                &ldquo;{b.change_reason}&rdquo;
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <NoDataMessage text="No ha cambiado de bancada." />
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Vote className="w-4 h-4 text-blue-500" />
@@ -480,216 +615,148 @@ export default function DetailLegislador({
             </div>
           </TabsContent>
 
-          {/* --- TAB 2: TRAYECTORIA POLÍTICA --- */}
+          {/* --- TAB 2: HISTORIAL LEGAL --- */}
           <TabsContent
             value="politica"
             className="space-y-6 animate-in fade-in-50 duration-300"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-              {/* Historial Bancadas */}
-              <Card className="shadow-sm lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ArrowRightLeft className="w-5 h-5 text-orange-500" />{" "}
-                    Historial de Bancadas
-                  </CardTitle>
-                  <CardDescription>
-                    Cambios de grupo parlamentario
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {bancadas.length > 0 ? (
-                    <div className="relative border-l-2 border-border ml-3 space-y-6 py-2">
-                      {bancadas.map((b, i) => (
-                        <div key={b.id} className="pl-6 relative">
-                          <div
-                            className={cn(
-                              "absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 bg-background",
-                              i === 0
-                                ? "border-orange-500"
-                                : "border-muted-foreground",
-                            )}
-                          />
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-bold text-foreground text-sm">
-                                {b.parliamentary_group?.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFechaJsonable(b.start_date)} —{" "}
-                                {b.end_date
-                                  ? formatFechaJsonable(b.end_date)
-                                  : "Actualidad"}
-                              </p>
-                            </div>
-                            {b.parliamentary_group?.logo_url && (
-                              <Image
-                                src={b.parliamentary_group.logo_url}
-                                alt="Logo"
-                                width={32}
-                                height={32}
-                                className="rounded object-contain opacity-80"
-                              />
-                            )}
-                          </div>
-                          {b.change_reason && i !== bancadas.length - 1 && (
-                            <div className="mt-2 bg-muted/50 p-2 rounded text-xs italic text-muted-foreground border border-border/50">
-                              “{b.change_reason}”
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <NoDataMessage text="No ha cambiado de bancada." />
-                  )}
-                </CardContent>
-              </Card>
+            {/* Antecedentes */}
+            <Card className="pt-0 shadow-sm border-warning/40">
+              <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4 overflow-y-auto">
+                {persona.backgrounds && persona.backgrounds.length > 0 ? (
+                  persona.backgrounds
+                    .slice()
+                    .sort((a, b) => {
+                      if (!a.publication_date) return 1;
+                      if (!b.publication_date) return -1;
+                      return (
+                        new Date(b.publication_date).getTime() -
+                        new Date(a.publication_date).getTime()
+                      );
+                    })
+                    .map((bg, i) => {
+                      const isJNE = bg.source?.toUpperCase() === "JNE";
+                      const config =
+                        backgroundTypeConfig[bg.type?.toUpperCase()] ??
+                        DEFAULT_BACKGROUND_CONFIG;
 
-              {/* Antecedentes */}
-              <Card className="pt-0 shadow-sm border-warning/40 lg:col-span-2">
-                <CardHeader className="py-2 bg-warning/20">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <AlertTriangle className="w-4 h-4 text-destructive" />
-                    Historial Legal
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2 px-4 pb-4 flex flex-col gap-4 overflow-y-auto">
-                  {persona.backgrounds && persona.backgrounds.length > 0 ? (
-                    persona.backgrounds
-                      .slice()
-                      .sort((a, b) => {
-                        if (!a.publication_date) return 1;
-                        if (!b.publication_date) return -1;
-                        return (
-                          new Date(b.publication_date).getTime() -
-                          new Date(a.publication_date).getTime()
-                        );
-                      })
-                      .map((bg, i) => {
-                        const isJNE = bg.source?.toUpperCase() === "JNE";
-                        const config =
-                          backgroundTypeConfig[bg.type?.toUpperCase()] ??
-                          DEFAULT_BACKGROUND_CONFIG;
+                      // 1. Extraemos la configuración del estado
+                      const statusConfig = bg.status
+                        ? backgroundStatusConfig[bg.status.toUpperCase()]
+                        : null;
 
-                        // 1. Extraemos la configuración del estado
-                        const statusConfig = bg.status
-                          ? backgroundStatusConfig[bg.status.toUpperCase()]
-                          : null;
-
-                        return (
-                          <div key={bg.id ?? i} className="flex flex-col gap-2">
-                            {/* Row: badges + fecha */}
-                            <div className="flex items-start sm:items-center justify-between gap-2 flex-col sm:flex-row">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span
-                                  className={cn(
-                                    "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
-                                    config.header,
-                                    config.badge,
-                                  )}
-                                >
-                                  {bg.type}
-                                </span>
-
-                                {/* 2. Agregamos el Badge de Estado Legal */}
-                                {statusConfig && (
-                                  <span
-                                    className={cn(
-                                      "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
-                                      statusConfig.badge,
-                                    )}
-                                  >
-                                    {bg.status.replace("_", " ")}
-                                  </span>
+                      return (
+                        <div key={bg.id ?? i} className="flex flex-col gap-2">
+                          {/* Row: badges + fecha */}
+                          <div className="flex items-start sm:items-center justify-between gap-2 flex-col sm:flex-row">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={cn(
+                                  "text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full",
+                                  config.header,
+                                  config.badge,
                                 )}
-
-                                {isJNE && (
-                                  <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border border-border/50">
-                                    JNE
-                                  </span>
-                                )}
-                              </div>
-                              {bg.publication_date && (
-                                <span className="text-[11px] text-muted-foreground font-mono shrink-0">
-                                  {new Intl.DateTimeFormat("es-PE", {
-                                    day: "numeric",
-                                    month: "short",
-                                    year: "numeric",
-                                  }).format(new Date(bg.publication_date))}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Título y Resumen */}
-                            <div className="space-y-1">
-                              <p className="text-sm font-semibold text-foreground leading-snug">
-                                {bg.title}
-                              </p>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {bg.summary}
-                              </p>
-                            </div>
-
-                            {/* 3. Agregamos la Caja de Sanción adaptada a esta Card */}
-                            {bg.sanction && (
-                              <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2 flex gap-2 items-start mt-1">
-                                <Gavel className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
-                                    Sanción Impuesta / Fallo
-                                  </span>
-                                  <p className="text-xs text-foreground/90 font-medium leading-snug">
-                                    {bg.sanction}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 4. Footer con el nuevo botón de Evidencia */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 mt-1">
-                              <span className="text-xs text-muted-foreground">
-                                Fuente:{" "}
-                                <span className="font-medium text-foreground">
-                                  {bg.source}
-                                </span>
+                              >
+                                {bg.type}
                               </span>
 
-                              {bg.source_url && (
-                                <Link
-                                  href={bg.source_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
+                              {/* 2. Agregamos el Badge de Estado Legal */}
+                              {statusConfig && (
+                                <span
+                                  className={cn(
+                                    "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide",
+                                    statusConfig.badge,
+                                  )}
                                 >
-                                  <ExternalLink className="w-3 h-3" />
-                                  {isJNE
-                                    ? "Revisar documento oficial"
-                                    : `Ver en ${new URL(
-                                        bg.source_url,
-                                      ).hostname.replace("www.", "")}`}
-                                </Link>
+                                  {bg.status.replace("_", " ")}
+                                </span>
+                              )}
+
+                              {isJNE && (
+                                <span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full border border-border/50">
+                                  JNE
+                                </span>
                               )}
                             </div>
-
-                            {/* Separador manual, excepto el último */}
-                            {i < persona.backgrounds.length - 1 && (
-                              <div className="border-t border-dashed border-border/60 mt-2 mb-1" />
+                            {bg.publication_date && (
+                              <span className="text-[11px] text-muted-foreground font-mono shrink-0">
+                                {new Intl.DateTimeFormat("es-PE", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }).format(new Date(bg.publication_date))}
+                              </span>
                             )}
                           </div>
-                        );
-                      })
-                  ) : (
-                    <div className="py-10 flex flex-col items-center gap-2 text-center">
-                      <CheckCircle2 className="w-8 h-8 text-muted-foreground/25" />
-                      <p className="text-sm text-muted-foreground">
-                        Sin antecedentes documentados
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+
+                          {/* Título y Resumen */}
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-foreground leading-snug">
+                              {bg.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                              {bg.summary}
+                            </p>
+                          </div>
+
+                          {/* 3. Agregamos la Caja de Sanción adaptada a esta Card */}
+                          {bg.sanction && (
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-2 flex gap-2 items-start mt-1">
+                              <Gavel className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-destructive uppercase tracking-wider mb-0.5">
+                                  Sanción Impuesta / Fallo
+                                </span>
+                                <p className="text-xs text-foreground/90 font-medium leading-snug">
+                                  {bg.sanction}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 4. Footer con el nuevo botón de Evidencia */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 mt-1">
+                            <span className="text-xs text-muted-foreground">
+                              Fuente:{" "}
+                              <span className="font-medium text-foreground">
+                                {bg.source}
+                              </span>
+                            </span>
+
+                            {bg.source_url && (
+                              <Link
+                                href={bg.source_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                {isJNE
+                                  ? "Revisar documento oficial"
+                                  : `Ver en ${new URL(
+                                      bg.source_url,
+                                    ).hostname.replace("www.", "")}`}
+                              </Link>
+                            )}
+                          </div>
+
+                          {/* Separador manual, excepto el último */}
+                          {i < persona.backgrounds.length - 1 && (
+                            <div className="border-t border border-border/60 mt-2 mb-1" />
+                          )}
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div className="py-10 flex flex-col items-center gap-2 text-center">
+                    <CheckCircle2 className="w-8 h-8 text-muted-foreground/25" />
+                    <p className="text-sm text-muted-foreground">
+                      Sin antecedentes documentados
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* --- TAB 3: HOJA DE VIDA --- */}
@@ -761,59 +828,162 @@ export default function DetailLegislador({
                 </Card>
               </div>
 
-              {/* Derecha: Noticias */}
-              <Card className="shadow-sm md:col-span-2 sticky top-4">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Newspaper className="w-5 h-5 text-muted-foreground" />
-                    En los medios
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="overflow-y-auto">
-                  {persona.detailed_biography?.length > 0 ? (
-                    <div className="border-l border-border/60 ml-3 space-y-6">
-                      {persona.detailed_biography
-                        .slice()
-                        .sort((a, b) => {
-                          if (!a.date) return 1;
-                          if (!b.date) return -1;
-                          return (
-                            new Date(b.date).getTime() -
-                            new Date(a.date).getTime()
-                          );
-                        })
-                        .map((bio, i) => (
-                          <div key={i} className="relative pl-6">
-                            <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
-                            <span className="inline-block px-2 py-0.5 rounded text-sm font-bold bg-primary/8 text-primary mb-2">
-                              {bio.date}
-                            </span>
-                            <p className="text-sm text-foreground/80 leading-relaxed">
-                              {bio.description}
+              {/* Derecha: Bienes Declarados */}
+              <div className="md:col-span-2 space-y-6">
+                {!incomeData && !hasAssets ? (
+                  <Card className="shadow-sm">
+                    <CardContent className="pt-6">
+                      <NoDataMessage
+                        text="No se registra información patrimonial declarada."
+                        icon={DollarSign}
+                      />
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    {incomeData && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Card className="shadow-sm">
+                          <CardContent className="p-5">
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                              Total anual declarado
                             </p>
-                            {bio.source_url && (
-                              <Link
-                                href={bio.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground/60 hover:text-primary transition-colors"
-                              >
-                                <ExternalLink size={10} />
-                                {new URL(bio.source_url).hostname.replace(
-                                  "www.",
-                                  "",
+                            <p className="text-3xl font-black text-foreground tabular-nums">
+                              {formatCurrency(incomeData.total_income)}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              Hoja de vida JNE
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card className="shadow-sm">
+                          <CardContent className="p-5">
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                              Sector público
+                            </p>
+                            <p className="text-2xl font-bold tabular-nums">
+                              {formatCurrency(incomeData.public_income)}
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card className="shadow-sm">
+                          <CardContent className="p-5">
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                              Sector privado
+                            </p>
+                            <p className="text-2xl font-bold tabular-nums">
+                              {formatCurrency(incomeData.private_income)}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    <Card className="shadow-sm">
+                      <CardHeader>
+                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-muted-foreground" />
+                          Bienes declarados
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4 space-y-2">
+                        {hasAssets ? (
+                          persona.assets.map((asset, i) => (
+                            <div
+                              key={i}
+                              className="flex justify-between items-start p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="flex gap-2.5">
+                                {asset.type.includes("CAMIONETA") ||
+                                asset.type.includes("VEHICULO") ||
+                                asset.type.includes("AUTO") ? (
+                                  <Car className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                                ) : (
+                                  <Building2 className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
                                 )}
-                              </Link>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <NoDataMessage text="Sin cobertura mediática registrada." />
-                  )}
-                </CardContent>
-              </Card>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {asset.type}
+                                  </p>
+                                  {asset.description && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {asset.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="font-mono text-sm font-medium whitespace-nowrap">
+                                {formatCurrency(asset.value)}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <NoDataMessage text="No registra bienes declarados." />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
             </div>
+          </TabsContent>
+
+          {/* --- TAB 4: NOTICIAS --- */}
+          <TabsContent
+            value="noticias"
+            className="space-y-6 animate-in fade-in-50 duration-300"
+          >
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Newspaper className="w-5 h-5 text-muted-foreground" />
+                  En los medios
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {persona.detailed_biography?.length > 0 ? (
+                  <div className="border-l border-border/60 ml-3 space-y-6">
+                    {persona.detailed_biography
+                      .slice()
+                      .sort((a, b) => {
+                        if (!a.date) return 1;
+                        if (!b.date) return -1;
+                        return (
+                          new Date(b.date).getTime() -
+                          new Date(a.date).getTime()
+                        );
+                      })
+                      .map((bio, i) => (
+                        <div key={i} className="relative pl-6">
+                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary shadow-sm" />
+                          <span className="inline-block px-2 py-0.5 rounded text-sm font-bold bg-primary/8 text-primary mb-2">
+                            {bio.date}
+                          </span>
+                          <p className="text-sm text-justify text-foreground/80 leading-relaxed">
+                            {bio.description}
+                          </p>
+                          {bio.source_url && (
+                            <Link
+                              href={bio.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground/60 hover:text-primary transition-colors"
+                            >
+                              <ExternalLink size={10} />
+                              {new URL(bio.source_url).hostname.replace(
+                                "www.",
+                                "",
+                              )}
+                            </Link>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <NoDataMessage text="Sin cobertura mediática registrada." />
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -822,6 +992,11 @@ export default function DetailLegislador({
         proyectos={proyectos}
         isOpen={openBills}
         onClose={() => setOpenBills(false)}
+      />
+      <BillsDialog
+        proyectos={approvedBills}
+        isOpen={openApprovedBills}
+        onClose={() => setOpenApprovedBills(false)}
       />
     </div>
   );
