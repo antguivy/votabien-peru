@@ -1,10 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-
-import { candidateService } from "@/services/candidate";
-import { districtService } from "@/services/district";
-import { partyService } from "@/services/parties";
+import { useCallback, useState } from "react";
 
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
@@ -15,6 +11,7 @@ import {
   QuestionOptionValue,
 } from "@/interfaces/match";
 import { MATCH_QUESTIONS } from "@/constants/match-questions";
+import { submitMatchAction } from "@/actions/candidate";
 
 const defaultFormState: MatchFormParams = {
   electoral_district_id: "",
@@ -33,9 +30,12 @@ const defaultFormState: MatchFormParams = {
   user_interests: undefined,
 };
 
-export const useMatchmaking = () => {
-  const [districts, setDistricts] = useState<ElectoralDistrictBase[]>([]);
-  const [parties, setParties] = useState<PoliticalPartyBase[]>([]);
+export const useMatchmaking = (
+  initialDistricts: ElectoralDistrictBase[],
+  initialParties: PoliticalPartyBase[],
+) => {
+  // const [districts, setDistricts] = useState<ElectoralDistrictBase[]>(initialDistricts);
+  // const [parties, setParties] = useState<PoliticalPartyBase[]>(initialParties);
   const [formData, setFormData] = useState<MatchFormParams>(defaultFormState);
   const [results, setResults] = useState<MatchResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,26 +44,6 @@ export const useMatchmaking = () => {
   const [aiStatusText, setAiStatusText] = useState("Iniciando auditoría...");
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    partyService
-      .getParties()
-      .then(setParties)
-      .catch((err) => {
-        setError("Error al cargar partidos electorales");
-        console.error("Error loading parties:", err);
-      });
-  }, []);
-
-  useEffect(() => {
-    districtService
-      .getDistricts()
-      .then(setDistricts)
-      .catch((err) => {
-        setError("Error al cargar distritos electorales");
-        console.error("Error loading districts:", err);
-      });
-  }, []);
 
   const updateAnswer = useCallback(
     (key: keyof MatchFormParams | "age_range", value: QuestionOptionValue) => {
@@ -142,7 +122,7 @@ export const useMatchmaking = () => {
           } as MatchFormParams,
         );
 
-        const data = await candidateService.getCandidatesMatch(cleanedParams);
+        const data = await submitMatchAction(cleanedParams);
         setResults(data);
         setStep(MATCH_QUESTIONS.length + 2);
       } catch (err) {
@@ -275,8 +255,8 @@ export const useMatchmaking = () => {
   );
 
   return {
-    parties,
-    districts,
+    parties: initialParties,
+    districts: initialDistricts,
     formData,
     results,
     loading,

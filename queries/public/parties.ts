@@ -131,7 +131,7 @@ export const getPartidosList = cache(
       }
     },
     ["partidos-list-paginated"],
-    { revalidate: TTL.static, tags: [TAGS.parties] },
+    { tags: [TAGS.parties] },
   ),
 );
 
@@ -339,6 +339,6 @@ export const getPartidoById = cache(
       }
     },
     ["partido-detail"],
-    { revalidate: TTL.static, tags: [TAGS.parties] },
+    { tags: [TAGS.parties] },
   ),
 );

@@ -1,6 +1,5 @@
 "use client";
 
-import { candidateService } from "@/services/candidate";
 import { CandidateDetail } from "@/interfaces/candidate";
 import {
   BookmarkX,
@@ -21,6 +20,7 @@ import {
   SavedMatchResult,
   useSavedResults,
 } from "@/store/saved-match-results";
+import { fetchCandidateDetailAction } from "@/actions/candidate";
 // import { ShareButton } from "../share-rs";
 
 const CATEGORY_ORDER: CategoryType[] = [
@@ -99,7 +99,7 @@ export const SavedResultsView = ({ onClose, onRestartMatch }: Props) => {
   const openDetail = useCallback(async (id: string) => {
     setLoadingDetail(true);
     try {
-      setSelectedDetail(await candidateService.getCandidateDetail(id));
+      setSelectedDetail(await fetchCandidateDetailAction(id));
     } catch {
       /* silent */
     } finally {

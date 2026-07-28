@@ -1,6 +1,5 @@
 "use client";
 
-import { candidateService } from "@/services/candidate";
 import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
 import { MatchResponse } from "@/interfaces/match";
 import {
@@ -18,6 +17,7 @@ import { SwipeCard } from "./swipe-card";
 import { CandidateDetailDrawer } from "./candidate-detail";
 import { CategoryType, useSavedResults } from "@/store/saved-match-results";
 import { useReadiness } from "@/store/readiness-store";
+import { fetchCandidateDetailAction } from "@/actions/candidate";
 
 const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
@@ -137,15 +137,18 @@ export const ResultsFlow = ({ results, onReset }: Props) => {
 
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const openDetail = useCallback(async (candidate: CandidateCard) => {
-    // ¡OJO! Ahora recibe el objeto completo, no solo el ID
     setLoadingDetail(true);
     try {
-      const detailFromDB = await candidateService.getCandidateDetail(
-        candidate.id,
-      );
+      const detailFromDB = await fetchCandidateDetailAction(candidate.id);
 
-      // Inyectamos el score y análisis de la IA que ya tenemos en memoria
-      const fullDetail = {
+      // 👇 1. Si la DB no devolvió el candidato, salimos de la función
+      if (!detailFromDB) {
+        console.error("No se encontró el detalle del candidato");
+        return;
+      }
+
+      // 👇 2. Ahora TypeScript sabe que detailFromDB no es null
+      const fullDetail: CandidateDetail = {
         ...detailFromDB,
         type: candidate.type || detailFromDB.type,
         ai_score: candidate.ai_score,

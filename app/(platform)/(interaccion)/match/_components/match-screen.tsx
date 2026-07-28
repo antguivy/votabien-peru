@@ -25,16 +25,19 @@ import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { useSavedResults } from "@/store/saved-match-results";
 import { Button } from "@/components/ui/button";
 import { AILoadingState } from "@/components/match/ai-loading-state";
+import { PoliticalPartyBase } from "@/interfaces/political-party";
 
 type View = "home" | "saved";
 
 export default function MatchScreen({
   districts,
+  parties,
 }: {
   districts: ElectoralDistrictBase[];
+  parties: PoliticalPartyBase[];
 }) {
   const {
-    parties,
+    parties: hookParties,
     formData,
     results,
     loading,
@@ -49,7 +52,7 @@ export default function MatchScreen({
     applyAIFilter,
     submitMatch,
     resetMatch,
-  } = useMatchmaking();
+  } = useMatchmaking(districts, parties);
   const { savedResults } = useSavedResults();
   const [view, setView] = useState<View>("home");
   const [showAIOptions, setShowAIOptions] = useState(false);
