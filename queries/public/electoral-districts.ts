@@ -29,7 +29,7 @@ export const getDistritos = cache(
     ["distritos-list"],
     {
       tags: [TAGS.districts],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

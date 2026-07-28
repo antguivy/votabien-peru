@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { applyFilters } from "@/lib/candidate-filters";
 import { API_BASE_URL } from "@/lib/config";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 const CATEGORY_CAPS: Record<string, number> = {
   presidente: 30,
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
             try {
               const matches = await prisma.$queryRawUnsafe(
                 `
-                SELECT 
+                SELECT
                   id, person_id, content, chunk_type,
                   1 - (embedding <=> $1::vector) as similarity
                 FROM person_embeddings

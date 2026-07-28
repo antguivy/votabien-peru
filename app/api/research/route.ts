@@ -2,7 +2,7 @@ import { API_BASE_URL } from "@/lib/config";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {

@@ -201,7 +201,7 @@ export const getLegisladoresCards = cache(
       }
     },
     ["legislators-cards-list"],
-    { tags: [TAGS.legislators], revalidate: TTL.static },
+    { tags: [TAGS.legislators] },
   ),
 );
 
@@ -256,7 +256,7 @@ export const getLegisladorById = cache(
       }
     },
     ["legislator-detail"],
-    { tags: [TAGS.legislators], revalidate: TTL.static },
+    { tags: [TAGS.legislators] },
   ),
 );
 
@@ -360,7 +360,7 @@ export const getVersusLegislators = cache(
       }
     },
     ["versus-legislators-list"],
-    { tags: [TAGS.legislators], revalidate: TTL.static },
+    { tags: [TAGS.legislators] },
   ),
 );
 

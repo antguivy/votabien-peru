@@ -22,7 +22,7 @@ export const getTeam = cache(
     ["team-list"],
     {
       tags: [TAGS.team],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

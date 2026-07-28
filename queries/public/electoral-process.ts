@@ -40,7 +40,7 @@ export const getElectoralProcess = cache(
     ["electoral-process-list"],
     {
       tags: [TAGS.electoral_process],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

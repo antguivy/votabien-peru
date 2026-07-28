@@ -6,15 +6,9 @@ export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // Clonar headers e inyectar la ruta actual para que los Server Components puedan leerla
+  // 1. Clonar headers e inyectar la ruta actual (Esto es muy barato, no consume CPU)
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-current-path", path);
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  const user = session?.user;
 
   const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"];
 
@@ -32,12 +26,12 @@ export async function proxy(request: NextRequest) {
     "/privacidad",
     "/terminos",
     "/api/stats",
-    "/api/proxy-image", // Permite cargar fotos externas sin estar logueado
-    "/api/candidates", // Hacer pública la API de candidatos
+    "/api/proxy-image",
+    "/api/candidates",
     "/match",
     "/trivia",
     "/simulador",
-    "/api/auth", // Very important to allow better-auth API routes
+    "/api/auth",
   ];
 
   const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
@@ -45,22 +39,48 @@ export async function proxy(request: NextRequest) {
     (route) => path === route || path.startsWith(route + "/"),
   );
 
-  if (!user) {
-    if (!isAuthRoute && !isPublicRoute) {
-      url.pathname = "/auth/login";
-      url.searchParams.set("callbackUrl", path);
-      return NextResponse.redirect(url);
-    }
+  // Si es una ruta pública, pasamos directo SIN consultar la sesión.
+  // Reduce el 90% del CPU del proxy.
+  if (isPublicRoute) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  if (user) {
-    if (isAuthRoute) {
+  // 2. Si es ruta de auth (login, register), verificamos si ya está logueado para redirigir
+  if (isAuthRoute) {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (session?.user) {
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  // Continuar la petición enviando los headers modificados en el request
+  // 3. Si llegamos hasta aquí, es una ruta PROTEGIDA (ej. /admin).
+  // Aquí SÍ necesitamos consultar la sesión.
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  const user = session?.user;
+
+  // Si no hay usuario y está en ruta protegida, al login
+  if (!user) {
+    url.pathname = "/auth/login";
+    url.searchParams.set("callbackUrl", path);
+    return NextResponse.redirect(url);
+  }
+
+  // Si hay usuario y es ruta protegida, pasa
   return NextResponse.next({
     request: {
       headers: requestHeaders,

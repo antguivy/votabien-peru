@@ -28,7 +28,7 @@ export const getHitos = cache(
     ["hitos-list"],
     {
       tags: [TAGS.hitos],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

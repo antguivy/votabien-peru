@@ -246,7 +246,7 @@ export const getCandidatesCards = cache(
       }
     },
     ["candidates-cards-list"],
-    { tags: [TAGS.candidates], revalidate: TTL.static },
+    { tags: [TAGS.candidates] },
   ),
 );
 
@@ -296,7 +296,7 @@ export const getPrincipalCandidates = cache(
       }
     },
     ["principal-candidates"],
-    { tags: [TAGS.candidates, TAGS.electoral_process], revalidate: TTL.static },
+    { tags: [TAGS.candidates, TAGS.electoral_process] },
   ),
 );
 
@@ -335,7 +335,7 @@ export const getFormulaPorPartido = cache(
       }
     },
     ["formula-por-partido"],
-    { tags: [TAGS.candidates], revalidate: TTL.static },
+    { tags: [TAGS.candidates] },
   ),
 );
 
@@ -354,7 +354,7 @@ export const getActiveLegislatorId = cache(
       }
     },
     ["active-legislator"],
-    { tags: [TAGS.candidates], revalidate: TTL.static },
+    { tags: [TAGS.candidates] },
   ),
 );
 
@@ -411,6 +411,6 @@ export const getCandidateById = cache(
       }
     },
     ["candidate-detail"],
-    { tags: [TAGS.candidates], revalidate: TTL.static },
+    { tags: [TAGS.candidates] },
   ),
 );

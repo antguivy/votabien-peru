@@ -50,7 +50,7 @@ export const getPartidosListSimple = cache(
       }
     },
     ["partidos-list-simple"],
-    { revalidate: TTL.static, tags: [TAGS.parties] },
+    { tags: [TAGS.parties] },
   ),
 );
 
