@@ -9,6 +9,7 @@ export const TAGS = {
   parliamentary_groups: "parliamentary_groups",
   seats: "seats",
   team: "team",
+  executives: "executives",
 } as const;
 
 export const TTL = {

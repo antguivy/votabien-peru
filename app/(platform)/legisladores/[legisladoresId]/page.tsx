@@ -3,9 +3,22 @@ import DetailLegislador from "./_components/detail-page";
 import { getLegisladorById } from "@/queries/public/legislators";
 import { getPreviousPeriodApprovedBills } from "@/queries/public/previous-period-bills";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
+import prisma from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ legisladoresId: string }>;
+}
+
+export async function generateStaticParams() {
+  try {
+    const legisladores = await prisma.legislator.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+    return legisladores.map((l) => ({ legisladoresId: l.id }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function LegisladorDetailPage({ params }: PageProps) {

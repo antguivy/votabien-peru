@@ -1,8 +1,10 @@
-import { serverGetUser } from "@/lib/auth-actions";
+"use client";
+
+import { useAuth } from "@/lib/auth-provider";
 import NavbarClient from "./navbar-client";
 
-export default async function Navbar() {
-  const { user } = await serverGetUser();
+export default function Navbar() {
+  const { user } = useAuth();
 
   return <NavbarClient user={user} />;
 }

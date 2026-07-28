@@ -4,9 +4,22 @@ import DetailAlliance from "./_components/detail-alliance";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getPrincipalCandidates } from "@/queries/public/candidacies";
 import { getPartidoById } from "@/queries/public/parties";
+import prisma from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ partidosId: string }>;
+}
+
+export async function generateStaticParams() {
+  try {
+    const partidos = await prisma.politicalparty.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+    return partidos.map((p) => ({ partidosId: p.id }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function PartidoDetailPage({ params }: PageProps) {

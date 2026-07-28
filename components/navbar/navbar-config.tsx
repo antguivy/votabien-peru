@@ -86,6 +86,7 @@ export const adminNavGroups: NavGroup[] = [
       { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
       { href: "/admin/seats", label: "Asientos", icon: UsersRound },
+      { href: "/admin/ejecutivo", label: "Ejecutivo", icon: Landmark },
     ],
   },
   {

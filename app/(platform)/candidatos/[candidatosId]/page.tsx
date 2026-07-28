@@ -6,9 +6,22 @@ import {
   getCandidateById,
   getFormulaPorPartido,
 } from "@/queries/public/candidacies";
+import prisma from "@/lib/prisma";
 
 interface PageProps {
   params: Promise<{ candidatosId: string }>;
+}
+
+export async function generateStaticParams() {
+  try {
+    const candidatos = await prisma.candidate.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+    return candidatos.map((c) => ({ candidatosId: c.id }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function CandidatoDetailPage({ params }: PageProps) {
