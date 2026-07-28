@@ -242,7 +242,7 @@ export const getPresidentialFormulasComparison = cache(
     ["presidential-formulas-comparison"],
     {
       tags: [TAGS.candidates, TAGS.parties],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

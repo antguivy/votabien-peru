@@ -52,7 +52,7 @@ export const getPersonas = cache(
     ["personas-search"],
     {
       tags: [TAGS.persons],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

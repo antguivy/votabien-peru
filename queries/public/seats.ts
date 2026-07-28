@@ -126,7 +126,7 @@ export const getSeatParliamentary = cache(
     ["seat-parliamentary-list"],
     {
       tags: [TAGS.seats, TAGS.legislators],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

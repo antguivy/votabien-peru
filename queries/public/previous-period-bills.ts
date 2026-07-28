@@ -62,6 +62,6 @@ export const getPreviousPeriodApprovedBills = cache(
       }
     },
     ["previous-period-approved-bills"],
-    { tags: [TAGS.legislators], revalidate: TTL.static },
+    { tags: [TAGS.legislators] },
   ),
 );

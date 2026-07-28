@@ -71,6 +71,6 @@ export const getPartidosSelectorList = cache(
       }
     },
     ["partidos-selector-list"],
-    { revalidate: TTL.static, tags: [TAGS.parties] },
+    { tags: [TAGS.parties] },
   ),
 );

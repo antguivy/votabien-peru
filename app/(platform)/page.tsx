@@ -4,7 +4,7 @@ import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getHitos } from "@/queries/public/hito";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroModern from "@/components/landing/hero-modern";
-import PodcastSection from "@/components/landing/podcast";
+// import PodcastSection from "@/components/landing/podcast";
 import SocialProof from "@/components/landing/social-proof";
 import LandingMobileHeader from "@/components/landing/mobile-header";
 import HemicileLegislator from "@/components/landing/hemicicle";
@@ -43,7 +43,7 @@ export default async function VotaBienPage() {
 
         <ContentPlatformLayout>
           {/* 1 — Hero: Estado actual (conteo / 2da vuelta) */}
-          {currentProcess && <HeroModern proceso_electoral={currentProcess} />}
+          <HeroModern />
 
           {/* Componente del Hemiciclo */}
           {finalSeats && finalSeats.length > 0 && (

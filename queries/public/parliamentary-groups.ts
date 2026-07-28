@@ -37,7 +37,7 @@ export const getParliamentaryGroups = cache(
     ["parliamentary-groups-list"],
     {
       tags: [TAGS.parliamentary_groups],
-      revalidate: TTL.static,
+      // revalidate: TTL.static,
     },
   ),
 );

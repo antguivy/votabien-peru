@@ -7,7 +7,7 @@ interface ElectoralProcess {
   election_date?: string;
 }
 interface HeroModernProps {
-  proceso_electoral: ElectoralProcess;
+  proceso_electoral?: ElectoralProcess;
 }
 
 // function calcDias(fecha: string) {
