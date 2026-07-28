@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = [
     "/",
     "/legisladores",
-    "/candidatos",
+    // "/candidatos",
     "/partidos",
     "/comparador",
     "/equipo",
@@ -25,12 +25,12 @@ export async function proxy(request: NextRequest) {
     "/reportar",
     "/privacidad",
     "/terminos",
-    "/api/stats",
-    "/api/proxy-image",
-    "/api/candidates",
-    "/match",
-    "/trivia",
-    "/simulador",
+    // "/api/stats",
+    // "/api/proxy-image",
+    // "/api/candidates",
+    // "/match",
+    // "/trivia",
+    // "/simulador",
     "/api/auth",
   ];
 

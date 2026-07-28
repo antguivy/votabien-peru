@@ -1,35 +1,36 @@
-import { notFound } from "next/navigation";
+// import { notFound } from "next/navigation";
 // import DetailCandidato from "./_components/detail-page";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import {
-  // getActiveLegislatorId,
-  getCandidateById,
-  // getFormulaPorPartido,
-} from "@/queries/public/candidacies";
-import prisma from "@/lib/prisma";
 import UnderConstruction from "@/components/under-construction";
+// import {
+//   getActiveLegislatorId,
+//   getCandidateById,
+//   getFormulaPorPartido,
+// } from "@/queries/public/candidacies";
+// import prisma from "@/lib/prisma";
 
-interface PageProps {
-  params: Promise<{ candidatosId: string }>;
-}
+// interface PageProps {
+//   params: Promise<{ candidatosId: string }>;
+// }
 
-export async function generateStaticParams() {
-  try {
-    const candidatos = await prisma.candidate.findMany({
-      where: { active: true },
-      select: { id: true },
-    });
-    return candidatos.map((c) => ({ candidatosId: c.id }));
-  } catch {
-    return [];
-  }
-}
+// export async function generateStaticParams() {
+//   try {
+//     const candidatos = await prisma.candidate.findMany({
+//       where: { active: true },
+//       select: { id: true },
+//     });
+//     return candidatos.map((c) => ({ candidatosId: c.id }));
+//   } catch {
+//     return [];
+//   }
+// }
 
-export default async function CandidatoDetailPage({ params }: PageProps) {
-  const { candidatosId } = await params;
+export default async function CandidatoDetailPage() {
+  // { params }: PageProps
+  // const { candidatosId } = await params;
 
-  const candidato = await getCandidateById(candidatosId);
-  if (!candidato) notFound();
+  // const candidato = await getCandidateById(candidatosId);
+  // if (!candidato) notFound();
 
   // const formula =
   //   candidato.type === "PRESIDENTE"
@@ -45,11 +46,6 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
 
   return (
     <ContentPlatformLayout>
-      <UnderConstruction
-        title="Ésta vista ya no esta disponible"
-        description="VotaBien Perú"
-        backHref="/candidatos"
-      />
       {/*<section className="px-4 pt-4 container mx-auto pb-20 lg:pb-4">
         <DetailCandidato
           candidate={candidato}
@@ -58,6 +54,11 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
           legislatorId={legislatorId}
         />
       </section>*/}
+      <UnderConstruction
+        title="VotaBien Perú"
+        description="Ésta vista no está disponible."
+        backHref="/partidos"
+      />
     </ContentPlatformLayout>
   );
 }
