@@ -62,18 +62,22 @@ model electoralprocess {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model executive {
-  id         String           @id @db.VarChar
-  person_id  String           @db.VarChar
-  role       executiverole
-  start_date DateTime         @db.Timestamptz(6)
-  end_date   DateTime?        @db.Timestamptz(6)
-  end_reason endoftermreason?
-  created_at DateTime         @db.Timestamptz(6)
-  updated_at DateTime         @db.Timestamptz(6)
-  ministry   String?          @db.VarChar
-  person     person           @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                    String             @id @db.VarChar
+  person_id             String             @db.VarChar
+  role                  executiverole
+  start_date            DateTime           @db.Timestamptz(6)
+  end_date              DateTime?          @db.Timestamptz(6)
+  end_reason            endoftermreason?
+  created_at            DateTime           @db.Timestamptz(6)
+  updated_at            DateTime           @db.Timestamptz(6)
+  ministry              String?            @db.VarChar
+  active                Boolean            @default(true)
+  legislative_period_id String?            @db.VarChar
+  person                person             @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  legislativeperiod     legislativeperiod? @relation(fields: [legislative_period_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([person_id], map: "ix_executive_person_id")
+  @@index([legislative_period_id], map: "ix_executive_period_id")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -87,6 +91,7 @@ model legislativeperiod {
   updated_at        DateTime            @default(now()) @db.Timestamptz(6)
   seatparliamentary seatparliamentary[]
   legislator        legislator[]
+  executive         executive[]
 
   @@index([active])
 }
