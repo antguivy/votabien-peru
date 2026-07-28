@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { candidateService } from "@/services/candidate";
 import { CandidateCard, CandidateDetail } from "@/interfaces/candidate";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { decodeSharePayload, SharePayload } from "@/lib/match-share";
@@ -16,6 +15,10 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { CategoryType, useSavedResults } from "@/store/saved-match-results";
+import {
+  fetchCandidateDetailAction,
+  fetchCandidatesBulkAction,
+} from "@/actions/candidate";
 
 const CATEGORY_ORDER: CategoryType[] = [
   "presidente",
@@ -95,7 +98,7 @@ export default function SharedMatch() {
         for (const cat of CATEGORY_ORDER) {
           const ids = payload.s[cat];
           if (ids && ids.length > 0) {
-            groups[cat] = await candidateService.getCandidatesBulk(ids);
+            groups[cat] = await fetchCandidatesBulkAction(ids);
           }
         }
         if (!ignore) {
@@ -130,7 +133,7 @@ export default function SharedMatch() {
   const openDetail = async (id: string) => {
     setLoadingDetail(true);
     try {
-      setSelectedDetail(await candidateService.getCandidateDetail(id));
+      setSelectedDetail(await fetchCandidateDetailAction(id));
     } catch {
       /* silent */
     } finally {
