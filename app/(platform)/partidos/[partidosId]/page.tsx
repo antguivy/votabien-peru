@@ -26,9 +26,12 @@ export default async function PartidoDetailPage({ params }: PageProps) {
   const { partidosId } = await params;
 
   try {
-    const [party, principalCandidates] = await Promise.all([
+    const [
+      party,
+      // principalCandidates
+    ] = await Promise.all([
       getPartidoById(partidosId),
-      getPrincipalCandidates(partidosId),
+      // getPrincipalCandidates(partidosId),
     ]);
 
     if (party.type === "ALIANZA") {
@@ -40,7 +43,7 @@ export default async function PartidoDetailPage({ params }: PageProps) {
         <section className="container mx-auto pb-20 lg:pb-0">
           <DetailParty
             party={party}
-            principalCandidates={principalCandidates}
+            // principalCandidates={principalCandidates}
             shareUrl={`https://votabienperu.com/partidos/${party.id}`}
           />
         </section>

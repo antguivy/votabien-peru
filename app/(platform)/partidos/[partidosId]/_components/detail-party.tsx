@@ -57,7 +57,7 @@ import { useState, useEffect } from "react";
 import { NoDataMessage } from "@/components/no-data-message";
 // import { ShareButton } from "@/components/share-rs";
 import { getFlowType } from "@/lib/utils/helper-enums";
-import { CandidatePresidentials } from "@/interfaces/candidate";
+// import { CandidatePresidentials } from "@/interfaces/candidate";
 import { PoliticalPartyDetail } from "@/interfaces/political-party";
 
 // --- SUBCOMPONENTE: TIMELINE ---
@@ -117,12 +117,12 @@ const TimelineList = ({ items }: { items: PartyHistory[] }) => {
 
 export default function DetailParty({
   party,
-  principalCandidates,
+  // principalCandidates,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   shareUrl,
 }: {
   party: PoliticalPartyDetail;
-  principalCandidates: CandidatePresidentials[];
+  // principalCandidates: CandidatePresidentials[];
   shareUrl: string;
 }) {
   const [showStickyNav, setShowStickyNav] = useState(false);
@@ -371,7 +371,7 @@ export default function DetailParty({
       {/* CONTENIDO CON TABS */}
       <div className="container mx-auto mt-8 px-4">
         <Tabs defaultValue="resumen" className="w-full space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4">
+          <TabsList className="grid grid-cols-3">
             <TabsTrigger value="resumen">
               <LayoutDashboard className="w-4 h-4" />
               Resumen
@@ -384,10 +384,6 @@ export default function DetailParty({
               <CircleDollarSign className="w-4 h-4" />
               Finanzas
             </TabsTrigger>
-            <TabsTrigger value="territorio">
-              <MapIcon className="w-4 h-4" />
-              Territorio
-            </TabsTrigger>
           </TabsList>
 
           {/* === TAB 1: RESUMEN (Plan, Identidad, Contacto) === */}
@@ -395,32 +391,35 @@ export default function DetailParty({
             value="resumen"
             className="space-y-6 animate-in fade-in-50 duration-300"
           >
-            {/* 1. PLAN DE GOBIERNO (Destacado) */}
-            {hasPlanData && (
-              <div className="space-y-2">
-                {displayPlan.isInherited && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-3">
-                    <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-bold text-primary">Plan de Alianza</p>
-                      <p className="text-muted-foreground">
-                        Este plan pertenece a la alianza{" "}
-                        <strong>{displayPlan.sourceName}</strong>.
-                      </p>
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 3. CONTACTO Y REDES */}
+              <div className="space-y-6">
+                {/* 1. PLAN DE GOBIERNO (Destacado) */}
+                {hasPlanData && (
+                  <div className="space-y-2">
+                    {displayPlan.isInherited && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-3">
+                        <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-bold text-primary">
+                            Plan de Alianza
+                          </p>
+                          <p className="text-muted-foreground">
+                            Este plan pertenece a la alianza{" "}
+                            <strong>{displayPlan.sourceName}</strong>.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <PlanGobiernoFlashcards
+                      audio_url={displayPlan.audio}
+                      planes={displayPlan.summary}
+                      government_plan_url={displayPlan.url}
+                    />
                   </div>
                 )}
-                <PlanGobiernoFlashcards
-                  audio_url={displayPlan.audio}
-                  planes={displayPlan.summary}
-                  government_plan_url={displayPlan.url}
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 2. IDENTIDAD */}
-              <Card className="shadow-sm">
+                {/* 2. IDENTIDAD */}
+                {/*<Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
                     Candidatura Presidencial
@@ -462,10 +461,7 @@ export default function DetailParty({
                     <NoDataMessage text="Sin candidatos" />
                   )}
                 </CardContent>
-              </Card>
-
-              {/* 3. CONTACTO Y REDES */}
-              <div className="space-y-6">
+              </Card>*/}
                 {hasSocialLinks && (
                   <Card className="shadow-sm">
                     <CardHeader className="pb-3">
@@ -538,6 +534,30 @@ export default function DetailParty({
                   </CardContent>
                 </Card>
               </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapIcon className="w-5 h-5 text-primary" /> Representación
+                    Nacional
+                  </CardTitle>
+                  <CardDescription>
+                    Distribución de escaños por región
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {party.seats_by_district &&
+                  party.seats_by_district.length > 0 ? (
+                    <PeruSeatsMapSimple
+                      partyName={party.name}
+                      partyColor={party.color_hex ?? "#888888"}
+                      seatsByDistrict={party.seats_by_district}
+                      totalSeats={totalSeats}
+                    />
+                  ) : (
+                    <NoDataMessage text="No tiene representación parlamentaria actual." />
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -798,37 +818,6 @@ export default function DetailParty({
                   </div>
                 ) : (
                   <NoDataMessage text="No hay reportes financieros disponibles." />
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* === TAB 4: TERRITORIO === */}
-          <TabsContent
-            value="territorio"
-            className="space-y-6 animate-in fade-in-50 duration-300"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapIcon className="w-5 h-5 text-primary" /> Representación
-                  Nacional
-                </CardTitle>
-                <CardDescription>
-                  Distribución de escaños por región
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {party.seats_by_district &&
-                party.seats_by_district.length > 0 ? (
-                  <PeruSeatsMapSimple
-                    partyName={party.name}
-                    partyColor={party.color_hex ?? "#888888"}
-                    seatsByDistrict={party.seats_by_district}
-                    totalSeats={totalSeats}
-                  />
-                ) : (
-                  <NoDataMessage text="No tiene representación parlamentaria actual." />
                 )}
               </CardContent>
             </Card>

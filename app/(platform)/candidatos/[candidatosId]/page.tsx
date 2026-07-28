@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
-import DetailCandidato from "./_components/detail-page";
+// import DetailCandidato from "./_components/detail-page";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import {
-  getActiveLegislatorId,
+  // getActiveLegislatorId,
   getCandidateById,
-  getFormulaPorPartido,
+  // getFormulaPorPartido,
 } from "@/queries/public/candidacies";
 import prisma from "@/lib/prisma";
+import UnderConstruction from "@/components/under-construction";
 
 interface PageProps {
   params: Promise<{ candidatosId: string }>;
@@ -30,28 +31,33 @@ export default async function CandidatoDetailPage({ params }: PageProps) {
   const candidato = await getCandidateById(candidatosId);
   if (!candidato) notFound();
 
-  const formula =
-    candidato.type === "PRESIDENTE"
-      ? await getFormulaPorPartido(
-          candidato.political_party_id,
-          candidato.electoral_process_id,
-        )
-      : [];
+  // const formula =
+  //   candidato.type === "PRESIDENTE"
+  //     ? await getFormulaPorPartido(
+  //         candidato.political_party_id,
+  //         candidato.electoral_process_id,
+  //       )
+  //     : [];
 
-  const legislatorId = candidato.person.is_incumbent
-    ? await getActiveLegislatorId(candidato.person.id)
-    : null;
+  // const legislatorId = candidato.person.is_incumbent
+  //   ? await getActiveLegislatorId(candidato.person.id)
+  //   : null;
 
   return (
     <ContentPlatformLayout>
-      <section className="px-4 pt-4 container mx-auto pb-20 lg:pb-4">
+      <UnderConstruction
+        title="Ésta vista ya no esta disponible"
+        description="VotaBien Perú"
+        backHref="/candidatos"
+      />
+      {/*<section className="px-4 pt-4 container mx-auto pb-20 lg:pb-4">
         <DetailCandidato
           candidate={candidato}
           formula={formula}
           shareUrl={`https://votabienperu.com/candidatos/${candidatosId}`}
           legislatorId={legislatorId}
         />
-      </section>
+      </section>*/}
     </ContentPlatformLayout>
   );
 }
