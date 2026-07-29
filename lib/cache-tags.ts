@@ -10,6 +10,7 @@ export const TAGS = {
   seats: "seats",
   team: "team",
   executives: "executives",
+  periods: "periods",
 } as const;
 
 export const TTL = {

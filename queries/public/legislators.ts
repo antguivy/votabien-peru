@@ -12,7 +12,7 @@ import { RnasSanction } from "@/interfaces/person";
 import prisma from "@/lib/prisma";
 import { Prisma, legislatormetrics } from "@/prisma/generated/client";
 
-interface GetLegislatorsParams {
+export interface GetLegislatorsParams {
   active_only?: boolean;
   chamber?: ChamberType;
   groups?: string[];
@@ -383,3 +383,16 @@ function buildStats(
     total_legal_records: metrics?.total_legal_records ?? 0,
   };
 }
+
+export const getActiveLegislativePeriod = cache(
+  unstable_cache(
+    async () => {
+      return prisma.legislativeperiod.findFirst({
+        where: { active: true },
+        select: { id: true },
+      });
+    },
+    ["active-legislative-period"],
+    { tags: [TAGS.periods] }, // Asegúrate de tener TAGS.periods en tu archivo
+  ),
+);
