@@ -26,3 +26,10 @@ export async function fetchLegislatorsAction(params: GetLegislatorsParams) {
     return []; // Retornamos un array vacío en caso de error para no romper la UI
   }
 }
+
+// Esta función simplemente envuelve la query cacheada para que el Client Component pueda llamarla
+export async function fetchLegisladoresCardsAction(
+  params: GetLegislatorsParams,
+) {
+  return getLegisladoresCards(params);
+}
