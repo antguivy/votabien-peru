@@ -1,6 +1,6 @@
 import * as React from "react";
 import { type Table } from "@tanstack/react-table";
-import { Download, Loader, X } from "lucide-react";
+import { Download, Loader, X, Microscope } from "lucide-react";
 
 import { exportTableToCSV } from "../_lib/export";
 import { Button } from "@/components/ui/button";
@@ -147,6 +147,29 @@ export function PersonTableFloatingBar({ table }: PersonTableFloatingBarProps) {
                   </SelectGroup>
                 </SelectContent>
               </Select> */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7 border"
+                    onClick={() => {
+                      // Trigger batch research event or state
+                      const event = new CustomEvent("open-batch-research", {
+                        detail: { rows: rows.map((r) => r.original) },
+                      });
+                      window.dispatchEvent(event);
+                    }}
+                    disabled={isPending}
+                  >
+                    <Microscope className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                  <p>Investigación Batch</p>
+                </TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

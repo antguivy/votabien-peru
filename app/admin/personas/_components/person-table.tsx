@@ -15,6 +15,7 @@ import { AdminPerson } from "@/interfaces/person";
 import { BiographyFormDialog } from "./biography-form-dialog";
 import { BackgroundsFormDialog } from "./background-form-dialog";
 import ResearchPageDialog from "./investigation/research-page";
+import { BatchResearchDialog } from "./investigation/batch-research-dialog";
 
 interface PersonTableProps {
   promises: Promise<[PaginatedPersonResponse]>;
@@ -24,6 +25,19 @@ export function PersonTable({ promises }: PersonTableProps) {
   const [{ data, total, page_size }] = React.use(promises);
   const [rowAction, setRowAction] =
     React.useState<DataTableRowAction<AdminPerson> | null>(null);
+  const [batchCandidates, setBatchCandidates] = React.useState<
+    AdminPerson[] | null
+  >(null);
+
+  React.useEffect(() => {
+    const handleBatchOpen = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setBatchCandidates(customEvent.detail.rows);
+    };
+    window.addEventListener("open-batch-research", handleBatchOpen);
+    return () =>
+      window.removeEventListener("open-batch-research", handleBatchOpen);
+  }, []);
   const columns = React.useMemo(
     () => getColumns({ setRowAction }),
     [setRowAction],
@@ -104,6 +118,14 @@ export function PersonTable({ promises }: PersonTableProps) {
           personName={rowAction.row.original.fullname}
         />
       )}
+
+      <BatchResearchDialog
+        candidates={batchCandidates}
+        onClose={() => {
+          setBatchCandidates(null);
+          table.toggleAllRowsSelected(false);
+        }}
+      />
     </>
   );
 }

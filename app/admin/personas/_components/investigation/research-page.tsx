@@ -170,9 +170,10 @@ export default function ResearchPageDialog({
             {resultadoFinal && `Resultados — ${resultadoFinal.investigado}`}
           </CredenzaTitle>
           <CredenzaDescription>
-            {showForm && `Lanza el agente de investigación para ${personName}.`}
+            {showForm &&
+              `Lanza el workflow de investigación para ${personName}.`}
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
-              "El agente está leyendo la web, por favor espere."}
+              "El workflow está leyendo la web, por favor espere."}
             {resultadoFinal &&
               "Revisa los datos consolidados y guárdalos en el perfil."}
           </CredenzaDescription>

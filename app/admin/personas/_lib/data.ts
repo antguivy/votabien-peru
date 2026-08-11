@@ -153,12 +153,12 @@ export async function getPersonForEdit(
 export async function getPersonBiography(id: string): Promise<{
   id: string;
   fullname: string;
-  detailed_biography: BiographyDetail[];
+  posturas: BiographyDetail[];
 } | null> {
   noStore(); // <-- AGREGADO: Para cuando edites la biografía
   const data = await prisma.person.findUnique({
     where: { id },
-    select: { id: true, fullname: true, detailed_biography: true },
+    select: { id: true, fullname: true, posturas: true },
   });
 
   if (!data) return null;
@@ -166,8 +166,7 @@ export async function getPersonBiography(id: string): Promise<{
   return {
     id: data.id,
     fullname: data.fullname || "",
-    detailed_biography:
-      (data.detailed_biography as unknown as BiographyDetail[]) ?? [],
+    posturas: (data.posturas as unknown as BiographyDetail[]) ?? [],
   };
 }
 

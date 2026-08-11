@@ -45,6 +45,8 @@ export async function getCandidates(
       };
     }
 
+    where.electoralprocess = { active: true };
+
     const orderBy: Record<string, unknown> = {};
     if (input.sort && input.sort.length > 0) {
       const sortItem = input.sort[0];

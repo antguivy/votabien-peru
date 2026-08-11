@@ -24,7 +24,7 @@ export interface PersonResponse {
   image_candidate_url: string | null;
   birth_date: string | null;
   profession: string | null;
-  detailed_biography: BiographyDetail[];
+  posturas: BiographyDetail[];
   secondary_school: boolean;
   technical_education: TechnicalEducation[];
   no_university_education: NoUniversityEducation[];

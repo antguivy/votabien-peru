@@ -49,7 +49,7 @@ export interface FormulaMember {
     image_url: string | null;
     image_candidate_url: string | null;
     profession: string | null;
-    detailed_biography: BiographyDetail[];
+    posturas: BiographyDetail[];
     hoja_de_vida: HojaDeVida;
   };
   backgrounds: BackgroundBase[];

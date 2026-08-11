@@ -941,9 +941,9 @@ export default function DetailLegislador({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {persona.detailed_biography?.length > 0 ? (
+                {persona.posturas?.length > 0 ? (
                   <div className="border-l border-border/60 ml-3 space-y-6">
-                    {persona.detailed_biography
+                    {persona.posturas
                       .slice()
                       .sort((a, b) => {
                         if (!a.date) return 1;

@@ -399,7 +399,7 @@ export const getCandidateById = cache(
           image_candidate_url: item.person.image_candidate_url,
           birth_date: item.person.birth_date,
           place_of_birth: item.person.place_of_birth,
-          detailed_biography: ensureArray(item.person.detailed_biography),
+          posturas: ensureArray(item.person.posturas),
           technical_education: ensureArray(item.person.technical_education),
           no_university_education: ensureArray(
             item.person.no_university_education,

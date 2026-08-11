@@ -294,7 +294,7 @@ export const CandidateDetailDrawer = ({ candidate, onClose }: Props) => {
               <TabBienes incomes={person.incomes} assets={person.assets} />
             )}
             {activeTab === "posturas" && (
-              <TabPosturas biography={person.detailed_biography} />
+              <TabPosturas biography={person.posturas} />
             )}
           </div>
         </CredenzaBody>

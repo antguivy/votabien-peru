@@ -899,9 +899,9 @@ export default function DetailCandidato({
           <TabsContent value="biografia" className="animate-in fade-in-50">
             <Card className="shadow-none border-border/60">
               <CardContent className="pt-6">
-                {persona.detailed_biography?.length > 0 ? (
+                {persona.posturas?.length > 0 ? (
                   <div className="border-l border-border/60 ml-3 space-y-6">
-                    {persona.detailed_biography
+                    {persona.posturas
                       .slice()
                       .sort((a, b) => {
                         if (!a.date) return 1;

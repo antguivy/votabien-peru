@@ -25,7 +25,7 @@ export function ImageUploader({
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === "drworkflowr" || e.type === "dragover") {
       setIsDragging(true);
     } else if (e.type === "dragleave") {
       setIsDragging(false);

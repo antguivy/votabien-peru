@@ -1,0 +1,22 @@
+model ai_workflow {
+  id             String   @id @default(cuid())
+  name           String   @db.VarChar(100)
+  description    String?  @db.VarChar(255)
+  
+  // Phase 1: Discovery
+  sources        String[] // Ej: ["web_news", "youtube"]
+  
+  // Phase 2: Compression
+  compressor_prompt String @db.Text
+  compressor_model  String @default("gemini-2.5-flash")
+  
+  // Phase 3: Validation
+  validator_prompt  String @db.Text
+  validator_model   String @default("gemini-2.5-flash")
+
+  status         String   @default("ACTIVE")
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([status])
+}

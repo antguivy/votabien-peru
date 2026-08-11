@@ -62,7 +62,8 @@ export interface DataTableRowAction<TData> {
     | "update-biography"
     | "update-background"
     | "research"
-    | "generate-embedding";
+    | "generate-embedding"
+    | "delete";
 }
 
 // Opciones de Query para Prisma

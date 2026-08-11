@@ -23,6 +23,8 @@ import {
   Milestone, // Hito — punto en línea de tiempo
   UsersRound, // Asientos
   CalendarDays, // Periodos
+  Inbox,
+  Bot,
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
@@ -85,6 +87,7 @@ export const adminNavGroups: NavGroup[] = [
       { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
       { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
+      { href: "/admin/personas/propuestas", label: "Propuestas", icon: Inbox },
       { href: "/admin/seats", label: "Asientos", icon: UsersRound },
       { href: "/admin/ejecutivo", label: "Ejecutivo", icon: Landmark },
     ],
@@ -97,6 +100,7 @@ export const adminNavGroups: NavGroup[] = [
     label: "Sistema",
     requiresRole: ["admin", "super_admin"],
     links: [
+      { href: "/admin/workflows", label: "Workflows IA", icon: Bot },
       { href: "/admin/team", label: "Equipo", icon: ShieldCheck },
       { href: "/admin/hito", label: "Hito", icon: Milestone },
     ],

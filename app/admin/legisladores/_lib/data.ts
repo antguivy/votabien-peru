@@ -47,6 +47,8 @@ export async function getLegislators(
     }
     if (input.legislative_period && input.legislative_period.length > 0) {
       where.legislative_period_id = { in: input.legislative_period };
+    } else {
+      where.legislativeperiod = { active: true };
     }
 
     const orderBy: Record<string, unknown> = {};

@@ -179,7 +179,7 @@ export function BiographyFormDialog({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     getPersonBiography(personId)
-      .then((data) => setItems(data?.detailed_biography ?? []))
+      .then((data) => setItems(data?.posturas ?? []))
       .finally(() => setIsLoading(false));
   }, [open, personId]);
 

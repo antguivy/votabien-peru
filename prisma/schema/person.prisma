@@ -13,6 +13,7 @@ model background {
   created_at       DateTime         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
   updated_at       DateTime         @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
   title            String
+  previous_version Json?
   person           person           @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([person_id], map: "ix_background_person_id")
@@ -29,7 +30,7 @@ model person {
   image_url                String?             @db.VarChar
   birth_date               DateTime?           @db.Timestamptz(6)
   profession               String?             @db.VarChar(200)
-  detailed_biography       Json?
+  posturas                 Json?
   technical_education      Json?
   university_education     Json                @default("[]")
   no_university_education  Json?
@@ -125,4 +126,19 @@ enum backgroundtype {
   ETICA
   CIVIL
   ADMINISTRATIVO
+}
+
+model research_proposals {
+  id            String    @id @default(cuid())
+  person_id     String
+  batch_run_id  String? // Identificador del lote para agrupar propuestas
+  target_id     String? // ID del antecedente a actualizar (si aplica)
+  action        String // "INSERT", "UPDATE", "IGNORE"
+  proposed_data Json // Payload completo incluyendo fuente_url, fecha, etc.
+  reason        String // Justificación de la decisión
+  confidence    Float // 0.0 a 1.0
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  created_at    DateTime  @default(now())
+  reviewed_at   DateTime?
+  reviewed_by   String?
 }

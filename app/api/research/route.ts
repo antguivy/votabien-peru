@@ -24,6 +24,31 @@ export async function POST(request: Request) {
     const accessToken = process.env.API_SECRET_KEY;
     const formData = await request.formData();
 
+    // FETCH WORKFLOW FROM DB
+    const workflowId = formData.get("workflow_id")?.toString();
+    if (workflowId) {
+      const { prisma } = await import("@/lib/prisma");
+      const workflow = await prisma.ai_workflow.findUnique({
+        where: { id: workflowId },
+      });
+      if (workflow) {
+        // Forward workflow config to Python
+        formData.append("compressor_prompt", workflow.compressor_prompt);
+        formData.append("compressor_model", workflow.compressor_model);
+        formData.append("validator_prompt", workflow.validator_prompt);
+        formData.append("validator_model", workflow.validator_model);
+
+        // Convert sources array to include_news / include_youtube booleans
+        const includeNews =
+          workflow.sources.includes("search_web") ||
+          workflow.sources.includes("search_jne");
+        const includeYoutube = workflow.sources.includes("search_youtube");
+
+        formData.append("include_news", String(includeNews));
+        formData.append("include_youtube", String(includeYoutube));
+      }
+    }
+
     const pythonResponse = await fetch(
       `${API_BASE_URL}/api/v1/research/full-pipeline`,
       {
