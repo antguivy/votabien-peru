@@ -65,8 +65,6 @@ export function BatchResearchDialog({
   React.useEffect(() => {
     if (!batchId || status !== "running") return;
 
-    let interval: NodeJS.Timeout;
-
     const checkProgress = async () => {
       const res = await getBatchResearchProgress(batchId);
       if (res.success && res.processedCount !== undefined) {
@@ -78,7 +76,7 @@ export function BatchResearchDialog({
       }
     };
 
-    interval = setInterval(checkProgress, 5000); // poll every 5s
+    const interval = setInterval(checkProgress, 5000); // poll every 5s
 
     return () => clearInterval(interval);
   }, [batchId, status, total]);
@@ -122,8 +120,8 @@ export function BatchResearchDialog({
                 Se han generado propuestas de actualización.
               </p>
               <Button asChild className="mt-4 w-full">
-                <Link href="/admin/personas/propuestas">
-                  Ir a la bandeja de revisión
+                <Link href="/admin/personas/revisiones">
+                  Ir a la bandeja de revisiones
                 </Link>
               </Button>
             </>

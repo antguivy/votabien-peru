@@ -54,6 +54,63 @@ const formatCurrency = (amount: string | number) => {
   }).format(num);
 };
 
+function getMemberRoleLabel(type: string, listNumber?: number | null): string {
+  switch (type) {
+    case "GOBERNADOR_REGIONAL":
+      return "Gobernador(a) Regional";
+    case "VICEGOBERNADOR_REGIONAL":
+      return "Vicegobernador(a) Regional";
+    case "CONSEJERO_REGIONAL":
+      return listNumber
+        ? `Consejero(a) Regional · N° ${listNumber}`
+        : "Consejero(a) Regional";
+    case "ALCALDE_PROVINCIAL":
+      return "Alcalde(sa) Provincial";
+    case "REGIDOR_PROVINCIAL":
+      return listNumber
+        ? `Regidor(a) Provincial · N° ${listNumber}`
+        : "Regidor(a) Provincial";
+    case "ALCALDE_DISTRITAL":
+      return "Alcalde(sa) Distrital";
+    case "REGIDOR_DISTRITAL":
+      return listNumber
+        ? `Regidor(a) Distrital · N° ${listNumber}`
+        : "Regidor(a) Distrital";
+    case "PRESIDENTE":
+      return "Presidente(a) de la República";
+    case "VICEPRESIDENTE_1":
+      return "1er Vicepresidente";
+    case "VICEPRESIDENTE_2":
+      return "2do Vicepresidente";
+    default:
+      return type.replace(/_/g, " ");
+  }
+}
+
+function getTeamSectionTitle(type: string): string {
+  switch (type) {
+    case "GOBERNADOR_REGIONAL":
+    case "VICEGOBERNADOR_REGIONAL":
+      return "Fórmula Regional";
+    case "CONSEJERO_REGIONAL":
+      return "Fórmula y Lista Regional";
+    case "ALCALDE_PROVINCIAL":
+      return "Lista de Regidores Provinciales";
+    case "ALCALDE_DISTRITAL":
+      return "Lista de Regidores Distritales";
+    case "REGIDOR_PROVINCIAL":
+      return "Lista Municipal Provincial";
+    case "REGIDOR_DISTRITAL":
+      return "Lista Municipal Distrital";
+    case "PRESIDENTE":
+    case "VICEPRESIDENTE_1":
+    case "VICEPRESIDENTE_2":
+      return "Fórmula Presidencial";
+    default:
+      return "Lista de Candidatura";
+  }
+}
+
 export default function DetailCandidato({
   candidate,
   formula = [],
@@ -323,86 +380,258 @@ export default function DetailCandidato({
           {/* ── 1. HOJA DE VIDA ── */}
           <TabsContent
             value="hoja-vida"
-            className="space-y-8 animate-in fade-in-50"
+            className="space-y-6 animate-in fade-in-50"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Columna izquierda */}
-              <div className="space-y-4">
-                {formula.length > 0 && (
-                  <Card className="shadow-none border-border/60">
-                    <CardHeader className="pb-3 border-b border-border/40">
-                      <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
-                        <Landmark className="w-4 h-4 text-muted-foreground" />
-                        Fórmula presidencial
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-4 space-y-3">
-                      {formula.map((vp) => (
-                        <Link
-                          key={vp.id}
-                          href={`/candidatos/${vp.id}`}
-                          className="flex items-center gap-3 group p-2 rounded-lg hover:bg-muted/40 transition-colors -mx-2"
-                        >
-                          <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-border/40 bg-muted shrink-0 group-hover:border-primary/40 transition-colors">
-                            <Image
-                              src={
-                                vp.person.image_candidate_url ||
-                                "/images/default.svg"
-                              }
-                              alt={vp.person.fullname}
-                              fill
-                              className="object-contain"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-tight truncate group-hover:text-primary transition-colors">
-                              {vp.person.fullname}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {vp.type === "VICEPRESIDENTE_1"
-                                ? "1er Vicepresidente"
-                                : "2do Vicepresidente"}
-                            </p>
-                          </div>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-colors shrink-0" />
-                        </Link>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
+            {(() => {
+              const displayMembers = formula.filter(
+                (m) => m.id !== candidate.id,
+              );
+              const hasTeam = displayMembers.length > 0;
 
-                {/* Trayectoria política */}
-                <Card className="shadow-none border-border/60">
-                  <CardHeader className="pb-3 border-b border-border/40">
-                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
+              const renderEducacionCard = () => (
+                <Card className="shadow-none border-border/60 py-0 gap-0 overflow-hidden h-fit">
+                  <CardHeader className="py-2.5 px-4 border-b border-border/40 bg-muted/20">
+                    <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2 text-foreground">
+                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                      Formación Académica
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    {!hasEducation ? (
+                      <NoDataMessage text="No registra información académica." />
+                    ) : (
+                      <>
+                        {persona.postgraduate_education?.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                              Posgrado
+                            </p>
+                            <div className="space-y-2.5">
+                              {persona.postgraduate_education.map((edu, i) => (
+                                <div
+                                  key={i}
+                                  className="p-2.5 rounded-lg bg-muted/30 border border-border/40"
+                                >
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div>
+                                      <p className="font-semibold text-sm leading-snug">
+                                        {edu.specialization}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {edu.graduate_school}
+                                      </p>
+                                    </div>
+                                    {edu.concluded === "NO" && (
+                                      <span className="text-[10px] text-destructive bg-destructive/8 px-1.5 py-0.5 rounded shrink-0 font-medium">
+                                        Inconcluso
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 mt-2 flex-wrap">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] h-5"
+                                    >
+                                      {edu.degree}
+                                    </Badge>
+                                    {edu.year_of_completion && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[10px] h-5"
+                                      >
+                                        {edu.year_of_completion}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {persona.university_education?.length > 0 && (
+                          <div>
+                            {persona.postgraduate_education?.length > 0 && (
+                              <div className="h-px bg-border/50 mb-3" />
+                            )}
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                              Universitaria
+                            </p>
+                            <div className="space-y-2.5">
+                              {persona.university_education.map((edu, i) => (
+                                <div
+                                  key={i}
+                                  className="flex gap-2.5 items-start"
+                                >
+                                  <div
+                                    className={cn(
+                                      "mt-1.5 w-1.5 h-1.5 rounded-full shrink-0",
+                                      edu.concluded === "SI"
+                                        ? "bg-primary"
+                                        : "border border-destructive",
+                                    )}
+                                  />
+                                  <div>
+                                    <p className="font-semibold text-sm leading-snug">
+                                      {edu.degree}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {edu.university}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {edu.year_of_completion && (
+                                        <span className="text-[11px] text-muted-foreground">
+                                          {edu.year_of_completion}
+                                        </span>
+                                      )}
+                                      {edu.concluded === "NO" && (
+                                        <span className="text-[10px] text-destructive font-medium">
+                                          Inconcluso
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {persona.technical_education?.length > 0 && (
+                          <div>
+                            {(persona.postgraduate_education?.length > 0 ||
+                              persona.university_education?.length > 0) && (
+                              <div className="h-px bg-border/50 mb-3" />
+                            )}
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                              Técnica
+                            </p>
+                            <div className="space-y-2.5">
+                              {persona.technical_education.map((edu, i) => (
+                                <div
+                                  key={i}
+                                  className="flex gap-2.5 items-start"
+                                >
+                                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
+                                  <div>
+                                    <p className="font-semibold text-sm leading-snug">
+                                      {edu.career}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {edu.graduate_school}
+                                    </p>
+                                    {edu.concluded === "NO" && (
+                                      <span className="text-[10px] text-destructive font-medium block mt-0.5">
+                                        Inconcluso
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {persona.no_university_education?.length > 0 && (
+                          <div>
+                            {(persona.postgraduate_education?.length > 0 ||
+                              persona.university_education?.length > 0 ||
+                              persona.technical_education?.length > 0) && (
+                              <div className="h-px bg-border/50 mb-3" />
+                            )}
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                              Otros estudios
+                            </p>
+                            <div className="space-y-2">
+                              {persona.no_university_education.map((edu, i) => (
+                                <div key={i}>
+                                  <p className="text-sm font-medium leading-snug">
+                                    {edu.career}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {edu.graduate_school}
+                                  </p>
+                                  {edu.concluded === "NO" && (
+                                    <span className="text-[10px] text-destructive font-medium block mt-0.5">
+                                      Inconcluso
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+
+              const renderExperienciaLaboralCard = () => (
+                <Card className="shadow-none border-border/60 py-0 gap-0 overflow-hidden h-fit">
+                  <CardHeader className="py-2.5 px-4 border-b border-border/40 bg-muted/20">
+                    <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2 text-foreground">
+                      <Briefcase className="w-4 h-4 text-muted-foreground" />
+                      Experiencia Laboral
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-3.5">
+                    {persona.work_experience?.length > 0 ? (
+                      persona.work_experience.map((exp, i) => (
+                        <div
+                          key={i}
+                          className="relative pl-3.5 border-l-2 border-border/70"
+                        >
+                          <p className="font-semibold text-sm leading-snug">
+                            {exp.position}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {exp.organization}
+                          </p>
+                          <span className="text-[11px] text-muted-foreground/80 block mt-0.5">
+                            {exp.period}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <NoDataMessage text="No registra información laboral." />
+                    )}
+                  </CardContent>
+                </Card>
+              );
+
+              const renderTrayectoriaPoliticaCard = () => (
+                <Card className="shadow-none border-border/60 py-0 gap-0 overflow-hidden h-fit">
+                  <CardHeader className="py-2.5 px-4 border-b border-border/40 bg-muted/20">
+                    <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2 text-foreground">
                       <Vote className="w-4 h-4 text-muted-foreground" />
                       Trayectoria Política
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-4 space-y-6">
+                  <CardContent className="p-4 space-y-3.5">
                     {!hasPolitics ? (
                       <NoDataMessage text="No registra trayectoria política previa." />
                     ) : (
                       <>
                         {persona.popular_election?.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                               <Landmark className="w-3 h-3" />
                               Elección popular
                             </p>
-                            <div className="space-y-3">
+                            <div className="space-y-2.5">
                               {persona.popular_election.map((elec, i) => (
                                 <div
                                   key={i}
-                                  className="pl-3 border-l-2 border-border"
+                                  className="pl-3 border-l-2 border-border/70"
                                 >
-                                  <p className="font-semibold text-sm">
+                                  <p className="font-semibold text-sm leading-snug">
                                     {elec.position}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground mt-0.5">
                                     {elec.political_organization}
                                   </p>
-                                  <span className="text-[11px] text-muted-foreground">
+                                  <span className="text-[11px] text-muted-foreground/80 block mt-0.5">
                                     {elec.period}
                                   </span>
                                 </div>
@@ -413,25 +642,25 @@ export default function DetailCandidato({
                         {persona.political_role?.length > 0 && (
                           <div>
                             {persona.popular_election?.length > 0 && (
-                              <div className="h-px bg-border/50 my-4" />
+                              <div className="h-px bg-border/50 mb-3 mt-2" />
                             )}
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                               <User className="w-3 h-3" />
                               Cargos partidarios
                             </p>
-                            <div className="space-y-3">
+                            <div className="space-y-2.5">
                               {persona.political_role.map((role, i) => (
                                 <div
                                   key={i}
-                                  className="pl-3 border-l-2 border-border"
+                                  className="pl-3 border-l-2 border-border/70"
                                 >
-                                  <p className="font-semibold text-sm">
+                                  <p className="font-semibold text-sm leading-snug">
                                     {role.position}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground mt-0.5">
                                     {role.political_organization}
                                   </p>
-                                  <span className="text-[11px] text-muted-foreground">
+                                  <span className="text-[11px] text-muted-foreground/80 block mt-0.5">
                                     {role.period}
                                   </span>
                                 </div>
@@ -443,198 +672,88 @@ export default function DetailCandidato({
                     )}
                   </CardContent>
                 </Card>
+              );
 
-                {/* Experiencia laboral */}
-                <Card className="shadow-none border-border/60">
-                  <CardHeader className="pb-3 border-b border-border/40">
-                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
-                      <Briefcase className="w-4 h-4 text-muted-foreground" />
-                      Experiencia Laboral
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4 space-y-4">
-                    {persona.work_experience?.length > 0 ? (
-                      persona.work_experience.map((exp, i) => (
-                        <div key={i} className="relative pl-5">
-                          <div className="absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                          <p className="font-semibold text-sm leading-tight">
-                            {exp.position}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {exp.organization}
-                          </p>
-                          <span className="text-[11px] text-muted-foreground">
-                            {exp.period}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <NoDataMessage text="No registra información laboral." />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                  {hasTeam ? (
+                    <>
+                      {/* Columna izquierda: Equipo / Lista + Trayectoria Política */}
+                      <div className="space-y-4">
+                        <Card className="shadow-none border-border/60 py-0 gap-0 overflow-hidden">
+                          <CardHeader className="py-2.5 px-4 border-b border-border/40 bg-muted/20">
+                            <CardTitle className="text-sm sm:text-base font-semibold flex items-center justify-between text-foreground">
+                              <div className="flex items-center gap-2">
+                                <Landmark className="w-4 h-4 text-muted-foreground" />
+                                <span>
+                                  {getTeamSectionTitle(candidate.type)}
+                                </span>
+                              </div>
+                              <span className="text-xs font-normal text-muted-foreground">
+                                {displayMembers.length} integrante
+                                {displayMembers.length > 1 ? "s" : ""}
+                              </span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+                            {displayMembers.map((member) => (
+                              <Link
+                                key={member.id}
+                                href={`/candidatos/${member.id}`}
+                                className="flex items-center gap-3 group p-2 rounded-xl hover:bg-muted/50 border border-transparent hover:border-border/40 transition-all -mx-1"
+                              >
+                                <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-border/40 bg-muted shrink-0 group-hover:border-primary/40 transition-colors">
+                                  <Image
+                                    src={
+                                      member.person.image_candidate_url ||
+                                      "/images/default.svg"
+                                    }
+                                    alt={member.person.fullname}
+                                    fill
+                                    className="object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold leading-tight truncate group-hover:text-primary transition-colors">
+                                    {member.person.fullname}
+                                  </p>
+                                  <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                                    {getMemberRoleLabel(
+                                      member.type,
+                                      member.list_number,
+                                    )}
+                                  </p>
+                                </div>
+                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary/60 transition-colors shrink-0" />
+                              </Link>
+                            ))}
+                          </CardContent>
+                        </Card>
 
-              {/* Columna derecha: educación */}
-              <Card className="shadow-none border-border/60 h-fit">
-                <CardHeader className="pb-3 border-b border-border/40">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2 text-foreground">
-                    <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                    Formación Académica
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-5">
-                  {!hasEducation ? (
-                    <NoDataMessage text="No registra información académica." />
+                        {renderTrayectoriaPoliticaCard()}
+                      </div>
+
+                      {/* Columna derecha: Educación + Experiencia Laboral */}
+                      <div className="space-y-4">
+                        {renderEducacionCard()}
+                        {renderExperienciaLaboralCard()}
+                      </div>
+                    </>
                   ) : (
                     <>
-                      {persona.postgraduate_education?.length > 0 && (
-                        <div>
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                            Posgrado
-                          </p>
-                          <div className="space-y-3">
-                            {persona.postgraduate_education.map((edu, i) => (
-                              <div
-                                key={i}
-                                className="p-3 rounded-lg bg-muted/30 border border-border/40"
-                              >
-                                <div className="flex justify-between items-start gap-2">
-                                  <div>
-                                    <p className="font-semibold text-sm">
-                                      {edu.specialization}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {edu.graduate_school}
-                                    </p>
-                                  </div>
-                                  {edu.concluded === "NO" && (
-                                    <span className="text-[10px] text-destructive bg-destructive/8 px-1.5 py-0.5 rounded shrink-0">
-                                      Inconcluso
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex gap-2 mt-2 flex-wrap">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px] h-5"
-                                  >
-                                    {edu.degree}
-                                  </Badge>
-                                  {edu.year_of_completion && (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-[10px] h-5"
-                                    >
-                                      {edu.year_of_completion}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {persona.university_education?.length > 0 && (
-                        <div>
-                          {persona.postgraduate_education?.length > 0 && (
-                            <div className="h-px bg-border/50" />
-                          )}
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                            Universitaria
-                          </p>
-                          <div className="space-y-3">
-                            {persona.university_education.map((edu, i) => (
-                              <div key={i} className="flex gap-3 items-start">
-                                <div
-                                  className={cn(
-                                    "mt-1.5 w-1.5 h-1.5 rounded-full shrink-0",
-                                    edu.concluded === "SI"
-                                      ? "bg-primary"
-                                      : "border border-destructive",
-                                  )}
-                                />
-                                <div>
-                                  <p className="font-semibold text-sm">
-                                    {edu.degree}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {edu.university}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    {edu.year_of_completion && (
-                                      <span className="text-[11px] text-muted-foreground">
-                                        {edu.year_of_completion}
-                                      </span>
-                                    )}
-                                    {edu.concluded === "NO" && (
-                                      <span className="text-[10px] text-destructive">
-                                        Inconcluso
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {persona.technical_education?.length > 0 && (
-                        <div>
-                          <div className="h-px bg-border/50" />
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-4">
-                            Técnica
-                          </p>
-                          <div className="space-y-3">
-                            {persona.technical_education.map((edu, i) => (
-                              <div key={i} className="flex gap-3 items-start">
-                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
-                                <div>
-                                  <p className="font-semibold text-sm">
-                                    {edu.career}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {edu.graduate_school}
-                                  </p>
-                                  {edu.concluded === "NO" && (
-                                    <span className="text-[10px] text-destructive">
-                                      Inconcluso
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {persona.no_university_education?.length > 0 && (
-                        <div>
-                          <div className="h-px bg-border/50" />
-                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-4">
-                            Otros estudios
-                          </p>
-                          <div className="space-y-2">
-                            {persona.no_university_education.map((edu, i) => (
-                              <div key={i}>
-                                <p className="text-sm font-medium">
-                                  {edu.career}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {edu.graduate_school}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Sin equipo: Educación + Trayectoria a la izquierda, Experiencia Laboral a la derecha */}
+                      <div className="space-y-4">
+                        {renderEducacionCard()}
+                        {renderTrayectoriaPoliticaCard()}
+                      </div>
+                      <div className="space-y-4">
+                        {renderExperienciaLaboralCard()}
+                      </div>
                     </>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              );
+            })()}
           </TabsContent>
 
           {/* ── 2. ANTECEDENTES ── */}
@@ -834,14 +953,14 @@ export default function DetailCandidato({
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="shadow-none border-border/60">
-                    <CardHeader className="pb-3 border-b border-border/40">
-                      <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Card className="shadow-none border-border/60 py-0 gap-0 overflow-hidden">
+                    <CardHeader className="py-2.5 px-4 border-b border-border/40 bg-muted/20">
+                      <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
                         <Home className="w-4 h-4 text-muted-foreground" />
                         Bienes declarados
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4 space-y-2">
+                    <CardContent className="p-4 space-y-2">
                       {hasAssets ? (
                         persona.assets.map((asset, i) => (
                           <div

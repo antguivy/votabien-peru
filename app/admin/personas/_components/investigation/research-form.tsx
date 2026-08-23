@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Bot, Loader2, Cpu, Fingerprint } from "lucide-react";
+import { Search, Loader2, Cpu, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +46,7 @@ export function InvestigacionForm({
             setWorkflowId(res.workflows[0].id);
           }
         }
-      } catch (e) {
+      } catch {
         toast.error("Error cargando workflows");
       } finally {
         setIsLoadingWorkflows(false);

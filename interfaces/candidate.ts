@@ -13,6 +13,9 @@ import { ElectoralProcess } from "./politics";
 export enum CandidacyStatus {
   SOLICITUD_INSCRIPCION = "SOLICITUD_INSCRIPCION", // Paso 1: Presentan la lista
   INSCRITO = "INSCRITO", // Paso 2: El JNE la acepta formalmente (Ya sale en la web oficial)
+  ADMITIDO = "ADMITIDO", // Admitido formalmente por el JEE
+  PUBLICADO_PARA_TACHAS = "PUBLICADO_PARA_TACHAS",
+  TACHA_EN_TRAMITE = "TACHA_EN_TRAMITE",
   TACHADO = "TACHADO", // Alguien se quejó y lo sacaron
   EXCLUIDO = "EXCLUIDO", // El JNE lo sacó por mentir en hoja de vida o dádivas
   IMPROCEDENTE = "IMPROCEDENTE", // No cumplió requisitos de forma
@@ -27,9 +30,20 @@ export enum CandidacyType {
   SENADOR = "SENADOR",
   DIPUTADO = "DIPUTADO",
   PARLAMENTO_ANDINO = "PARLAMENTO_ANDINO",
+  GOBERNADOR_REGIONAL = "GOBERNADOR_REGIONAL",
+  VICEGOBERNADOR_REGIONAL = "VICEGOBERNADOR_REGIONAL",
+  CONSEJERO_REGIONAL = "CONSEJERO_REGIONAL",
+  ALCALDE_PROVINCIAL = "ALCALDE_PROVINCIAL",
+  REGIDOR_PROVINCIAL = "REGIDOR_PROVINCIAL",
+  ALCALDE_DISTRITAL = "ALCALDE_DISTRITAL",
+  REGIDOR_DISTRITAL = "REGIDOR_DISTRITAL",
 }
 
 export type FilterCandidacyType =
+  | "GOBERNADOR_REGIONAL"
+  | "CONSEJERO_REGIONAL"
+  | "ALCALDE_PROVINCIAL"
+  | "ALCALDE_DISTRITAL"
   | "PRESIDENTE"
   | "SENADOR_NACIONAL"
   | "SENADOR_REGIONAL"
@@ -43,33 +57,28 @@ export const typeOptions: {
   description: string;
 }[] = [
   {
-    value: "PRESIDENTE",
-    label: "Presidente",
-    description: "",
+    value: "GOBERNADOR_REGIONAL",
+    label: "Gobernadores Reg.",
+    description:
+      "Gobierno Regional: Gobernador y Vicegobernador elegidos para liderar el desarrollo y la gestión de tu región.",
   },
   {
-    value: "SENADOR_NACIONAL",
-    label: "Senador Nacional",
+    value: "CONSEJERO_REGIONAL",
+    label: "Consejeros Reg.",
     description:
-      "Se eligen 30. Representan a todo el Perú. Revisan las leyes que proponen los diputados y deciden si se aprueban o no.",
+      "Consejo Regional: Fiscalizan y norman a nivel del departamento en representación de cada provincia.",
   },
   {
-    value: "SENADOR_REGIONAL",
-    label: "Senador Regional",
+    value: "ALCALDE_PROVINCIAL",
+    label: "Alcaldes Prov.",
     description:
-      "Se eligen 30. Representan a tu región. Revisan las leyes y defienden las necesidades de su zona.",
+      "Municipalidad Provincial: Lideran la gestión de la provincia junto con el cuerpo de regidores provinciales.",
   },
   {
-    value: "DIPUTADO",
-    label: "Diputado",
+    value: "ALCALDE_DISTRITAL",
+    label: "Alcaldes Dist.",
     description:
-      "Se eligen 130. Representan a tu región. Proponen y debaten la mayoría de leyes.",
-  },
-  {
-    value: "PARLAMENTO_ANDINO",
-    label: "Parlamento Andino",
-    description:
-      "Se eligen 5. Representan al Perú ante otros países andinos. Trabajan en acuerdos sobre temas como comercio, migración y medio ambiente.",
+      "Municipalidad Distrital: Alcalde y regidores encargados del desarrollo y servicios directos de tu distrito.",
   },
 ];
 
@@ -78,7 +87,10 @@ export interface FiltersCandidates {
   type: string; // FilterCandidacyType en práctica
   parties: string[]; // 0 ó 1 elemento (single select)
   districts: string[]; // 0 ó 1 elemento (single select)
-  alerts: string[]; // "CON_SANCION" | "EN_INVESTIGACION" | "IS_INCUMBENT"
+  alerts?: string[];
+  no_sentencias?: boolean;
+  min_work?: number;
+  education?: string;
 }
 
 export interface AllianceBase {
@@ -147,6 +159,7 @@ export interface CandidatePresidentials {
   id: string;
   person: PersonBasicInfo;
   type: CandidacyType;
+  list_number?: number | null;
 }
 
 export interface CandidateDetail extends CandidateBase {

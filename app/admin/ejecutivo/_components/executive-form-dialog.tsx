@@ -1,7 +1,7 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useContext, useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
@@ -85,36 +85,52 @@ export function ExecutiveFormDialog({
     defaultValues: emptyValues,
   });
 
-  const watchedRole = form.watch("role");
+  const watchedRole = useWatch({
+    control: form.control,
+    name: "role",
+    defaultValue: ExecutiveRole.MINISTRO,
+  });
 
   const isMinister = watchedRole === ExecutiveRole.MINISTRO;
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
       form.reset(emptyValues);
       setSelectedPerson(null);
       setGlobalSearch("");
+    }
+    onOpenChange(newOpen);
+  };
+
+  useEffect(() => {
+    if (!open || mode !== "edit" || !executiveId) {
       return;
     }
 
-    if (mode === "create" || !executiveId) {
-      form.reset(emptyValues);
-      setSelectedPerson(null);
-      return;
-    }
+    let isSubscribed = true;
 
-    setIsLoadingData(true);
-    getExecutiveForEdit(executiveId)
-      .then((data) => {
-        if (!data) return;
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      try {
+        const data = await getExecutiveForEdit(executiveId);
+        if (!isSubscribed || !data) return;
         const { person, ...formValues } = data;
         form.reset(formValues);
         setSelectedPerson(person as PersonBasicInfo);
         setGlobalSearch("");
-      })
-      .finally(() => setIsLoadingData(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mode, executiveId]);
+      } finally {
+        if (isSubscribed) {
+          setIsLoadingData(false);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [open, mode, executiveId, form]);
 
   const handlePersonSelect = (person: PersonBasicInfo | null) => {
     setSelectedPerson(person);
@@ -150,14 +166,14 @@ export function ExecutiveFormDialog({
         },
       );
 
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Error al guardar ejecutivo:", error);
     }
   };
 
   return (
-    <Credenza open={open} onOpenChange={onOpenChange}>
+    <Credenza open={open} onOpenChange={handleOpenChange}>
       <CredenzaContent className="sm:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col">
         <CredenzaHeader>
           <CredenzaTitle>
@@ -390,12 +406,15 @@ export function ExecutiveFormDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={form.formState.isSubmitting}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting || isLoadingData}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting || isLoadingData}
+              >
                 {form.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

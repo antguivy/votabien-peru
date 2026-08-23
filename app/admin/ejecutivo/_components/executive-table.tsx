@@ -4,7 +4,6 @@ import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { useDataTable } from "@/hooks/use-data-table";
-import { toSentenceCase } from "@/lib/utils";
 import { getColumns } from "./executive-table-columns";
 import type { DataTableFilterField, DataTableRowAction } from "@/lib/types";
 import { ExecutivesTableToolbarActions } from "./executive-table-toolbar-actions";

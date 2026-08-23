@@ -22,10 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createWorkflow, updateWorkflow } from "../_lib/actions";
+import { extractErrorMessage } from "@/lib/error-handler";
+import type { AIWorkflow } from "@/interfaces/workflow";
 
 const workflowSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
@@ -51,7 +52,7 @@ const AVAILABLE_TOOLS = [
 interface WorkflowFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workflow?: any; // Pasa el objeto si es edición, null para crear
+  workflow?: AIWorkflow | null; // Pasa el objeto si es edición, null para crear
 }
 
 export function WorkflowFormDialog({
@@ -124,8 +125,8 @@ export function WorkflowFormDialog({
           onOpenChange(false);
         } else throw new Error(res.error);
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(extractErrorMessage(error));
     }
   };
 

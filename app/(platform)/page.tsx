@@ -2,7 +2,6 @@ import ErrorLanding from "@/components/landing/error-landing";
 import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import { getHitos } from "@/queries/public/hito";
-import { getElectoralProcess } from "@/queries/public/electoral-process";
 import HeroModern from "@/components/landing/hero-modern";
 // import PodcastSection from "@/components/landing/podcast";
 import SocialProof from "@/components/landing/social-proof";
@@ -13,17 +12,11 @@ import { ChamberType } from "@/interfaces/politics";
 
 export default async function VotaBienPage() {
   try {
-    const [hitos, proceso_electoral, seatsDiputados, seatsSenado] =
-      await Promise.all([
-        getHitos(),
-        getElectoralProcess({ active: true }),
-        getSeatParliamentary(ChamberType.DIPUTADOS),
-        getSeatParliamentary(ChamberType.SENADO),
-      ]);
-    const currentProcess =
-      proceso_electoral && proceso_electoral.length > 0
-        ? proceso_electoral[0]
-        : null;
+    const [hitos, seatsDiputados, seatsSenado] = await Promise.all([
+      getHitos(),
+      getSeatParliamentary(ChamberType.DIPUTADOS),
+      getSeatParliamentary(ChamberType.SENADO),
+    ]);
 
     // Si diputados está vacío pero hay datos en el CONGRESO (legacy), usamos ese
     const fallbackSeats =

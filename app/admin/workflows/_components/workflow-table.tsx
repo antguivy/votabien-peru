@@ -10,14 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { deleteWorkflow } from "../_lib/actions";
 import { toast } from "sonner";
+import type { AIWorkflow } from "@/interfaces/workflow";
 
 interface WorkflowTableProps {
-  data: any[];
+  data: AIWorkflow[];
 }
 
 export function WorkflowTable({ data }: WorkflowTableProps) {
   const [rowAction, setRowAction] =
-    React.useState<DataTableRowAction<any> | null>(null);
+    React.useState<DataTableRowAction<AIWorkflow> | null>(null);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
 
   const columns = React.useMemo(

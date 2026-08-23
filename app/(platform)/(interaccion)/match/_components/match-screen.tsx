@@ -37,7 +37,6 @@ export default function MatchScreen({
   parties: PoliticalPartyBase[];
 }) {
   const {
-    parties: hookParties,
     formData,
     results,
     loading,

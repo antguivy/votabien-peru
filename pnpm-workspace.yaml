@@ -1,2 +1,11 @@
+allowBuilds:
+  '@prisma/engines': false
+  '@tailwindcss/oxide': false
+  core-js: false
+  esbuild: false
+  lefthook: false
+  prisma: false
+  sharp: false
+  unrs-resolver: false
 onlyBuiltDependencies:
   - lefthook

@@ -253,8 +253,8 @@ export function BackgroundsFormDialog({
   }, [open, personId]);
 
   const handleFetchFromJNE = async () => {
-    if (!partyNumberRop || !dni) {
-      toast.error("Faltan datos del candidato (ROP o DNI)");
+    if (!dni) {
+      toast.error("Falta el DNI de la persona");
       return;
     }
 
@@ -264,7 +264,7 @@ export function BackgroundsFormDialog({
     try {
       const result = await fetchAntecedentesFromJNE(
         jneMode,
-        partyNumberRop,
+        partyNumberRop || null,
         dni,
       );
 
@@ -379,8 +379,8 @@ export function BackgroundsFormDialog({
             <Badge variant="secondary" className="font-mono">
               {items.length} Reg
             </Badge>
-            {/* Botón JNE - solo si tiene ROP y DNI */}
-            {partyNumberRop && dni && viewMode === "list" && (
+            {/* Botón JNE - solo si tiene DNI */}
+            {dni && viewMode === "list" && (
               <div className="flex items-center gap-1 border rounded-md overflow-hidden">
                 {/* Toggle classic / consolidated */}
                 <Tabs

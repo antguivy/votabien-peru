@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Users, Star, MapPinned } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Users, Star, MapPin, Building2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
 import { getTextColor } from "@/lib/utils/color-utils";
 import { shuffleArray } from "@/lib/utils/arrays";
+import {
+  isCapitalDistrict,
+  resolveLocationFromParam,
+} from "@/lib/ubigeo-helpers";
 import { Badge } from "../ui/badge";
 import {
   AlertBadge,
@@ -24,6 +29,41 @@ const TYPE_CONFIG: Record<
   string,
   { label: string; bgBadge: string; ring: string }
 > = {
+  GOBERNADOR_REGIONAL: {
+    label: "Gobernador",
+    bgBadge: "bg-indigo-600/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-indigo-500/30",
+  },
+  VICEGOBERNADOR_REGIONAL: {
+    label: "Vicegobernador",
+    bgBadge: "bg-indigo-500/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-indigo-400/30",
+  },
+  CONSEJERO_REGIONAL: {
+    label: "Consejero",
+    bgBadge: "bg-purple-600/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-purple-500/30",
+  },
+  ALCALDE_PROVINCIAL: {
+    label: "Alcalde Provincial",
+    bgBadge: "bg-amber-600/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-amber-500/30",
+  },
+  REGIDOR_PROVINCIAL: {
+    label: "Regidor Provincial",
+    bgBadge: "bg-amber-500/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-amber-400/30",
+  },
+  ALCALDE_DISTRITAL: {
+    label: "Alcalde Distrital",
+    bgBadge: "bg-emerald-600/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-emerald-500/30",
+  },
+  REGIDOR_DISTRITAL: {
+    label: "Regidor Distrital",
+    bgBadge: "bg-emerald-500/90 text-white backdrop-blur-sm",
+    ring: "group-hover:ring-emerald-400/30",
+  },
   PRESIDENTE: {
     label: "Presidente",
     bgBadge: "bg-role-president/90 text-white backdrop-blur-sm",
@@ -45,7 +85,7 @@ const TYPE_CONFIG: Record<
     ring: "group-hover:ring-teal-400/30",
   },
   DEFAULT: {
-    label: "Vicepresidente",
+    label: "Candidato",
     bgBadge: "bg-muted text-muted-foreground backdrop-blur-sm",
     ring: "group-hover:ring-border",
   },
@@ -189,10 +229,20 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
             </div>
           </div>
 
-          {/* ── Fila 2: nombre ── */}
-          <h3 className="font-bebas text-[16px] sm:text-[17px] leading-tight tracking-wide text-card-foreground group-hover:text-primary transition-colors duration-200 line-clamp-3 flex-1">
-            {person.fullname}
-          </h3>
+          {/* ── Fila 2: nombre y circunscripción ── */}
+          <div>
+            <h3 className="font-bebas text-[16px] sm:text-[17px] leading-tight tracking-wide text-card-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 flex-1">
+              {person.fullname}
+            </h3>
+            {candidato.electoral_district?.name && (
+              <span className="text-[10px] font-bold text-muted-foreground/70 truncate flex items-center gap-1 mt-0.5">
+                <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-muted-foreground/60" />
+                <span className="truncate">
+                  {candidato.electoral_district.name}
+                </span>
+              </span>
+            )}
+          </div>
 
           {/* ── Fila 3: meta chips ── */}
           {hasMeta && (
@@ -312,7 +362,16 @@ const CandidatoSkeleton = () => (
 // DistrictHintBanner
 // ─────────────────────────────────────────────
 
-const DISTRICT_TYPES = ["SENADOR_REGIONAL", "DIPUTADO"];
+const DISTRICT_TYPES = [
+  "GOBERNADOR_REGIONAL",
+  "CONSEJERO_REGIONAL",
+  "ALCALDE_PROVINCIAL",
+  "ALCALDE_DISTRITAL",
+  "REGIDOR_PROVINCIAL",
+  "REGIDOR_DISTRITAL",
+  "SENADOR_REGIONAL",
+  "DIPUTADO",
+];
 
 const DistrictHintBanner = ({
   currentType,
@@ -324,8 +383,38 @@ const DistrictHintBanner = ({
   onOpenFilters: () => void;
 }) => {
   const isSelected = !!currentDistrict;
-  const label =
-    currentType === "SENADOR_REGIONAL" ? "senadores regionales" : "diputados";
+  const resolvedLoc = resolveLocationFromParam(currentDistrict);
+  const displayDistrict =
+    currentType === "GOBERNADOR_REGIONAL" ||
+    currentType === "CONSEJERO_REGIONAL"
+      ? resolvedLoc?.department || currentDistrict
+      : resolvedLoc?.district?.split(" (")[0] ||
+        resolvedLoc?.province?.split(" (")[0] ||
+        resolvedLoc?.department ||
+        currentDistrict;
+
+  const label = (() => {
+    switch (currentType) {
+      case "GOBERNADOR_REGIONAL":
+        return "gobernadores regionales";
+      case "CONSEJERO_REGIONAL":
+        return "consejeros regionales";
+      case "ALCALDE_PROVINCIAL":
+        return "alcaldes provinciales";
+      case "ALCALDE_DISTRITAL":
+        return "alcaldes distritales";
+      case "REGIDOR_PROVINCIAL":
+        return "regidores provinciales";
+      case "REGIDOR_DISTRITAL":
+        return "regidores distritales";
+      case "SENADOR_REGIONAL":
+        return "senadores regionales";
+      case "DIPUTADO":
+        return "diputados";
+      default:
+        return "candidatos";
+    }
+  })();
 
   return (
     <div
@@ -344,13 +433,13 @@ const DistrictHintBanner = ({
           isSelected ? "bg-brand/12" : "bg-brand/18",
         )}
       >
-        <MapPinned className="w-4.5 h-4.5 text-brand" />
+        <MapPin className="w-4.5 h-4.5 text-brand" />
       </div>
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-foreground leading-tight">
           {isSelected
-            ? `Mostrando ${label} de ${currentDistrict}`
+            ? `Mostrando ${label} de ${displayDistrict}`
             : `¿En qué región votas?`}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
@@ -371,7 +460,7 @@ const DistrictHintBanner = ({
             : "bg-brand text-white shadow-sm shadow-brand/20 hover:bg-brand/90",
         )}
       >
-        <MapPinned className="w-3.5 h-3.5" />
+        <MapPin className="w-3.5 h-3.5" />
         {isSelected ? "Cambiar región" : "Elegir mi región"}
       </button>
     </div>
@@ -401,6 +490,8 @@ const CandidatosList = ({
   currentFilters,
   infiniteScroll = true,
 }: CandidatosListProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [candidatos, setCandidatos] =
     useState<CandidateCard[]>(initialCandidaturas);
   const [isReady, setIsReady] = useState(currentFilters.type !== "PRESIDENTE");
@@ -416,6 +507,20 @@ const CandidatosList = ({
 
   const currentDistrict = currentFilters.districts?.[0] ?? "";
   const showDistrictHint = DISTRICT_TYPES.includes(currentFilters.type);
+  const capitalInfo = isCapitalDistrict(null, currentDistrict);
+  const isDistritalType =
+    currentFilters.type === "ALCALDE_DISTRITAL" ||
+    currentFilters.type === "REGIDOR_DISTRITAL";
+  const showCapitalNotice =
+    isDistritalType && capitalInfo.isCapital && candidatos.length === 0;
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCandidatos(initialCandidaturas);
+    setHasMore(initialCandidaturas.length >= PAGE_SIZE);
+    pageRef.current = Math.ceil(initialCandidaturas.length / PAGE_SIZE);
+    hasMoreRef.current = initialCandidaturas.length >= PAGE_SIZE;
+  }, [initialCandidaturas]);
 
   useEffect(() => {
     if (currentFilters.type === "PRESIDENTE") {
@@ -453,9 +558,9 @@ const CandidatosList = ({
           districts: currentFilters.districts?.length
             ? currentFilters.districts
             : undefined,
-          alerts: currentFilters.alerts?.length
-            ? currentFilters.alerts
-            : undefined,
+          no_sentencias: currentFilters.no_sentencias,
+          min_work: currentFilters.min_work,
+          education: currentFilters.education,
         }),
       });
 
@@ -541,17 +646,55 @@ const CandidatosList = ({
           Array.from({ length: 10 }).map((_, i) => (
             <CandidatoSkeleton key={i} />
           ))
-        ) : candidatos.length === 0 && !showDistrictHint ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-32 text-center opacity-0 animate-in fade-in zoom-in duration-500">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-5">
-              <Star className="w-9 h-9 text-muted-foreground/30" />
+        ) : showCapitalNotice ? (
+          <div className="col-span-full flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-3xl border border-amber-500/30 bg-amber-500/5 animate-in fade-in zoom-in-95 duration-400">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+              <Building2 className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-1.5">
+              En el distrito capital ({capitalInfo.districtName}), gobierna la
+              Municipalidad Provincial
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-lg mb-5 leading-relaxed">
+              De acuerdo con la legislación electoral peruana (JNE), los
+              distritos capitales de provincia no eligen alcalde distrital por
+              separado. Tu autoridad municipal directa a elegir es el{" "}
+              <strong>Alcalde Provincial</strong> y sus regidores.
+            </p>
+            <button
+              onClick={() => {
+                const next = new URLSearchParams(window.location.search);
+                next.set("type", "ALCALDE_PROVINCIAL");
+                router.replace(`${pathname}?${next.toString()}`, {
+                  scroll: false,
+                });
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/20 hover:bg-brand/90 transition-all active:scale-95"
+            >
+              <span>
+                Ver Alcaldes Provinciales de {capitalInfo.provinceName}
+              </span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : candidatos.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-24 text-center opacity-0 animate-in fade-in zoom-in duration-500">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Star className="w-8 h-8 text-muted-foreground/30" />
             </div>
             <h3 className="text-2xl font-bebas text-foreground mb-1">
               No se encontraron candidatos
             </h3>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Prueba cambiando los filtros de búsqueda.
+            <p className="text-sm text-muted-foreground max-w-xs mb-4">
+              No se registraron candidatos para los filtros seleccionados.
             </p>
+            <button
+              onClick={handleOpenFilters}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold border border-border/60 transition-all"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Cambiar ubicación o filtros</span>
+            </button>
           </div>
         ) : (
           candidatos.map((candidato, index) => (

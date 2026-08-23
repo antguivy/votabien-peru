@@ -768,10 +768,8 @@ export function PersonFormDialog({
     const rop = form.getValues("party_number_rop");
     const dni = form.getValues("dni");
 
-    if (!rop || !dni || dni.length < 8) {
-      toast.warning(
-        "Ingresa el N° ROP y un DNI válido (8 dígitos) para buscar.",
-      );
+    if (!dni || dni.length < 8) {
+      toast.warning("Ingresa un DNI válido (8 dígitos) para buscar en el JNE.");
       return;
     }
 

@@ -70,6 +70,7 @@ model person {
   legislator               legislator[]
   person_embeddings        person_embeddings[]
   triviagame               triviagame[]
+  research_proposals       research_proposals[]
 
   @@index([dni(ops: raw("gin_trgm_ops"))], map: "idx_person_dni_trgm", type: Gin)
   @@index([fullname(ops: raw("gin_trgm_ops"))], map: "idx_person_fullname_trgm", type: Gin)
@@ -130,7 +131,7 @@ enum backgroundtype {
 
 model research_proposals {
   id            String    @id @default(cuid())
-  person_id     String
+  person_id     String    @db.VarChar
   batch_run_id  String? // Identificador del lote para agrupar propuestas
   target_id     String? // ID del antecedente a actualizar (si aplica)
   action        String // "INSERT", "UPDATE", "IGNORE"
@@ -141,4 +142,9 @@ model research_proposals {
   created_at    DateTime  @default(now())
   reviewed_at   DateTime?
   reviewed_by   String?
+  person        person    @relation(fields: [person_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([person_id], map: "ix_research_proposals_person_id")
+  @@index([status], map: "ix_research_proposals_status")
+  @@index([batch_run_id], map: "ix_research_proposals_batch_run_id")
 }

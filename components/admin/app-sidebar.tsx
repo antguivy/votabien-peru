@@ -14,16 +14,16 @@ export default function AdminPanelLayout({
   if (!sidebar) return null;
 
   return (
-    <>
+    <div className="relative flex min-h-screen w-full overflow-x-hidden bg-background">
       <Sidebar />
       <main
         className={cn(
-          "min-h-[calc(100vh)] w-full bg-background text-foreground transition-[margin-left] ease-in-out duration-300",
+          "min-h-screen flex-1 min-w-0 text-foreground transition-[margin-left] ease-in-out duration-300",
           sidebar?.isOpen === false ? "lg:ml-[90px]" : "lg:ml-72",
         )}
       >
         {children}
       </main>
-    </>
+    </div>
   );
 }

@@ -140,7 +140,7 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
   return (
-    <div className={cn("px-2 md:px-0", className)} {...props}>
+    <div className={cn("px-4 sm:px-6 py-2", className)} {...props}>
       {children}
     </div>
   );

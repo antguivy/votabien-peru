@@ -425,26 +425,24 @@ export async function deletePersonBackground(backgroundId: string) {
 // ==========================================
 
 export async function fetchCandidateFromJNE(
-  jne_mode: string,
-  party_number_rop: string,
-  dni: string,
+  jne_mode?: string,
+  party_number_rop?: string | null,
+  dni?: string | null,
+  id_hoja_vida?: string | null,
 ) {
   try {
     const { user } = await serverGetUser();
 
     if (!user) {
-      return new Response(
-        JSON.stringify({ detail: "No autorizado - Debes iniciar sesión" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      return { success: false, error: "No autorizado - Debes iniciar sesión" };
     }
-    const accessToken = process.env.API_SECRET_KEY; // Mandamos la clave secreta compartida
+    const accessToken = process.env.API_SECRET_KEY;
 
-    if (!party_number_rop || !dni) {
-      return { success: false, error: "Faltan parámetros" };
+    if (!dni && !id_hoja_vida) {
+      return {
+        success: false,
+        error: "Debe ingresar al menos un DNI o ID de Hoja de Vida",
+      };
     }
 
     const response = await fetch(
@@ -456,9 +454,10 @@ export async function fetchCandidateFromJNE(
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          jne_mode,
-          party_number_rop,
-          dni,
+          jne_mode: jne_mode || undefined,
+          party_number_rop: party_number_rop || undefined,
+          dni: dni || undefined,
+          id_hoja_vida: id_hoja_vida || undefined,
         }),
         cache: "no-store",
       },
@@ -480,9 +479,10 @@ export async function fetchCandidateFromJNE(
 }
 
 export async function fetchAntecedentesFromJNE(
-  jne_mode: string,
-  party_number_rop: string,
-  dni: string,
+  jne_mode?: string,
+  party_number_rop?: string | null,
+  dni?: string | null,
+  id_hoja_vida?: string | null,
 ) {
   try {
     const { user } = await serverGetUser();
@@ -491,8 +491,11 @@ export async function fetchAntecedentesFromJNE(
       return { success: false, error: "No autorizado - Debes iniciar sesión" };
     }
 
-    if (!party_number_rop || !dni) {
-      return { success: false, error: "Faltan parámetros ROP o DNI" };
+    if (!dni && !id_hoja_vida) {
+      return {
+        success: false,
+        error: "Debe ingresar al menos un DNI o ID de Hoja de Vida",
+      };
     }
 
     const response = await fetch(
@@ -503,7 +506,12 @@ export async function fetchAntecedentesFromJNE(
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.API_SECRET_KEY}`,
         },
-        body: JSON.stringify({ jne_mode, party_number_rop, dni }),
+        body: JSON.stringify({
+          jne_mode: jne_mode || undefined,
+          party_number_rop: party_number_rop || undefined,
+          dni: dni || undefined,
+          id_hoja_vida: id_hoja_vida || undefined,
+        }),
         cache: "no-store",
       },
     );

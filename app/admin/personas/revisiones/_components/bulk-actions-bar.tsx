@@ -1,0 +1,71 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Loader2, Check, X } from "lucide-react";
+
+interface BulkActionsBarProps {
+  selectedCount: number;
+  onBulkApprove: () => void;
+  onBulkReject: () => void;
+  onClearSelection: () => void;
+  isProcessing?: boolean;
+}
+
+export function BulkActionsBar({
+  selectedCount,
+  onBulkApprove,
+  onBulkReject,
+  onClearSelection,
+  isProcessing,
+}: BulkActionsBarProps) {
+  if (selectedCount === 0) return null;
+
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-background/95 backdrop-blur border border-border shadow-2xl rounded-full px-5 py-3 animate-in fade-in slide-in-from-bottom-5">
+      <div className="flex items-center gap-2 pr-2 border-r">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          {selectedCount}
+        </span>
+        <span className="text-xs font-medium text-foreground">
+          {selectedCount === 1 ? "seleccionado" : "seleccionados"}
+        </span>
+      </div>
+
+      <Button
+        variant="default"
+        size="sm"
+        onClick={onBulkApprove}
+        disabled={isProcessing}
+        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-8"
+      >
+        {isProcessing ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+        ) : (
+          <Check className="h-3.5 w-3.5 mr-1.5" />
+        )}
+        Aprobar en Bloque
+      </Button>
+
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={onBulkReject}
+        disabled={isProcessing}
+        className="rounded-full px-4 h-8"
+      >
+        <X className="h-3.5 w-3.5 mr-1.5" />
+        Rechazar en Bloque
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onClearSelection}
+        disabled={isProcessing}
+        className="text-xs text-muted-foreground hover:text-foreground h-8 rounded-full"
+      >
+        Limpiar
+      </Button>
+    </div>
+  );
+}

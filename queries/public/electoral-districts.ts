@@ -1,5 +1,5 @@
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
-import { TAGS, TTL } from "@/lib/cache-tags";
+import { TAGS } from "@/lib/cache-tags";
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
@@ -14,6 +14,9 @@ export const getDistritos = cache(
             id: true,
             name: true,
             code: true,
+            ubigeo: true,
+            level: true,
+            parent_id: true,
             is_national: true,
             active: true,
           },

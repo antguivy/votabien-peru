@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Edit, Trash } from "lucide-react";
 import type { DataTableRowAction } from "@/lib/types";
+import type { AIWorkflow } from "@/interfaces/workflow";
 
 export function getColumns({
   setRowAction,
 }: {
   setRowAction: React.Dispatch<
-    React.SetStateAction<DataTableRowAction<any> | null>
+    React.SetStateAction<DataTableRowAction<AIWorkflow> | null>
   >;
-}): ColumnDef<any>[] {
+}): ColumnDef<AIWorkflow>[] {
   return [
     {
       accessorKey: "name",

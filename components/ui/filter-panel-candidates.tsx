@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -9,16 +9,18 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Check,
-  ArrowLeft,
   MapPin,
+  ShieldCheck,
+  Briefcase,
+  GraduationCap,
+  Shield,
+  RotateCcw,
 } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  DrawerDescription,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -32,7 +34,19 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "@/components/ui/credenza";
-import { Button } from "./button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { LocationModal } from "@/components/politics/location-modal";
+import {
+  UserLocationSelection,
+  getSavedUserLocation,
+  getScopeLabelForType,
+  clearSavedUserLocation,
+  resolveLocationFromParam,
+} from "@/lib/ubigeo-helpers";
 
 // ─────────────────────────────────────────────
 // Tipos
@@ -43,12 +57,26 @@ interface NewFilterPanelProps {
   currentSearch: string;
   currentParty: string;
   currentDistrict: string;
+  currentNoSentencias?: boolean;
+  currentMinWork?: number;
+  currentEducation?: string;
   distritos: ElectoralDistrictBase[];
   parties: PoliticalPartyBase[];
-  currentAlerts: string[];
 }
 
-const REGION_TYPES = ["SENADOR_REGIONAL", "DIPUTADO"];
+const WORK_OPTIONS = [
+  { value: 0, label: "Cualquier experiencia" },
+  { value: 1, label: "1+ trabajo declarado" },
+  { value: 3, label: "3+ trabajos declarados" },
+  { value: 5, label: "5+ trabajos declarados" },
+];
+
+const EDUCATION_OPTIONS = [
+  { value: "", label: "Cualquier nivel" },
+  { value: "universitaria", label: "Universitaria / Posgrado" },
+  { value: "tecnica", label: "Técnica o Superior" },
+  { value: "secundaria", label: "Secundaria completa" },
+];
 
 // ─────────────────────────────────────────────
 // Lista de partidos
@@ -62,7 +90,7 @@ function PartyList({
 }: {
   parties: PoliticalPartyBase[];
   selected: string;
-  onSelect: (name: string) => void;
+  onSelect: (id: string) => void;
   filter?: string;
 }) {
   const filtered = filter
@@ -153,82 +181,7 @@ function PartyList({
 }
 
 // ─────────────────────────────────────────────
-// Lista de distritos
-// ─────────────────────────────────────────────
-
-function DistrictList({
-  districts,
-  selected,
-  onSelect,
-  filter,
-}: {
-  districts: ElectoralDistrictBase[];
-  selected: string;
-  onSelect: (name: string) => void;
-  filter?: string;
-}) {
-  const filtered = filter
-    ? districts.filter((d) =>
-        d.name.toLowerCase().includes(filter.toLowerCase()),
-      )
-    : districts;
-
-  if (filtered.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 gap-2">
-        <MapPin className="w-8 h-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">Sin resultados</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-1">
-      {filtered.map((d) => {
-        const isSelected = selected === d.name;
-        return (
-          <button
-            key={d.id}
-            onClick={() => onSelect(isSelected ? "" : d.name)}
-            className={cn(
-              "flex items-center gap-3 w-full px-3 py-3 rounded-xl",
-              "border transition-all duration-150 active:scale-[0.99] outline-none text-left",
-              isSelected
-                ? "border-brand/30 bg-brand/5"
-                : "border-transparent hover:border-border/60 hover:bg-muted/50",
-            )}
-          >
-            <MapPin
-              className={cn(
-                "w-4 h-4 flex-shrink-0",
-                isSelected ? "text-brand" : "text-muted-foreground/50",
-              )}
-            />
-            <span
-              className={cn(
-                "flex-1 text-sm font-medium",
-                isSelected ? "text-brand font-semibold" : "text-foreground",
-              )}
-            >
-              {d.name}
-            </span>
-            <div
-              className={cn(
-                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-                isSelected ? "bg-brand border-brand" : "border-border/40",
-              )}
-            >
-              {isSelected && <Check className="w-3 h-3 text-white" />}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// SearchBar reutilizable
+// SearchBar reusable
 // ─────────────────────────────────────────────
 
 function SearchBar({
@@ -261,22 +214,8 @@ function SearchBar({
   );
 }
 
-const ALERT_OPTIONS = [
-  { value: "HAS_PENAL_SENTENCE", label: "Sentenciados", color: "red" },
-  { value: "HAS_SANCTION", label: "Sancionados", color: "orange" },
-  { value: "EN_INVESTIGACION", label: "Investigados", color: "amber" },
-  { value: "IS_INCUMBENT", label: "Congresistas actuales", color: "blue" },
-] as const;
-
-const colorMap = {
-  red: { active: "bg-red-500/10 border-red-400/40 text-red-600" },
-  orange: { active: "bg-orange-500/10 border-orange-400/40 text-orange-600" },
-  amber: { active: "bg-amber-500/10 border-amber-400/40 text-amber-600" },
-  blue: { active: "bg-blue-500/10 border-blue-400/40 text-blue-600" },
-};
-
 // ─────────────────────────────────────────────
-// Componente principal
+// Componente Principal de Filtros
 // ─────────────────────────────────────────────
 
 export function NewFilterPanel({
@@ -284,221 +223,370 @@ export function NewFilterPanel({
   currentSearch,
   currentParty,
   currentDistrict,
+  currentNoSentencias = false,
+  currentMinWork = 0,
+  currentEducation = "",
   distritos,
   parties,
-  currentAlerts,
 }: NewFilterPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
-
-  const showRegion = REGION_TYPES.includes(currentType);
-
-  // Cuántos filtros están activos en la URL actual (para la pill del trigger)
-  const activeCount = [
-    currentSearch ? 1 : 0,
-    currentParty ? 1 : 0,
-    currentDistrict && showRegion ? 1 : 0,
-    currentAlerts.length > 0 ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
-
-  // ── Search desktop ──
-  const [localSearch, setLocalSearch] = useState(currentSearch);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalSearch(currentSearch);
-  }, [currentSearch]);
-
-  // ── Credenza desktop ──
-  const [openCredenza, setOpenCredenza] = useState<"party" | "region" | null>(
-    null,
-  );
-  const [desktopSearch, setDesktopSearch] = useState("");
-
-  // ── Mobile drawer ──
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [subDrawer, setSubDrawer] = useState<"party" | "region" | null>(null);
-  const [subSearch, setSubSearch] = useState("");
-
-  // Estado pendiente mobile — se inicializa al abrir el drawer
-  const [pendingSearch, setPendingSearch] = useState(currentSearch);
-  const [pendingParty, setPendingParty] = useState(currentParty);
-  const [pendingDistrict, setPendingDistrict] = useState(currentDistrict);
-  const [pendingAlerts, setPendingAlerts] = useState<string[]>(currentAlerts);
-
-  // Sincronizar estado pendiente al abrir el drawer
-  useEffect(() => {
-    if (isDrawerOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPendingSearch(currentSearch);
-      setPendingParty(currentParty);
-      setPendingDistrict(currentDistrict);
-      setPendingAlerts(currentAlerts);
-    }
-  }, [
-    isDrawerOpen,
-    currentSearch,
-    currentParty,
-    currentDistrict,
-    currentAlerts,
-  ]);
-
-  useEffect(() => {
-    const handleToggle = () =>
-      setTimeout(() => setIsDrawerOpen((prev) => !prev), 0);
-    const handleOpenRegion = () => {
-      setDesktopSearch("");
-      setOpenCredenza("region");
-    };
-    window.addEventListener("toggle-filter-panel", handleToggle);
-    window.addEventListener("open-desktop-region", handleOpenRegion);
-    return () => {
-      window.removeEventListener("toggle-filter-panel", handleToggle);
-      window.removeEventListener("open-desktop-region", handleOpenRegion);
-    };
-  }, []);
-
-  const districtOptions = useMemo(
-    () => distritos.filter((d) => !d.is_national),
-    [distritos],
-  );
-
-  // ─────────────────────────────────────────────
-  // Detección de cambios — el fix central
-  // ─────────────────────────────────────────────
-  // "¿Hay algo diferente entre lo que el usuario configuró y lo que está en la URL?"
-  // Esto es lo que habilita/deshabilita el botón Apply, no si hay filtros activos.
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const hasChanges = useMemo(() => {
-    const alertsChanged =
-      pendingAlerts.length !== currentAlerts.length ||
-      pendingAlerts.some((a) => !currentAlerts.includes(a));
-
-    return (
-      pendingSearch !== currentSearch ||
-      pendingParty !== currentParty ||
-      (showRegion ? pendingDistrict !== currentDistrict : false) ||
-      alertsChanged
-    );
-  }, [
-    pendingSearch,
-    currentSearch,
-    pendingParty,
-    currentParty,
-    pendingDistrict,
-    currentDistrict,
-    showRegion,
-    pendingAlerts,
-    currentAlerts,
-  ]);
-
-  // Cuántos filtros tiene el estado pendiente (para el label del botón)
-  const pendingActiveCount = [
-    pendingSearch ? 1 : 0,
-    pendingParty ? 1 : 0,
-    pendingDistrict && showRegion ? 1 : 0,
-    pendingAlerts.length > 0 ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
-
-  // ¿El estado pendiente tiene algún filtro activo? (para mostrar "Limpiar")
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const pendingHasFilters = pendingActiveCount > 0;
 
   // ─────────────────────────────────────────────
   // URL builder
   // ─────────────────────────────────────────────
 
   const buildUrl = useCallback(
-    (search: string, party: string, district: string, alerts: string[]) => {
+    (
+      search: string,
+      party: string,
+      district: string,
+      noSentencias: boolean,
+      minWork: number,
+      education: string,
+    ) => {
       const params = new URLSearchParams();
       params.set("type", currentType);
       if (search) params.set("search", search);
       if (party) params.set("parties", party);
-      if (district && showRegion) params.set("districts", district);
-      if (alerts.length > 0) params.set("alerts", alerts.join(","));
+      if (district) params.set("districts", district);
+      if (noSentencias) params.set("no_sentencias", "true");
+      if (minWork > 0) params.set("min_work", String(minWork));
+      if (education) params.set("education", education);
       return `${pathname}?${params.toString()}`;
     },
-    [currentType, pathname, showRegion],
+    [currentType, pathname],
   );
 
+  // Ubicación guardada
+  const [userLocation, setUserLocation] =
+    useState<UserLocationSelection | null>(() => {
+      if (currentDistrict) {
+        return (
+          resolveLocationFromParam(currentDistrict) || getSavedUserLocation()
+        );
+      }
+      return getSavedUserLocation();
+    });
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = getSavedUserLocation();
+    if (!currentDistrict && saved) {
+      const districtParam =
+        saved.districtCode ||
+        saved.provinceCode ||
+        saved.departmentCode ||
+        saved.district ||
+        saved.province ||
+        saved.department ||
+        "";
+      if (districtParam) {
+        router.replace(
+          buildUrl(
+            currentSearch,
+            currentParty,
+            districtParam,
+            currentNoSentencias,
+            currentMinWork,
+            currentEducation,
+          ),
+          { scroll: false },
+        );
+      }
+    }
+
+    const handleLocChange = (e: Event) => {
+      const customEvent = e as CustomEvent<UserLocationSelection | null>;
+      setUserLocation(customEvent.detail);
+    };
+
+    window.addEventListener("votabien-location-changed", handleLocChange);
+    return () =>
+      window.removeEventListener("votabien-location-changed", handleLocChange);
+  }, [
+    buildUrl,
+    currentDistrict,
+    currentEducation,
+    currentMinWork,
+    currentNoSentencias,
+    currentParty,
+    currentSearch,
+    router,
+  ]);
+
+  // Cuántos filtros están activos en total
+  const activeCount = [
+    currentSearch ? 1 : 0,
+    currentParty ? 1 : 0,
+    currentDistrict ? 1 : 0,
+    currentNoSentencias ? 1 : 0,
+    currentMinWork > 0 ? 1 : 0,
+    currentEducation ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  // ── Search desktop ──
+  const [localSearch, setLocalSearch] = useState(currentSearch);
+  const [prevSearch, setPrevSearch] = useState(currentSearch);
+  if (prevSearch !== currentSearch) {
+    setPrevSearch(currentSearch);
+    setLocalSearch(currentSearch);
+  }
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // ── Credenza desktop ──
+  const [openPartyCredenza, setOpenPartyCredenza] = useState(false);
+  const [desktopPartySearch, setDesktopPartySearch] = useState("");
+
+  // ── Popovers desktop ──
+  const [openWorkPopover, setOpenWorkPopover] = useState(false);
+  const [openEduPopover, setOpenEduPopover] = useState(false);
+
+  // ── Mobile drawer ──
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Estado pendiente mobile
+  const [pendingSearch, setPendingSearch] = useState(currentSearch);
+  const [pendingParty, setPendingParty] = useState(currentParty);
+  const [pendingDistrict, setPendingDistrict] = useState(currentDistrict);
+  const [pendingNoSentencias, setPendingNoSentencias] =
+    useState(currentNoSentencias);
+  const [pendingMinWork, setPendingMinWork] = useState(currentMinWork);
+  const [pendingEducation, setPendingEducation] = useState(currentEducation);
+
+  const [prevDrawerOpen, setPrevDrawerOpen] = useState(false);
+  if (isDrawerOpen && !prevDrawerOpen) {
+    setPrevDrawerOpen(true);
+    setPendingSearch(currentSearch);
+    setPendingParty(currentParty);
+    setPendingDistrict(currentDistrict);
+    setPendingNoSentencias(currentNoSentencias);
+    setPendingMinWork(currentMinWork);
+    setPendingEducation(currentEducation);
+  } else if (!isDrawerOpen && prevDrawerOpen) {
+    setPrevDrawerOpen(false);
+  }
+
+  useEffect(() => {
+    const handleToggle = () =>
+      setTimeout(() => setIsDrawerOpen((prev) => !prev), 0);
+    const handleOpenLoc = () => setIsLocationModalOpen(true);
+
+    window.addEventListener("toggle-filter-panel", handleToggle);
+    window.addEventListener("open-desktop-region", handleOpenLoc);
+    return () => {
+      window.removeEventListener("toggle-filter-panel", handleToggle);
+      window.removeEventListener("open-desktop-region", handleOpenLoc);
+    };
+  }, []);
+
   // ─────────────────────────────────────────────
-  // Desktop handlers
+  // Desktop Handlers
   // ─────────────────────────────────────────────
 
   const commitSearch = useCallback(
     (value: string) => {
       router.replace(
-        buildUrl(value, currentParty, currentDistrict, currentAlerts),
-        { scroll: false },
-      );
-    },
-    [router, buildUrl, currentParty, currentDistrict, currentAlerts],
-  );
-
-  const setParty = useCallback(
-    (name: string) => {
-      router.replace(
-        buildUrl(currentSearch, name, currentDistrict, currentAlerts),
-        { scroll: false },
-      );
-      setOpenCredenza(null);
-      setDesktopSearch("");
-    },
-    [router, buildUrl, currentSearch, currentDistrict, currentAlerts],
-  );
-
-  const setDistrict = useCallback(
-    (name: string) => {
-      router.replace(
-        buildUrl(currentSearch, currentParty, name, currentAlerts),
-        { scroll: false },
-      );
-      setOpenCredenza(null);
-      setDesktopSearch("");
-    },
-    [router, buildUrl, currentSearch, currentParty, currentAlerts],
-  );
-
-  const clearAll = useCallback(() => {
-    router.replace(buildUrl("", "", "", []), { scroll: false });
-    setLocalSearch("");
-  }, [router, buildUrl]);
-
-  const toggleAlertDesktop = useCallback(
-    (value: string) => {
-      const next = currentAlerts.includes(value)
-        ? currentAlerts.filter((a) => a !== value)
-        : [...currentAlerts, value];
-      router.replace(
-        buildUrl(currentSearch, currentParty, currentDistrict, next),
+        buildUrl(
+          value,
+          currentParty,
+          currentDistrict,
+          currentNoSentencias,
+          currentMinWork,
+          currentEducation,
+        ),
         { scroll: false },
       );
     },
     [
       router,
       buildUrl,
-      currentAlerts,
-      currentSearch,
       currentParty,
       currentDistrict,
+      currentNoSentencias,
+      currentMinWork,
+      currentEducation,
     ],
   );
 
-  // ─────────────────────────────────────────────
-  // Mobile handlers
-  // ─────────────────────────────────────────────
+  const setParty = useCallback(
+    (partyId: string) => {
+      router.replace(
+        buildUrl(
+          currentSearch,
+          partyId,
+          currentDistrict,
+          currentNoSentencias,
+          currentMinWork,
+          currentEducation,
+        ),
+        { scroll: false },
+      );
+      setOpenPartyCredenza(false);
+      setDesktopPartySearch("");
+    },
+    [
+      router,
+      buildUrl,
+      currentSearch,
+      currentDistrict,
+      currentNoSentencias,
+      currentMinWork,
+      currentEducation,
+    ],
+  );
 
-  const toggleAlertMobile = useCallback((value: string) => {
-    setPendingAlerts((prev) =>
-      prev.includes(value) ? prev.filter((a) => a !== value) : [...prev, value],
+  const handleLocationSelect = useCallback(
+    (loc: UserLocationSelection) => {
+      setUserLocation(loc);
+      const districtParam =
+        loc.districtCode ||
+        loc.provinceCode ||
+        loc.departmentCode ||
+        loc.district ||
+        loc.province ||
+        loc.department ||
+        "";
+      router.replace(
+        buildUrl(
+          currentSearch,
+          currentParty,
+          districtParam,
+          currentNoSentencias,
+          currentMinWork,
+          currentEducation,
+        ),
+        { scroll: false },
+      );
+    },
+    [
+      router,
+      buildUrl,
+      currentSearch,
+      currentParty,
+      currentNoSentencias,
+      currentMinWork,
+      currentEducation,
+    ],
+  );
+
+  const clearLocation = useCallback(() => {
+    clearSavedUserLocation();
+    setUserLocation(null);
+    router.replace(
+      buildUrl(
+        currentSearch,
+        currentParty,
+        "",
+        currentNoSentencias,
+        currentMinWork,
+        currentEducation,
+      ),
+      { scroll: false },
     );
-  }, []);
+  }, [
+    router,
+    buildUrl,
+    currentSearch,
+    currentParty,
+    currentNoSentencias,
+    currentMinWork,
+    currentEducation,
+  ]);
 
+  const toggleNoSentencias = useCallback(() => {
+    router.replace(
+      buildUrl(
+        currentSearch,
+        currentParty,
+        currentDistrict,
+        !currentNoSentencias,
+        currentMinWork,
+        currentEducation,
+      ),
+      { scroll: false },
+    );
+  }, [
+    router,
+    buildUrl,
+    currentSearch,
+    currentParty,
+    currentDistrict,
+    currentNoSentencias,
+    currentMinWork,
+    currentEducation,
+  ]);
+
+  const setMinWork = useCallback(
+    (val: number) => {
+      router.replace(
+        buildUrl(
+          currentSearch,
+          currentParty,
+          currentDistrict,
+          currentNoSentencias,
+          val,
+          currentEducation,
+        ),
+        { scroll: false },
+      );
+      setOpenWorkPopover(false);
+    },
+    [
+      router,
+      buildUrl,
+      currentSearch,
+      currentParty,
+      currentDistrict,
+      currentNoSentencias,
+      currentEducation,
+    ],
+  );
+
+  const setEducation = useCallback(
+    (val: string) => {
+      router.replace(
+        buildUrl(
+          currentSearch,
+          currentParty,
+          currentDistrict,
+          currentNoSentencias,
+          currentMinWork,
+          val,
+        ),
+        { scroll: false },
+      );
+      setOpenEduPopover(false);
+    },
+    [
+      router,
+      buildUrl,
+      currentSearch,
+      currentParty,
+      currentDistrict,
+      currentNoSentencias,
+      currentMinWork,
+    ],
+  );
+
+  const clearAllFilters = useCallback(() => {
+    clearSavedUserLocation();
+    setUserLocation(null);
+    setLocalSearch("");
+    router.replace(buildUrl("", "", "", false, 0, ""), { scroll: false });
+  }, [router, buildUrl]);
+
+  // ── Mobile handlers ──
   const applyMobile = useCallback(() => {
     router.replace(
-      buildUrl(pendingSearch, pendingParty, pendingDistrict, pendingAlerts),
+      buildUrl(
+        pendingSearch,
+        pendingParty,
+        pendingDistrict,
+        pendingNoSentencias,
+        pendingMinWork,
+        pendingEducation,
+      ),
       { scroll: false },
     );
     setIsDrawerOpen(false);
@@ -508,111 +596,89 @@ export function NewFilterPanel({
     pendingSearch,
     pendingParty,
     pendingDistrict,
-    pendingAlerts,
+    pendingNoSentencias,
+    pendingMinWork,
+    pendingEducation,
   ]);
 
-  // Limpiar solo resetea el estado pendiente — no toca la URL
-  // El usuario aún tiene que presionar "Aplicar" para confirmar
-  const clearPending = useCallback(() => {
-    setPendingSearch("");
-    setPendingParty("");
-    setPendingDistrict("");
-    setPendingAlerts([]);
-  }, []);
-
-  // Datos del partido seleccionado
+  // Datos seleccionados
   const selectedPartyData = currentParty
     ? parties.find((p) => p.id === currentParty)
     : null;
-  const pendingPartyData = pendingParty
-    ? parties.find((p) => p.id === pendingParty)
-    : null;
 
-  // ─────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────
+  const scopeInfo = getScopeLabelForType(
+    currentType,
+    userLocation,
+    currentDistrict,
+  );
 
   return (
     <>
+      {/* Modal de Ubicación (Credenza) */}
+      <LocationModal
+        open={isLocationModalOpen}
+        onOpenChange={setIsLocationModalOpen}
+        distritos={distritos}
+        selectedLocation={userLocation}
+        onSelect={handleLocationSelect}
+        onClear={clearLocation}
+      />
+
       {/* ══════════════════════════════════════════
-          Mobile trigger
+          Mobile trigger bar
       ══════════════════════════════════════════ */}
-      <button
-        onClick={() => setIsDrawerOpen(true)}
-        className={cn(
-          "lg:hidden w-full flex items-center justify-between px-4 py-3 rounded-2xl",
-          "border-2 transition-all duration-200 active:scale-[0.99]",
-          activeCount > 0
-            ? "bg-brand/5 border-brand/30"
-            : "bg-card border-border/50 hover:border-border",
-        )}
-      >
-        <div className="flex items-center gap-2.5">
-          <div
-            className={cn(
-              "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-              activeCount > 0 ? "bg-brand/15" : "bg-muted",
-            )}
-          >
-            <SlidersHorizontal
-              className={cn(
-                "w-3.5 h-3.5",
-                activeCount > 0 ? "text-brand" : "text-muted-foreground",
-              )}
-            />
-          </div>
-          <span
-            className={cn(
-              "text-sm font-semibold",
-              activeCount > 0 ? "text-brand" : "text-foreground/70",
-            )}
-          >
-            {activeCount > 0 ? "Filtros activos" : "Buscar y filtrar"}
-          </span>
-
-          {activeCount > 0 && (
-            <div className="flex items-center gap-1.5 overflow-hidden">
-              {currentSearch && (
-                <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
-                  {currentSearch}
-                </span>
-              )}
-              {selectedPartyData && (
-                <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
-                  {(selectedPartyData.acronym ?? selectedPartyData.name).slice(
-                    0,
-                    3,
-                  )}
-                </span>
-              )}
-              {currentDistrict && showRegion && (
-                <span className="text-[10px] font-semibold text-brand/70 bg-brand/10 px-2 py-0.5 rounded-full truncate max-w-[80px]">
-                  {currentDistrict}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <ChevronDown
+      <div className="lg:hidden flex items-center gap-2">
+        <button
+          onClick={() => setIsDrawerOpen(true)}
           className={cn(
-            "w-4 h-4 flex-shrink-0 transition-colors",
-            activeCount > 0 ? "text-brand/50" : "opacity-30",
+            "flex-1 flex items-center justify-between px-3.5 py-2.5 rounded-xl",
+            "border transition-all duration-200 active:scale-[0.99]",
+            activeCount > 0
+              ? "bg-brand/5 border-brand/40 text-brand"
+              : "bg-card border-border/60 hover:border-border text-foreground/80",
           )}
-        />
-      </button>
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <SlidersHorizontal className="w-4 h-4 text-brand flex-shrink-0" />
+            <span className="text-xs font-bold truncate">
+              {activeCount > 0
+                ? `Filtros activos (${activeCount})`
+                : "Buscar y filtrar"}
+            </span>
+          </div>
+          <ChevronDown className="w-4 h-4 opacity-50 flex-shrink-0" />
+        </button>
+
+        {/* Botón rápido de ubicación en mobile */}
+        <button
+          onClick={() => setIsLocationModalOpen(true)}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all",
+            currentDistrict || userLocation
+              ? "bg-brand/10 border-brand/40 text-brand"
+              : "bg-card border-border/60 text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          <span className="max-w-[100px] truncate">
+            {scopeInfo.activeLocation
+              ? scopeInfo.activeLocation.split(" (")[0]
+              : "Ubicación"}
+          </span>
+        </button>
+      </div>
 
       {/* ══════════════════════════════════════════
-          Desktop controles
+          Desktop Controles
       ══════════════════════════════════════════ */}
       <div className="hidden lg:flex items-center gap-2 flex-wrap">
-        {/* Search */}
+        {/* 1. Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             ref={searchRef}
             type="text"
-            placeholder="Buscar candidato… (Enter)"
+            placeholder="Buscar candidato por nombre…"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             onKeyDown={(e) => {
@@ -621,7 +687,7 @@ export function NewFilterPanel({
                 commitSearch(localSearch);
               }
             }}
-            className="pl-9 pr-16 h-9 text-sm min-w-[240px] bg-background border-border/60 focus-visible:border-brand/50 focus-visible:ring-brand/20"
+            className="pl-9 pr-16 h-9 text-xs min-w-[230px] bg-background border-border/60 focus-visible:border-brand/50 focus-visible:ring-brand/20 rounded-xl"
           />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {localSearch && (
@@ -649,107 +715,45 @@ export function NewFilterPanel({
           </div>
         </div>
 
-        {ALERT_OPTIONS.map((opt) => {
-          const isActive = currentAlerts.includes(opt.value);
-          const colors = colorMap[opt.color];
-          return (
-            <button
-              key={opt.value}
-              onClick={() => toggleAlertDesktop(opt.value)}
-              className={cn(
-                "flex items-center justify-between px-3 py-1.5 rounded-xl border-2",
-                "text-sm font-medium transition-all active:scale-[0.99]",
-                isActive
-                  ? colors.active
-                  : "border-border/50 text-foreground hover:border-border bg-card",
-              )}
-            >
-              <span>{opt.label}</span>
-              {isActive && <X className="ml-4 w-4 h-4 flex-shrink-0" />}
-            </button>
-          );
-        })}
-
-        {/* Región — Credenza */}
-        {showRegion && (
-          <Credenza
-            open={openCredenza === "region"}
-            onOpenChange={(o) => {
-              setOpenCredenza(o ? "region" : null);
-              if (!o) setDesktopSearch("");
-            }}
+        {/* 2. Selector de Ubicación Inteligente */}
+        <div className="flex items-center">
+          <button
+            onClick={() => setIsLocationModalOpen(true)}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all border outline-none",
+              currentDistrict || userLocation
+                ? "bg-brand/10 border-brand/40 text-brand hover:bg-brand/15"
+                : "bg-card border-border/60 text-foreground/80 hover:border-border hover:bg-muted/40",
+            )}
           >
-            <CredenzaTrigger asChild>
-              <button
-                className={cn(
-                  "inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium",
-                  "border transition-all duration-200 outline-none",
-                  currentDistrict
-                    ? "bg-brand/8 border-brand/30 text-brand hover:bg-brand/12"
-                    : "bg-background border-border/60 text-muted-foreground hover:border-border hover:text-foreground",
-                )}
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                <span>
-                  {currentDistrict ? (
-                    <span className="max-w-[120px] truncate font-semibold">
-                      {currentDistrict}
-                    </span>
-                  ) : (
-                    "Región"
-                  )}
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform",
-                    openCredenza === "region" && "rotate-180",
-                  )}
-                />
-              </button>
-            </CredenzaTrigger>
-            <CredenzaContent className="sm:max-w-sm">
-              <CredenzaHeader className="pb-0">
-                <CredenzaTitle>Región donde votas</CredenzaTitle>
-              </CredenzaHeader>
-              <CredenzaBody className="pt-3 flex flex-col gap-3">
-                <SearchBar
-                  value={desktopSearch}
-                  onChange={setDesktopSearch}
-                  placeholder="Buscar región…"
-                />
-                <div className="max-h-[50vh] overflow-y-auto pr-1">
-                  <DistrictList
-                    districts={districtOptions}
-                    selected={currentDistrict}
-                    onSelect={(name) => setDistrict(name)}
-                    filter={desktopSearch}
-                  />
-                </div>
-              </CredenzaBody>
-            </CredenzaContent>
-          </Credenza>
-        )}
+            <MapPin className="w-3.5 h-3.5 text-brand flex-shrink-0" />
+            <span className="max-w-[160px] truncate">{scopeInfo.label}</span>
+            <ChevronDown className="w-3 h-3 opacity-60 ml-0.5" />
+          </button>
+          {(currentDistrict || userLocation) && (
+            <button
+              onClick={clearLocation}
+              title="Quitar filtro de ubicación"
+              className="ml-1 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
-        {/* Partido — Credenza */}
-        <Credenza
-          open={openCredenza === "party"}
-          onOpenChange={(o) => {
-            setOpenCredenza(o ? "party" : null);
-            if (!o) setDesktopSearch("");
-          }}
-        >
+        {/* 3. Selector de Partido */}
+        <Credenza open={openPartyCredenza} onOpenChange={setOpenPartyCredenza}>
           <CredenzaTrigger asChild>
             <button
               className={cn(
-                "inline-flex items-center gap-2 h-9 px-3 rounded-lg text-sm font-medium",
-                "border transition-all duration-200 outline-none",
+                "inline-flex items-center gap-2 h-9 px-3 rounded-xl text-xs font-bold transition-all border outline-none",
                 currentParty
-                  ? "bg-brand/8 border-brand/30 text-brand hover:bg-brand/12"
-                  : "bg-background border-border/60 text-muted-foreground hover:border-border hover:text-foreground",
+                  ? "bg-brand/10 border-brand/40 text-brand hover:bg-brand/15"
+                  : "bg-card border-border/60 text-foreground/80 hover:border-border hover:bg-muted/40",
               )}
             >
               {selectedPartyData?.logo_url ? (
-                <div className="relative w-5 h-5 rounded overflow-hidden bg-white border border-border/30 flex-shrink-0">
+                <div className="relative w-4 h-4 rounded overflow-hidden bg-white border border-border/30 flex-shrink-0">
                   <Image
                     src={selectedPartyData.logo_url}
                     alt={selectedPartyData.name}
@@ -758,447 +762,292 @@ export function NewFilterPanel({
                   />
                 </div>
               ) : null}
-              <span>
-                {currentParty ? (
-                  <span className="max-w-[110px] truncate font-semibold">
-                    {selectedPartyData?.acronym ?? selectedPartyData?.name}
-                  </span>
-                ) : (
-                  "Partido"
-                )}
+              <span className="max-w-[120px] truncate">
+                {selectedPartyData?.acronym ??
+                  selectedPartyData?.name ??
+                  "Partido Político"}
               </span>
-              <ChevronDown
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  openCredenza === "party" && "rotate-180",
-                )}
-              />
+              <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           </CredenzaTrigger>
           <CredenzaContent className="sm:max-w-md">
             <CredenzaHeader className="pb-0">
-              <CredenzaTitle>Partido político</CredenzaTitle>
+              <CredenzaTitle className="text-base font-bold">
+                Organización Política
+              </CredenzaTitle>
             </CredenzaHeader>
             <CredenzaBody className="pt-3 flex flex-col gap-3">
               <SearchBar
-                value={desktopSearch}
-                onChange={setDesktopSearch}
-                placeholder="Buscar partido o siglas…"
+                value={desktopPartySearch}
+                onChange={setDesktopPartySearch}
+                placeholder="Buscar partido o movimiento regional…"
               />
-              <div className="max-h-[55vh] overflow-y-auto pr-1">
+              <div className="max-h-[50vh] overflow-y-auto pr-1">
                 <PartyList
                   parties={parties}
                   selected={currentParty}
-                  onSelect={(p) => setParty(p)}
-                  filter={desktopSearch}
+                  onSelect={setParty}
+                  filter={desktopPartySearch}
                 />
               </div>
             </CredenzaBody>
           </CredenzaContent>
         </Credenza>
 
+        {/* 4. Filtro Ético: "Sin sentencias" */}
+        <button
+          onClick={toggleNoSentencias}
+          className={cn(
+            "inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all border outline-none",
+            currentNoSentencias
+              ? "bg-emerald-500/15 border-emerald-500/60 text-emerald-700 dark:text-emerald-400 shadow-sm"
+              : "bg-card border-border/60 text-foreground/80 hover:border-border hover:bg-muted/40",
+          )}
+          title="Oculta candidatos con sentencias penales o demandas civiles/alimentarias"
+        >
+          {currentNoSentencias ? (
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          ) : (
+            <Shield className="w-3.5 h-3.5 text-muted-foreground" />
+          )}
+          <span>
+            {currentNoSentencias ? "✓ Solo sin sentencias" : "Sin sentencias"}
+          </span>
+        </button>
+
+        {/* 5. Filtro: Experiencia Laboral */}
+        <Popover open={openWorkPopover} onOpenChange={setOpenWorkPopover}>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                "inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all border outline-none",
+                currentMinWork > 0
+                  ? "bg-brand/10 border-brand/40 text-brand"
+                  : "bg-card border-border/60 text-foreground/80 hover:border-border hover:bg-muted/40",
+              )}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>
+                {currentMinWork > 0
+                  ? `${currentMinWork}+ empleos`
+                  : "Experiencia"}
+              </span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-2 rounded-2xl">
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                Experiencia laboral
+              </p>
+              {WORK_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setMinWork(opt.value)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all text-left",
+                    currentMinWork === opt.value
+                      ? "bg-brand/10 text-brand font-bold"
+                      : "hover:bg-muted text-foreground",
+                  )}
+                >
+                  <span>{opt.label}</span>
+                  {currentMinWork === opt.value && (
+                    <Check className="w-3.5 h-3.5 text-brand" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* 6. Filtro: Nivel de Estudios */}
+        <Popover open={openEduPopover} onOpenChange={setOpenEduPopover}>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                "inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-bold transition-all border outline-none",
+                currentEducation
+                  ? "bg-brand/10 border-brand/40 text-brand"
+                  : "bg-card border-border/60 text-foreground/80 hover:border-border hover:bg-muted/40",
+              )}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>
+                {currentEducation
+                  ? EDUCATION_OPTIONS.find((e) => e.value === currentEducation)
+                      ?.label || "Estudios"
+                  : "Estudios"}
+              </span>
+              <ChevronDown className="w-3 h-3 opacity-60" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-60 p-2 rounded-2xl">
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                Nivel académico mínimo
+              </p>
+              {EDUCATION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setEducation(opt.value)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all text-left",
+                    currentEducation === opt.value
+                      ? "bg-brand/10 text-brand font-bold"
+                      : "hover:bg-muted text-foreground",
+                  )}
+                >
+                  <span>{opt.label}</span>
+                  {currentEducation === opt.value && (
+                    <Check className="w-3.5 h-3.5 text-brand" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* 7. Limpiar todo */}
         {activeCount > 0 && (
           <button
-            onClick={clearAll}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm text-muted-foreground hover:text-destructive border border-transparent hover:border-destructive/20 hover:bg-destructive/5 transition-all"
+            onClick={clearAllFilters}
+            className="inline-flex items-center gap-1 h-9 px-2.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors"
           >
-            <X className="h-3.5 w-3.5" />
-            Limpiar
+            <RotateCcw className="w-3 h-3" />
+            Limpiar ({activeCount})
           </button>
         )}
       </div>
 
       {/* ══════════════════════════════════════════
-          Mobile drawer principal
+          Mobile Drawer de Filtros
       ══════════════════════════════════════════ */}
-      <Drawer
-        open={isDrawerOpen}
-        onOpenChange={(o) => {
-          setIsDrawerOpen(o);
-          if (!o) {
-            setSubDrawer(null);
-            setSubSearch("");
-          }
-        }}
-      >
-        <DrawerContent
-          noScroll
-          className="flex flex-col max-h-[92dvh] outline-none"
-        >
-          {/* Header */}
-          <DrawerHeader className="flex-shrink-0 px-5 pt-5 pb-4 border-b border-border/40">
-            <DrawerTitle className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center flex-shrink-0">
-                <SlidersHorizontal className="w-4 h-4 text-brand" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">Filtros</span>
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader className="border-b border-border/40 pb-3">
+            <DrawerTitle className="text-base font-bold flex items-center justify-between">
+              <span>Filtros de Búsqueda</span>
               {activeCount > 0 && (
-                <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[10px] font-bold">
-                  {activeCount}
+                <span className="text-xs font-bold text-brand bg-brand/10 px-2 py-0.5 rounded-full">
+                  {activeCount} activo{activeCount > 1 ? "s" : ""}
                 </span>
-              )}
-
-              {/* Limpiar */}
-              {activeCount > 0 && (
-                <Button
-                  onClick={() => {
-                    clearPending();
-                    router.replace(buildUrl("", "", "", []), { scroll: false });
-                  }}
-                  variant={"outline"}
-                  className="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  Limpiar todo
-                  <X />
-                </Button>
               )}
             </DrawerTitle>
           </DrawerHeader>
 
-          {/* Contenido scrolleable */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {/* Search */}
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-1">
-                Búsqueda
-              </p>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={pendingSearch}
-                  onChange={(e) => setPendingSearch(e.target.value)}
-                  placeholder="Nombre, apellido"
-                  className="h-14 pl-12 pr-10 rounded-2xl text-base bg-muted/40 border-2 border-transparent focus-visible:border-brand/40 focus-visible:ring-0 focus-visible:bg-background transition-all"
-                />
-                {pendingSearch && (
-                  <button
-                    onClick={() => setPendingSearch("")}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Región */}
-            {showRegion && (
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-1">
-                  Región donde votas
-                </p>
-                <button
-                  onClick={() => {
-                    setSubSearch("");
-                    setSubDrawer("region");
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-[0.99]",
-                    pendingDistrict
-                      ? "bg-brand/5 border-brand/25"
-                      : "bg-card border-border/50 hover:border-border",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0",
-                      pendingDistrict ? "bg-brand/15" : "bg-muted",
-                    )}
-                  >
-                    <MapPin
-                      className={cn(
-                        "w-4 h-4",
-                        pendingDistrict
-                          ? "text-brand"
-                          : "text-muted-foreground",
-                      )}
-                    />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p
-                      className={cn(
-                        "text-[13px] font-semibold leading-tight",
-                        pendingDistrict ? "text-brand" : "text-foreground",
-                      )}
-                    >
-                      {pendingDistrict || "Selecciona tu región"}
-                    </p>
-                    {!pendingDistrict && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {districtOptions.length} regiones disponibles
-                      </p>
-                    )}
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
-                </button>
-              </div>
-            )}
-
-            {/* Partido */}
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest px-1">
-                Partido político
-              </p>
+          <div className="p-5 flex-1 overflow-y-auto space-y-5 text-sm">
+            {/* 1. Ubicación */}
+            <div>
+              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
+                Ubicación de Votación
+              </label>
               <button
                 onClick={() => {
-                  setSubSearch("");
-                  setSubDrawer("party");
+                  setIsDrawerOpen(false);
+                  setTimeout(() => setIsLocationModalOpen(true), 200);
                 }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-[0.99]",
-                  pendingParty
-                    ? "bg-brand/5 border-brand/25"
-                    : "bg-card border-border/50 hover:border-border",
-                )}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 font-semibold text-left"
               >
-                <div
-                  className={cn(
-                    "w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 border flex items-center justify-center",
-                    pendingParty
-                      ? "border-brand/20"
-                      : "border-border/40 bg-muted",
-                  )}
-                  style={{
-                    backgroundColor: pendingPartyData?.logo_url
-                      ? "white"
-                      : (pendingPartyData?.color_hex ?? undefined),
-                  }}
-                >
-                  {pendingPartyData?.logo_url ? (
-                    <Image
-                      src={pendingPartyData.logo_url}
-                      alt={pendingPartyData.name}
-                      width={36}
-                      height={36}
-                      className="object-contain p-0.5"
-                    />
-                  ) : pendingPartyData?.color_hex ? (
-                    <span className="text-[10px] font-black text-white leading-none">
-                      {(
-                        pendingPartyData.acronym ?? pendingPartyData.name
-                      ).slice(0, 3)}
-                    </span>
-                  ) : (
-                    <SlidersHorizontal className="w-4 h-4 text-muted-foreground/50" />
-                  )}
+                <div className="flex items-center gap-2 truncate">
+                  <MapPin className="w-4 h-4 text-brand flex-shrink-0" />
+                  <span className="truncate">
+                    {userLocation?.fullLabel ||
+                      userLocation?.district ||
+                      userLocation?.department ||
+                      "Elegir región, provincia o distrito"}
+                  </span>
                 </div>
-
-                <div className="flex-1 text-left min-w-0">
-                  <p
-                    className={cn(
-                      "text-[13px] font-semibold leading-tight truncate",
-                      pendingParty ? "text-brand" : "text-foreground",
-                    )}
-                  >
-                    {pendingPartyData?.name ?? "Selecciona un partido"}
-                  </p>
-                  {!pendingParty && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {parties.length} partidos disponibles
-                    </p>
-                  )}
-                  {pendingPartyData?.acronym && pendingParty && (
-                    <p className="text-xs text-brand/60 mt-0.5">
-                      {pendingPartyData.acronym}
-                    </p>
-                  )}
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground/40 flex-shrink-0" />
+                <ChevronDown className="w-4 h-4 opacity-50 flex-shrink-0" />
               </button>
             </div>
 
-            {/* Alertas */}
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold text-brand uppercase tracking-widest px-1">
-                ¿A quiénes prefieres excluir?
-              </p>
-              <div className="flex flex-col gap-1.5">
-                {ALERT_OPTIONS.map((opt) => {
-                  const isActive = pendingAlerts.includes(opt.value);
-                  const colors = colorMap[opt.color];
-                  return (
-                    <button
-                      key={opt.value}
-                      onClick={() => toggleAlertMobile(opt.value)}
-                      className={cn(
-                        "flex items-center justify-between px-3 py-2.5 rounded-xl border-2",
-                        "text-sm font-medium transition-all active:scale-[0.99]",
-                        isActive
-                          ? colors.active
-                          : "border-border/50 text-foreground hover:border-border bg-card",
-                      )}
-                    >
-                      <span>{opt.label}</span>
-                      {isActive && <X className="w-4 h-4 flex-shrink-0" />}
-                    </button>
-                  );
-                })}
+            {/* 2. Filtro Ético */}
+            <div className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-card">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Solo sin sentencias
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Oculta candidatos con antecedentes penales o civiles
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={pendingNoSentencias}
+                onChange={(e) => setPendingNoSentencias(e.target.checked)}
+                className="size-5 accent-emerald-600 rounded cursor-pointer"
+              />
+            </div>
+
+            {/* 3. Experiencia Laboral */}
+            <div>
+              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
+                💼 Experiencia Laboral
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {WORK_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setPendingMinWork(opt.value)}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold text-center transition-all",
+                      pendingMinWork === opt.value
+                        ? "bg-brand/10 border-brand text-brand"
+                        : "border-border/60 bg-card text-muted-foreground",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Nivel de Estudios */}
+            <div>
+              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
+                🎓 Nivel Académico
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {EDUCATION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setPendingEducation(opt.value)}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-xs font-bold text-center transition-all",
+                      pendingEducation === opt.value
+                        ? "bg-brand/10 border-brand text-brand"
+                        : "border-border/60 bg-card text-muted-foreground",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* ── Footer ─────────────────────────────
-              Lógica nueva:
-              - hasChanges  → habilita "Aplicar"
-              - !hasChanges → solo "Cerrar"
-              - pendingHasFilters → muestra "Limpiar" como secundario
-          ─────────────────────────────────────── */}
-          <div className="flex-shrink-0 px-4 pt-3 pb-8 border-t border-border/40 bg-background space-y-2">
-            <Button
+          <div className="p-4 border-t border-border/40 bg-muted/10 flex items-center gap-2">
+            <button
+              onClick={() => {
+                setPendingSearch("");
+                setPendingParty("");
+                setPendingDistrict("");
+                setPendingNoSentencias(false);
+                setPendingMinWork(0);
+                setPendingEducation("");
+              }}
+              className="flex-1 py-2.5 rounded-xl border border-border/60 text-xs font-bold text-muted-foreground hover:bg-muted text-center"
+            >
+              Restablecer
+            </button>
+            <button
               onClick={applyMobile}
-              className="w-full h-12 rounded-xl text-base font-bold bg-brand text-white shadow-lg shadow-brand/20 hover:bg-brand/90 active:scale-[0.98] transition-all"
+              className="flex-1 py-2.5 rounded-xl bg-brand text-white text-xs font-bold text-center hover:bg-brand/90"
             >
-              {`Aplicar filtros (${pendingActiveCount})`}
-            </Button>
-            <Button
-              onClick={() => setIsDrawerOpen(false)}
-              variant={"outline"}
-              className="w-full h-12 rounded-xl text-foreground text-base transition-all active:scale-[0.98]"
-            >
-              Cerrar
-            </Button>
-          </div>
-        </DrawerContent>
-      </Drawer>
-
-      {/* ══════════════════════════════════════════
-          Sub-drawer: Región
-      ══════════════════════════════════════════ */}
-      <Drawer
-        open={subDrawer === "region"}
-        onOpenChange={(o) => {
-          if (!o) {
-            setSubDrawer(null);
-            setSubSearch("");
-          }
-        }}
-      >
-        <DrawerContent
-          noScroll
-          className="flex flex-col max-h-[88dvh] outline-none"
-        >
-          <DrawerHeader className="hidden">
-            <DrawerTitle />
-          </DrawerHeader>
-
-          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-4 border-b border-border/40">
-            <button
-              onClick={() => {
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
+              Aplicar filtros
             </button>
-            <div className="flex-1">
-              <p className="text-base font-bold">Región donde votas</p>
-              {pendingDistrict && (
-                <p className="text-xs text-brand mt-0.5">
-                  {pendingDistrict} seleccionado
-                </p>
-              )}
-            </div>
-            {pendingDistrict && (
-              <button
-                onClick={() => setPendingDistrict("")}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded-lg hover:bg-destructive/5"
-              >
-                Quitar
-              </button>
-            )}
-          </div>
-
-          <div className="flex-shrink-0 px-4 py-3 border-b border-border/40">
-            <SearchBar
-              value={subSearch}
-              onChange={setSubSearch}
-              placeholder="Buscar región…"
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-3">
-            <DistrictList
-              districts={districtOptions}
-              selected={pendingDistrict}
-              onSelect={(name) => {
-                setPendingDistrict(name);
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              filter={subSearch}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
-
-      {/* ══════════════════════════════════════════
-          Sub-drawer: Partido
-      ══════════════════════════════════════════ */}
-      <Drawer
-        open={subDrawer === "party"}
-        onOpenChange={(o) => {
-          if (!o) {
-            setSubDrawer(null);
-            setSubSearch("");
-          }
-        }}
-      >
-        <DrawerContent
-          noScroll
-          className="flex flex-col max-h-[88dvh] outline-none"
-        >
-          <DrawerHeader className="hidden">
-            <DrawerTitle />
-          </DrawerHeader>
-
-          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-4 border-b border-border/40">
-            <button
-              onClick={() => {
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div className="flex-1">
-              <p className="text-base font-bold">Partido político</p>
-              {pendingPartyData && (
-                <p className="text-xs text-brand mt-0.5 truncate">
-                  {pendingPartyData?.name}
-                </p>
-              )}
-            </div>
-            {pendingParty && (
-              <button
-                onClick={() => setPendingParty("")}
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors px-2 py-1 rounded-lg hover:bg-destructive/5"
-              >
-                Quitar
-              </button>
-            )}
-          </div>
-
-          <div className="flex-shrink-0 px-4 py-3 border-b border-border/40">
-            <SearchBar
-              value={subSearch}
-              onChange={setSubSearch}
-              placeholder="Buscar partido o siglas…"
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-3">
-            <PartyList
-              parties={parties}
-              selected={pendingParty}
-              onSelect={(name) => {
-                setPendingParty(name);
-                setSubDrawer(null);
-                setSubSearch("");
-              }}
-              filter={subSearch}
-            />
           </div>
         </DrawerContent>
       </Drawer>

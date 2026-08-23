@@ -35,12 +35,8 @@ export function TypeBar({ currentType }: TypeBarProps) {
     setOpen(false);
     if (value === currentType) return;
 
-    const next = new URLSearchParams();
+    const next = new URLSearchParams(searchParams.toString());
     next.set("type", value);
-    const search = searchParams.get("search");
-    const parties = searchParams.get("parties");
-    if (search) next.set("search", search);
-    if (parties) next.set("parties", parties);
 
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   };

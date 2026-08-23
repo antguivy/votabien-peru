@@ -31,6 +31,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "stovotoinformadodev.blob.core.windows.net",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "mpesije.jne.gob.pe",
         pathname: "/**",
       },
