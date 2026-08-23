@@ -1,0 +1,107 @@
+// ==========================================
+// 1. AUDIENCIAS OBJETIVO (100% Dinámico)
+// ==========================================
+model triviaaudience {
+  id          String   @id @default(cuid()) @db.VarChar
+  slug        String   @unique @db.VarChar(100) // ej: "colegios", "universitarios", "ciudadanos", "talleres"
+  name        String   @db.VarChar(150)         // ej: "Escolares / Colegios"
+  description String?
+  icon        String?  @db.VarChar(50)          // ej: "GraduationCap", "BookOpen", "Vote", "Users"
+  emoji       String?  @db.VarChar(10)          // ej: "🎒", "🎓", "🗳️", "👥"
+  color       String?  @db.VarChar(30)          // ej: "#3b82f6", "#10b981", "#f59e0b"
+  is_active   Boolean  @default(true)
+  order_index Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  topics      triviatopic_audience[]
+  questions   triviagame_audience[]
+
+  @@index([is_active])
+  @@index([order_index])
+}
+
+// ==========================================
+// 2. TEMAS / EJES FORMATIVOS
+// ==========================================
+model triviatopic {
+  id          String   @id @default(cuid()) @db.VarChar
+  slug        String   @unique @db.VarChar(100) // ej: "constitucion-derechos", "poderes-estado", "elecciones-2026"
+  title       String   @db.VarChar(200)         // ej: "Constitución y Derechos Ciudadanos"
+  description String?
+  icon        String?  @db.VarChar(50)          // ej: "Scale", "Landmark", "Vote", "Quote"
+  badge_color String?  @db.VarChar(30)          // ej: "#d97706", "#2563eb"
+  banner_url  String?
+  is_active   Boolean  @default(true)
+  order_index Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  audiences   triviatopic_audience[]
+  questions   triviagame[]
+
+  @@index([is_active])
+  @@index([order_index])
+}
+
+// Tabla intermedia N:M entre Temas y Audiencias
+model triviatopic_audience {
+  topic_id    String         @db.VarChar
+  audience_id String         @db.VarChar
+  topic       triviatopic    @relation(fields: [topic_id], references: [id], onDelete: Cascade)
+  audience    triviaaudience @relation(fields: [audience_id], references: [id], onDelete: Cascade)
+
+  @@id([topic_id, audience_id])
+}
+
+// ==========================================
+// 3. PREGUNTAS DE TRIVIA (Polimórficas)
+// ==========================================
+model triviagame {
+  id                 BigInt          @id @default(autoincrement())
+  topic_id           String?         @db.VarChar
+  quote              String          // Pregunta, frase o enunciado
+  title              String?         // Título descriptivo opcional
+  category           String?         // "CONSTITUCION", "PODERES", "PROPUESTA", "POLEMICO", "HISTORIA", etc.
+  difficulty         String          @default("FACIL") // "FACIL", "MEDIO", "DIFICIL"
+  
+  // Tipo de presentación visual de las opciones:
+  // "TEXT_ONLY" | "PERSON" | "PARTY" | "INSTITUTION" | "TRUE_FALSE" | "IMAGE_CARD"
+  display_type       String          @default("TEXT_ONLY") @db.VarChar(30)
+  
+  correct_answer_id  String          @db.VarChar // ID agnóstico de la respuesta correcta
+  options            Json            @db.Json    // Array de opciones [{ option_id, name, subtitle?, image_url? }]
+  
+  // Relaciones políticas opcionales (para retrocompatibilidad y búsqueda rápida)
+  person_id          String?         @db.VarChar
+  political_party_id String?         @db.VarChar
+
+  global_index       BigInt          @default(0) // Orden dentro del nivel o tema
+  explanation        String?         // Explicación pedagógica contextual
+  source_url         String?         // Enlace a fuente verificada o ley
+  image_url          String?         // Imagen ilustrativa de la pregunta (opcional)
+  is_published       Boolean         @default(true)
+
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+
+  topic              triviatopic?    @relation(fields: [topic_id], references: [id], onDelete: SetNull)
+  person             person?         @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  politicalparty     politicalparty? @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audiences          triviagame_audience[]
+
+  @@index([topic_id])
+  @@index([difficulty])
+  @@index([global_index])
+  @@index([is_published])
+}
+
+// Tabla intermedia N:M entre Preguntas y Audiencias específicas
+model triviagame_audience {
+  question_id BigInt         
+  audience_id String         @db.VarChar
+  question    triviagame     @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  audience    triviaaudience @relation(fields: [audience_id], references: [id], onDelete: Cascade)
+
+  @@id([question_id, audience_id])
+}

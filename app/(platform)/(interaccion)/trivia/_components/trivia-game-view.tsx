@@ -2,7 +2,11 @@
 
 import { getRegionByLevel } from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
-import { TriviaOption, TriviaQuestion } from "@/interfaces/game-types";
+import {
+  TriviaOption,
+  TriviaQuestion,
+  OptionDisplayType,
+} from "@/interfaces/game-types";
 import {
   BookOpen,
   Check,
@@ -13,6 +17,8 @@ import {
   Share2,
   X,
   Zap,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { IncaArcadeCard } from "@/components/game/inca-arcade-card";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,20 +28,23 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 // ── Constants ─────────────────────────────────────────────────────────────
-const SECONDS_PER_QUESTION = 40;
+const SECONDS_PER_QUESTION = 30;
 const EXPLANATION_COLLAPSE_THRESHOLD = 120;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function calcStars(correct: number, total: number): 0 | 1 | 2 | 3 {
+  if (total === 0) return 0;
   const r = correct / total;
   if (r === 1) return 3;
   if (r >= 0.75) return 2;
   if (r >= 0.5) return 1;
   return 0;
 }
+
 function calcXp(stars: number): number {
   return 50 + stars * 25;
 }
+
 function scoreForAnswer(timeLeft: number, correct: boolean): number {
   if (!correct) return 0;
   return 100 + Math.round((timeLeft / SECONDS_PER_QUESTION) * 100);
@@ -58,35 +67,38 @@ function TimerBar({ timeLeft, total }: { timeLeft: number; total: number }) {
   );
 }
 
-// ── Option card ───────────────────────────────────────────────────────────
+// ── Option card polimórfica ───────────────────────────────────────────────
 function OptionCard({
   option,
   revealed,
   selectedId,
   correctId,
+  displayType = "TEXT_ONLY",
   onSelect,
 }: {
   option: TriviaOption;
   revealed: boolean;
   selectedId: string | null;
   correctId: string;
+  displayType?: OptionDisplayType;
   onSelect: (id: string) => void;
 }) {
   const isSelected = selectedId === option.option_id;
   const isCorrect = option.option_id === correctId;
 
-  let container = "border-white/40 bg-white/95";
-  let nameClass = "text-gray-800";
+  let container =
+    "border-white/40 bg-white/95 dark:bg-slate-900/90 dark:border-white/20";
+  let nameClass = "text-gray-800 dark:text-gray-100";
   let photoRing = "";
   let badge: React.ReactNode = null;
 
   if (revealed) {
     if (isCorrect) {
-      container = "border-emerald-400 bg-emerald-50";
-      nameClass = "text-emerald-800 font-black";
+      container = "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40";
+      nameClass = "text-emerald-800 dark:text-emerald-300 font-black";
       photoRing = "ring-2 ring-emerald-400";
       badge = (
-        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg ring-2 ring-white z-10">
+        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg ring-2 ring-white z-10 animate-in zoom-in-50 duration-150">
           <svg viewBox="0 0 12 12" className="w-3.5 h-3.5" fill="none">
             <path
               d="M2 6l3 3 5-5"
@@ -99,11 +111,11 @@ function OptionCard({
         </span>
       );
     } else if (isSelected) {
-      container = "border-red-400 bg-red-50";
-      nameClass = "text-red-800";
+      container = "border-red-400 bg-red-50 dark:bg-red-950/40";
+      nameClass = "text-red-800 dark:text-red-300";
       photoRing = "ring-2 ring-red-400";
       badge = (
-        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shadow-lg ring-2 ring-white z-10">
+        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shadow-lg ring-2 ring-white z-10 animate-in zoom-in-50 duration-150">
           <svg viewBox="0 0 12 12" className="w-4 h-4" fill="none">
             <path
               d="M3 3l6 6M9 3l-6 6"
@@ -115,41 +127,67 @@ function OptionCard({
         </span>
       );
     } else {
-      container = "border-white/20 bg-white/40 opacity-50";
-      nameClass = "text-gray-600";
+      container = "border-white/15 bg-white/40 dark:bg-slate-900/30 opacity-40";
+      nameClass = "text-gray-600 dark:text-gray-400";
     }
   }
+
+  const isTrueFalse = displayType === "TRUE_FALSE";
+  const isPersonOrParty =
+    displayType === "PERSON" ||
+    displayType === "PARTY" ||
+    displayType === "INSTITUTION";
 
   return (
     <button
       type="button"
       disabled={revealed}
       onClick={() => onSelect(option.option_id)}
-      className={`relative flex flex-row items-center gap-2.5 px-2.5 py-2 rounded-2xl border-2 transition-all duration-200 select-none text-left
+      className={`relative flex items-center gap-2.5 p-3 rounded-2xl border-2 transition-all duration-200 select-none text-left min-h-[58px]
         ${container}
-        ${!revealed ? "active:scale-[0.97] hover:bg-white hover:border-white/70 cursor-pointer shadow-md" : "cursor-default"}
+        ${!revealed ? "active:scale-[0.97] hover:bg-white hover:border-white/80 dark:hover:bg-slate-900 cursor-pointer shadow-md" : "cursor-default"}
       `}
     >
       {badge}
-      <div
-        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 transition-all ${photoRing}`}
-      >
-        {option.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
+
+      {/* Letra de Opción o Ícono */}
+      {isTrueFalse ? (
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-black/10 dark:bg-white/10">
+          {option.name.toLowerCase().includes("verdadero") ? (
+            <CheckCircle2 size={18} className="text-emerald-600" />
+          ) : (
+            <XCircle size={18} className="text-rose-600" />
+          )}
+        </div>
+      ) : isPersonOrParty && option.image_url ? (
+        <div
+          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 transition-all ${photoRing}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={option.image_url}
             alt={option.name}
             className="w-full h-full object-contain"
           />
-        ) : (
-          <span className="text-xl">👤</span>
+        </div>
+      ) : (
+        <span className="w-7 h-7 rounded-full bg-black/10 dark:bg-white/15 flex items-center justify-center text-xs font-black flex-shrink-0 text-foreground">
+          {option.letter || "•"}
+        </span>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p
+          className={`text-xs sm:text-[13px] font-bold leading-snug line-clamp-3 ${nameClass}`}
+        >
+          {option.name}
+        </p>
+        {option.subtitle && (
+          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+            {option.subtitle}
+          </p>
         )}
       </div>
-      <p
-        className={`text-[10px] sm:text-[11px] font-bold leading-tight uppercase tracking-wide line-clamp-3 flex-1 ${nameClass}`}
-      >
-        {option.name}
-      </p>
     </button>
   );
 }
@@ -214,32 +252,23 @@ function ResultsScreen({
 
   const isPerfect = stars === 3;
 
-  // Pick a "featured" question — prefer one with an image
+  // Pick a "featured" question
   const featuredQuestion = useMemo(() => {
     const withImg = questions.filter((q) => q.options.some((o) => o.image_url));
     return withImg[0] ?? questions[0];
   }, [questions]);
-
-  // Detect mobile
-  const isMobile =
-    typeof navigator !== "undefined" &&
-    /android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
 
   const handleShare = async () => {
     if (!cardRef.current) return;
     setSharing(true);
 
     try {
-      // 1. Volvemos a importar html-to-image
       const { toPng } = await import("html-to-image");
 
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: "#1c1917",
-        // 2. Restauramos el filtro
         filter: (node) => {
-          // Excluir elementos <link> y <style> del documento principal
-          // Esto evita que lea el CSS global donde están los colores no soportados
           if (node.tagName === "LINK" || node.tagName === "STYLE") return false;
           return true;
         },
@@ -251,15 +280,15 @@ function ResultsScreen({
         type: "image/png",
       });
 
-      const isMobile = /android|iphone|ipad|ipod/i.test(
-        navigator.userAgent || "",
-      );
+      const isMobile =
+        typeof navigator !== "undefined" &&
+        /android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
 
       if (isMobile && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: "¡Completé un nivel en VotaBien Perú!",
-          text: `Obtuve ${score} puntos. ¿Sabes más que yo sobre política peruana? 🇵🇪`,
+          title: "¡Completé un desafío en VotaBien Perú!",
+          text: `Obtuve ${score} puntos en la Trivia Cívica de VotaBien. ¿Te animas a superarme? 🇵🇪`,
         });
       } else {
         const url = URL.createObjectURL(blob);
@@ -278,12 +307,16 @@ function ResultsScreen({
     }
   };
 
+  const isMobile =
+    typeof navigator !== "undefined" &&
+    /android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
+
   return (
     <div
       className="flex flex-col h-full overflow-y-auto px-5 py-6 gap-5 animate-in fade-in duration-300"
       style={{ scrollbarWidth: "none" }}
     >
-      {/* Arcade share card — always visible, share button disabled if not perfect */}
+      {/* Arcade share card */}
       <div className="flex flex-col gap-3 flex-shrink-0">
         <div
           style={{ width: "100%", display: "flex", justifyContent: "center" }}
@@ -303,12 +336,12 @@ function ResultsScreen({
           type="button"
           onClick={handleShare}
           disabled={!isPerfect || sharing}
-          className="w-auto py-3.5 rounded-2xl font-extrabold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-auto py-3.5 rounded-2xl font-extrabold text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
           style={{ backgroundColor: "#fbbf24", color: "#000" }}
         >
           <Share2 size={16} />
           {!isPerfect
-            ? "Solo disponible con puntaje perfecto"
+            ? "Disponible con puntaje perfecto"
             : sharing
               ? "Preparando tarjeta..."
               : isMobile
@@ -321,7 +354,7 @@ function ResultsScreen({
       <button
         type="button"
         onClick={onExit}
-        className="w-full py-4 rounded-2xl font-extrabold text-white text-base uppercase tracking-widest shadow-md transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
+        className="w-full py-4 rounded-2xl font-extrabold text-white text-base uppercase tracking-widest shadow-lg transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
         style={{ backgroundColor: regionColor }}
       >
         {stars >= 2 ? "¡Continuar!" : "Volver al mapa"}
@@ -344,8 +377,12 @@ function VideoSourceLink({ url }: { url: string }) {
       <VideoDialog
         url={url}
         trigger={
-          <Button type="button" className="relative group overflow-visible">
-            <Play size={13} className="fill-primary animate-bounce" />
+          <Button
+            type="button"
+            size="sm"
+            className="relative group overflow-visible text-xs"
+          >
+            <Play size={12} className="fill-primary animate-bounce mr-1" />
             Ver video
           </Button>
         }
@@ -358,10 +395,10 @@ function VideoSourceLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-muted-foreground/40"
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-muted-foreground/40"
     >
-      Ver fuente de la noticia
-      <ExternalLink size={12} />
+      Ver fuente oficial
+      <ExternalLink size={11} />
     </Link>
   );
 }
@@ -378,7 +415,8 @@ export function TriviaGameView({
   onExit,
   onComplete,
 }: TriviaGameViewProps) {
-  const { getLevels, completeLevel, rawQuestions } = useGameStore();
+  const { getLevels, completeLevel, rawQuestions, currentTopic } =
+    useGameStore();
 
   const level = useMemo(
     () => getLevels().find((l) => l.id === levelId) ?? null,
@@ -412,6 +450,7 @@ export function TriviaGameView({
       timerRef.current = null;
     }
   };
+
   // ── Reveal ───────────────────────────────────────────────────────────────
   const doReveal = (chosenId: string | null) => {
     stopTimer();
@@ -461,7 +500,7 @@ export function TriviaGameView({
       const correct = answers.filter(Boolean).length;
       const stars = calcStars(correct, questions.length);
       const xp = calcXp(stars);
-      completeLevel(levelId, stars, xp);
+      completeLevel(levelId, stars, xp, currentTopic?.slug);
       onComplete?.();
       setPhase("results");
     } else {
@@ -490,8 +529,8 @@ export function TriviaGameView({
   const feedbackLabel = isTimeout
     ? "¡Se acabó el tiempo!"
     : isCorrectAns
-      ? "¡Correcto!"
-      : "Incorrecto";
+      ? "¡Respuesta Correcta!"
+      : "Respuesta Incorrecta";
   const feedbackTextClass = isTimeout
     ? "text-muted-foreground"
     : isCorrectAns
@@ -501,9 +540,7 @@ export function TriviaGameView({
   return (
     <div
       className={cn(
-        // Mobile — full screen
         "fixed inset-0 z-[40] flex flex-col",
-        // Desktop — panel centrado respetando navbar
         "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden",
       )}
       style={{
@@ -524,7 +561,7 @@ export function TriviaGameView({
         />
       ) : (
         <div className="flex flex-col h-full">
-          {/* ── Header ── */}
+          {/* Header */}
           <div
             className="flex-shrink-0 px-3 sm:px-4 flex flex-col gap-2"
             style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top))" }}
@@ -545,7 +582,7 @@ export function TriviaGameView({
                   {currentIdx + 1} / {questions.length}
                 </span>
                 {streak >= 2 && (
-                  <div className="flex items-center gap-1 bg-amber-500/25 border border-amber-400/40 px-2 py-0.5 rounded-full animate-in fade-in duration-200">
+                  <div className="flex items-center gap-1 bg-amber-500/30 border border-amber-400/50 px-2 py-0.5 rounded-full animate-in fade-in duration-200">
                     <Zap size={11} fill="#fbbf24" className="text-amber-400" />
                     <span className="text-amber-300 text-xs font-black">
                       {streak}
@@ -571,27 +608,34 @@ export function TriviaGameView({
             <TimerBar timeLeft={timeLeft} total={SECONDS_PER_QUESTION} />
           </div>
 
-          {/* ── Scrollable body ── */}
+          {/* Scrollable body */}
           <div
             className="flex-1 overflow-y-auto px-3 sm:px-4 pt-3 pb-2 flex flex-col gap-2.5 sm:gap-3"
             style={{ scrollbarWidth: "none" }}
           >
             {/* Question card */}
-            <div className="bg-black/25 backdrop-blur-md rounded-2xl p-3.5 sm:p-4 border border-white/15 flex-shrink-0 shadow-lg">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white/90 text-[9px] font-black uppercase tracking-widest mb-2">
-                {question?.category}
+            <div className="bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex-shrink-0 shadow-lg">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[9px] font-black uppercase tracking-widest mb-2">
+                {question?.category || "CÍVICA"}
               </span>
               <p
-                className="text-white font-semibold text-sm sm:text-[15px] leading-snug text-center"
-                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}
+                className="text-white font-semibold text-sm sm:text-base leading-snug text-center"
+                style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}
               >
                 ❝{question?.quote}❞
               </p>
             </div>
 
-            {/* Options */}
+            {/* Options grid */}
             {question && (
-              <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+              <div
+                className={cn(
+                  "grid gap-2 flex-shrink-0",
+                  question.display_type === "TRUE_FALSE"
+                    ? "grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-2",
+                )}
+              >
                 {question.options.map((opt: TriviaOption) => (
                   <OptionCard
                     key={opt.option_id}
@@ -599,6 +643,7 @@ export function TriviaGameView({
                     revealed={revealed}
                     selectedId={selectedId}
                     correctId={question.correct_answer_id}
+                    displayType={question.display_type}
                     onSelect={handleSelect}
                   />
                 ))}
@@ -609,11 +654,11 @@ export function TriviaGameView({
             {revealed && (
               <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-2xl ring-1 ring-black/10 animate-in slide-in-from-bottom-3 duration-200 flex-shrink-0">
                 <div
-                  className="h-1 w-full"
+                  className="h-1.5 w-full"
                   style={{ backgroundColor: feedbackColor }}
                 />
                 <div className="p-3.5 sm:p-4 flex flex-col gap-3">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm"
@@ -630,7 +675,7 @@ export function TriviaGameView({
                         )}
                       </div>
                       <span
-                        className={`font-black text-base ${feedbackTextClass}`}
+                        className={`font-black text-sm sm:text-base ${feedbackTextClass}`}
                       >
                         {feedbackLabel}
                       </span>
@@ -643,10 +688,10 @@ export function TriviaGameView({
 
                   {question?.explanation && (
                     <div className="bg-muted/70 rounded-xl p-3">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <BookOpen size={11} className="text-muted-foreground" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                          Contexto
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <BookOpen size={12} className="text-muted-foreground" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          Explicación
                         </span>
                       </div>
                       <Explanation text={question.explanation} />
@@ -659,10 +704,10 @@ export function TriviaGameView({
             <div className="flex-shrink-0 h-1" />
           </div>
 
-          {/* ── Sticky next button ── */}
+          {/* Sticky next button */}
           {revealed && (
             <div
-              className="flex-shrink-0 px-3 sm:px-4 pt-2 border-t border-white/10 bg-black/15 backdrop-blur-md animate-in slide-in-from-bottom-1 duration-150"
+              className="flex-shrink-0 px-3 sm:px-4 pt-2 border-t border-white/10 bg-black/20 backdrop-blur-md animate-in slide-in-from-bottom-1 duration-150"
               style={{
                 paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
               }}

@@ -1,23 +1,30 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { questionsService } from "@/services/questions";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import TriviaMapClient from "./_components/trivia-map-client";
-import UnderConstruction from "@/components/under-construction";
+import { TriviaHubClient } from "./_components/trivia-hub-client";
+import {
+  getPlayableTopics,
+  getPlayableAudiences,
+  getPlayableQuestions,
+} from "./_lib/data";
+
+export const metadata = {
+  title: "Trivia Cívica & Electoral | VotaBien Perú",
+  description:
+    "Aprende sobre la Constitución, instituciones democráticas y elecciones de manera interactiva.",
+};
 
 export default async function TriviaPage() {
-  // const questions = await questionsService.getQuestions();
+  const [topics, audiences, questions] = await Promise.all([
+    getPlayableTopics(),
+    getPlayableAudiences(),
+    getPlayableQuestions(),
+  ]);
 
   return (
     <ContentPlatformLayout>
-      {/* <div className="flex justify-center bg-background h-dvh lg:h-[calc(100dvh-56px)]">
-        <div className="w-full" style={{ maxWidth: 480 }}>
-          <TriviaMapClient initialQuestions={questions} />
-        </div>
-      </div> */}
-      <UnderConstruction
-        title="La herramienta ya no está disponible"
-        description="VotaBien Perú"
+      <TriviaHubClient
+        initialTopics={topics}
+        initialAudiences={audiences}
+        initialQuestions={questions}
       />
     </ContentPlatformLayout>
   );

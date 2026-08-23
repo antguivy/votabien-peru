@@ -10,101 +10,226 @@ import {
   GameRegion,
   LevelProgress,
   TriviaQuestion,
+  GamePlayMode,
 } from "@/interfaces/game-types";
+import { TriviaTopic, TriviaAudience } from "@/interfaces/trivia";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-interface GameState {
-  rawQuestions: TriviaQuestion[];
-  levelsProgress: Record<number, LevelProgress>;
-  userXp: number;
+export interface TopicProgress {
   highestUnlockedLevel: number;
+  levelsProgress: Record<number, LevelProgress>;
+  topicXp: number;
+  quizzesCompleted: number;
+}
 
-  getLevels: () => GameLevel[];
-  getCurrentRegion: () => GameRegion;
+interface GameState {
+  currentTopic: TriviaTopic | null;
+  currentAudience: TriviaAudience | null;
+  currentMode: GamePlayMode;
 
+  rawQuestions: TriviaQuestion[];
+  userXp: number;
+
+  // Progreso particionado por slug de tema (o "general" como default)
+  progressByTopic: Record<string, TopicProgress>;
+
+  // Getters
+  getLevels: (topicSlug?: string) => GameLevel[];
+  getCurrentRegion: (topicSlug?: string) => GameRegion;
+  getTopicProgress: (topicSlug?: string) => TopicProgress;
+  highestUnlockedLevel: number;
+  levelsProgress: Record<number, LevelProgress>;
+
+  // Setters
+  setCurrentTopic: (topic: TriviaTopic | null) => void;
+  setCurrentAudience: (audience: TriviaAudience | null) => void;
+  setMode: (mode: GamePlayMode) => void;
   setQuestions: (questions: TriviaQuestion[]) => void;
+
   completeLevel: (
     levelId: number,
     stars: 0 | 1 | 2 | 3,
     xpGained: number,
+    topicSlug?: string,
   ) => void;
-  resetProgress: () => void;
+
+  recordQuizResult: (
+    score: number,
+    correctCount: number,
+    total: number,
+    topicSlug?: string,
+  ) => void;
+
+  resetProgress: (topicSlug?: string) => void;
 }
+
+const DEFAULT_TOPIC_PROGRESS: TopicProgress = {
+  highestUnlockedLevel: 1,
+  levelsProgress: {},
+  topicXp: 0,
+  quizzesCompleted: 0,
+};
 
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
+      currentTopic: null,
+      currentAudience: null,
+      currentMode: "MAP",
       rawQuestions: [],
-      levelsProgress: {},
-      highestUnlockedLevel: 1,
       userXp: 0,
+      progressByTopic: {},
 
-      getLevels: () => {
-        const { rawQuestions, highestUnlockedLevel, levelsProgress } = get();
+      get highestUnlockedLevel() {
+        const topicSlug = get().currentTopic?.slug || "general";
+        return get().progressByTopic[topicSlug]?.highestUnlockedLevel ?? 1;
+      },
+
+      get levelsProgress() {
+        const topicSlug = get().currentTopic?.slug || "general";
+        return get().progressByTopic[topicSlug]?.levelsProgress ?? {};
+      },
+
+      getTopicProgress: (topicSlug) => {
+        const slug = topicSlug || get().currentTopic?.slug || "general";
+        return get().progressByTopic[slug] ?? { ...DEFAULT_TOPIC_PROGRESS };
+      },
+
+      getLevels: (topicSlug) => {
+        const { rawQuestions, progressByTopic, currentTopic } = get();
+        const slug = topicSlug || currentTopic?.slug || "general";
+        const topicProg = progressByTopic[slug] ?? {
+          ...DEFAULT_TOPIC_PROGRESS,
+        };
+
         return hydrateLevelsWithQuestions(
           rawQuestions,
-          highestUnlockedLevel,
-          levelsProgress,
+          topicProg.highestUnlockedLevel,
+          topicProg.levelsProgress,
         );
       },
 
-      getCurrentRegion: () => {
-        return getRegionByLevel(get().highestUnlockedLevel).id;
+      getCurrentRegion: (topicSlug) => {
+        const slug = topicSlug || get().currentTopic?.slug || "general";
+        const highest = get().progressByTopic[slug]?.highestUnlockedLevel ?? 1;
+        return getRegionByLevel(highest).id;
+      },
+
+      setCurrentTopic: (topic) => {
+        set({ currentTopic: topic });
+      },
+
+      setCurrentAudience: (audience) => {
+        set({ currentAudience: audience });
+      },
+
+      setMode: (mode) => {
+        set({ currentMode: mode });
       },
 
       setQuestions: (questions) => {
         set({ rawQuestions: questions });
       },
 
-      completeLevel: (levelId, stars, xpGained) => {
+      completeLevel: (levelId, stars, xpGained, topicSlug) => {
         set((state) => {
-          const current = state.levelsProgress[levelId] ?? {
+          const slug = topicSlug || state.currentTopic?.slug || "general";
+          const currentProg = state.progressByTopic[slug] ?? {
+            ...DEFAULT_TOPIC_PROGRESS,
+          };
+
+          const currentLevelProg = currentProg.levelsProgress[levelId] ?? {
             stars: 0,
             status: "unlocked",
           };
-          const newStars = Math.max(current.stars, stars) as 0 | 1 | 2 | 3;
-          const newProgress = {
-            ...state.levelsProgress,
+
+          const newStars = Math.max(currentLevelProg.stars, stars) as
+            | 0
+            | 1
+            | 2
+            | 3;
+          const newLevelsProgress = {
+            ...currentProg.levelsProgress,
             [levelId]: { stars: newStars, status: "completed" as const },
           };
 
-          // Tope: no superar el último nivel disponible con las preguntas actuales
-          const totalLevels = Math.floor(
-            state.rawQuestions.length / QUESTIONS_PER_LEVEL,
+          const totalLevels = Math.max(
+            1,
+            Math.floor(state.rawQuestions.length / QUESTIONS_PER_LEVEL),
           );
+
           const newHighest =
-            levelId === state.highestUnlockedLevel
-              ? Math.min(state.highestUnlockedLevel + 1, totalLevels)
-              : state.highestUnlockedLevel;
+            levelId === currentProg.highestUnlockedLevel
+              ? Math.min(currentProg.highestUnlockedLevel + 1, totalLevels)
+              : currentProg.highestUnlockedLevel;
+
+          const updatedTopicProg: TopicProgress = {
+            ...currentProg,
+            highestUnlockedLevel: newHighest,
+            levelsProgress: newLevelsProgress,
+            topicXp: currentProg.topicXp + xpGained,
+          };
 
           return {
-            levelsProgress: newProgress,
+            progressByTopic: {
+              ...state.progressByTopic,
+              [slug]: updatedTopicProg,
+            },
             userXp: state.userXp + xpGained,
-            highestUnlockedLevel: newHighest,
           };
         });
       },
 
-      resetProgress: () =>
-        set({
-          levelsProgress: {},
-          userXp: 0,
-          highestUnlockedLevel: 1,
-          rawQuestions: [],
-        }),
+      recordQuizResult: (score, _correctCount, _total, topicSlug) => {
+        set((state) => {
+          const slug = topicSlug || state.currentTopic?.slug || "general";
+          const currentProg = state.progressByTopic[slug] ?? {
+            ...DEFAULT_TOPIC_PROGRESS,
+          };
+
+          const xpGained = Math.round(score * 0.5);
+
+          const updatedTopicProg: TopicProgress = {
+            ...currentProg,
+            quizzesCompleted: currentProg.quizzesCompleted + 1,
+            topicXp: currentProg.topicXp + xpGained,
+          };
+
+          return {
+            progressByTopic: {
+              ...state.progressByTopic,
+              [slug]: updatedTopicProg,
+            },
+            userXp: state.userXp + xpGained,
+          };
+        });
+      },
+
+      resetProgress: (topicSlug) => {
+        set((state) => {
+          if (topicSlug) {
+            const copy = { ...state.progressByTopic };
+            delete copy[topicSlug];
+            return { progressByTopic: copy };
+          }
+          return {
+            progressByTopic: {},
+            userXp: 0,
+            rawQuestions: [],
+          };
+        });
+      },
     }),
     {
-      name: "votabien-game-storage",
-      version: 4, // bump de versión — resetea progreso de usuarios con storage viejo
+      name: "votabien-game-storage-v5",
+      version: 5,
       migrate: (persistedState: unknown, fromVersion: number) => {
-        // Versiones anteriores usaban el nombre "votabien-game-storage-v3"
-        // por lo que este store arrancará limpio para todos — comportamiento correcto
-        if (fromVersion < 4) {
+        if (fromVersion < 5) {
           return {
-            levelsProgress: {},
+            progressByTopic: {},
             userXp: 0,
-            highestUnlockedLevel: 1,
+            currentMode: "MAP",
           };
         }
         return persistedState;
@@ -120,9 +245,8 @@ export const useGameStore = create<GameState>()(
         return localStorage;
       }),
       partialize: (state) => ({
-        levelsProgress: state.levelsProgress,
+        progressByTopic: state.progressByTopic,
         userXp: state.userXp,
-        highestUnlockedLevel: state.highestUnlockedLevel,
       }),
     },
   ),
