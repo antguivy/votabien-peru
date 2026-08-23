@@ -119,16 +119,17 @@ const LegislatorCardItem = ({ legislador }: { legislador: LegislatorCard }) => {
             <div className="relative w-[56px] h-[56px] rounded-full overflow-hidden flex-shrink-0 border-2 border-border/60 bg-muted">
               {person.image_url || person.image_candidate_url ? (
                 <Image
-                  src={`/api/proxy-image?url=${encodeURIComponent(
-                    person.image_url || person.image_candidate_url!,
-                  )}`}
+                  src={
+                    person.image_url ||
+                    person.image_candidate_url ||
+                    "/images/default-avatar.svg"
+                  }
                   alt={person.fullname}
                   fill
-                  unoptimized
                   sizes="56px"
-                  className="object-cover object-center scale-110 transition-transform duration-500 group-hover:scale-125"
+                  className="object-cover object-top scale-110 transition-transform duration-500 group-hover:scale-125"
                   onError={(e) => {
-                    e.currentTarget.src = "/images/placeholder-user.png";
+                    e.currentTarget.src = "/images/default-avatar.svg";
                   }}
                 />
               ) : (
