@@ -524,13 +524,17 @@ function HemicicloRenderer({ seatsData }: { seatsData: SeatParliamentary[] }) {
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-slate-800 overflow-hidden relative border border-slate-700 flex-shrink-0">
                       <Image
-                        src={`/api/proxy-image?url=${encodeURIComponent(activeBubble.seat.legislator.person?.image_candidate_url || activeBubble.seat.legislator.person?.image_url || "")}`}
+                        src={
+                          activeBubble.seat.legislator.person
+                            ?.image_candidate_url ||
+                          activeBubble.seat.legislator.person?.image_url ||
+                          "/images/default-avatar.svg"
+                        }
                         alt="Legislador"
                         fill
                         className="object-cover"
-                        unoptimized
                         onError={(e) => {
-                          e.currentTarget.src = "/images/placeholder-user.png";
+                          e.currentTarget.src = "/images/default-avatar.svg";
                         }}
                       />
                     </div>
