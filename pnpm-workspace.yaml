@@ -4,12 +4,12 @@ packages:
 overrides:
   kysely: ^0.28.17
 
-onlyBuiltDependencies:
-  - '@prisma/engines'
-  - '@tailwindcss/oxide'
-  - core-js
-  - esbuild
-  - lefthook
-  - prisma
-  - sharp
-  - unrs-resolver
+allowBuilds:
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  core-js: true
+  esbuild: true
+  lefthook: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
