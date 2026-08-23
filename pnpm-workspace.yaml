@@ -1,2 +1,15 @@
-onlyBuiltDependencies:
-  - lefthook
+packages:
+  - '.'
+
+overrides:
+  kysely: ^0.28.17
+
+allowBuilds:
+  '@prisma/engines': true
+  '@tailwindcss/oxide': true
+  core-js: true
+  esbuild: true
+  lefthook: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

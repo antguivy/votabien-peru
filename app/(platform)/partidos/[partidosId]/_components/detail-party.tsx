@@ -10,7 +10,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  Users,
   ChevronRight,
   Home,
   Gavel,

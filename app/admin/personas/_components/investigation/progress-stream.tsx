@@ -37,7 +37,7 @@ export function ProgressStream({
           />
           <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
             <Server className="h-5 w-5 text-muted-foreground" />
-            {isStreaming ? "Agente Ejecutándose..." : "Proceso Detenido"}
+            {isStreaming ? "Workflow Ejecutándose..." : "Proceso Detenido"}
           </h2>
         </div>
         {isStreaming && (
@@ -119,7 +119,7 @@ export function ProgressStream({
                   </span>
                 )}
                 {(log.type === "log" || log.type === "final_result") && (
-                  <span>
+                  <span className="whitespace-pre-wrap">
                     {log.type === "final_result" && (
                       <span className="text-primary mr-2">[DONE]</span>
                     )}

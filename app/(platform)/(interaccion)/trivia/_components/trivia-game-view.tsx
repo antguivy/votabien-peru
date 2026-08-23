@@ -223,7 +223,7 @@ function ResultsScreen({
   // Detect mobile
   const isMobile =
     typeof navigator !== "undefined" &&
-    /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    /android|iphone|ipad|ipod/i.test(navigator.userAgent || "");
 
   const handleShare = async () => {
     if (!cardRef.current) return;
@@ -251,7 +251,9 @@ function ResultsScreen({
         type: "image/png",
       });
 
-      const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isMobile = /android|iphone|ipad|ipod/i.test(
+        navigator.userAgent || "",
+      );
 
       if (isMobile && navigator.canShare?.({ files: [file] })) {
         await navigator.share({

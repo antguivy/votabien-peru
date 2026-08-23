@@ -108,7 +108,7 @@ export interface AdminPerson {
   birth_date: string | null;
   place_of_birth: string | null;
   profession: string | null;
-  detailed_biography?: BiographyDetail[];
+  posturas?: BiographyDetail[];
   secondary_school: boolean;
   technical_education: TechnicalEducation[];
   no_university_education: NoUniversityEducation[];
@@ -150,7 +150,7 @@ export interface PersonBase {
   birth_date: string | null;
   place_of_birth: string | null;
   profession: string | null;
-  detailed_biography: BiographyDetail[];
+  posturas: BiographyDetail[];
   secondary_school: boolean | null;
   technical_education: TechnicalEducation[];
   no_university_education: NoUniversityEducation[];

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { TAGS, TTL } from "@/lib/cache-tags";
+import { TAGS } from "@/lib/cache-tags";
 import prisma from "@/lib/prisma";
 import { BillBasic } from "@/interfaces/bill";
 

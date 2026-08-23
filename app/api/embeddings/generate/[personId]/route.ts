@@ -45,9 +45,7 @@ export async function POST(
       person_id: personId,
       fullname: person?.fullname || "Candidato Desconocido",
       party_name: party?.name || "Partido Desconocido",
-      detailed_biography: Array.isArray(person?.detailed_biography)
-        ? person.detailed_biography
-        : [],
+      posturas: Array.isArray(person?.posturas) ? person.posturas : [],
       backgrounds: Array.isArray(person?.background) ? person.background : [],
       government_plan: Array.isArray(party?.government_plan_summary)
         ? party.government_plan_summary

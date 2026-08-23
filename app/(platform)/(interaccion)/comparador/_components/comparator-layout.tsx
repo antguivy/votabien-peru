@@ -129,7 +129,7 @@ export default function ComparatorLayout({
         0,
       ),
       biography: members.reduce(
-        (sum, m) => sum + (m?.person?.detailed_biography?.length ?? 0),
+        (sum, m) => sum + (m?.person?.posturas?.length ?? 0),
         0,
       ),
       hoja_de_vida: 0, // siempre presente

@@ -15,7 +15,7 @@ const handleError = (error: unknown, msg: string) => {
   console.error(msg, error);
   return {
     success: false,
-    error: error instanceof Error ? error.message : msg,
+    error: extractErrorMessage(error),
   };
 };
 

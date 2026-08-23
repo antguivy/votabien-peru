@@ -11,8 +11,8 @@ import { ReinfoStatus, RnasSanction } from "@/interfaces/person";
 
 interface RegistrosOficialesProps {
   is_incumbent: boolean;
-  reinfo_status: ReinfoStatus | null;
-  rnas_sanctions: RnasSanction[] | null;
+  reinfo_status?: ReinfoStatus | null;
+  rnas_sanctions?: RnasSanction[] | null;
   profession: string | null;
   legislatorId?: string | null;
 }
@@ -302,7 +302,7 @@ export function RegistrosOficiales({
   profession,
   legislatorId,
 }: RegistrosOficialesProps) {
-  const hasRnas = rnas_sanctions !== null && rnas_sanctions.length > 0;
+  const hasRnas = Array.isArray(rnas_sanctions) && rnas_sanctions.length > 0;
   const candidateIsLawyer = isLawyer(profession);
   const showRnasSanctions = hasRnas;
   const showRnasFallback = !hasRnas && candidateIsLawyer;
@@ -315,7 +315,9 @@ export function RegistrosOficiales({
       ) : (
         <ReinfoCleanRow />
       )}
-      {showRnasSanctions && <RnasRow sanctions={rnas_sanctions!} />}
+      {showRnasSanctions && rnas_sanctions && (
+        <RnasRow sanctions={rnas_sanctions} />
+      )}
       {showRnasFallback && <RnasCleanRow />}
     </section>
   );

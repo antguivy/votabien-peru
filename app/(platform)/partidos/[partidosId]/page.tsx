@@ -1,60 +1,13 @@
-import { notFound } from "next/navigation";
-import DetailParty from "./_components/detail-party";
-import DetailAlliance from "./_components/detail-alliance";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-import { getPrincipalCandidates } from "@/queries/public/candidacies";
-import { getPartidoById } from "@/queries/public/parties";
-import prisma from "@/lib/prisma";
+import UnderConstruction from "@/components/under-construction";
 
-interface PageProps {
-  params: Promise<{ partidosId: string }>;
-}
-
-export async function generateStaticParams() {
-  try {
-    const partidos = await prisma.politicalparty.findMany({
-      where: { active: true },
-      select: { id: true },
-    });
-    return partidos.map((p) => ({ partidosId: p.id }));
-  } catch {
-    return [];
-  }
-}
-
-export default async function PartidoDetailPage({ params }: PageProps) {
-  const { partidosId } = await params;
-
-  try {
-    const [
-      party,
-      // principalCandidates
-    ] = await Promise.all([
-      getPartidoById(partidosId),
-      // getPrincipalCandidates(partidosId),
-    ]);
-
-    if (party.type === "ALIANZA") {
-      return <DetailAlliance alliance={party} />;
-    }
-
-    return (
-      <ContentPlatformLayout>
-        <section className="container mx-auto pb-20 lg:pb-0">
-          <DetailParty
-            party={party}
-            // principalCandidates={principalCandidates}
-            shareUrl={`https://votabienperu.com/partidos/${party.id}`}
-          />
-        </section>
-      </ContentPlatformLayout>
-    );
-  } catch (error) {
-    if (error instanceof Error && error.message === "Partido no encontrado") {
-      notFound();
-    }
-
-    console.error("Error inesperado en partido:", error);
-    notFound();
-  }
+export default async function PartidoDetailPage() {
+  return (
+    <ContentPlatformLayout>
+      <UnderConstruction
+        title="Sección en Actualización"
+        description="Estamos adaptando y consolidando la información de las organizaciones políticas para el proceso electoral."
+      />
+    </ContentPlatformLayout>
+  );
 }

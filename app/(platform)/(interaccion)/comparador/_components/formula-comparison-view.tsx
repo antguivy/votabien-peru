@@ -698,13 +698,13 @@ function MemberSection({
   const hasActive = hasActiveBackground(backgrounds);
   const bioTypes = useMemo(() => {
     const types = new Set<string>();
-    person.detailed_biography?.forEach((b) => types.add(b.type));
+    person.posturas?.forEach((b) => types.add(b.type));
     return ["Todas", ...Array.from(types)];
-  }, [person.detailed_biography]);
+  }, [person.posturas]);
   const [localBioType, setLocalBioType] = useState("Todas");
   const [showAllBio, setShowAllBio] = useState(false);
   const filteredBio = useMemo(() => {
-    const bio = person.detailed_biography ?? [];
+    const bio = person.posturas ?? [];
     const filtered =
       localBioType === "Todas"
         ? bio
@@ -714,7 +714,7 @@ function MemberSection({
       if (!b.date) return -1;
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-  }, [person.detailed_biography, localBioType]);
+  }, [person.posturas, localBioType]);
   const visibleBio = showAllBio ? filteredBio : filteredBio.slice(0, 3);
   const hasMore = filteredBio.length > 5;
 
@@ -820,7 +820,7 @@ function MemberSection({
               ))}
             {activeTab === "biography" && (
               <>
-                {(person.detailed_biography?.length ?? 0) === 0 ? (
+                {(person.posturas?.length ?? 0) === 0 ? (
                   <p className="text-xs text-muted-foreground py-2 text-center">
                     No hay posturas registradas.
                   </p>

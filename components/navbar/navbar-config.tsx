@@ -1,6 +1,7 @@
 import {
   Home, // Inicio
-  // Candidatos — persona con check de verificación
+  UserCheck, // Candidatos — persona con check de verificación
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Flag, // Partidos — bandera
   Landmark, // Congresistas — edificio institucional (congreso)
   Scale, // Comparador — balanza, justicia
@@ -23,16 +24,19 @@ import {
   Milestone, // Hito — punto en línea de tiempo
   UsersRound, // Asientos
   CalendarDays, // Periodos
+  Inbox,
+  Bot,
+  FileText,
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
 
 export const NAV_MOBILE_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
-  // { href: "/candidatos", label: "Candidatos", icon: UserCheck },
+  { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   // { href: "/simulador", label: "Simulador", icon: Vote },
   { href: "/legisladores", label: "Congresistas", icon: Landmark },
-  { href: "/partidos", label: "Partidos", icon: Flag },
+  // { href: "/partidos", label: "Partidos", icon: Flag },
   // { href: "/match", label: "Mi Candidato", icon: Heart },
 
   { href: "ACTION:MENU", label: "Menú", icon: Menu, isAction: true },
@@ -40,13 +44,13 @@ export const NAV_MOBILE_ITEMS = [
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Inicio", icon: Home },
-  // {
-  //   type: "link",
-  //   href: "/candidatos",
-  //   label: "Candidatos 2026",
-  //   icon: UserCheck,
-  // },
-  { type: "link", href: "/partidos", label: "Partidos", icon: Flag },
+  {
+    type: "link",
+    href: "/candidatos",
+    label: "Candidatos ERM",
+    icon: UserCheck,
+  },
+  // { type: "link", href: "/partidos", label: "Partidos", icon: Flag },
   {
     type: "link",
     href: "/legisladores",
@@ -84,7 +88,17 @@ export const adminNavGroups: NavGroup[] = [
       { href: "/admin/bancadas", label: "Bancadas", icon: Users },
       { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
       { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
+      {
+        href: "/admin/proyectos-ley",
+        label: "Proyectos de Ley",
+        icon: FileText,
+      },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
+      {
+        href: "/admin/personas/revisiones",
+        label: "Revisiones IA",
+        icon: Inbox,
+      },
       { href: "/admin/seats", label: "Asientos", icon: UsersRound },
       { href: "/admin/ejecutivo", label: "Ejecutivo", icon: Landmark },
     ],
@@ -97,6 +111,7 @@ export const adminNavGroups: NavGroup[] = [
     label: "Sistema",
     requiresRole: ["admin", "super_admin"],
     links: [
+      { href: "/admin/workflows", label: "Workflows IA", icon: Bot },
       { href: "/admin/team", label: "Equipo", icon: ShieldCheck },
       { href: "/admin/hito", label: "Hito", icon: Milestone },
     ],

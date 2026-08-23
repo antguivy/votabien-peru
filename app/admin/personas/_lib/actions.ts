@@ -271,8 +271,8 @@ export async function updatePersonBiography(
     const data = await prisma.person.update({
       where: { id: personId },
 
-      data: { detailed_biography: toJsonInsert(biography) },
-      select: { id: true, fullname: true, detailed_biography: true },
+      data: { posturas: toJsonInsert(biography) },
+      select: { id: true, fullname: true, posturas: true },
     });
 
     revalidatePersonEcosystem(); // 🔥
@@ -298,7 +298,7 @@ export async function insertPersonBiography(
     await prisma.person.update({
       where: { id: personId },
 
-      data: { detailed_biography: toJsonInsert(filtered) },
+      data: { posturas: toJsonInsert(filtered) },
     });
 
     revalidatePersonEcosystem(); // 🔥
@@ -425,26 +425,24 @@ export async function deletePersonBackground(backgroundId: string) {
 // ==========================================
 
 export async function fetchCandidateFromJNE(
-  jne_mode: string,
-  party_number_rop: string,
-  dni: string,
+  jne_mode?: string,
+  party_number_rop?: string | null,
+  dni?: string | null,
+  id_hoja_vida?: string | null,
 ) {
   try {
     const { user } = await serverGetUser();
 
     if (!user) {
-      return new Response(
-        JSON.stringify({ detail: "No autorizado - Debes iniciar sesión" }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      return { success: false, error: "No autorizado - Debes iniciar sesión" };
     }
-    const accessToken = process.env.API_SECRET_KEY; // Mandamos la clave secreta compartida
+    const accessToken = process.env.API_SECRET_KEY;
 
-    if (!party_number_rop || !dni) {
-      return { success: false, error: "Faltan parámetros" };
+    if (!dni && !id_hoja_vida) {
+      return {
+        success: false,
+        error: "Debe ingresar al menos un DNI o ID de Hoja de Vida",
+      };
     }
 
     const response = await fetch(
@@ -456,9 +454,10 @@ export async function fetchCandidateFromJNE(
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          jne_mode,
-          party_number_rop,
-          dni,
+          jne_mode: jne_mode || undefined,
+          party_number_rop: party_number_rop || undefined,
+          dni: dni || undefined,
+          id_hoja_vida: id_hoja_vida || undefined,
         }),
         cache: "no-store",
       },
@@ -480,9 +479,10 @@ export async function fetchCandidateFromJNE(
 }
 
 export async function fetchAntecedentesFromJNE(
-  jne_mode: string,
-  party_number_rop: string,
-  dni: string,
+  jne_mode?: string,
+  party_number_rop?: string | null,
+  dni?: string | null,
+  id_hoja_vida?: string | null,
 ) {
   try {
     const { user } = await serverGetUser();
@@ -491,8 +491,11 @@ export async function fetchAntecedentesFromJNE(
       return { success: false, error: "No autorizado - Debes iniciar sesión" };
     }
 
-    if (!party_number_rop || !dni) {
-      return { success: false, error: "Faltan parámetros ROP o DNI" };
+    if (!dni && !id_hoja_vida) {
+      return {
+        success: false,
+        error: "Debe ingresar al menos un DNI o ID de Hoja de Vida",
+      };
     }
 
     const response = await fetch(
@@ -503,7 +506,12 @@ export async function fetchAntecedentesFromJNE(
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.API_SECRET_KEY}`,
         },
-        body: JSON.stringify({ jne_mode, party_number_rop, dni }),
+        body: JSON.stringify({
+          jne_mode: jne_mode || undefined,
+          party_number_rop: party_number_rop || undefined,
+          dni: dni || undefined,
+          id_hoja_vida: id_hoja_vida || undefined,
+        }),
         cache: "no-store",
       },
     );
@@ -530,6 +538,82 @@ export async function fetchAntecedentesFromJNE(
     );
 
     return { success: true, data: antecedentes, total: data.total };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function queueBatchResearch(personIds: string[]) {
+  await serverRequireEditor();
+  try {
+    const batch_run_id = createId();
+    const persons = await prisma.person.findMany({
+      where: { id: { in: personIds } },
+      select: {
+        id: true,
+        fullname: true,
+        posturas: true,
+        background: {
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            title: true,
+            summary: true,
+            sanction: true,
+            publication_date: true,
+            source: true,
+            source_url: true,
+          },
+        },
+      },
+    });
+
+    const candidates = persons.map((p) => ({
+      person_id: p.id,
+      fullname: p.fullname,
+      existing_backgrounds: p.background,
+      existing_posturas: p.posturas || [],
+    }));
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/research/batch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.API_SECRET_KEY}`,
+      },
+      body: JSON.stringify({
+        batch_run_id,
+        candidates,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    return { success: true, batch_run_id };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function getBatchResearchProgress(batch_run_id: string) {
+  await serverRequireEditor();
+  try {
+    const proposals = await prisma.research_proposals.findMany({
+      where: { batch_run_id },
+      select: { person_id: true },
+    });
+
+    // Group by person to know how many distinct persons have generated proposals
+    const processedPersonIds = new Set(proposals.map((p) => p.person_id));
+
+    return {
+      success: true,
+      processedCount: processedPersonIds.size,
+      totalProposals: proposals.length,
+    };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }

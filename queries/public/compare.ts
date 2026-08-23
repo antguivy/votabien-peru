@@ -17,7 +17,7 @@ import {
   WorkExperience,
 } from "@/interfaces/person";
 import { BackgroundBase } from "@/interfaces/background";
-import { TAGS, TTL } from "@/lib/cache-tags";
+import { TAGS } from "@/lib/cache-tags";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import prisma from "@/lib/prisma";
@@ -102,7 +102,7 @@ export const getPresidentialFormulasComparison = cache(
                     image_url: true,
                     image_candidate_url: true,
                     profession: true,
-                    detailed_biography: true,
+                    posturas: true,
                     university_education: true,
                     postgraduate_education: true,
                     technical_education: true,
@@ -155,9 +155,7 @@ export const getPresidentialFormulasComparison = cache(
                 image_url: raw.person!.image_url,
                 image_candidate_url: raw.person!.image_candidate_url,
                 profession: raw.person!.profession,
-                detailed_biography: toJsonArray<BiographyDetail>(
-                  raw.person!.detailed_biography,
-                ),
+                posturas: toJsonArray<BiographyDetail>(raw.person!.posturas),
                 hoja_de_vida: {
                   university_education: toJsonArray<UniversityEducation>(
                     raw.person!.university_education,

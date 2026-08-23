@@ -35,12 +35,7 @@ export function useInvestigacionStream() {
   }, []);
 
   const iniciarInvestigacion = useCallback(
-    async (
-      nombreInvestigado: string,
-      modelName: string,
-      includeYoutube: boolean,
-      includeNews: boolean,
-    ) => {
+    async (nombreInvestigado: string, workflowId: string) => {
       resetEstado();
       setIsStreaming(true);
 
@@ -50,10 +45,7 @@ export function useInvestigacionStream() {
       try {
         const formData = new FormData();
         formData.append("nombre_investigado", nombreInvestigado);
-        formData.append("model_name", modelName);
-
-        formData.append("include_youtube", String(includeYoutube));
-        formData.append("include_news", String(includeNews));
+        formData.append("workflow_id", workflowId);
 
         const response = await fetch("/api/research", {
           method: "POST",

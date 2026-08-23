@@ -25,13 +25,9 @@ export async function proxy(request: NextRequest) {
     "/reportar",
     "/privacidad",
     "/terminos",
-    // "/api/stats",
-    // "/api/proxy-image",
-    // "/api/candidates",
-    // "/match",
-    // "/trivia",
-    // "/simulador",
     "/api/auth",
+    "/api/webhooks",
+    "/api/internal",
   ];
 
   const isAuthRoute = authRoutes.some((route) => path.startsWith(route));

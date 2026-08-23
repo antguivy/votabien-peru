@@ -36,6 +36,7 @@ model candidate {
   @@index([person_id], map: "ix_candidate_person_id")
   @@index([political_party_id], map: "ix_candidate_political_party_id")
   @@index([type], map: "ix_candidate_type")
+  @@index([electoral_process_id, type, list_number], map: "idx_candidate_process_type_list")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -223,6 +224,8 @@ model politicalparty {
   government_audio_url    String?
   type                    organizationtype?
   rop                     String?
+  scope_district_id       String?               @db.VarChar
+  scope_district          electoraldistrict?    @relation(fields: [scope_district_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentAlliances         alliancecomposition[] @relation("AllianceParent")
   childAlliances          alliancecomposition[] @relation("AllianceChild")
   candidate               candidate[]
@@ -241,6 +244,9 @@ enum candidacystatus {
   IMPROCEDENTE
   RENUNCIA
   APELACION
+  ADMITIDO
+  PUBLICADO_PARA_TACHAS
+  TACHA_EN_TRAMITE
 }
 
 enum candidacytype {
@@ -250,6 +256,13 @@ enum candidacytype {
   DIPUTADO
   VICEPRESIDENTE_2
   PARLAMENTO_ANDINO
+  GOBERNADOR_REGIONAL
+  VICEGOBERNADOR_REGIONAL
+  CONSEJERO_REGIONAL
+  ALCALDE_PROVINCIAL
+  REGIDOR_PROVINCIAL
+  ALCALDE_DISTRITAL
+  REGIDOR_DISTRITAL
 }
 
 enum financingcategory {
@@ -296,4 +309,5 @@ enum legislatorcondition {
 enum organizationtype {
   PARTIDO
   ALIANZA
+  MOVIMIENTO_REGIONAL
 }
