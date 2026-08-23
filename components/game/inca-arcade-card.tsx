@@ -229,16 +229,14 @@ export function IncaArcadeCard({
                   style={{ background: "rgba(251,191,36,0.08)" }}
                 >
                   {correctOption?.image_url && (
-                    <div
-                      className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
-                      style={{ background: "#292524" }}
-                    >
-                      {/* <img
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-stone-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={`/api/proxy-image?url=${encodeURIComponent(correctOption.image_url)}`}
                         alt={correctOption.name}
                         className="w-full h-full object-contain"
                         crossOrigin="anonymous"
-                      /> */}
+                      />
                     </div>
                   )}
                   <p
