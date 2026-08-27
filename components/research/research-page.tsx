@@ -21,10 +21,7 @@ import {
 } from "@/interfaces/background";
 import { BiographyDetail } from "@/interfaces/person";
 import { toast } from "sonner";
-import {
-  insertPersonBackgrounds,
-  insertPersonBiography,
-} from "../../_lib/actions";
+import { queueResearchProposals } from "@/lib/actions/research";
 
 function normalizeType(raw: string | null | undefined): BackgroundType {
   const map: Record<string, BackgroundType> = {
@@ -99,49 +96,53 @@ export default function ResearchPageDialog({
       if (!tablas) throw new Error("Sin datos validados para guardar");
 
       // --- Mapear Antecedentes → BackgroundBase ---
-      const backgrounds: BackgroundBase[] = (
-        tablas.antecedentes_validos ?? []
-      ).map((ant) => ({
-        id: "",
-        type: normalizeType(ant.tipo),
-        status: normalizeStatus(ant.estado),
-        title: ant.titulo ?? "",
-        summary: ant.redaccion_final ?? ant.descripcion ?? "",
-        sanction: ant.sancion ?? null,
-        source: ant.fuente_normalizada ?? ant.fuente ?? "",
-        source_url: ant.fuente_url ?? null,
-        publication_date: ant.fecha ?? null,
-      }));
+      const backgrounds: BackgroundBase[] =
+        saveAntecedentes && tablas.antecedentes_validos
+          ? tablas.antecedentes_validos.map((ant) => ({
+              id: "",
+              type: normalizeType(ant.tipo),
+              status: normalizeStatus(ant.estado),
+              title: ant.titulo ?? "",
+              summary: ant.redaccion_final ?? ant.descripcion ?? "",
+              sanction: ant.sancion ?? null,
+              source: ant.fuente_normalizada ?? ant.fuente ?? "",
+              source_url: ant.fuente_url ?? null,
+              publication_date: ant.fecha ?? null,
+            }))
+          : [];
 
       // --- Mapear Posturas → BiographyDetail ---
-      const biography: BiographyDetail[] = (tablas.posturas_validas ?? []).map(
-        (pos) => ({
-          // ← sin id, no existe en BiographyDetail
-          type: pos.tema ?? "",
-          date: pos.fecha ?? "",
-          description: pos.redaccion_final ?? pos.hecho ?? "",
-          source: pos.fuente_normalizada ?? pos.fuente ?? "",
-          source_url: pos.fuente_url ?? null,
-        }),
+      const biography: BiographyDetail[] =
+        saveNoticias && tablas.posturas_validas
+          ? tablas.posturas_validas.map((pos) => ({
+              title:
+                pos.titulo ||
+                (pos.tema
+                  ? `${pos.tema} - Declaración`
+                  : "Noticia / Declaración"),
+              type: pos.tema ?? "NOTICIA",
+              date: pos.fecha ?? "",
+              description: pos.redaccion_final ?? pos.hecho ?? "",
+              source: pos.fuente_normalizada ?? pos.fuente ?? "",
+              source_url: pos.fuente_url ?? null,
+            }))
+          : [];
+
+      const res = await queueResearchProposals(
+        personId,
+        backgrounds,
+        biography,
       );
 
-      const [bgResult, bioResult] = await Promise.all([
-        saveAntecedentes && backgrounds.length > 0
-          ? insertPersonBackgrounds(personId, backgrounds)
-          : Promise.resolve({ success: true, inserted: 0 }),
-        saveNoticias && biography.length > 0
-          ? insertPersonBiography(personId, biography)
-          : Promise.resolve({ success: true }),
-      ]);
-
-      if (!bgResult.success || !bioResult.success) {
-        if (!bgResult.success) toast.error("Error al guardar antecedentes");
-        if (!bioResult.success) toast.error("Error al guardar noticias");
+      if (!res.success) {
+        toast.error("Error al enviar a revisión", {
+          description: res.error,
+        });
         return;
       }
 
-      toast.success("Datos guardados correctamente", {
-        description: `${backgrounds.length} antecedentes y ${biography.length} noticias guardadas.`,
+      toast.success("Enviado a la bandeja de revisiones", {
+        description: `${res.count} hallazgos quedaron PENDIENTES de revisión en /admin/candidatos/revisiones.`,
       });
 
       resetEstado();
@@ -175,14 +176,16 @@ export default function ResearchPageDialog({
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
               "El workflow está leyendo la web, por favor espere."}
             {resultadoFinal &&
-              "Revisa los datos consolidados y guárdalos en el perfil."}
+              "Revisa los hallazgos y envíalos a la bandeja de revisiones."}
           </CredenzaDescription>
         </CredenzaHeader>
         <CredenzaBody className="overflow-y-auto max-h-[70vh]">
           <div className="animate-in fade-in zoom-in-95 duration-300">
             {showForm && (
               <InvestigacionForm
-                onSubmit={iniciarInvestigacion}
+                onSubmit={(nombre, wfId) =>
+                  iniciarInvestigacion(nombre, wfId, personId)
+                }
                 disabled={isStreaming}
                 defaultName={personName}
               />

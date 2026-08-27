@@ -14,8 +14,8 @@ import { PersonTableToolbarActions } from "./person-table-toolbar-actions";
 import { AdminPerson } from "@/interfaces/person";
 import { BiographyFormDialog } from "./biography-form-dialog";
 import { BackgroundsFormDialog } from "./background-form-dialog";
-import ResearchPageDialog from "./investigation/research-page";
-import { BatchResearchDialog } from "./investigation/batch-research-dialog";
+import ResearchPageDialog from "@/components/research/research-page";
+import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
 
 interface PersonTableProps {
   promises: Promise<[PaginatedPersonResponse]>;
@@ -120,7 +120,7 @@ export function PersonTable({ promises }: PersonTableProps) {
       )}
 
       <BatchResearchDialog
-        candidates={batchCandidates}
+        persons={batchCandidates}
         onClose={() => {
           setBatchCandidates(null);
           table.toggleAllRowsSelected(false);

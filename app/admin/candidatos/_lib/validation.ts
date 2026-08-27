@@ -42,7 +42,7 @@ export const searchParamsCache = createSearchParamsCache({
     parseAsStringEnum(Object.values(CandidacyStatus)),
   ).withDefault([]),
   parties: parseAsArrayOf(parseAsString).withDefault([]),
-  // district: parseAsArrayOf(parseAsString).withDefault([]),
+  district: parseAsArrayOf(parseAsString).withDefault([]),
 });
 
 export type GetCandidateSchema = Awaited<

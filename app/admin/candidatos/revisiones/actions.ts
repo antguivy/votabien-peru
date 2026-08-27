@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { serverRequireEditor } from "@/lib/auth-actions";
+import { serverRequireReviewer } from "@/lib/auth-actions";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { TAGS } from "@/lib/cache-tags";
 import { createId } from "@paralleldrive/cuid2";
@@ -10,14 +10,15 @@ import { Prisma } from "@/prisma/generated/client";
 
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
-  revalidatePath("/admin/personas/revisiones");
+  revalidatePath("/admin/candidatos");
+  revalidatePath("/admin/candidatos/revisiones");
   revalidateTag(TAGS.persons, "max");
   revalidateTag(TAGS.candidates, "max");
   revalidateTag(TAGS.legislators, "max");
 }
 
 export async function getExistingBackgroundForDiff(targetId: string) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   try {
     const bg = await prisma.background.findUnique({
       where: { id: targetId },
@@ -31,7 +32,7 @@ export async function getExistingBackgroundForDiff(targetId: string) {
 }
 
 export async function rejectResearchFinding(findingId: string) {
-  const { user } = await serverRequireEditor();
+  const { user } = await serverRequireReviewer();
 
   try {
     await prisma.research_proposals.update({
@@ -53,7 +54,7 @@ export async function rejectResearchFinding(findingId: string) {
 }
 
 export async function bulkRejectFindings(findingIds: string[]) {
-  const { user } = await serverRequireEditor();
+  const { user } = await serverRequireReviewer();
 
   if (!findingIds || findingIds.length === 0) {
     return {
@@ -88,7 +89,7 @@ export async function applyResearchFinding(
   findingId: string,
   customData?: Record<string, unknown>,
 ) {
-  const { user } = await serverRequireEditor();
+  const { user } = await serverRequireReviewer();
 
   try {
     const finding = await prisma.research_proposals.findUnique({
@@ -243,13 +244,29 @@ export async function applyResearchFinding(
         const bio = Array.isArray(person.posturas)
           ? [...(person.posturas as Record<string, unknown>[])]
           : [];
+        const titleVal = String(
+          data.title ||
+            data.titulo ||
+            (data.tema
+              ? `${data.tema} - Declaración`
+              : "Noticia / Declaración"),
+        );
         const newItem = {
-          type: String(data.tema || data.type || "NOTICIA"),
-          date: String(data.fecha || data.date || ""),
+          id: finding.target_id || createId(),
+          title: titleVal,
+          type: String(data.tema || data.type || data.tipo || "NOTICIA"),
+          date: String(data.fecha || data.date || data.publication_date || ""),
           description: String(
-            data.redaccion_final || data.description || data.summary || "",
+            data.redaccion_final ||
+              data.description ||
+              data.summary ||
+              data.descripcion ||
+              data.hecho ||
+              "",
           ),
-          source: String(data.fuente_normalizada || data.source || "Web"),
+          source: String(
+            data.fuente_normalizada || data.source || data.fuente || "Web",
+          ),
           source_url:
             data.fuente_url || data.source_url
               ? String(data.fuente_url || data.source_url)
@@ -258,8 +275,12 @@ export async function applyResearchFinding(
 
         if (finding.action === "INSERT") {
           bio.push(newItem);
-        } else if (finding.action === "UPDATE" && finding.target_id) {
-          const idx = bio.findIndex((b) => b.id === finding.target_id);
+        } else if (finding.action === "UPDATE") {
+          const idx = bio.findIndex(
+            (b) =>
+              (finding.target_id && b.id === finding.target_id) ||
+              (newItem.source_url && b.source_url === newItem.source_url),
+          );
           if (idx >= 0) {
             bio[idx] = { ...bio[idx], ...newItem };
           } else {
@@ -297,7 +318,7 @@ export async function applyResearchFinding(
 }
 
 export async function bulkApplyFindings(findingIds: string[]) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
 
   if (!findingIds || findingIds.length === 0) {
     return {

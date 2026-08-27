@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getActiveWorkflows } from "../../../workflows/_lib/actions";
+import { getActiveWorkflows } from "@/app/admin/workflows/_lib/actions";
 import { toast } from "sonner";
 
 interface InvestigacionFormProps {

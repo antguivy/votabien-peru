@@ -8,7 +8,8 @@ import { Prisma } from "@/prisma/generated/client";
 
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
-  revalidatePath("/admin/personas/revisiones");
+  revalidatePath("/admin/candidatos");
+  revalidatePath("/admin/candidatos/revisiones");
   revalidateTag(TAGS.persons, "max");
   revalidateTag(TAGS.candidates, "max");
   revalidateTag(TAGS.legislators, "max");
@@ -216,24 +217,56 @@ async function applyProposalDirect(proposal: {
     });
     if (person) {
       const bio = Array.isArray(person.posturas)
-        ? [...(person.posturas as Prisma.InputJsonValue[])]
+        ? [...(person.posturas as Record<string, unknown>[])]
         : [];
-      bio.push({
-        type: String(data.tema || data.type || "NOTICIA"),
-        date: String(data.fecha || data.date || ""),
+      const titleVal = String(
+        data.title ||
+          data.titulo ||
+          (data.tema ? `${data.tema} - Declaración` : "Noticia / Declaración"),
+      );
+      const newItem = {
+        id: proposal.target_id || createId(),
+        title: titleVal,
+        type: String(data.tema || data.type || data.tipo || "NOTICIA"),
+        date: String(data.fecha || data.date || data.publication_date || ""),
         description: String(
-          data.redaccion_final || data.description || data.summary || "",
+          data.redaccion_final ||
+            data.description ||
+            data.summary ||
+            data.descripcion ||
+            data.hecho ||
+            "",
         ),
-        source: String(data.fuente_normalizada || data.source || "Web"),
+        source: String(
+          data.fuente_normalizada || data.source || data.fuente || "Web",
+        ),
         source_url:
           data.fuente_url || data.source_url
             ? String(data.fuente_url || data.source_url)
             : null,
-      });
+      };
+
+      if (proposal.action === "INSERT") {
+        bio.push(newItem);
+      } else if (proposal.action === "UPDATE") {
+        const idx = bio.findIndex(
+          (b) =>
+            (proposal.target_id && b.id === proposal.target_id) ||
+            (newItem.source_url && b.source_url === newItem.source_url),
+        );
+        if (idx >= 0) {
+          bio[idx] = { ...bio[idx], ...newItem };
+        } else {
+          bio.push(newItem);
+        }
+      }
 
       await prisma.person.update({
         where: { id: proposal.person_id },
-        data: { posturas: bio, updated_at: new Date() },
+        data: {
+          posturas: bio as Prisma.InputJsonValue[],
+          updated_at: new Date(),
+        },
       });
     }
   }

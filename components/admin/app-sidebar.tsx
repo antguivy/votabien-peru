@@ -14,7 +14,7 @@ export default function AdminPanelLayout({
   if (!sidebar) return null;
 
   return (
-    <div className="relative flex min-h-screen w-full overflow-x-hidden bg-background">
+    <div className="relative flex min-h-screen w-full overflow-x-clip bg-background">
       <Sidebar />
       <main
         className={cn(

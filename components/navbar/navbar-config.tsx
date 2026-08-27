@@ -1,5 +1,6 @@
 import {
   Home, // Inicio
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   UserCheck, // Candidatos — persona con check de verificación
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Flag, // Partidos — bandera
@@ -82,11 +83,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 export const adminNavGroups: NavGroup[] = [
   {
     label: "Gestión",
+    requiresRole: ["admin", "super_admin"],
     links: [
       { href: "/admin/periodos", label: "Periodos", icon: CalendarDays },
       { href: "/admin/partidos", label: "Partidos", icon: FlagTriangleRight },
       { href: "/admin/bancadas", label: "Bancadas", icon: Users },
-      { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
       { href: "/admin/legisladores", label: "Legisladores", icon: ScrollText },
       {
         href: "/admin/proyectos-ley",
@@ -94,17 +95,26 @@ export const adminNavGroups: NavGroup[] = [
         icon: FileText,
       },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
-      {
-        href: "/admin/personas/revisiones",
-        label: "Revisiones IA",
-        icon: Inbox,
-      },
       { href: "/admin/seats", label: "Asientos", icon: UsersRound },
       { href: "/admin/ejecutivo", label: "Ejecutivo", icon: Landmark },
     ],
   },
   {
+    label: "Investigación",
+    requiresRole: ["admin", "super_admin", "editor", "volunteer"],
+    links: [
+      { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
+      {
+        href: "/admin/candidatos/revisiones",
+        label: "Revisiones IA",
+        icon: Inbox,
+      },
+      { href: "/admin/guia", label: "Guía de Revisión", icon: FileText },
+    ],
+  },
+  {
     label: "Juegos",
+    requiresRole: ["admin", "super_admin", "editor", "volunteer"],
     links: [{ href: "/admin/trivia", label: "Trivia", icon: Trophy }],
   },
   {
@@ -112,6 +122,7 @@ export const adminNavGroups: NavGroup[] = [
     requiresRole: ["admin", "super_admin"],
     links: [
       { href: "/admin/workflows", label: "Workflows IA", icon: Bot },
+      { href: "/admin/usuarios", label: "Usuarios", icon: ShieldCheck },
       { href: "/admin/team", label: "Equipo", icon: ShieldCheck },
       { href: "/admin/hito", label: "Hito", icon: Milestone },
     ],

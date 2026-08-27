@@ -9,22 +9,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AdminPerson } from "@/interfaces/person";
 import {
   queueBatchResearch,
   getBatchResearchProgress,
-} from "../../_lib/actions";
+} from "@/lib/actions/research";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
+interface BatchItem {
+  id: string;
+}
+
 interface BatchResearchDialogProps {
-  candidates: AdminPerson[] | null;
+  persons: BatchItem[] | null;
   onClose: () => void;
 }
 
 export function BatchResearchDialog({
-  candidates,
+  persons,
   onClose,
 }: BatchResearchDialogProps) {
   const [batchId, setBatchId] = React.useState<string | null>(null);
@@ -34,16 +37,16 @@ export function BatchResearchDialog({
   >("idle");
   const [errorMsg, setErrorMsg] = React.useState("");
 
-  const total = candidates?.length || 0;
+  const total = persons?.length || 0;
 
   React.useEffect(() => {
-    if (!candidates || candidates.length === 0) return;
+    if (!persons || persons.length === 0) return;
 
     let isCancelled = false;
 
     async function startBatch() {
       setStatus("running");
-      const res = await queueBatchResearch(candidates!.map((c) => c.id));
+      const res = await queueBatchResearch(persons!.map((c) => c.id));
       if (isCancelled) return;
 
       if (!res.success || !res.batch_run_id) {
@@ -60,7 +63,7 @@ export function BatchResearchDialog({
     return () => {
       isCancelled = true;
     };
-  }, [candidates]);
+  }, [persons]);
 
   React.useEffect(() => {
     if (!batchId || status !== "running") return;
@@ -84,7 +87,7 @@ export function BatchResearchDialog({
   const percent = total > 0 ? (progress / total) * 100 : 0;
 
   return (
-    <Dialog open={!!candidates} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={!!persons} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Investigación por Lotes</DialogTitle>
@@ -120,7 +123,7 @@ export function BatchResearchDialog({
                 Se han generado propuestas de actualización.
               </p>
               <Button asChild className="mt-4 w-full">
-                <Link href="/admin/personas/revisiones">
+                <Link href="/admin/candidatos/revisiones">
                   Ir a la bandeja de revisiones
                 </Link>
               </Button>

@@ -52,20 +52,29 @@ function FindingEditForm({
   isProcessing,
 }: FindingEditFormProps) {
   const initialData = finding.proposed_data || {};
-  const isBackground =
-    Boolean(initialData.type) &&
-    ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
-      String(initialData.type),
-    );
+  const rawType = String(
+    initialData.type || initialData.tipo || initialData.tema || "",
+  ).toUpperCase();
+  const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
+    rawType,
+  );
+
+  const fallbackTitle = initialData.tema
+    ? `${initialData.tema} - Declaración`
+    : initialData.description
+      ? String(initialData.description).substring(0, 60)
+      : "";
 
   const [title, setTitle] = React.useState(() =>
-    String(initialData.title || initialData.titulo || ""),
+    String(initialData.title || initialData.titulo || fallbackTitle),
   );
   const [summary, setSummary] = React.useState(() =>
     String(
       initialData.summary ||
         initialData.redaccion_final ||
         initialData.descripcion ||
+        initialData.description ||
+        initialData.hecho ||
         "",
     ),
   );
@@ -73,6 +82,7 @@ function FindingEditForm({
     String(
       initialData.type ||
         initialData.tipo ||
+        initialData.tema ||
         (isBackground ? "PENAL" : "NOTICIA"),
     ),
   );
@@ -83,7 +93,12 @@ function FindingEditForm({
     String(initialData.sanction || initialData.sancion || ""),
   );
   const [publicationDate, setPublicationDate] = React.useState(() =>
-    String(initialData.publication_date || initialData.fecha || ""),
+    String(
+      initialData.publication_date ||
+        initialData.fecha ||
+        initialData.date ||
+        "",
+    ),
   );
   const [source, setSource] = React.useState(() =>
     String(
@@ -99,16 +114,34 @@ function FindingEditForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanDate = publicationDate.trim() ? publicationDate.trim() : null;
+    const cleanSource = source.trim() ? source.trim() : "Web";
+    const cleanUrl = sourceUrl.trim() ? sourceUrl.trim() : null;
+    const cleanSanction = sanction.trim() ? sanction.trim() : null;
+
     const updatedPayload: Record<string, unknown> = {
       ...initialData,
       title,
+      titulo: title,
       summary,
+      descripcion: summary,
+      description: summary,
+      redaccion_final: summary,
       type,
+      tipo: type,
+      tema: type,
       status,
-      sanction: sanction.trim() ? sanction.trim() : null,
-      publication_date: publicationDate.trim() ? publicationDate.trim() : null,
-      source: source.trim() ? source.trim() : "Web",
-      source_url: sourceUrl.trim() ? sourceUrl.trim() : null,
+      estado: status,
+      sanction: cleanSanction,
+      sancion: cleanSanction,
+      publication_date: cleanDate,
+      fecha: cleanDate,
+      date: cleanDate,
+      source: cleanSource,
+      fuente: cleanSource,
+      fuente_normalizada: cleanSource,
+      source_url: cleanUrl,
+      fuente_url: cleanUrl,
     };
 
     await onSaveAndApprove(updatedPayload);
@@ -260,7 +293,7 @@ function FindingEditForm({
         />
       </div>
 
-      <DialogFooter className="pt-4 border-t">
+      <DialogFooter className="pt-4 border-t border-border">
         <Button
           type="button"
           variant="outline"
@@ -272,7 +305,7 @@ function FindingEditForm({
         <Button
           type="submit"
           disabled={isProcessing}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-success hover:bg-success/90 text-success-foreground"
         >
           {isProcessing ? (
             <Loader2 className="h-4 w-4 animate-spin mr-1" />

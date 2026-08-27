@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bot, Ellipsis, SquarePen } from "lucide-react";
+import { Bot, Ellipsis, Microscope, SquarePen } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,12 @@ interface GetColumnsProps {
   setRowAction: React.Dispatch<
     React.SetStateAction<DataTableRowAction<AdminCandidate> | null>
   >;
+  canLaunchResearch?: boolean;
 }
 
 export function getColumns({
   setRowAction,
+  canLaunchResearch = false,
 }: GetColumnsProps): ColumnDef<AdminCandidate>[] {
   return [
     {
@@ -147,6 +149,7 @@ export function getColumns({
       enableSorting: false,
     },
     {
+      id: "district",
       accessorKey: "electoral_district",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Distrito Elect." />
@@ -230,6 +233,15 @@ export function getColumns({
                 <SquarePen className="size-4" />
                 Actualizar
               </DropdownMenuItem>
+              {canLaunchResearch && (
+                <DropdownMenuItem
+                  onSelect={() => setRowAction({ type: "research", row })}
+                  className="text-violet-600 focus:text-violet-600 focus:bg-violet-50"
+                >
+                  <Microscope className="size-4 mr-2" />
+                  Investigar (IA)
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onSelect={() =>
                   setRowAction({ type: "generate-embedding", row })

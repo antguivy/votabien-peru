@@ -15,7 +15,12 @@ export interface AuthTokens {
   token_type: string;
   expires_in?: number;
 }
-export type UserRole = "user" | "editor" | "admin" | "super_admin";
+export type UserRole =
+  | "user"
+  | "volunteer"
+  | "editor"
+  | "admin"
+  | "super_admin";
 
 export interface AuthUser {
   id: string;

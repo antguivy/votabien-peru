@@ -11,7 +11,7 @@ import {
   type AudienceFormValues,
 } from "./validation";
 import { extractErrorMessage } from "@/lib/error-handler";
-import { serverRequireEditor } from "@/lib/auth-actions";
+import { serverRequireEditor, serverRequireReviewer } from "@/lib/auth-actions";
 import { Prisma } from "@/prisma/generated/client";
 
 // =========================================================================
@@ -19,7 +19,7 @@ import { Prisma } from "@/prisma/generated/client";
 // =========================================================================
 
 export async function createTrivia(data: TriviaFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -80,7 +80,7 @@ export async function createTrivia(data: TriviaFormValues) {
 }
 
 export async function updateTrivia(id: number, data: TriviaFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -143,7 +143,7 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
 }
 
 export async function togglePublishTrivia(id: number, is_published: boolean) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   try {
     await prisma.triviagame.update({
       where: { id: BigInt(id) },
@@ -161,7 +161,7 @@ export async function togglePublishTrivia(id: number, is_published: boolean) {
 }
 
 export async function duplicateTrivia(id: number) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   try {
     const original = await prisma.triviagame.findUnique({
       where: { id: BigInt(id) },
@@ -230,20 +230,28 @@ export async function deleteTrivia(id: number) {
   }
 }
 
+export interface BulkImportFailure {
+  index: number; // índice en el JSON de origen (0-based)
+  preview: string; // fragmento del enunciado para ubicar la fila
+  error: string; // motivo de validación
+}
+
 export async function bulkImportTrivias(
   questionsList: TriviaFormValues[],
   targetTopicId?: string,
   targetAudienceIds?: string[],
+  isPublished = false, // por defecto se importa como BORRADOR para revisión
 ) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   try {
+    const failures: BulkImportFailure[] = [];
     let createdCount = 0;
     const maxIndexAgg = await prisma.triviagame.aggregate({
       _max: { global_index: true },
     });
     let currentIndex = Number(maxIndexAgg._max.global_index ?? 0);
 
-    for (const q of questionsList) {
+    for (const [rowIndex, q] of questionsList.entries()) {
       const validation = triviaSchema.safeParse({
         ...q,
         topic_id: targetTopicId || q.topic_id,
@@ -255,6 +263,13 @@ export async function bulkImportTrivias(
       });
 
       if (!validation.success) {
+        failures.push({
+          index: rowIndex,
+          preview: String(q.quote || q.title || "(sin enunciado)").slice(0, 80),
+          error:
+            validation.error.issues[0]?.message ||
+            "Validación fallida sin detalle",
+        });
         continue;
       }
 
@@ -283,7 +298,7 @@ export async function bulkImportTrivias(
           explanation: data.explanation || null,
           source_url: data.source_url || null,
           image_url: data.image_url || null,
-          is_published: data.is_published ?? true,
+          is_published: isPublished,
           options: data.options as Prisma.InputJsonValue,
           person_id: personId,
           political_party_id: politicalPartyId,
@@ -306,10 +321,21 @@ export async function bulkImportTrivias(
 
     revalidatePath("/admin/trivia");
     revalidatePath("/trivia");
+
+    const estadoMsg = isPublished ? "publicadas" : "guardadas como borrador";
+    let message: string;
+    if (failures.length === 0) {
+      message = `Se importaron ${createdCount} preguntas ${estadoMsg}.`;
+    } else {
+      message = `${createdCount} importadas ${estadoMsg}, ${failures.length} descartadas por errores (ver detalle).`;
+    }
+
     return {
-      success: true,
-      message: `Se importaron ${createdCount} preguntas exitosamente.`,
+      success: createdCount > 0 || failures.length === 0,
+      message,
       count: createdCount,
+      failedCount: failures.length,
+      failures,
     };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
@@ -321,7 +347,7 @@ export async function bulkImportTrivias(
 // =========================================================================
 
 export async function createTopic(data: TopicFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = topicSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -362,7 +388,7 @@ export async function createTopic(data: TopicFormValues) {
 }
 
 export async function updateTopic(id: string, data: TopicFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = topicSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -424,7 +450,7 @@ export async function deleteTopic(id: string) {
 // =========================================================================
 
 export async function createAudience(data: AudienceFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = audienceSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -448,7 +474,7 @@ export async function createAudience(data: AudienceFormValues) {
 }
 
 export async function updateAudience(id: string, data: AudienceFormValues) {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   const validation = audienceSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
