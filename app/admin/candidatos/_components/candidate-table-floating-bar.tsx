@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Download,
   Loader,
+  Microscope,
   Trash2,
   X,
   XCircle,
@@ -32,10 +33,12 @@ import { bulkUpdateCandidates } from "../_lib/actions";
 
 interface CandidatesTableFloatingBarProps {
   table: Table<AdminCandidate>;
+  canLaunchResearch?: boolean;
 }
 
 export function CandidatesTableFloatingBar({
   table,
+  canLaunchResearch = false,
 }: CandidatesTableFloatingBarProps) {
   const rows = table.getFilteredSelectedRowModel().rows;
 
@@ -162,6 +165,38 @@ export function CandidatesTableFloatingBar({
                   </SelectGroup>
                 </SelectContent>
               </Select>
+              {canLaunchResearch && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="size-7 border text-violet-600"
+                      onClick={() => {
+                        // Deduplicar por persona: un candidato puede tener varias candidaturas
+                        const persons = Array.from(
+                          new Map(
+                            rows.map((r) => [
+                              r.original.person_id,
+                              { id: r.original.person_id },
+                            ]),
+                          ).values(),
+                        );
+                        const event = new CustomEvent("open-batch-research", {
+                          detail: { rows: persons },
+                        });
+                        window.dispatchEvent(event);
+                      }}
+                      disabled={isPending}
+                    >
+                      <Microscope className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                    <p>Investigación Batch</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

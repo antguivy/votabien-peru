@@ -172,7 +172,7 @@ export function FindingDiffDialog({
                   <p className="text-xs text-muted-foreground">
                     Título Propuesto:
                   </p>
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-sm font-semibold text-foreground break-words">
                     {proposedTitle}
                   </p>
                 </div>
@@ -181,17 +181,16 @@ export function FindingDiffDialog({
                     Estado Procesal:
                   </p>
                   <Badge
-                    variant="default"
-                    className={
+                    variant={
                       proposedStatus !== existing?.status
-                        ? "bg-amber-600 hover:bg-amber-700"
-                        : ""
+                        ? "warning"
+                        : "default"
                     }
                   >
                     {proposedStatus}
                   </Badge>
                   {existing && proposedStatus !== existing.status && (
-                    <span className="text-xs text-amber-600 font-medium ml-2">
+                    <span className="text-xs text-warning-foreground font-medium ml-2">
                       (Cambio detectado)
                     </span>
                   )}
@@ -200,37 +199,45 @@ export function FindingDiffDialog({
                   <p className="text-xs text-muted-foreground">
                     Sanción Propuesta:
                   </p>
-                  <p className="text-sm font-medium">{proposedSanction}</p>
+                  <p className="text-sm font-medium break-words">
+                    {proposedSanction}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
                     Nuevo Resumen / Redacción:
                   </p>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                     {proposedSummary}
                   </p>
                 </div>
                 <div className="text-xs text-muted-foreground pt-2 border-t border-primary/20 flex items-center justify-between">
                   <span>Fecha: {proposedDate}</span>
-                  <span>Fuente: {proposedSource}</span>
+                  <span
+                    className="truncate max-w-[200px]"
+                    title={proposedSource}
+                  >
+                    Fuente: {proposedSource}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Acciones */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
               <Button
                 variant="outline"
                 onClick={onReject}
                 disabled={isProcessing}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
               >
-                <X className="h-4 w-4 mr-1 text-red-500" /> Rechazar Propuesta
+                <X className="h-4 w-4 mr-1" /> Rechazar Propuesta
               </Button>
               <Button
                 variant="default"
                 onClick={onApprove}
                 disabled={isProcessing}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-success hover:bg-success/90 text-success-foreground"
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />

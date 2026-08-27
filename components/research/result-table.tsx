@@ -481,7 +481,7 @@ export function ResultadoTablas({
           <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
             <CheckCircle2 className="h-3 w-3 text-green-500" />
             <span className="flex items-center gap-1">
-              Selecciona qué datos deseas guardar en la base de datos.
+              Selecciona qué datos deseas enviar a la bandeja de revisión.
             </span>
           </div>
         </div>
@@ -498,7 +498,7 @@ export function ResultadoTablas({
                     onChange={(e) => setSaveAntecedentes(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
-                  Sobreescribir Antecedentes
+                  Incluir Antecedentes
                 </label>
                 <div className="w-px h-4 bg-border"></div>
                 <label className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors">
@@ -508,7 +508,7 @@ export function ResultadoTablas({
                     onChange={(e) => setSaveNoticias(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                   />
-                  Guardar Noticias (Biografía)
+                  Incluir Noticias (Biografía)
                 </label>
               </div>
 
@@ -523,7 +523,7 @@ export function ResultadoTablas({
                 ) : (
                   <Database className="h-4 w-4" />
                 )}
-                {isSaving ? "Guardando..." : "Guardar Selección"}
+                {isSaving ? "Enviando..." : "Enviar a Revisión"}
               </Button>
             </>
           )}

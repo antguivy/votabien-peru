@@ -22,21 +22,42 @@ import {
 } from "@/interfaces/candidate";
 import { CandidateFormDialog } from "./candidate-form-dialog";
 import { EmbeddingDialog } from "./embedding-dialog";
+import ResearchPageDialog from "@/components/research/research-page";
+import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
 
 interface CandidatesTableProps {
   promises: Promise<
     [PaginatedCandidatesResponse, TypeCounts, StatusCounts, PartyCounts]
   >;
+  districts?: { id: string; name: string; level?: string | null }[];
+  canLaunchResearch?: boolean;
 }
 
-export function CandidatesTable({ promises }: CandidatesTableProps) {
+export function CandidatesTable({
+  promises,
+  districts = [],
+  canLaunchResearch = false,
+}: CandidatesTableProps) {
   const [{ data, total, page_size }, typeCounts, statusCounts, partyCounts] =
     React.use(promises);
   const [rowAction, setRowAction] =
     React.useState<DataTableRowAction<AdminCandidate> | null>(null);
+  const [batchPersons, setBatchPersons] = React.useState<
+    { id: string }[] | null
+  >(null);
+
+  React.useEffect(() => {
+    const handleBatchOpen = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setBatchPersons(customEvent.detail.rows);
+    };
+    window.addEventListener("open-batch-research", handleBatchOpen);
+    return () =>
+      window.removeEventListener("open-batch-research", handleBatchOpen);
+  }, []);
   const columns = React.useMemo(
-    () => getColumns({ setRowAction }),
-    [setRowAction],
+    () => getColumns({ setRowAction, canLaunchResearch }),
+    [setRowAction, canLaunchResearch],
   );
   const filterFields: DataTableFilterField<AdminCandidate>[] = [
     {
@@ -71,6 +92,13 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
         count,
       })),
     },
+    {
+      id: "district" as keyof AdminCandidate,
+      label: "Región",
+      options: districts
+        .filter((d) => d.level === "REGIONAL")
+        .map((d) => ({ label: d.name, value: d.name })),
+    },
   ];
 
   const { table } = useDataTable({
@@ -93,7 +121,12 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
     <>
       <DataTable
         table={table}
-        floatingBar={<CandidatesTableFloatingBar table={table} />}
+        floatingBar={
+          <CandidatesTableFloatingBar
+            table={table}
+            canLaunchResearch={canLaunchResearch}
+          />
+        }
       >
         <DataTableToolbar table={table} filterFields={filterFields}>
           <CandidatesTableToolbarActions table={table} />
@@ -115,6 +148,22 @@ export function CandidatesTable({ promises }: CandidatesTableProps) {
           fullname={rowAction.row.original.person?.fullname || "Desconocido"}
         />
       )}
+      {rowAction?.type === "research" && (
+        <ResearchPageDialog
+          open={true}
+          onOpenChange={() => setRowAction(null)}
+          personId={rowAction.row.original.person_id}
+          personName={rowAction.row.original.person?.fullname || "Sin nombre"}
+        />
+      )}
+
+      <BatchResearchDialog
+        persons={batchPersons}
+        onClose={() => {
+          setBatchPersons(null);
+          table.toggleAllRowsSelected(false);
+        }}
+      />
     </>
   );
 }

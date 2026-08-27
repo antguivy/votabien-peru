@@ -1,6 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { createId } from "@paralleldrive/cuid2";
+import { hashPassword } from "better-auth/crypto";
 import { auth } from "./auth";
 import { headers } from "next/headers";
 import prisma from "./prisma";
@@ -89,16 +92,35 @@ export async function serverCheckRole(allowedRoles: UserRole[]) {
 
 // ============================================
 // VERIFICAR SI ES ADMIN (Utility)
+// super_admin es un alias operativo del admin
 // ============================================
 export async function serverRequireAdmin() {
-  return serverCheckRole(["admin"]);
+  return serverCheckRole(["admin", "super_admin"]);
 }
 
 // ============================================
 // VERIFICAR SI ES EDITOR O ADMIN (Utility)
+// NOTA: desde la incorporación de voluntarios, "editor" tiene permisos de
+// voluntario (revisar hallazgos + trivia). Las mutaciones de gestión
+// (personas, partidos, research, eliminaciones) quedan reservadas a admin.
 // ============================================
 export async function serverRequireEditor() {
-  return serverCheckRole(["editor", "admin"]);
+  return serverCheckRole(["admin", "super_admin"]);
+}
+
+// ============================================
+// VERIFICAR SI ES VOLUNTARIO, EDITOR O ADMIN (Revisores)
+// ============================================
+export async function serverRequireReviewer() {
+  return serverCheckRole(["volunteer", "editor", "admin", "super_admin"]);
+}
+
+// ============================================
+// VERIFICAR ROL SIN REDIRIGIR (para UI condicional)
+// ============================================
+export async function serverHasAnyRole(allowedRoles: UserRole[]) {
+  const { user } = await serverGetUser();
+  return !!user && allowedRoles.includes(user.role);
 }
 
 // ============================================
@@ -110,11 +132,18 @@ export async function serverUpdateUserRole(
 ): Promise<AuthActionResponse> {
   const { user: currentUserProfile } = await serverGetUser();
 
-  if (!currentUserProfile || currentUserProfile.role !== "admin") {
+  if (
+    !currentUserProfile ||
+    !["admin", "super_admin"].includes(currentUserProfile.role)
+  ) {
     return { error: "No tienes permisos para realizar esta acción" };
   }
 
-  if (userId === currentUserProfile.id && newRole !== "admin") {
+  if (
+    userId === currentUserProfile.id &&
+    newRole !== "admin" &&
+    newRole !== "super_admin"
+  ) {
     return { error: "No puedes cambiar tu propio rol de administrador" };
   }
 
@@ -123,6 +152,126 @@ export async function serverUpdateUserRole(
       where: { id: userId },
       data: { role: newRole },
     });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Algo salió mal" };
+  }
+}
+
+// ============================================
+// CREAR USUARIO DIRECTO (Solo admins)
+// Sin verificación de email: el admin asigna credenciales
+// temporalmente hasta implementar el flujo de invitación.
+// ============================================
+const ASSIGNABLE_ROLES: UserRole[] = ["user", "volunteer", "editor", "admin"];
+
+export async function serverCreateUser(input: {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}): Promise<AuthActionResponse & { userId?: string }> {
+  const { user: currentUser } = await serverGetUser();
+
+  if (!currentUser || !["admin", "super_admin"].includes(currentUser.role)) {
+    return { error: "No tienes permisos para realizar esta acción" };
+  }
+
+  const name = input.name?.trim();
+  const email = input.email?.toLowerCase().trim();
+  const password = input.password;
+
+  if (!name || !email || !password) {
+    return { error: "Nombre, email y contraseña son obligatorios" };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: "Formato de email inválido" };
+  }
+  if (password.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres" };
+  }
+  if (!ASSIGNABLE_ROLES.includes(input.role)) {
+    return { error: "Rol inválido" };
+  }
+
+  try {
+    // Mismo algoritmo de hash que usa Better-Auth en el login
+    const hashedPassword = await hashPassword(password);
+
+    const existing = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (existing) {
+      return { error: `Ya existe un usuario con el email ${email}` };
+    }
+
+    const userId = createId();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.create({
+        data: {
+          id: userId,
+          name,
+          email,
+          role: input.role,
+          emailVerified: true, // directo, sin flujo de verificación
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      await tx.account.create({
+        data: {
+          id: createId(),
+          accountId: userId,
+          providerId: "credential",
+          userId,
+          password: hashedPassword,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+    });
+
+    revalidatePath("/admin/usuarios");
+    return { success: true, userId };
+  } catch (error) {
+    console.error("Error en serverCreateUser:", error);
+    return { error: error instanceof Error ? error.message : "Algo salió mal" };
+  }
+}
+
+// ============================================
+// DAR DE BAJA USUARIO (Solo admins)
+// Baja el rol a "user" Y elimina todas sus sesiones activas
+// (logout inmediato en todos sus dispositivos). La cuenta se
+// conserva para auditoría y posible reactivación.
+// ============================================
+export async function serverDeactivateUser(
+  userId: string,
+): Promise<AuthActionResponse> {
+  const { user: currentUser } = await serverGetUser();
+
+  if (!currentUser || !["admin", "super_admin"].includes(currentUser.role)) {
+    return { error: "No tienes permisos para realizar esta acción" };
+  }
+
+  if (userId === currentUser.id) {
+    return { error: "No puedes darte de baja a ti mismo" };
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: userId },
+        data: { role: "user", updatedAt: new Date() },
+      }),
+      // Mata el token en todos sus dispositivos: la próxima request
+      // ya no encontrará la sesión en la DB
+      prisma.session.deleteMany({ where: { userId } }),
+    ]);
+    revalidatePath("/admin/usuarios");
     return { success: true };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Algo salió mal" };

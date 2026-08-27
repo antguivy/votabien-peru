@@ -44,6 +44,16 @@ export async function getCandidates(
         name: { in: input.parties },
       };
     }
+    if (input.district && input.district.length > 0) {
+      // Incluye el subárbol geográfico: departamento → provincias → distritos
+      where.electoraldistrict = {
+        OR: [
+          { name: { in: input.district } },
+          { parent: { name: { in: input.district } } },
+          { parent: { parent: { name: { in: input.district } } } },
+        ],
+      };
+    }
 
     where.electoralprocess = { active: true };
 

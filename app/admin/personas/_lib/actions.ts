@@ -19,6 +19,7 @@ import {
 } from "@/interfaces/background";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
+import { isBlockedSourceUrl } from "@/lib/blocked-sources";
 import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
 import { limaDateToUtc } from "@/lib/utils/date";
 
@@ -238,28 +239,6 @@ export async function searchPersonByDNI(dni: string) {
 const cleanForDb = (val: string | null | undefined) => {
   if (!val || val.trim() === "") return null;
   return val.trim();
-};
-
-const BLOCKED_SOURCE_URLS_EXACT = new Set([
-  "https://congrezoo.pe/fauna-electoral/2026/02/10/elecciones-2026-postulantes-condicion-de-deudores-alimentarios-morosos/",
-  "https://congrezoo.pe/fauna-electoral/2026/01/11/podemos-fuerza-popular-app-peru-libre-mayor-numero-candidatos-con-sentencias-penales/",
-  "https://congrezoo.pe/fauna-electoral/2026/01/18/elecciones-2026-lista-de-candidatos-con-sentencias-por-alimentos/",
-]);
-
-const BLOCKED_SOURCE_URL_PREFIXES = [
-  "https://checabien.com/",
-  "https://revisatucandidato.pe/",
-  "https://votoinformado.jne.gob.pe/",
-  "https://candidatos.pe/",
-];
-
-const isBlockedSourceUrl = (url: string | null | undefined): boolean => {
-  if (!url) return false;
-  const trimmed = url.trim();
-  if (BLOCKED_SOURCE_URLS_EXACT.has(trimmed)) return true;
-  return BLOCKED_SOURCE_URL_PREFIXES.some((prefix) =>
-    trimmed.startsWith(prefix),
-  );
 };
 
 export async function updatePersonBiography(
@@ -538,82 +517,6 @@ export async function fetchAntecedentesFromJNE(
     );
 
     return { success: true, data: antecedentes, total: data.total };
-  } catch (error) {
-    return { success: false, error: extractErrorMessage(error) };
-  }
-}
-
-export async function queueBatchResearch(personIds: string[]) {
-  await serverRequireEditor();
-  try {
-    const batch_run_id = createId();
-    const persons = await prisma.person.findMany({
-      where: { id: { in: personIds } },
-      select: {
-        id: true,
-        fullname: true,
-        posturas: true,
-        background: {
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            title: true,
-            summary: true,
-            sanction: true,
-            publication_date: true,
-            source: true,
-            source_url: true,
-          },
-        },
-      },
-    });
-
-    const candidates = persons.map((p) => ({
-      person_id: p.id,
-      fullname: p.fullname,
-      existing_backgrounds: p.background,
-      existing_posturas: p.posturas || [],
-    }));
-
-    const response = await fetch(`${API_BASE_URL}/api/v1/research/batch`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.API_SECRET_KEY}`,
-      },
-      body: JSON.stringify({
-        batch_run_id,
-        candidates,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
-
-    return { success: true, batch_run_id };
-  } catch (error) {
-    return { success: false, error: extractErrorMessage(error) };
-  }
-}
-
-export async function getBatchResearchProgress(batch_run_id: string) {
-  await serverRequireEditor();
-  try {
-    const proposals = await prisma.research_proposals.findMany({
-      where: { batch_run_id },
-      select: { person_id: true },
-    });
-
-    // Group by person to know how many distinct persons have generated proposals
-    const processedPersonIds = new Set(proposals.map((p) => p.person_id));
-
-    return {
-      success: true,
-      processedCount: processedPersonIds.size,
-      totalProposals: proposals.length,
-    };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }

@@ -35,7 +35,11 @@ export function useInvestigacionStream() {
   }, []);
 
   const iniciarInvestigacion = useCallback(
-    async (nombreInvestigado: string, workflowId: string) => {
+    async (
+      nombreInvestigado: string,
+      workflowId: string,
+      personId?: string,
+    ) => {
       resetEstado();
       setIsStreaming(true);
 
@@ -46,6 +50,9 @@ export function useInvestigacionStream() {
         const formData = new FormData();
         formData.append("nombre_investigado", nombreInvestigado);
         formData.append("workflow_id", workflowId);
+        if (personId) {
+          formData.append("person_id", personId);
+        }
 
         const response = await fetch("/api/research", {
           method: "POST",

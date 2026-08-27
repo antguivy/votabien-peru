@@ -51,6 +51,8 @@ export const NavbarUserMenu = ({ user }: NavbarUserMenuProps) => {
         return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30";
       case "editor":
         return "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30";
+      case "volunteer":
+        return "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30";
       default:
         return "bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/30";
     }

@@ -21,8 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileUp, Copy, Check, AlertCircle } from "lucide-react";
-import { bulkImportTrivias } from "../_lib/actions";
+import { FileUp, Copy, Check, AlertCircle, AlertTriangle } from "lucide-react";
+import { bulkImportTrivias, type BulkImportFailure } from "../_lib/actions";
 import { TriviaTopic, TriviaAudience } from "@/interfaces/trivia";
 import { TriviaFormValues } from "../_lib/validation";
 import { renderAudienceIcon } from "@/lib/trivia-icons";
@@ -68,10 +68,14 @@ export function BulkImportDialog({
   const [parseError, setParseError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importFailures, setImportFailures] = useState<
+    BulkImportFailure[] | null
+  >(null);
 
   const handleJsonChange = (text: string) => {
     setJsonText(text);
     setParseError(null);
+    setImportFailures(null);
     if (!text.trim()) {
       setParsedCount(null);
       return;
@@ -112,13 +116,22 @@ export function BulkImportDialog({
         selectedAudienceIds,
       );
 
-      if (res.success) {
-        toast.success(res.message);
+      if (res.error) {
+        toast.error(res.error || "Hubo un problema al importar las preguntas");
+        return;
+      }
+
+      // Éxito parcial o total: mostrar detalle de descartadas
+      if (res.failures && res.failures.length > 0) {
+        setImportFailures(res.failures);
+        toast.warning(res.message || "Algunas preguntas fueron descartadas");
+      } else {
+        toast.success(
+          res.message || `Se importaron ${res.count} preguntas como borrador.`,
+        );
         setJsonText("");
         onOpenChange(false);
         router.refresh();
-      } else {
-        toast.error(res.error || "Hubo un problema al importar las preguntas");
       }
     } catch (e) {
       toast.error("Error al procesar las preguntas");
@@ -245,15 +258,40 @@ export function BulkImportDialog({
               ) : parsedCount !== null ? (
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                   <Check size={13} /> Se detectaron {parsedCount} preguntas
-                  listas para guardar.
+                  listas para guardar (como borrador).
                 </span>
               ) : (
                 <span className="text-muted-foreground">
                   Cada pregunta debe incluir su enunciado, opciones y respuesta
-                  correcta.
+                  correcta. Se importan como <strong>borrador</strong> para
+                  revisión antes de publicar.
                 </span>
               )}
             </div>
+
+            {/* Detalle de filas descartadas en el último intento */}
+            {importFailures && importFailures.length > 0 && (
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 space-y-2">
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                  <AlertTriangle size={14} />
+                  {importFailures.length} pregunta(s) descartada(s):
+                </p>
+                <ul className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {importFailures.map((f) => (
+                    <li
+                      key={f.index}
+                      className="text-[11px] text-muted-foreground leading-snug"
+                    >
+                      <span className="font-bold text-foreground">
+                        Fila {f.index + 1}
+                      </span>{" "}
+                      — “{f.preview}”:{" "}
+                      <span className="text-destructive">{f.error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </CredenzaBody>
 

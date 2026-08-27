@@ -31,6 +31,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Administrador",
   admin: "Administrador",
   editor: "Editor",
+  volunteer: "Voluntario",
   user: "Usuario",
 };
 
@@ -38,5 +39,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   super_admin: ["manage_users", "manage_all_content", "manage_settings"],
   admin: ["manage_content", "view_analytics"],
   editor: ["edit_content"],
+  volunteer: ["review_research", "create_trivia"],
   user: [],
 };

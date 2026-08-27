@@ -31,6 +31,16 @@ export const auth = betterAuth({
   socialProviders: {
     // You can configure your social providers here
   },
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        defaultValue: "user",
+        // El rol solo se modifica desde /admin/usuarios, nunca por input del cliente
+        input: false,
+      },
+    },
+  },
   rateLimit: {
     enabled: true,
     window: 60, // 60 segundos

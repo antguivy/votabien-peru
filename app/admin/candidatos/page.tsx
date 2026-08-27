@@ -18,6 +18,7 @@ import { CandidatesTable } from "./_components/candidate-table";
 import { getElectoralProcess } from "@/queries/public/electoral-process";
 import { ContentLayout } from "@/components/admin/content-layout";
 import { getDistritos } from "@/queries/public/electoral-districts";
+import { serverHasAnyRole } from "@/lib/auth-actions";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;
@@ -31,14 +32,16 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
     getCandidacyStatusCounts(),
     getPartiesCounts(),
   ]);
-  const [districts, parties, active_process] = await Promise.all([
-    getDistritos(),
-    getPartidosList({
-      active: true,
-      limit: 100,
-    }),
-    getElectoralProcess({ active: true }),
-  ]);
+  const [districts, parties, active_process, canLaunchResearch] =
+    await Promise.all([
+      getDistritos(),
+      getPartidosList({
+        active: true,
+        limit: 100,
+      }),
+      getElectoralProcess({ active: true }),
+      serverHasAnyRole(["admin", "super_admin"]),
+    ]);
 
   return (
     <ContentLayout title="Candidatos">
@@ -78,7 +81,11 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
               />
             }
           >
-            <CandidatesTable promises={promises} />
+            <CandidatesTable
+              promises={promises}
+              districts={districts}
+              canLaunchResearch={canLaunchResearch}
+            />
           </Suspense>
           {/* </FeatureFlagsProvider> */}
         </AdminCandidateProvider>

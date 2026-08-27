@@ -5,6 +5,8 @@ import { CandidacyStatus, CandidateToPerson } from "./candidate";
 import { LegislatorDetail } from "./legislator";
 
 export interface BiographyDetail {
+  id?: string;
+  title?: string | null;
   type: string;
   date: string;
   description: string;
