@@ -26,10 +26,37 @@ function revalidatePersonEcosystem() {
  * Encola la investigación batch de un conjunto de personas en el servicio Python.
  * Solo editores/admins: el pipeline corre en la máquina del operador (IP residencial).
  */
-export async function queueBatchResearch(personIds: string[]) {
+export async function queueBatchResearch(
+  personIds: string[],
+  workflowId?: string,
+) {
   await serverRequireAdmin();
   try {
     const batch_run_id = createId();
+
+    let compressor_prompt = "";
+    let compressor_model = "gemini-3.5-flash-lite";
+    let validator_prompt = "";
+    let validator_model = "gemini-3.6-flash";
+    let include_news = true;
+    let include_youtube = false;
+
+    if (workflowId) {
+      const wf = await prisma.ai_workflow.findUnique({
+        where: { id: workflowId },
+      });
+      if (wf) {
+        compressor_prompt = wf.compressor_prompt || "";
+        compressor_model = wf.compressor_model || "gemini-3.5-flash-lite";
+        validator_prompt = wf.validator_prompt || "";
+        validator_model = wf.validator_model || "gemini-3.6-flash";
+        include_news =
+          wf.sources.includes("search_web") ||
+          wf.sources.includes("search_jne");
+        include_youtube = wf.sources.includes("search_youtube");
+      }
+    }
+
     const persons = await prisma.person.findMany({
       where: { id: { in: personIds } },
       select: {
@@ -68,6 +95,12 @@ export async function queueBatchResearch(personIds: string[]) {
       body: JSON.stringify({
         batch_run_id,
         candidates,
+        compressor_prompt,
+        compressor_model,
+        validator_prompt,
+        validator_model,
+        include_news,
+        include_youtube,
       }),
     });
 
@@ -86,15 +119,25 @@ export async function getBatchResearchProgress(batch_run_id: string) {
   try {
     const proposals = await prisma.research_proposals.findMany({
       where: { batch_run_id },
-      select: { person_id: true },
+      select: { person_id: true, status: true, action: true },
     });
 
-    // Group by person to know how many distinct persons have generated proposals
-    const processedPersonIds = new Set(proposals.map((p) => p.person_id));
+    const allPersonIds = new Set(proposals.map((p) => p.person_id));
+    const failedPersonIds = new Set(
+      proposals
+        .filter((p) => p.status === "FAILED" || p.action === "ERROR")
+        .map((p) => p.person_id),
+    );
+    const successPersonIds = Array.from(allPersonIds).filter(
+      (id) => !failedPersonIds.has(id),
+    );
 
     return {
       success: true,
-      processedCount: processedPersonIds.size,
+      processedCount: allPersonIds.size,
+      completedCount: successPersonIds.length,
+      failedCount: failedPersonIds.size,
+      failedPersonIds: Array.from(failedPersonIds),
       totalProposals: proposals.length,
     };
   } catch (error) {

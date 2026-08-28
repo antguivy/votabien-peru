@@ -20,12 +20,9 @@ export default function UnauthorizedPage() {
           es un error, contacta al administrador del sistema.
         </p>
 
-        <div className="flex gap-4 mt-6">
-          <Button variant="outline" asChild>
-            <Link href="/admin">Volver al Dashboard</Link>
-          </Button>
+        <div className="mt-6">
           <Button asChild>
-            <Link href="/">Ir al Inicio</Link>
+            <Link href="/admin">Regresar a inicio</Link>
           </Button>
         </div>
       </div>

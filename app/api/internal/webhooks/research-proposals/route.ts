@@ -34,28 +34,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const createdProposals = await prisma.$transaction(
-      proposals.map((p) =>
-        prisma.research_proposals.create({
-          data: {
-            id: createId(),
-            person_id: String(p.person_id),
-            batch_run_id: p.batch_run_id ? String(p.batch_run_id) : null,
-            action: String(p.action || "INSERT"),
-            target_id: p.target_id ? String(p.target_id) : null,
-            reason: String(p.reason || ""),
-            confidence: typeof p.confidence === "number" ? p.confidence : 0.8,
-            status: String(p.status || "PENDING"),
-            proposed_data: (p.proposed_data || {}) as Prisma.InputJsonValue,
-          },
-        }),
+    // 1. Si este candidato se está reintentando, eliminar registros previos de error en este lote
+    const personBatchPairs = Array.from(
+      new Set(
+        proposals
+          .filter((p) => p.person_id && p.batch_run_id)
+          .map((p) => `${p.person_id}:::${p.batch_run_id}`),
       ),
     );
 
+    const cleanupOps = personBatchPairs.map((pair) => {
+      const [person_id, batch_run_id] = pair.split(":::");
+      return prisma.research_proposals.deleteMany({
+        where: {
+          person_id,
+          batch_run_id,
+          OR: [{ action: "ERROR" }, { status: "FAILED" }],
+        },
+      });
+    });
+
+    const createOps = proposals.map((p) =>
+      prisma.research_proposals.create({
+        data: {
+          id: createId(),
+          person_id: String(p.person_id),
+          batch_run_id: p.batch_run_id ? String(p.batch_run_id) : null,
+          action: String(p.action || "INSERT"),
+          target_id: p.target_id ? String(p.target_id) : null,
+          reason: String(p.reason || ""),
+          confidence: typeof p.confidence === "number" ? p.confidence : 0.8,
+          status: String(p.status || "PENDING"),
+          proposed_data: (p.proposed_data || {}) as Prisma.InputJsonValue,
+        },
+      }),
+    );
+
+    const txResults = await prisma.$transaction([...cleanupOps, ...createOps]);
+
+    const createdProposals = txResults.slice(cleanupOps.length);
+
     // Si vienen propuestas auto-aprobadas con acción real
     for (const prop of createdProposals) {
-      if (prop.status === "APPROVED" && prop.action !== "NONE") {
-        await applyProposalDirect(prop);
+      if (
+        prop &&
+        "status" in prop &&
+        prop.status === "APPROVED" &&
+        "action" in prop &&
+        prop.action !== "NONE" &&
+        prop.action !== "ERROR"
+      ) {
+        await applyProposalDirect(
+          prop as Parameters<typeof applyProposalDirect>[0],
+        );
       }
     }
 

@@ -49,6 +49,52 @@ const AVAILABLE_TOOLS = [
   { id: "db_query", label: "Consulta a Base de Datos (Prisma)" },
 ];
 
+const COMPRESSOR_MODELS = [
+  {
+    value: "gemini-3.5-flash-lite",
+    label: "Gemini 3.5 Flash Lite (500 RPD - Recomendado)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "gemini-3.1-flash-lite",
+    label: "Gemini 3.1 Flash Lite (500 RPD)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "deepseek-v4-flash",
+    label: "DeepSeek V4 Flash (1M Context - Ultra Económico)",
+    group: "DeepSeek API",
+  },
+];
+
+const VALIDATOR_MODELS = [
+  {
+    value: "gemini-3.6-flash",
+    label: "Gemini 3.6 Flash (20 RPD - Recomendado)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "gemini-3.5-flash",
+    label: "Gemini 3.5 Flash (20 RPD)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "gemini-3-flash",
+    label: "Gemini 3.0 Flash (20 RPD)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "gemini-3.7-flash",
+    label: "Gemini 3.7 Flash (20 RPD)",
+    group: "Google AI Studio",
+  },
+  {
+    value: "deepseek-v4-flash",
+    label: "DeepSeek V4 Flash (1M Context - Thinking Mode)",
+    group: "DeepSeek API",
+  },
+];
+
 interface WorkflowFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -73,11 +119,11 @@ export function WorkflowFormDialog({
     defaultValues: {
       name: "",
       description: "",
-      sources: [],
+      sources: ["search_web"],
       compressor_prompt: "",
-      compressor_model: "gemini-2.5-flash",
+      compressor_model: "gemini-3.5-flash-lite",
       validator_prompt: "",
-      validator_model: "gemini-2.5-flash",
+      validator_model: "gemini-3.6-flash",
       status: "ACTIVE",
     },
   });
@@ -88,22 +134,23 @@ export function WorkflowFormDialog({
         reset({
           name: workflow.name,
           description: workflow.description || "",
-          sources: workflow.sources || [],
+          sources: workflow.sources || ["search_web"],
           compressor_prompt: workflow.compressor_prompt || "",
-          compressor_model: workflow.compressor_model || "gemini-2.5-flash",
+          compressor_model:
+            workflow.compressor_model || "gemini-3.5-flash-lite",
           validator_prompt: workflow.validator_prompt || "",
-          validator_model: workflow.validator_model || "gemini-2.5-flash",
+          validator_model: workflow.validator_model || "gemini-3.6-flash",
           status: workflow.status,
         });
       } else {
         reset({
           name: "",
           description: "",
-          sources: [],
+          sources: ["search_web"],
           compressor_prompt: "",
-          compressor_model: "gemini-2.5-flash",
+          compressor_model: "gemini-3.5-flash-lite",
           validator_prompt: "",
-          validator_model: "gemini-2.5-flash",
+          validator_model: "gemini-3.6-flash",
           status: "ACTIVE",
         });
       }
@@ -221,19 +268,42 @@ export function WorkflowFormDialog({
             </Label>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label>Prompt del Compresor</Label>
+                <div className="flex justify-between items-baseline">
+                  <Label>Prompt del Compresor (Opcional)</Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Opcional para acotar
+                  </span>
+                </div>
                 <Textarea
                   {...register("compressor_prompt")}
-                  rows={5}
-                  placeholder="Extrae solo información sobre lavado de activos..."
+                  rows={4}
+                  placeholder="Instrucciones adicionales para filtrar noticias (ej. enfocar en lavado de activos). Déjalo vacío para análisis estándar."
                   className="font-mono text-xs"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Modelo Compresor</Label>
-                <Input
-                  {...register("compressor_model")}
-                  placeholder="gemini-2.5-flash"
+                <Controller
+                  name="compressor_model"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="Seleccionar modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMPRESSOR_MODELS.map((m) => (
+                          <SelectItem
+                            key={m.value}
+                            value={m.value}
+                            className="text-xs"
+                          >
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
             </div>
@@ -245,19 +315,42 @@ export function WorkflowFormDialog({
             </Label>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label>Prompt del Validador</Label>
+                <div className="flex justify-between items-baseline">
+                  <Label>Prompt del Validador (Opcional)</Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Opcional para reglas extra
+                  </span>
+                </div>
                 <Textarea
                   {...register("validator_prompt")}
-                  rows={5}
-                  placeholder="Valida que la postura cumpla con las reglas establescidas..."
+                  rows={4}
+                  placeholder="Reglas adicionales para extracción legal. Déjalo vacío para usar las reglas periodísticas estándar."
                   className="font-mono text-xs"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Modelo Validador</Label>
-                <Input
-                  {...register("validator_model")}
-                  placeholder="gemini-2.5-flash"
+                <Controller
+                  name="validator_model"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="Seleccionar modelo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VALIDATOR_MODELS.map((m) => (
+                          <SelectItem
+                            key={m.value}
+                            value={m.value}
+                            className="text-xs"
+                          >
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
             </div>

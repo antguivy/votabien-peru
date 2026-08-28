@@ -44,18 +44,63 @@ export async function getCandidates(
         name: { in: input.parties },
       };
     }
-    if (input.district && input.district.length > 0) {
-      // Incluye el subárbol geográfico: departamento → provincias → distritos
-      where.electoraldistrict = {
-        OR: [
-          { name: { in: input.district } },
-          { parent: { name: { in: input.district } } },
-          { parent: { parent: { name: { in: input.district } } } },
-        ],
-      };
+    if (input.district) {
+      const terms = Array.isArray(input.district)
+        ? (input.district as string[]).filter(Boolean)
+        : [input.district as string].filter(Boolean);
+
+      if (terms.length > 0) {
+        const matchedDistricts = await prisma.electoraldistrict.findMany({
+          where: {
+            OR: terms.flatMap((term) => [
+              { id: term },
+              { code: term },
+              { ubigeo: term },
+              { name: { equals: term, mode: "insensitive" } },
+              { name: { startsWith: term + " -", mode: "insensitive" } },
+              { name: { startsWith: term + " (", mode: "insensitive" } },
+            ]),
+          },
+          include: {
+            children: {
+              include: {
+                children: true,
+              },
+            },
+          },
+        });
+
+        const targetDistrictIds = new Set<string>();
+        for (const dist of matchedDistricts) {
+          targetDistrictIds.add(dist.id);
+          if (dist.children) {
+            for (const child of dist.children) {
+              targetDistrictIds.add(child.id);
+              if (child.children) {
+                for (const grandChild of child.children) {
+                  targetDistrictIds.add(grandChild.id);
+                }
+              }
+            }
+          }
+        }
+
+        if (targetDistrictIds.size > 0) {
+          where.electoral_district_id = { in: Array.from(targetDistrictIds) };
+        }
+      }
     }
 
-    where.electoralprocess = { active: true };
+    if (input.process) {
+      where.electoralprocess = {
+        OR: [
+          { id: input.process },
+          { name: { contains: input.process, mode: "insensitive" } },
+        ],
+      };
+    } else {
+      where.electoralprocess = { active: true };
+    }
 
     const orderBy: Record<string, unknown> = {};
     if (input.sort && input.sort.length > 0) {
