@@ -39,7 +39,7 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
         active: true,
         limit: 100,
       }),
-      getElectoralProcess({ active: true }),
+      getElectoralProcess(),
       serverHasAnyRole(["admin", "super_admin"]),
     ]);
 

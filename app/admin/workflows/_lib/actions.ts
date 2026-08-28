@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { serverRequireEditor } from "@/lib/auth-actions";
+import { serverRequireEditor, serverRequireReviewer } from "@/lib/auth-actions";
 import { revalidatePath } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { extractErrorMessage } from "@/lib/error-handler";
@@ -83,7 +83,7 @@ export async function getActiveWorkflows(): Promise<
   | { success: true; workflows: { id: string; name: string }[] }
   | { success: false; error: string }
 > {
-  await serverRequireEditor();
+  await serverRequireReviewer();
   try {
     const workflows = await prisma.ai_workflow.findMany({
       where: { status: "ACTIVE" },

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BillsTable } from "./_components/bills-table";
 import { searchParamsCache } from "./_lib/validation";
 import { getBills, getBillStats, getBillFilterOptions } from "./_lib/data";
-import { FileText, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { FileText, CheckCircle2, Clock, BrainCircuit } from "lucide-react";
 
 interface BillsPageProps {
   searchParams: Promise<SearchParams>;
@@ -88,7 +88,7 @@ export default async function AdminBillsPage(props: BillsPageProps) {
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Con Título IA
               </CardTitle>
-              <Sparkles className="h-4 w-4 text-primary" />
+              <BrainCircuit className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">

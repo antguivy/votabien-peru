@@ -165,16 +165,16 @@ export default function ResearchPageDialog({
       >
         <CredenzaHeader>
           <CredenzaTitle>
-            {showForm && "Investigación Autónoma RAG"}
+            {showForm && "Investigación Asistida por IA"}
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
               "Procesando investigación..."}
             {resultadoFinal && `Resultados — ${resultadoFinal.investigado}`}
           </CredenzaTitle>
           <CredenzaDescription>
             {showForm &&
-              `Lanza el workflow de investigación para ${personName}.`}
+              `Rastreo de noticias, declaraciones públicas y antecedentes para ${personName}.`}
             {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
-              "El workflow está leyendo la web, por favor espere."}
+              "El workflow está consultando fuentes públicas, por favor espere."}
             {resultadoFinal &&
               "Revisa los hallazgos y envíalos a la bandeja de revisiones."}
           </CredenzaDescription>

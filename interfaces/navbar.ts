@@ -6,6 +6,11 @@ export interface NavLink {
   label: string;
   icon: LucideIcon;
   badge?: string;
+  submenus?: {
+    href: string;
+    label: string;
+    active?: boolean;
+  }[];
 }
 
 export interface NavGroup {

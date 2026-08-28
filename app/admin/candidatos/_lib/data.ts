@@ -291,8 +291,13 @@ export async function getPartiesCounts(): Promise<PartyCounts> {
   }
 }
 
-type CandidateForEdit = CandidateFormValues & {
+export type CandidateForEdit = CandidateFormValues & {
   person: PersonBasicInfo | null;
+  electoral_process_name?: string;
+  party_name?: string;
+  district_name?: string;
+  district_formatted?: string;
+  district_level?: string;
 };
 
 export async function getCandidateForEdit(
@@ -320,10 +325,58 @@ export async function getCandidateForEdit(
           profession: true,
         },
       },
+      electoralprocess: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      politicalparty: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      electoraldistrict: {
+        select: {
+          id: true,
+          name: true,
+          level: true,
+          parent_id: true,
+          parent: {
+            select: {
+              name: true,
+              parent: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
   if (!data) return null;
+
+  let districtFormatted = data.electoraldistrict?.name || "";
+  if (data.electoraldistrict) {
+    const d = data.electoraldistrict;
+    if (d.level === "DISTRITAL") {
+      if (d.parent?.parent?.name) {
+        districtFormatted = `${d.name}, ${d.parent.name} (${d.parent.parent.name})`;
+      } else if (d.parent?.name) {
+        districtFormatted = `${d.name} (${d.parent.name})`;
+      }
+    } else if (d.level === "PROVINCIAL") {
+      if (d.parent?.name) {
+        districtFormatted = `${d.name} (${d.parent.name})`;
+      }
+    } else if (d.level === "REGIONAL") {
+      districtFormatted = `Región ${d.name}`;
+    }
+  }
 
   return {
     id: data.id,
@@ -336,5 +389,10 @@ export async function getCandidateForEdit(
     list_number: data.list_number ?? 0,
     active: data.active ?? true,
     person: data.person as PersonBasicInfo | null,
+    electoral_process_name: data.electoralprocess?.name || "",
+    party_name: data.politicalparty?.name || "",
+    district_name: data.electoraldistrict?.name || "",
+    district_formatted: districtFormatted,
+    district_level: data.electoraldistrict?.level || "",
   };
 }

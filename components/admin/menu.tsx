@@ -14,17 +14,44 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { CollapseMenuButton } from "./collapse-menu-button"; // Asegúrate de que la ruta es correcta
 import { adminNavGroups } from "../navbar/navbar-config";
 
+import { isRouteAllowedForRole } from "@/lib/rbac";
+import { UserRole } from "@/interfaces/auth";
+
 interface MenuProps {
   isOpen: boolean | undefined;
+  userRole?: string;
 }
 
-export function Menu({ isOpen }: MenuProps) {
+export function Menu({ isOpen, userRole }: MenuProps) {
+  const allowedGroups = adminNavGroups
+    .map((group) => ({
+      ...group,
+      links: group.links
+        .map((link) => {
+          if (link.submenus && link.submenus.length > 0) {
+            const allowedSubmenus = link.submenus.filter((sub) =>
+              isRouteAllowedForRole(sub.href, userRole as UserRole),
+            );
+            if (allowedSubmenus.length === 0) return null;
+            return {
+              ...link,
+              submenus: allowedSubmenus,
+            };
+          }
+          return isRouteAllowedForRole(link.href, userRole as UserRole)
+            ? link
+            : null;
+        })
+        .filter((link): link is NonNullable<typeof link> => link !== null),
+    }))
+    .filter((group) => group.links.length > 0);
+
   return (
     <ScrollArea className="[&>div>div[style]]:!block">
       <nav className="mt-8 h-full w-full">
         <ul className="flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-2">
-          {/* Iteramos sobre los GRUPOS (Gestión, Herramientas, etc.) */}
-          {adminNavGroups.map((group, index) => (
+          {/* Iteramos sobre los GRUPOS permitidos para este rol */}
+          {allowedGroups.map((group, index) => (
             <li key={index} className={cn("w-full", group.label ? "pt-5" : "")}>
               {isOpen && group.label ? (
                 <p className="px-4 pb-2 text-xs font-medium text-muted-foreground text-ellipsis whitespace-nowrap overflow-hidden">
@@ -42,6 +69,7 @@ export function Menu({ isOpen }: MenuProps) {
                     icon={link.icon}
                     label={link.label}
                     href={link.href}
+                    submenus={link.submenus}
                     isOpen={isOpen}
                   />
                 </div>

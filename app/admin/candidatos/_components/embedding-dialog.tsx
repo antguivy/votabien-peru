@@ -8,24 +8,25 @@ import {
   AlertCircle,
   Database,
   FileText,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Sparkles,
   Clock,
   Hash,
   RefreshCcw,
   ChevronRight,
   Layers,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Credenza,
   CredenzaBody,
   CredenzaContent,
+  CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
   CredenzaTitle,
 } from "@/components/ui/credenza";
 import { embeddingService, EmbeddingChunk } from "@/services/embedding";
+import { useAuth } from "@/lib/auth-provider";
 
 interface EmbeddingDialogProps {
   open: boolean;
@@ -153,41 +154,70 @@ export function EmbeddingDialog({
   personId,
   fullname,
 }: EmbeddingDialogProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [chunks, setChunks] = useState<EmbeddingChunk[]>([]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
-    if (open && personId) fetchChunks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!open || !personId) return;
+
+    let isMounted = true;
+
+    async function loadData() {
+      try {
+        const res = await embeddingService.getEmbeddings(personId);
+        if (isMounted) {
+          if (res.success && Array.isArray(res.data)) {
+            setChunks(res.data);
+          }
+          setIsLoading(false);
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Error al cargar los embeddings existentes.";
+          toast.error(message);
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [open, personId]);
 
-  const fetchChunks = async () => {
-    setIsLoading(true);
-    try {
-      const res = await embeddingService.getEmbeddings(personId);
-      if (res.success) setChunks(res.data);
-    } catch {
-      toast.error("Error al cargar los embeddings existentes.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleGenerate = async () => {
-    if (!personId) return;
+    if (!isAdmin || !personId) return;
     setIsGenerating(true);
     try {
       const response = await embeddingService.generateEmbeddings(personId);
       if (response.success) {
         toast.success(response.message);
-        await fetchChunks();
+        setIsLoading(true);
+        const res = await embeddingService.getEmbeddings(personId);
+        if (res.success && Array.isArray(res.data)) {
+          setChunks(res.data);
+        }
+      } else {
+        toast.error(response.message || "Error al generar vectores.");
       }
-    } catch {
-      toast.error("Error al generar vectores. Revisa los logs.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Error al generar vectores. Revisa los logs.";
+      toast.error(message);
     } finally {
       setIsGenerating(false);
+      setIsLoading(false);
     }
   };
 
@@ -213,6 +243,10 @@ export function EmbeddingDialog({
               </span>
             </span>
           </CredenzaTitle>
+          <CredenzaDescription className="sr-only">
+            Visor y generador de vectores semánticos para búsqueda RAG de{" "}
+            {fullname}
+          </CredenzaDescription>
 
           {/* Stats row */}
           {!isLoading && chunks.length > 0 && (
@@ -243,7 +277,9 @@ export function EmbeddingDialog({
               })}
               <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                {new Date(chunks[0].created_at).toLocaleDateString("es-PE")}
+                {chunks[0]?.created_at
+                  ? new Date(chunks[0].created_at).toLocaleDateString("es-PE")
+                  : "Reciente"}
               </span>
             </div>
           )}
@@ -302,9 +338,11 @@ export function EmbeddingDialog({
         {/* ── Footer ── */}
         <CredenzaFooter className="px-5 py-4 border-t border-border/70 bg-muted/20 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground hidden sm:block">
-            {chunks.length > 0
-              ? "Los vectores se usan para búsqueda semántica en el chat IA."
-              : "Genera vectores para habilitar el contexto IA."}
+            {!isAdmin
+              ? "Vectores almacenados para búsqueda semántica. La generación se ejecuta por el equipo técnico."
+              : chunks.length > 0
+                ? "Los vectores se usan para búsqueda semántica en el chat IA."
+                : "Genera vectores para habilitar el contexto IA."}
           </p>
           <div className="flex items-center gap-2 ml-auto">
             <Button
@@ -321,10 +359,15 @@ export function EmbeddingDialog({
               type="button"
               size="sm"
               onClick={handleGenerate}
-              disabled={isGenerating || isLoading}
+              disabled={!isAdmin || isGenerating || isLoading}
               className="h-8 px-4 text-xs bg-primary hover:bg-primary/90 text-primary-foreground min-w-[148px] gap-1.5"
             >
-              {isGenerating ? (
+              {!isAdmin ? (
+                <>
+                  <Lock className="h-3.5 w-3.5" />
+                  Solo Administradores
+                </>
+              ) : isGenerating ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Vectorizando…

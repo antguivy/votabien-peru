@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 import { serverGetUser } from "@/lib/auth-actions";
 import { redirect } from "next/navigation";
-import { checkPathPermissions } from "@/lib/rbac";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AdminPanelLayout from "@/components/admin/app-sidebar";
 
@@ -17,21 +16,10 @@ export default async function AdminLayout({
     redirect("/auth/login?callbackUrl=/admin");
   }
 
-  const headersList = await headers();
-
   const userRole = user.role || "user";
 
   if (userRole === "user") {
     redirect("/");
-  }
-
-  const currentPath = headersList.get("x-current-path") || "";
-
-  if (currentPath) {
-    const isAuthorized = checkPathPermissions(currentPath, userRole);
-    if (!isAuthorized) {
-      redirect("/admin/unauthorized");
-    }
   }
 
   const cookieStore = await cookies();
@@ -39,7 +27,7 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AdminPanelLayout>{children}</AdminPanelLayout>
+      <AdminPanelLayout userRole={userRole}>{children}</AdminPanelLayout>
     </SidebarProvider>
   );
 }

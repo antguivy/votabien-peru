@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Check } from "lucide-react";
+import { normalizeFindingData } from "@/interfaces/research";
 
 interface FindingEditDialogProps {
   open: boolean;
@@ -51,65 +52,24 @@ function FindingEditForm({
   onCancel,
   isProcessing,
 }: FindingEditFormProps) {
-  const initialData = finding.proposed_data || {};
-  const rawType = String(
-    initialData.type || initialData.tipo || initialData.tema || "",
-  ).toUpperCase();
+  const normalized = normalizeFindingData(finding.proposed_data);
   const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
-    rawType,
+    normalized.type,
   );
 
-  const fallbackTitle = initialData.tema
-    ? `${initialData.tema} - Declaración`
-    : initialData.description
-      ? String(initialData.description).substring(0, 60)
-      : "";
-
-  const [title, setTitle] = React.useState(() =>
-    String(initialData.title || initialData.titulo || fallbackTitle),
+  const [title, setTitle] = React.useState(() => normalized.title);
+  const [summary, setSummary] = React.useState(() => normalized.summary);
+  const [type, setType] = React.useState(() => normalized.type);
+  const [status, setStatus] = React.useState(() => normalized.status);
+  const [sanction, setSanction] = React.useState(
+    () => normalized.sanction || "",
   );
-  const [summary, setSummary] = React.useState(() =>
-    String(
-      initialData.summary ||
-        initialData.redaccion_final ||
-        initialData.descripcion ||
-        initialData.description ||
-        initialData.hecho ||
-        "",
-    ),
+  const [publicationDate, setPublicationDate] = React.useState(
+    () => normalized.publication_date || "",
   );
-  const [type, setType] = React.useState(() =>
-    String(
-      initialData.type ||
-        initialData.tipo ||
-        initialData.tema ||
-        (isBackground ? "PENAL" : "NOTICIA"),
-    ),
-  );
-  const [status, setStatus] = React.useState(() =>
-    String(initialData.status || initialData.estado || "EN_INVESTIGACION"),
-  );
-  const [sanction, setSanction] = React.useState(() =>
-    String(initialData.sanction || initialData.sancion || ""),
-  );
-  const [publicationDate, setPublicationDate] = React.useState(() =>
-    String(
-      initialData.publication_date ||
-        initialData.fecha ||
-        initialData.date ||
-        "",
-    ),
-  );
-  const [source, setSource] = React.useState(() =>
-    String(
-      initialData.source ||
-        initialData.fuente_normalizada ||
-        initialData.fuente ||
-        "",
-    ),
-  );
-  const [sourceUrl, setSourceUrl] = React.useState(() =>
-    String(initialData.source_url || initialData.fuente_url || ""),
+  const [source, setSource] = React.useState(() => normalized.source || "");
+  const [sourceUrl, setSourceUrl] = React.useState(
+    () => normalized.source_url || "",
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +80,7 @@ function FindingEditForm({
     const cleanSanction = sanction.trim() ? sanction.trim() : null;
 
     const updatedPayload: Record<string, unknown> = {
-      ...initialData,
+      ...finding.proposed_data,
       title,
       titulo: title,
       summary,

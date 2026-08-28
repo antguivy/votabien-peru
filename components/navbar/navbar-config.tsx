@@ -28,6 +28,7 @@ import {
   Inbox,
   Bot,
   FileText,
+  BookOpen,
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
@@ -109,7 +110,15 @@ export const adminNavGroups: NavGroup[] = [
         label: "Revisiones IA",
         icon: Inbox,
       },
-      { href: "/admin/guia", label: "Guía de Revisión", icon: FileText },
+      {
+        href: "/admin/guias",
+        label: "Guías",
+        icon: BookOpen,
+        submenus: [
+          { href: "/admin/guias/revision-ia", label: "Revisión IA" },
+          { href: "/admin/guias/trivia", label: "Trivia" },
+        ],
+      },
     ],
   },
   {

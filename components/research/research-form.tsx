@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, Cpu, Fingerprint } from "lucide-react";
+import { Search, Loader2, Cpu, Fingerprint, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { getActiveWorkflows } from "@/app/admin/workflows/_lib/actions";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-provider";
 
 interface InvestigacionFormProps {
   onSubmit: (nombre: string, workflowId: string) => void;
@@ -29,6 +30,9 @@ export function InvestigacionForm({
   disabled,
   defaultName,
 }: InvestigacionFormProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   const [nombreInvestigado, setNombreInvestigado] = useState(defaultName ?? "");
   const [workflowId, setWorkflowId] = useState("");
   const [workflows, setWorkflows] = useState<{ id: string; name: string }[]>(
@@ -57,6 +61,7 @@ export function InvestigacionForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!nombreInvestigado || !workflowId) return;
 
     onSubmit(nombreInvestigado, workflowId);
@@ -73,11 +78,11 @@ export function InvestigacionForm({
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight">
-                Investigación Autónoma RAG
+                Investigación Asistida por IA
               </h2>
               <p className="text-xs text-muted-foreground">
-                Selecciona un Workflow pre-configurado para extraer la
-                información.
+                Selecciona el workflow y fuentes de extracción configuradas para
+                este candidato.
               </p>
             </div>
           </div>
@@ -132,12 +137,12 @@ export function InvestigacionForm({
 
         {/* Lado Derecho: Configuración */}
         <div className="w-full md:w-[300px] bg-muted/30 border-t md:border-t-0 md:border-l border-border p-5 flex flex-col justify-between">
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <Cpu className="h-4 w-4 text-primary" />
               <h3 className="font-semibold text-sm">Ejecución</h3>
             </div>
-            <div className="pt-2">
+            <div className="pt-1">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-muted-foreground">Estado</span>
                 <Badge
@@ -152,26 +157,47 @@ export function InvestigacionForm({
                 </Badge>
               </div>
             </div>
+
+            {!isAdmin && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+                <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-foreground text-xs">
+                    Solo Administradores
+                  </p>
+                  <p className="text-[11px] leading-relaxed">
+                    La extracción y scraping en tiempo real se ejecuta en local
+                    por el equipo técnico.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="pt-5 mt-5 border-t border-border/50">
+          <div className="pt-4 mt-4 border-t border-border/50">
             <Button
               onClick={handleSubmit}
               disabled={
+                !isAdmin ||
                 disabled ||
                 !nombreInvestigado ||
                 !workflowId ||
                 isLoadingWorkflows
               }
-              className="w-full h-11 text-sm font-semibold shadow-md"
+              className="w-full h-11 text-sm font-semibold shadow-md gap-2"
             >
-              {disabled ? (
+              {!isAdmin ? (
+                <>
+                  <Lock className="h-4 w-4" />
+                  Solo Administradores
+                </>
+              ) : disabled ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Procesando
                 </>
               ) : (
-                "Iniciar Workflow"
+                "Iniciar Investigación"
               )}
             </Button>
           </div>

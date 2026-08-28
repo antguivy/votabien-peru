@@ -1,17 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { isRouteAllowedForRole } from "@/lib/rbac";
+import { UserRole } from "@/interfaces/auth";
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // 1. Clonar headers e inyectar la ruta actual (Esto es muy barato, no consume CPU)
+  // 1. Inyectar header de ruta actual
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-current-path", path);
 
-  const authRoutes = ["/auth/login", "/auth/register", "/auth/reset-password"];
+  // 2. Bloqueo y redirección de registro público
+  if (path.startsWith("/auth/register")) {
+    url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
 
+  // 3. Rutas públicas directas (sin consultar sesión ni consumir CPU/DB)
   const publicRoutes = [
     "/",
     "/legisladores",
@@ -31,13 +37,10 @@ export async function proxy(request: NextRequest) {
     "/api/internal",
   ];
 
-  const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
   const isPublicRoute = publicRoutes.some(
     (route) => path === route || path.startsWith(route + "/"),
   );
 
-  // Si es una ruta pública, pasamos directo SIN consultar la sesión.
-  // Reduce el 90% del CPU del proxy.
   if (isPublicRoute) {
     return NextResponse.next({
       request: {
@@ -46,10 +49,13 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 2. Si es ruta de auth (login, register), verificamos si ya está logueado para redirigir
+  // 4. Rutas de auth (login, reset-password)
+  const authRoutes = ["/auth/login", "/auth/reset-password"];
+  const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
+
   if (isAuthRoute) {
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: request.headers,
     });
     if (session?.user) {
       url.pathname = "/";
@@ -62,22 +68,44 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // 3. Si llegamos hasta aquí, es una ruta PROTEGIDA (ej. /admin).
-  // Aquí SÍ necesitamos consultar la sesión.
+  // 5. Rutas protegidas (/admin/*, /api/admin/*, etc.)
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: request.headers,
   });
 
   const user = session?.user;
 
-  // Si no hay usuario y está en ruta protegida, al login
+  // Caso: Usuario no autenticado en ruta protegida
   if (!user) {
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     url.pathname = "/auth/login";
     url.searchParams.set("callbackUrl", path);
     return NextResponse.redirect(url);
   }
 
-  // Si hay usuario y es ruta protegida, pasa
+  const role = (user.role as UserRole) || "user";
+
+  // Caso: Usuario regular ('user') intentando entrar al panel
+  if (role === "user") {
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  // Caso: Validación granular contra el diccionario declarativo de permisos
+  if (!isRouteAllowedForRole(path, role)) {
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    url.pathname = "/admin/unauthorized";
+    return NextResponse.redirect(url);
+  }
+
+  // Usuario autenticado y con rol permitido para la ruta
   return NextResponse.next({
     request: {
       headers: requestHeaders,

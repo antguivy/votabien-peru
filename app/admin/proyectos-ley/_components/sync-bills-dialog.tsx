@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { RefreshCw, Terminal, CheckCircle2, Sparkles } from "lucide-react";
+import { RefreshCw, Terminal, CheckCircle2, Bot } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SyncBillsDialogProps {
@@ -200,7 +200,7 @@ export function SyncBillsDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 text-primary">
-            <Sparkles className="h-5 w-5" />
+            <Bot className="h-5 w-5" />
             <span className="text-xs font-bold uppercase tracking-wider">
               Scraping + Gemini 2.5 Flash
             </span>
