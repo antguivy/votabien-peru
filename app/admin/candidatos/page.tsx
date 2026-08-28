@@ -84,6 +84,7 @@ export default async function AdminCandidatesPage(props: IndexPageProps) {
             <CandidatesTable
               promises={promises}
               districts={districts}
+              processes={active_process}
               canLaunchResearch={canLaunchResearch}
             />
           </Suspense>

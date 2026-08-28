@@ -84,7 +84,7 @@ export async function serverCheckRole(allowedRoles: UserRole[]) {
   }
 
   if (!allowedRoles.includes(user.role)) {
-    redirect("/unauthorized");
+    redirect("/admin/unauthorized");
   }
 
   return { user };

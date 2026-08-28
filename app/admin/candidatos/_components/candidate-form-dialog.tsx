@@ -147,12 +147,26 @@ export function CandidateFormDialog({
 
     if (
       typeStr === "DIPUTADO" ||
+      typeStr === "GOBERNADOR_REGIONAL" ||
+      typeStr === "VICEGOBERNADOR_REGIONAL" ||
       (typeStr === "SENADOR" && senatorDistricType === "MULTIPLE")
     ) {
-      return districts.filter((d) => d.id !== nationalDistrictId);
+      return districts.filter((d) => d.level === "REGIONAL");
     }
 
-    return districts;
+    if (
+      typeStr === "ALCALDE_PROVINCIAL" ||
+      typeStr === "REGIDOR_PROVINCIAL" ||
+      typeStr === "CONSEJERO_REGIONAL"
+    ) {
+      return districts.filter((d) => d.level === "PROVINCIAL");
+    }
+
+    if (typeStr === "ALCALDE_DISTRITAL" || typeStr === "REGIDOR_DISTRITAL") {
+      return districts.filter((d) => d.level === "DISTRITAL");
+    }
+
+    return districts.filter((d) => d.id !== nationalDistrictId);
   }, [districts, watchedType, senatorDistricType, nationalDistrictId]);
 
   useEffect(() => {

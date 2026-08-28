@@ -37,11 +37,13 @@ interface DataTableToolbarProps<TData>
    * ]
    */
   filterFields?: DataTableFilterField<TData>[];
+  customFilters?: React.ReactNode;
 }
 
 export function DataTableToolbar<TData>({
   table,
   filterFields = [],
+  customFilters,
   children,
   className,
   ...props
@@ -98,6 +100,7 @@ export function DataTableToolbar<TData>({
                 />
               ),
           )}
+        {customFilters}
         {isFiltered && (
           <Button
             aria-label="Reset filters"

@@ -24,18 +24,24 @@ import { CandidateFormDialog } from "./candidate-form-dialog";
 import { EmbeddingDialog } from "./embedding-dialog";
 import ResearchPageDialog from "@/components/research/research-page";
 import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
+import { AdminLocationFilter } from "./admin-location-filter";
+import { ElectoralProcessFilter } from "./electoral-process-filter";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
+import { ElectoralProcess } from "@/interfaces/politics";
 
 interface CandidatesTableProps {
   promises: Promise<
     [PaginatedCandidatesResponse, TypeCounts, StatusCounts, PartyCounts]
   >;
-  districts?: { id: string; name: string; level?: string | null }[];
+  districts?: ElectoralDistrictBase[];
+  processes?: ElectoralProcess[];
   canLaunchResearch?: boolean;
 }
 
 export function CandidatesTable({
   promises,
   districts = [],
+  processes = [],
   canLaunchResearch = false,
 }: CandidatesTableProps) {
   const [{ data, total, page_size }, typeCounts, statusCounts, partyCounts] =
@@ -92,13 +98,6 @@ export function CandidatesTable({
         count,
       })),
     },
-    {
-      id: "district" as keyof AdminCandidate,
-      label: "Región",
-      options: districts
-        .filter((d) => d.level === "REGIONAL")
-        .map((d) => ({ label: d.name, value: d.name })),
-    },
   ];
 
   const { table } = useDataTable({
@@ -128,7 +127,16 @@ export function CandidatesTable({
           />
         }
       >
-        <DataTableToolbar table={table} filterFields={filterFields}>
+        <DataTableToolbar
+          table={table}
+          filterFields={filterFields}
+          customFilters={
+            <>
+              <ElectoralProcessFilter processes={processes} />
+              <AdminLocationFilter districts={districts} />
+            </>
+          }
+        >
           <CandidatesTableToolbarActions table={table} />
         </DataTableToolbar>
       </DataTable>

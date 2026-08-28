@@ -11,12 +11,12 @@ ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 
-# Instalar pnpm (versión específica)
-RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
+# Instalar pnpm (versión coincidente con pnpm-lock v11)
+RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --ignore-scripts
 
 # ==========================================
 # STAGE 2: Builder
@@ -24,18 +24,22 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 FROM base AS builder
 
 # Instalar pnpm en esta etapa también
-RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Variables Dummy de Prisma para que 'prisma generate' no falle al leer prisma.config.ts
+# Variables Dummy de Prisma y Auth para que el prerendering de Next.js no falle
+ENV CI=true
+ENV VERCEL=1
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV DIRECT_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV BETTER_AUTH_URL="http://localhost:3000"
+ENV BETTER_AUTH_SECRET="build_time_dummy_secret_for_prerendering_123456"
 
 # Generar cliente de Prisma
-RUN pnpm exec prisma generate
+RUN npx prisma generate
 
 # 1. Variables de Configuración General
 ARG NEXT_PUBLIC_API_URL
@@ -76,7 +80,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Instalar Prisma CLI para poder ejecutar las migraciones en el runner
 RUN npm install prisma@7.8.0
 
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
