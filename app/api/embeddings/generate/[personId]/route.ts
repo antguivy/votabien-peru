@@ -19,6 +19,14 @@ export async function POST(
       return NextResponse.json({ detail: "No autorizado" }, { status: 401 });
     }
 
+    const role = sessionResponse.user?.role;
+    if (role !== "admin" && role !== "super_admin") {
+      return NextResponse.json(
+        { detail: "Solo los administradores pueden generar embeddings" },
+        { status: 403 },
+      );
+    }
+
     const { personId } = await context.params;
 
     const candidate = await prisma.candidate.findFirst({

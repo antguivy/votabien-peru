@@ -7,12 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { createId } from "@paralleldrive/cuid2";
 import { BulkUpdateCandidatesRequest } from "./types";
 import {
+  CandidacyStatus,
   CandidacyType,
   CreateCandidatePeriodRequest,
   UpdateCandidatePeriodRequest,
 } from "@/interfaces/candidate";
 import { extractErrorMessage } from "@/lib/error-handler";
-import { serverRequireEditor } from "@/lib/auth-actions";
+import { serverRequireEditor, serverRequireReviewer } from "@/lib/auth-actions";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -250,5 +251,28 @@ export async function bulkUpdateCandidates(input: BulkUpdateCandidatesRequest) {
     };
   } catch (error) {
     return handleError(error, "Error al actualizar candidatos");
+  }
+}
+
+export async function updateCandidateStatus(
+  candidateId: string,
+  status: CandidacyStatus,
+) {
+  await serverRequireReviewer();
+  try {
+    const result = await prisma.candidate.update({
+      where: { id: candidateId },
+      data: { status },
+    });
+
+    revalidatePath("/admin/candidatos");
+    revalidateTag(TAGS.candidates, "max");
+
+    return { success: true, data: result };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: extractErrorMessage(error),
+    };
   }
 }

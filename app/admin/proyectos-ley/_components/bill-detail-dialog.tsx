@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, ExternalLink, Save, User, Users } from "lucide-react";
+import { BrainCircuit, ExternalLink, Save, User, Users } from "lucide-react";
 import { BillStatusBadge } from "./bill-status-badge";
 import {
   billApprovalStatuses,
@@ -164,7 +164,7 @@ function BillDetailContent({
         <div className="space-y-2 border border-primary/20 bg-primary/5 p-3.5 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <BrainCircuit className="h-4 w-4 text-primary" />
               <Label
                 htmlFor="titleAi"
                 className="text-xs font-bold text-primary uppercase tracking-wider"
@@ -180,7 +180,7 @@ function BillDetailContent({
               onClick={handleRegenerateAi}
               disabled={isRegenerating}
             >
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <BrainCircuit className="h-3.5 w-3.5 text-primary" />
               {isRegenerating ? "Generando..." : "Regenerar IA"}
             </Button>
           </div>

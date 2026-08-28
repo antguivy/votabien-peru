@@ -6,8 +6,7 @@ import { PiMicrosoftExcelLogoFill } from "react-icons/pi";
 import { exportTableToCSV } from "../_lib/export";
 import { Button } from "@/components/ui/button";
 import { AdminCandidate } from "@/interfaces/candidate";
-
-// import { DeleteTasksDialog } from "./delete-tasks-dialog"
+import { useAuth } from "@/lib/auth-provider";
 
 interface CandidateTableToolbarActionsProps {
   table: Table<AdminCandidate>;
@@ -16,6 +15,10 @@ interface CandidateTableToolbarActionsProps {
 export function CandidatesTableToolbarActions({
   table,
 }: CandidateTableToolbarActionsProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
+  if (!isAdmin) return null;
   return (
     <div className="flex items-center gap-2">
       {/* {table.getFilteredSelectedRowModel().rows.length > 0 ? (

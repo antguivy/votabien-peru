@@ -98,3 +98,89 @@ export type StreamEvent =
   | StreamProgress
   | StreamError
   | StreamFinal;
+
+export interface CanonicalFindingData {
+  type: string;
+  title: string;
+  summary: string;
+  status: string;
+  publication_date: string | null;
+  source: string;
+  source_url: string | null;
+  sanction: string | null;
+}
+
+export function normalizeFindingData(
+  raw: Record<string, unknown> | null | undefined,
+): CanonicalFindingData {
+  if (!raw) {
+    return {
+      type: "NOTICIA",
+      title: "Sin título",
+      summary: "Sin descripción",
+      status: "EN_INVESTIGACION",
+      publication_date: null,
+      source: "Web",
+      source_url: null,
+      sanction: null,
+    };
+  }
+
+  const rawType = String(raw.type || raw.tipo || raw.tema || "NOTICIA")
+    .trim()
+    .toUpperCase();
+
+  const fallbackTitle = raw.tema
+    ? `${raw.tema} - Declaración`
+    : raw.description || raw.summary || raw.redaccion_final
+      ? String(raw.description || raw.summary || raw.redaccion_final).substring(
+          0,
+          70,
+        ) + "..."
+      : "Hallazgo Web";
+
+  const title = String(raw.title || raw.titulo || fallbackTitle).trim();
+
+  const summary = String(
+    raw.summary ||
+      raw.redaccion_final ||
+      raw.descripcion ||
+      raw.description ||
+      raw.hecho ||
+      "Sin resumen",
+  ).trim();
+
+  const rawStatus = String(raw.status || raw.estado || "EN_INVESTIGACION")
+    .trim()
+    .toUpperCase();
+
+  const publication_date =
+    raw.publication_date || raw.fecha || raw.date
+      ? String(raw.publication_date || raw.fecha || raw.date).trim()
+      : null;
+
+  const source = String(
+    raw.source || raw.fuente_normalizada || raw.fuente || "Web",
+  ).trim();
+
+  const source_url =
+    raw.source_url || raw.fuente_url
+      ? String(raw.source_url || raw.fuente_url).trim()
+      : null;
+
+  const sanction =
+    raw.sanction || raw.sancion
+      ? String(raw.sanction || raw.sancion).trim()
+      : null;
+
+  return {
+    type: rawType,
+    title,
+    summary,
+    status: rawStatus,
+    publication_date,
+    source,
+    source_url,
+    sanction,
+  };
+}

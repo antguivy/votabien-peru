@@ -25,7 +25,7 @@ import { EmbeddingDialog } from "./embedding-dialog";
 import ResearchPageDialog from "@/components/research/research-page";
 import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
 import { AdminLocationFilter } from "./admin-location-filter";
-import { ElectoralProcessFilter } from "./electoral-process-filter";
+// import { ElectoralProcessFilter } from "./electoral-process-filter";
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { ElectoralProcess } from "@/interfaces/politics";
 
@@ -41,7 +41,7 @@ interface CandidatesTableProps {
 export function CandidatesTable({
   promises,
   districts = [],
-  processes = [],
+  processes: _processes = [],
   canLaunchResearch = false,
 }: CandidatesTableProps) {
   const [{ data, total, page_size }, typeCounts, statusCounts, partyCounts] =
@@ -132,7 +132,7 @@ export function CandidatesTable({
           filterFields={filterFields}
           customFilters={
             <>
-              <ElectoralProcessFilter processes={processes} />
+              {/* <ElectoralProcessFilter processes={processes} /> */}
               <AdminLocationFilter districts={districts} />
             </>
           }

@@ -10,9 +10,17 @@ import Link from "next/link";
 import { adminNavGroups } from "@/components/navbar/navbar-config";
 import { ContentLayout } from "@/components/admin/content-layout";
 
+import { isRouteAllowedForRole } from "@/lib/rbac";
+import { UserRole } from "@/interfaces/auth";
+
 export default async function AdminDashboardPage() {
   const { user } = await serverGetUser();
   const firstName = user?.name?.split(" ")[0] || "Administrador";
+  const userRole = (user?.role || "volunteer") as UserRole;
+
+  const allowedLinks = adminNavGroups
+    .flatMap((group) => group.links)
+    .filter((link) => isRouteAllowedForRole(link.href, userRole));
 
   return (
     <ContentLayout title={"Dashboard"}>
@@ -24,30 +32,28 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {adminNavGroups.map((group) =>
-            group.links.map((link) => {
-              const Icon = link.icon;
+          {allowedLinks.map((link) => {
+            const Icon = link.icon;
 
-              return (
-                <Link key={link.href} href={link.href} className="group">
-                  <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {link.label}
-                      </CardTitle>
-                      <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">&rarr;</div>
-                      <CardDescription className="mt-2 text-xs">
-                        Gestionar {link.label.toLowerCase()}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            }),
-          )}
+            return (
+              <Link key={link.href} href={link.href} className="group">
+                <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {link.label}
+                    </CardTitle>
+                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">&rarr;</div>
+                    <CardDescription className="mt-2 text-xs">
+                      Gestionar {link.label.toLowerCase()}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </ContentLayout>

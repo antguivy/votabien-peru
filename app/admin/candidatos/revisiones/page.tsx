@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { serverRequireReviewer } from "@/lib/auth-actions";
 import { ContentLayout } from "@/components/admin/content-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Inbox, AlertTriangle, Scale, Newspaper } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Gavel, Scale, Newspaper } from "lucide-react";
 import { FindingsTable, FindingItem } from "./_components/findings-table";
 
 export const metadata = {
-  title: "Revisiones de Investigación IA | Admin VotaBien",
+  title: "Bandeja de Revisiones IA | Admin VotaBien",
   description:
     "Bandeja de moderación y aprobación de hallazgos detectados por IA",
 };
@@ -46,7 +46,7 @@ export default async function RevisionesPage() {
     },
   } as const;
 
-  const [pendingProposals, approvedProposals, rejectedProposals, pendingCount] =
+  const [pendingProposals, approvedProposals, rejectedProposals] =
     await Promise.all([
       prisma.research_proposals.findMany({
         where: { status: "PENDING", action: { not: "NONE" } },
@@ -66,9 +66,6 @@ export default async function RevisionesPage() {
         orderBy: { created_at: "desc" },
         take: HISTORY_LIMIT,
       }),
-      prisma.research_proposals.count({
-        where: { status: "PENDING", action: { not: "NONE" } },
-      }),
     ]);
 
   const validFindings = [
@@ -80,7 +77,7 @@ export default async function RevisionesPage() {
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   ) as unknown as FindingItem[];
 
-  // KPIs precisos calculados en servidor a partir del tipo propuesto
+  // Contadores calculados en servidor a partir del tipo propuesto
   const pendingItems = validFindings.filter((f) => f.status === "PENDING");
   const penalPending = pendingItems.filter((f) => {
     const type = String(
@@ -103,105 +100,38 @@ export default async function RevisionesPage() {
     );
   });
 
-  // Extraer lotes únicos
-  const distinctBatches = Array.from(
-    new Set(
-      validFindings.map((f) => f.batch_run_id).filter(Boolean) as string[],
-    ),
-  );
-
   return (
-    <ContentLayout title="Revisiones de Investigación">
-      <div className="flex w-full flex-col gap-6 min-w-0">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Bandeja de Revisiones IA
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Modera, edita y aprueba antecedentes y noticias detectadas en
-              prensa y web antes de publicarlas.
-            </p>
-          </div>
-        </div>
+    <ContentLayout title="Bandeja de Revisiones IA">
+      <div className="flex w-full flex-col gap-4 min-w-0">
+        {/* Badges de Conteo Rápido */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge
+            variant="destructive"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold shadow-none"
+          >
+            <Gavel className="h-3.5 w-3.5" />
+            <span>Penales: {penalPending.length}</span>
+          </Badge>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
-                Total Pendientes
-              </CardTitle>
-              <Inbox className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {pendingCount}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Hallazgos esperando moderación
-              </p>
-            </CardContent>
-          </Card>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 shadow-none"
+          >
+            <Scale className="h-3.5 w-3.5" />
+            <span>Éticos / Admin: {eticaPending.length}</span>
+          </Badge>
 
-          <Card className="border-border/80 border-l-4 border-l-destructive bg-destructive/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs font-medium text-destructive">
-                Sensibles Penales
-              </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                {penalPending.length}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Requieren revisión jurídica estricta
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/80 border-l-4 border-l-warning bg-warning/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs font-medium text-warning-foreground">
-                Éticos / Administrativos
-              </CardTitle>
-              <Scale className="h-4 w-4 text-warning" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {eticaPending.length}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Sanciones e informes de fiscalización
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/80 border-l-4 border-l-info bg-info/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-xs font-medium text-info">
-                Noticias y Posturas
-              </CardTitle>
-              <Newspaper className="h-4 w-4 text-info" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {newsPending.length}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Declaraciones y trayectoria política
-              </p>
-            </CardContent>
-          </Card>
+          <Badge
+            variant="outline"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 shadow-none"
+          >
+            <Newspaper className="h-3.5 w-3.5" />
+            <span>Noticias y Posturas: {newsPending.length}</span>
+          </Badge>
         </div>
 
         {/* Tabla y Filtros Interactivos */}
-        <FindingsTable
-          initialFindings={validFindings}
-          distinctBatches={distinctBatches}
-        />
+        <FindingsTable initialFindings={validFindings} />
       </div>
     </ContentLayout>
   );

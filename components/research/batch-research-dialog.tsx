@@ -14,7 +14,7 @@ import {
   getBatchResearchProgress,
 } from "@/lib/actions/research";
 import { getActiveWorkflows } from "@/app/admin/workflows/_lib/actions";
-import { Loader2, CheckCircle2, Play, Sparkles } from "lucide-react";
+import { Loader2, CheckCircle2, Play, Bot, Lock } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-provider";
 
 interface BatchItem {
   id: string;
@@ -39,6 +40,9 @@ export function BatchResearchDialog({
   persons,
   onClose,
 }: BatchResearchDialogProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   const [batchId, setBatchId] = React.useState<string | null>(null);
   const [progress, setProgress] = React.useState(0);
   const [completedCount, setCompletedCount] = React.useState(0);
@@ -82,6 +86,7 @@ export function BatchResearchDialog({
   }, [persons]);
 
   const handleStartBatch = async () => {
+    if (!isAdmin) return;
     if (!persons || persons.length === 0) return;
     setStatus("running");
     setErrorMsg("");
@@ -124,6 +129,7 @@ export function BatchResearchDialog({
   }, [batchId, status, total]);
 
   const handleRetryFailed = async () => {
+    if (!isAdmin) return;
     if (failedPersonIds.length === 0) return;
     setIsRetrying(true);
     const res = await queueBatchResearch(
@@ -150,19 +156,20 @@ export function BatchResearchDialog({
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Bot className="h-5 w-5 text-primary" />
             Investigación por Lotes
           </DialogTitle>
           <DialogDescription>
-            {total} candidato(s) seleccionados para análisis autónomo con IA.
+            {total} candidato(s) seleccionados. Rastrea antecedentes y noticias
+            públicas con scraping e IA.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-2">
           {status === "idle" && (
             <div className="space-y-4">
-              <div className="space-y-2 border rounded-lg p-3.5 bg-slate-50">
-                <Label className="text-xs font-semibold text-slate-700">
+              <div className="space-y-2 border rounded-lg p-3.5 bg-slate-50 dark:bg-slate-900/50">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Workflow de Inteligencia Artificial
                 </Label>
                 {isLoadingWorkflows ? (
@@ -175,7 +182,7 @@ export function BatchResearchDialog({
                     value={selectedWorkflowId}
                     onValueChange={setSelectedWorkflowId}
                   >
-                    <SelectTrigger className="bg-white text-xs">
+                    <SelectTrigger className="bg-white dark:bg-slate-950 text-xs">
                       <SelectValue placeholder="Seleccionar workflow" />
                     </SelectTrigger>
                     <SelectContent>
@@ -197,17 +204,43 @@ export function BatchResearchDialog({
                 </p>
               </div>
 
+              {!isAdmin && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-muted-foreground flex items-start gap-2.5">
+                  <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-foreground">
+                      Modo informativo (Solo Administradores)
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      El motor de scraping y extracción IA se ejecuta en local
+                      por el equipo técnico para optimizar recursos.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={onClose}>
-                  Cancelar
+                  Cerrar
                 </Button>
                 <Button
                   onClick={handleStartBatch}
-                  disabled={isLoadingWorkflows || workflows.length === 0}
+                  disabled={
+                    !isAdmin || isLoadingWorkflows || workflows.length === 0
+                  }
                   className="gap-2"
                 >
-                  <Play className="h-4 w-4" />
-                  Iniciar Lote ({total})
+                  {!isAdmin ? (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      Solo Administradores
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Iniciar Lote ({total})
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

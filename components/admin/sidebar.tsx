@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useStore } from "@/hooks/use-store";
 import { SidebarToggle } from "./sidebar-toogle";
 
-export function Sidebar() {
+export function Sidebar({ userRole }: { userRole?: string }) {
   const sidebar = useStore(useSidebarToggle, (state) => state);
   if (!sidebar) return null;
 
@@ -48,7 +48,7 @@ export function Sidebar() {
             </h1>
           </Link>
         </Button>
-        <Menu isOpen={sidebar?.isOpen} />
+        <Menu isOpen={sidebar?.isOpen} userRole={userRole} />
       </div>
     </aside>
   );

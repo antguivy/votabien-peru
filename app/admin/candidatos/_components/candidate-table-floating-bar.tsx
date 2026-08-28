@@ -5,7 +5,7 @@ import {
   CheckCircle2,
   Download,
   Loader,
-  Microscope,
+  Bot,
   Trash2,
   X,
   XCircle,
@@ -30,6 +30,7 @@ import { Kbd } from "@/components/kbd";
 import { toast } from "sonner";
 import { AdminCandidate } from "@/interfaces/candidate";
 import { bulkUpdateCandidates } from "../_lib/actions";
+import { useAuth } from "@/lib/auth-provider";
 
 interface CandidatesTableFloatingBarProps {
   table: Table<AdminCandidate>;
@@ -38,8 +39,10 @@ interface CandidatesTableFloatingBarProps {
 
 export function CandidatesTableFloatingBar({
   table,
-  canLaunchResearch = false,
 }: CandidatesTableFloatingBarProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   const rows = table.getFilteredSelectedRowModel().rows;
 
   const [isPending, startTransition] = React.useTransition();
@@ -92,181 +95,177 @@ export function CandidatesTableFloatingBar({
             </div>
             <Separator orientation="vertical" className="hidden h-5 sm:block" />
             <div className="flex items-center gap-1.5">
-              <Select
-                onValueChange={(value: string) => {
-                  setAction("update-active");
+              {isAdmin && (
+                <>
+                  <Select
+                    onValueChange={(value: string) => {
+                      setAction("update-active");
 
-                  startTransition(async () => {
-                    const result = await bulkUpdateCandidates({
-                      ids: rows.map((row) => row.original.id),
-                      active: value === "true",
-                    });
+                      startTransition(async () => {
+                        const result = await bulkUpdateCandidates({
+                          ids: rows.map((row) => row.original.id),
+                          active: value === "true",
+                        });
 
-                    if (result.error) {
-                      toast.error(result.error);
-                      return;
-                    }
+                        if (result.error) {
+                          toast.error(result.error);
+                          return;
+                        }
 
-                    if ("data" in result && result.data) {
-                      const status =
-                        value === "true" ? "activado(s)" : "desactivado(s)";
-                      toast.success(
-                        `${result.data.count} candidato(s) ${status} correctamente`,
+                        if ("data" in result && result.data) {
+                          const status =
+                            value === "true" ? "activado(s)" : "desactivado(s)";
+                          toast.success(
+                            `${result.data.count} candidato(s) ${status} correctamente`,
+                          );
+                        }
+
+                        table.toggleAllRowsSelected(false);
+                      });
+                    }}
+                  >
+                    <Tooltip>
+                      <SelectTrigger asChild>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-7 border data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+                            disabled={isPending}
+                          >
+                            {isPending && action === "update-active" ? (
+                              <Loader
+                                className="size-3.5 animate-spin"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <CheckCircle2
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                      </SelectTrigger>
+                      <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                        <p>Actualizar Estado</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <SelectContent align="center">
+                      <SelectGroup>
+                        <SelectItem
+                          value="true"
+                          className="flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="size-4 text-green-600 inline" />
+                          Sí (Activo)
+                        </SelectItem>
+                        <SelectItem
+                          value="false"
+                          className="flex items-center gap-2"
+                        >
+                          <XCircle className="size-4 text-red-600 inline" />
+                          No (Inactivo)
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7 border text-primary"
+                    onClick={() => {
+                      // Deduplicar por persona: un candidato puede tener varias candidaturas
+                      const persons = Array.from(
+                        new Map(
+                          rows.map((r) => [
+                            r.original.person_id,
+                            { id: r.original.person_id },
+                          ]),
+                        ).values(),
                       );
-                    }
+                      const event = new CustomEvent("open-batch-research", {
+                        detail: { rows: persons },
+                      });
+                      window.dispatchEvent(event);
+                    }}
+                    disabled={isPending}
+                  >
+                    <Bot className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                  <p>Investigación por Lotes (IA)</p>
+                </TooltipContent>
+              </Tooltip>
 
-                    table.toggleAllRowsSelected(false);
-                  });
-                }}
-              >
-                <Tooltip>
-                  <SelectTrigger asChild>
+              {isAdmin && (
+                <>
+                  <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="size-7 border data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
+                        className="size-7 border"
+                        onClick={() => {
+                          setAction("export");
+
+                          startTransition(() => {
+                            exportTableToCSV(table, {
+                              excludeColumns: ["select", "actions"],
+                              onlySelected: true,
+                            });
+                          });
+                        }}
                         disabled={isPending}
                       >
-                        {isPending && action === "update-active" ? (
+                        {isPending && action === "export" ? (
                           <Loader
                             className="size-3.5 animate-spin"
                             aria-hidden="true"
                           />
                         ) : (
-                          <CheckCircle2
-                            className="size-3.5"
-                            aria-hidden="true"
-                          />
+                          <Download className="size-3.5" aria-hidden="true" />
                         )}
                       </Button>
                     </TooltipTrigger>
-                  </SelectTrigger>
-                  <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
-                    <p>Actualizar Estado</p>
-                  </TooltipContent>
-                </Tooltip>
-                <SelectContent align="center">
-                  <SelectGroup>
-                    <SelectItem
-                      value="true"
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle2 className="size-4 text-green-600 inline" />
-                      Sí (Activo)
-                    </SelectItem>
-                    <SelectItem
-                      value="false"
-                      className="flex items-center gap-2"
-                    >
-                      <XCircle className="size-4 text-red-600 inline" />
-                      No (Inactivo)
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              {canLaunchResearch && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="size-7 border text-violet-600"
-                      onClick={() => {
-                        // Deduplicar por persona: un candidato puede tener varias candidaturas
-                        const persons = Array.from(
-                          new Map(
-                            rows.map((r) => [
-                              r.original.person_id,
-                              { id: r.original.person_id },
-                            ]),
-                          ).values(),
-                        );
-                        const event = new CustomEvent("open-batch-research", {
-                          detail: { rows: persons },
-                        });
-                        window.dispatchEvent(event);
-                      }}
-                      disabled={isPending}
-                    >
-                      <Microscope className="size-3.5" aria-hidden="true" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
-                    <p>Investigación Batch</p>
-                  </TooltipContent>
-                </Tooltip>
+                    <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                      <p>Exportar Candidatos</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="size-7 border"
+                        onClick={() => {
+                          setAction("delete");
+                        }}
+                        disabled={isPending}
+                      >
+                        {isPending && action === "delete" ? (
+                          <Loader
+                            className="size-3.5 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                      <p>Eliminar Candidatos</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </>
               )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="size-7 border"
-                    onClick={() => {
-                      setAction("export");
-
-                      startTransition(() => {
-                        exportTableToCSV(table, {
-                          excludeColumns: ["select", "actions"],
-                          onlySelected: true,
-                        });
-                      });
-                    }}
-                    disabled={isPending}
-                  >
-                    {isPending && action === "export" ? (
-                      <Loader
-                        className="size-3.5 animate-spin"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Download className="size-3.5" aria-hidden="true" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
-                  <p>Exportar Candidatos</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="size-7 border"
-                    onClick={() => {
-                      setAction("delete");
-
-                      // startTransition(async () => {
-                      //   const { error } = await deleteIncidents({
-                      //     ids: rows.map((row) => row.original.id),
-                      //   })
-
-                      //   if (error) {
-                      //     toast.error(error)
-                      //     return
-                      //   }
-
-                      //   table.toggleAllRowsSelected(false)
-                      // })
-                    }}
-                    disabled={isPending}
-                  >
-                    {isPending && action === "delete" ? (
-                      <Loader
-                        className="size-3.5 animate-spin"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Trash2 className="size-3.5" aria-hidden="true" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
-                  <p>Eliminar Candidatos</p>
-                </TooltipContent>
-              </Tooltip>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { revalidateTag, revalidatePath } from "next/cache";
 import { TAGS } from "@/lib/cache-tags";
 import { BackgroundStatus, BackgroundType } from "@/interfaces/background";
 import { Prisma } from "@/prisma/generated/client";
+import { normalizeFindingData } from "@/interfaces/research";
 
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
@@ -54,8 +55,11 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    const createOps = proposals.map((p) =>
-      prisma.research_proposals.create({
+    const createOps = proposals.map((p) => {
+      const normalizedData = normalizeFindingData(
+        (p.proposed_data || {}) as Record<string, unknown>,
+      );
+      return prisma.research_proposals.create({
         data: {
           id: createId(),
           person_id: String(p.person_id),
@@ -65,10 +69,10 @@ export async function POST(req: NextRequest) {
           reason: String(p.reason || ""),
           confidence: typeof p.confidence === "number" ? p.confidence : 0.8,
           status: String(p.status || "PENDING"),
-          proposed_data: (p.proposed_data || {}) as Prisma.InputJsonValue,
+          proposed_data: normalizedData as unknown as Prisma.InputJsonValue,
         },
-      }),
-    );
+      });
+    });
 
     const txResults = await prisma.$transaction([...cleanupOps, ...createOps]);
 
@@ -111,19 +115,14 @@ async function applyProposalDirect(proposal: {
   target_id: string | null;
   proposed_data: unknown;
 }) {
-  const data = (proposal.proposed_data || {}) as Record<string, unknown>;
-  const rawType = String(data.type || data.tipo || "")
-    .toUpperCase()
-    .trim();
+  const rawData = (proposal.proposed_data || {}) as Record<string, unknown>;
+  const normalized = normalizeFindingData(rawData);
   const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
-    rawType,
+    normalized.type,
   );
 
   if (isBackground) {
-    const typeEnum = rawType as BackgroundType;
-    const rawStatus = String(data.status || data.estado || "EN_INVESTIGACION")
-      .toUpperCase()
-      .trim();
+    const typeEnum = normalized.type as BackgroundType;
     const statusEnum = (
       [
         "EN_INVESTIGACION",
@@ -132,38 +131,30 @@ async function applyProposalDirect(proposal: {
         "ARCHIVADO",
         "ABSUELTO",
         "PRESCRITO",
-      ].includes(rawStatus)
-        ? rawStatus
+      ].includes(normalized.status)
+        ? normalized.status
         : "EN_INVESTIGACION"
     ) as BackgroundStatus;
 
     if (proposal.action === "INSERT") {
+      const bgId = createId();
       await prisma.background.create({
         data: {
-          id: createId(),
+          id: bgId,
           person_id: proposal.person_id,
-          publication_date:
-            data.publication_date || data.fecha
-              ? String(data.publication_date || data.fecha)
-              : null,
+          publication_date: normalized.publication_date,
           type: typeEnum,
           status: statusEnum,
-          summary: String(
-            data.summary || data.redaccion_final || data.descripcion || "",
-          ),
-          sanction:
-            data.sanction || data.sancion
-              ? String(data.sanction || data.sancion)
-              : null,
-          source: String(
-            data.source || data.fuente_normalizada || data.fuente || "Web",
-          ),
-          source_url:
-            data.source_url || data.fuente_url
-              ? String(data.source_url || data.fuente_url)
-              : null,
-          title: String(data.title || data.titulo || "Hallazgo Web"),
+          summary: normalized.summary,
+          sanction: normalized.sanction,
+          source: normalized.source,
+          source_url: normalized.source_url,
+          title: normalized.title,
         },
+      });
+      await prisma.research_proposals.update({
+        where: { id: proposal.id },
+        data: { target_id: bgId },
       });
     } else if (proposal.action === "UPDATE" && proposal.target_id) {
       const existing = await prisma.background.findUnique({
@@ -174,32 +165,14 @@ async function applyProposalDirect(proposal: {
           where: { id: proposal.target_id },
           data: {
             publication_date:
-              data.publication_date || data.fecha
-                ? String(data.publication_date || data.fecha)
-                : existing.publication_date,
+              normalized.publication_date || existing.publication_date,
             type: typeEnum,
             status: statusEnum,
-            summary: String(
-              data.summary ||
-                data.redaccion_final ||
-                data.descripcion ||
-                existing.summary,
-            ),
-            sanction:
-              data.sanction || data.sancion
-                ? String(data.sanction || data.sancion)
-                : existing.sanction,
-            source: String(
-              data.source ||
-                data.fuente_normalizada ||
-                data.fuente ||
-                existing.source,
-            ),
-            source_url:
-              data.source_url || data.fuente_url
-                ? String(data.source_url || data.fuente_url)
-                : existing.source_url,
-            title: String(data.title || data.titulo || existing.title),
+            summary: normalized.summary || existing.summary,
+            sanction: normalized.sanction || existing.sanction,
+            source: normalized.source || existing.source,
+            source_url: normalized.source_url || existing.source_url,
+            title: normalized.title || existing.title,
             previous_version: existing as unknown as Prisma.InputJsonValue,
             updated_at: new Date(),
           },
@@ -250,35 +223,25 @@ async function applyProposalDirect(proposal: {
       const bio = Array.isArray(person.posturas)
         ? [...(person.posturas as Record<string, unknown>[])]
         : [];
-      const titleVal = String(
-        data.title ||
-          data.titulo ||
-          (data.tema ? `${data.tema} - Declaración` : "Noticia / Declaración"),
-      );
+
+      const postureId = proposal.target_id || createId();
+
       const newItem = {
-        id: proposal.target_id || createId(),
-        title: titleVal,
-        type: String(data.tema || data.type || data.tipo || "NOTICIA"),
-        date: String(data.fecha || data.date || data.publication_date || ""),
-        description: String(
-          data.redaccion_final ||
-            data.description ||
-            data.summary ||
-            data.descripcion ||
-            data.hecho ||
-            "",
-        ),
-        source: String(
-          data.fuente_normalizada || data.source || data.fuente || "Web",
-        ),
-        source_url:
-          data.fuente_url || data.source_url
-            ? String(data.fuente_url || data.source_url)
-            : null,
+        id: postureId,
+        title: normalized.title,
+        type: normalized.type,
+        date: normalized.publication_date || "",
+        description: normalized.summary,
+        source: normalized.source,
+        source_url: normalized.source_url,
       };
 
       if (proposal.action === "INSERT") {
         bio.push(newItem);
+        await prisma.research_proposals.update({
+          where: { id: proposal.id },
+          data: { target_id: postureId },
+        });
       } else if (proposal.action === "UPDATE") {
         const idx = bio.findIndex(
           (b) =>

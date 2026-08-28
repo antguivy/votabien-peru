@@ -16,7 +16,7 @@ import {
 import {
   Ellipsis,
   FileText,
-  Sparkles,
+  BrainCircuit,
   ExternalLink,
   Edit,
   Trash2,
@@ -87,7 +87,7 @@ export function getColumns({
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
-                    <Sparkles className="h-2.5 w-2.5" /> IA
+                    <BrainCircuit className="h-2.5 w-2.5" /> IA
                   </span>
                   <span className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
                     {titleAi}
@@ -307,7 +307,7 @@ export function getColumns({
                 onClick={handleRegenerate}
                 className="gap-2 text-primary"
               >
-                <Sparkles className="h-3.5 w-3.5" /> Regenerar con IA
+                <BrainCircuit className="h-3.5 w-3.5" /> Regenerar con IA
               </DropdownMenuItem>
               {bill.document_url && (
                 <DropdownMenuItem

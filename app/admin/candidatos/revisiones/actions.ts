@@ -8,6 +8,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { BackgroundStatus, BackgroundType } from "@/interfaces/background";
 import { Prisma } from "@/prisma/generated/client";
 
+import { normalizeFindingData } from "@/interfaces/research";
+
 function revalidatePersonEcosystem() {
   revalidatePath("/admin/personas");
   revalidatePath("/admin/candidatos");
@@ -100,22 +102,19 @@ export async function applyResearchFinding(
       throw new Error("El hallazgo no es válido o ya fue procesado.");
     }
 
-    const data = (customData || finding.proposed_data) as Record<
+    const rawData = (customData || finding.proposed_data) as Record<
       string,
       unknown
     >;
-    const rawType = String(data.type || data.tipo || "")
-      .toUpperCase()
-      .trim();
+    const normalized = normalizeFindingData(rawData);
     const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
-      rawType,
+      normalized.type,
     );
 
+    let finalTargetId = finding.target_id;
+
     if (isBackground) {
-      const typeEnum = rawType as BackgroundType;
-      const rawStatus = String(data.status || data.estado || "EN_INVESTIGACION")
-        .toUpperCase()
-        .trim();
+      const typeEnum = normalized.type as BackgroundType;
       const statusEnum = (
         [
           "EN_INVESTIGACION",
@@ -124,37 +123,27 @@ export async function applyResearchFinding(
           "ARCHIVADO",
           "ABSUELTO",
           "PRESCRITO",
-        ].includes(rawStatus)
-          ? rawStatus
+        ].includes(normalized.status)
+          ? normalized.status
           : "EN_INVESTIGACION"
       ) as BackgroundStatus;
 
       if (finding.action === "INSERT") {
+        const bgId = createId();
+        finalTargetId = bgId;
+
         await prisma.background.create({
           data: {
-            id: createId(),
+            id: bgId,
             person_id: finding.person_id,
-            publication_date:
-              data.publication_date || data.fecha
-                ? String(data.publication_date || data.fecha)
-                : null,
+            publication_date: normalized.publication_date,
             type: typeEnum,
             status: statusEnum,
-            summary: String(
-              data.summary || data.redaccion_final || data.descripcion || "",
-            ),
-            sanction:
-              data.sanction || data.sancion
-                ? String(data.sanction || data.sancion)
-                : null,
-            source: String(
-              data.source || data.fuente_normalizada || data.fuente || "Web",
-            ),
-            source_url:
-              data.source_url || data.fuente_url
-                ? String(data.source_url || data.fuente_url)
-                : null,
-            title: String(data.title || data.titulo || "Hallazgo Web"),
+            summary: normalized.summary,
+            sanction: normalized.sanction,
+            source: normalized.source,
+            source_url: normalized.source_url,
+            title: normalized.title,
           },
         });
       } else if (finding.action === "UPDATE" && finding.target_id) {
@@ -167,32 +156,14 @@ export async function applyResearchFinding(
             where: { id: finding.target_id },
             data: {
               publication_date:
-                data.publication_date || data.fecha
-                  ? String(data.publication_date || data.fecha)
-                  : existing.publication_date,
+                normalized.publication_date || existing.publication_date,
               type: typeEnum,
               status: statusEnum,
-              summary: String(
-                data.summary ||
-                  data.redaccion_final ||
-                  data.descripcion ||
-                  existing.summary,
-              ),
-              sanction:
-                data.sanction || data.sancion
-                  ? String(data.sanction || data.sancion)
-                  : existing.sanction,
-              source: String(
-                data.source ||
-                  data.fuente_normalizada ||
-                  data.fuente ||
-                  existing.source,
-              ),
-              source_url:
-                data.source_url || data.fuente_url
-                  ? String(data.source_url || data.fuente_url)
-                  : existing.source_url,
-              title: String(data.title || data.titulo || existing.title),
+              summary: normalized.summary || existing.summary,
+              sanction: normalized.sanction || existing.sanction,
+              source: normalized.source || existing.source,
+              source_url: normalized.source_url || existing.source_url,
+              title: normalized.title || existing.title,
               previous_version: existing as unknown as Prisma.InputJsonValue,
               updated_at: new Date(),
             },
@@ -244,48 +215,33 @@ export async function applyResearchFinding(
         const bio = Array.isArray(person.posturas)
           ? [...(person.posturas as Record<string, unknown>[])]
           : [];
-        const titleVal = String(
-          data.title ||
-            data.titulo ||
-            (data.tema
-              ? `${data.tema} - Declaración`
-              : "Noticia / Declaración"),
-        );
+
+        const postureId = finding.target_id || createId();
+        finalTargetId = postureId;
+
         const newItem = {
-          id: finding.target_id || createId(),
-          title: titleVal,
-          type: String(data.tema || data.type || data.tipo || "NOTICIA"),
-          date: String(data.fecha || data.date || data.publication_date || ""),
-          description: String(
-            data.redaccion_final ||
-              data.description ||
-              data.summary ||
-              data.descripcion ||
-              data.hecho ||
-              "",
-          ),
-          source: String(
-            data.fuente_normalizada || data.source || data.fuente || "Web",
-          ),
-          source_url:
-            data.fuente_url || data.source_url
-              ? String(data.fuente_url || data.source_url)
-              : null,
+          id: postureId,
+          title: normalized.title,
+          type: normalized.type,
+          date: normalized.publication_date || "",
+          description: normalized.summary,
+          source: normalized.source,
+          source_url: normalized.source_url,
         };
 
-        if (finding.action === "INSERT") {
+        // Deduplicación inteligente: por ID o por URL de fuente
+        const existingIdx = bio.findIndex(
+          (b) =>
+            b.id === postureId ||
+            (newItem.source_url &&
+              b.source_url &&
+              b.source_url === newItem.source_url),
+        );
+
+        if (existingIdx >= 0) {
+          bio[existingIdx] = { ...bio[existingIdx], ...newItem };
+        } else {
           bio.push(newItem);
-        } else if (finding.action === "UPDATE") {
-          const idx = bio.findIndex(
-            (b) =>
-              (finding.target_id && b.id === finding.target_id) ||
-              (newItem.source_url && b.source_url === newItem.source_url),
-          );
-          if (idx >= 0) {
-            bio[idx] = { ...bio[idx], ...newItem };
-          } else {
-            bio.push(newItem);
-          }
         }
 
         await prisma.person.update({
@@ -302,6 +258,7 @@ export async function applyResearchFinding(
       where: { id: findingId },
       data: {
         status: "APPROVED",
+        target_id: finalTargetId,
         reviewed_at: new Date(),
         reviewed_by: user.email || user.id,
       },
@@ -313,6 +270,136 @@ export async function applyResearchFinding(
     const message =
       error instanceof Error ? error.message : "Error al aplicar hallazgo";
     console.error("Error en applyResearchFinding:", error);
+    return { success: false, error: message };
+  }
+}
+
+export async function revertResearchFinding(findingId: string) {
+  await serverRequireReviewer();
+
+  try {
+    const finding = await prisma.research_proposals.findUnique({
+      where: { id: findingId },
+    });
+
+    if (!finding || finding.status !== "APPROVED") {
+      throw new Error("El hallazgo no se encuentra en estado aprobado.");
+    }
+
+    const rawData = finding.proposed_data as Record<string, unknown>;
+    const normalized = normalizeFindingData(rawData);
+    const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
+      normalized.type,
+    );
+
+    if (isBackground) {
+      if (finding.action === "INSERT" && finding.target_id) {
+        // Eliminar antecedente creado
+        await prisma.background.deleteMany({
+          where: { id: finding.target_id },
+        });
+      } else if (finding.action === "UPDATE" && finding.target_id) {
+        // Restaurar versión previa si existía
+        const existingBg = await prisma.background.findUnique({
+          where: { id: finding.target_id },
+        });
+        if (existingBg && existingBg.previous_version) {
+          const prev = existingBg.previous_version as Record<string, unknown>;
+          await prisma.background.update({
+            where: { id: finding.target_id },
+            data: {
+              title: String(prev.title || existingBg.title),
+              summary: String(prev.summary || existingBg.summary),
+              type: prev.type as BackgroundType,
+              status: prev.status as BackgroundStatus,
+              publication_date: prev.publication_date
+                ? String(prev.publication_date)
+                : null,
+              sanction: prev.sanction ? String(prev.sanction) : null,
+              source: String(prev.source || existingBg.source),
+              source_url: prev.source_url ? String(prev.source_url) : null,
+              previous_version: Prisma.DbNull,
+              updated_at: new Date(),
+            },
+          });
+        }
+      }
+
+      // Recalcular flags penales de la persona
+      const allBgs = await prisma.background.findMany({
+        where: { person_id: finding.person_id },
+        select: { type: true, status: true },
+      });
+
+      const has_criminal_record = allBgs.some(
+        (b) =>
+          b.type === "PENAL" &&
+          ["EN_INVESTIGACION", "SENTENCIADO"].includes(b.status),
+      );
+      const has_penal_sentence = allBgs.some(
+        (b) => b.type === "PENAL" && b.status === "SENTENCIADO",
+      );
+      const has_sanction = allBgs.some(
+        (b) =>
+          ["ETICA", "ADMINISTRATIVO"].includes(b.type) &&
+          b.status === "SANCIONADO",
+      );
+      const is_under_investigation = allBgs.some(
+        (b) => b.status === "EN_INVESTIGACION",
+      );
+
+      await prisma.person.update({
+        where: { id: finding.person_id },
+        data: {
+          has_criminal_record,
+          has_penal_sentence,
+          has_sanction,
+          is_under_investigation,
+          updated_at: new Date(),
+        },
+      });
+    } else {
+      // Revertir Postura / Noticia
+      const person = await prisma.person.findUnique({
+        where: { id: finding.person_id },
+        select: { posturas: true },
+      });
+
+      if (person && Array.isArray(person.posturas)) {
+        const bio = person.posturas as Record<string, unknown>[];
+        const filteredBio = bio.filter((p) => {
+          if (finding.target_id && p.id === finding.target_id) return false;
+          if (normalized.source_url && p.source_url === normalized.source_url)
+            return false;
+          return true;
+        });
+
+        await prisma.person.update({
+          where: { id: finding.person_id },
+          data: {
+            posturas: filteredBio as Prisma.InputJsonValue[],
+            updated_at: new Date(),
+          },
+        });
+      }
+    }
+
+    // Revertir propuesta a PENDING
+    await prisma.research_proposals.update({
+      where: { id: findingId },
+      data: {
+        status: "PENDING",
+        reviewed_at: null,
+        reviewed_by: null,
+      },
+    });
+
+    revalidatePersonEcosystem();
+    return { success: true };
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Error al revertir hallazgo";
+    console.error("Error en revertResearchFinding:", error);
     return { success: false, error: message };
   }
 }
