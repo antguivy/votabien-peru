@@ -440,6 +440,7 @@ export function NewFilterPanel({
     (loc: UserLocationSelection) => {
       setUserLocation(loc);
       const districtParam =
+        loc.districtId ||
         loc.districtCode ||
         loc.provinceCode ||
         loc.departmentCode ||
@@ -610,6 +611,7 @@ export function NewFilterPanel({
     currentType,
     userLocation,
     currentDistrict,
+    distritos,
   );
 
   return (

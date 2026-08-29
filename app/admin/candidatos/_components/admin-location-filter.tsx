@@ -40,12 +40,13 @@ export function AdminLocationFilter({
   // Resolver la ubicación a partir del parámetro en la URL
   const selectedLocation = React.useMemo<UserLocationSelection | null>(() => {
     if (!districtParam) return null;
-    return resolveLocationFromParam(districtParam);
-  }, [districtParam]);
+    return resolveLocationFromParam(districtParam, districts);
+  }, [districtParam, districts]);
 
   const handleLocationSelect = React.useCallback(
     (loc: UserLocationSelection) => {
       const codeOrName =
+        loc.districtId ||
         loc.districtCode ||
         loc.provinceCode ||
         loc.departmentCode ||

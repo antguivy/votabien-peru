@@ -1,13 +1,14 @@
 import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 
 export interface UserLocationSelection {
-  department?: string; // Nombre del departamento ej: "JUNIN"
-  departmentCode?: string; // ej: "11"
-  province?: string; // Nombre de la provincia ej: "HUANCAYO (JUNIN)" o "HUANCAYO"
-  provinceCode?: string; // ej: "110100" o "1101"
-  district?: string; // Nombre del distrito ej: "EL TAMBO (HUANCAYO)" o "EL TAMBO"
-  districtCode?: string; // ej: "110113"
-  fullLabel?: string; // ej: "El Tambo, Huancayo, Junín"
+  department?: string; // Nombre del departamento ej: "LIMA PROVINCIAS", "JUNIN"
+  departmentCode?: string; // ej: "LMP", "140000"
+  province?: string; // Nombre de la provincia ej: "HUAURA (LIMA PROVINCIAS)" o "HUANCAYO"
+  provinceCode?: string; // ej: "140500" o "110100"
+  district?: string; // Nombre del distrito ej: "HUACHO (HUAURA)" o "EL TAMBO"
+  districtCode?: string; // ej: "140501" o "110113"
+  districtId?: string; // ID único en electoraldistrict (ej. "cmt6eohd4015v6djcoo121j6g")
+  fullLabel?: string; // ej: "Huacho, Huaura, Lima Provincias"
 }
 
 export const STORAGE_LOCATION_KEY = "votabien_erm_location";
@@ -109,15 +110,130 @@ interface UbigeoDepartment {
 const DEPARTMENTS_DATA = ubigeoTreeData as UbigeoDepartment[];
 
 /**
- * Resuelve una estructura UserLocationSelection a partir de un código ubigeo o nombre
+ * Resuelve una estructura UserLocationSelection a partir de un código, ID o nombre
  */
 export function resolveLocationFromParam(
   param?: string,
+  distritos?: ElectoralDistrictBase[],
 ): UserLocationSelection | null {
   if (!param || !param.trim()) return null;
   const clean = param.trim();
 
-  // Si es numérico (código ubigeo)
+  // 1. Si se proporcionan los distritos de la base de datos, resolver jerárquicamente
+  if (distritos && distritos.length > 0) {
+    const cleanNorm = normalizeText(clean);
+    const distMap = new Map(distritos.map((d) => [d.id, d]));
+
+    // Manejo especial para la región completa de LIMA
+    if (
+      cleanNorm === "lima" ||
+      cleanNorm === "region lima" ||
+      cleanNorm === "region de lima" ||
+      clean.toUpperCase() === "LIMA"
+    ) {
+      return {
+        department: "LIMA",
+        departmentCode: "LIMA",
+        province: undefined,
+        provinceCode: undefined,
+        district: undefined,
+        districtCode: undefined,
+        districtId: "LIMA",
+        fullLabel: "Región LIMA",
+      };
+    }
+
+    // 1. Coincidencia exacta por ID
+    let found = distritos.find((d) => d.id === clean);
+
+    // 2. Si no es ID, buscar primero si coincide con una Región/Departamento Raíz (Nivel Nacional)
+    if (!found) {
+      found = distritos.find(
+        (d) =>
+          d.parent_id === null &&
+          (normalizeText(d.name) === cleanNorm ||
+            d.code.toLowerCase() === clean.toLowerCase() ||
+            d.ubigeo === clean),
+      );
+    }
+
+    // 3. Si no es región, buscar si coincide con una Provincia
+    if (!found) {
+      found = distritos.find(
+        (d) =>
+          d.level === "PROVINCIAL" &&
+          (normalizeText(d.name) === cleanNorm ||
+            d.code.toLowerCase() === clean.toLowerCase() ||
+            d.ubigeo === clean),
+      );
+    }
+
+    // 4. Si no es provincia, buscar en Distritos
+    if (!found) {
+      found = distritos.find(
+        (d) =>
+          d.level === "DISTRITAL" &&
+          (normalizeText(d.name) === cleanNorm ||
+            d.code.toLowerCase() === clean.toLowerCase() ||
+            d.ubigeo === clean),
+      );
+    }
+
+    if (found) {
+      if (found.level === "DISTRITAL") {
+        const parent = found.parent_id ? distMap.get(found.parent_id) : null;
+        const grandparent = parent?.parent_id
+          ? distMap.get(parent.parent_id)
+          : null;
+        const provName = parent?.level === "PROVINCIAL" ? parent.name : "";
+        const regName = grandparent?.name || parent?.name || "";
+
+        return {
+          department: regName || undefined,
+          departmentCode:
+            grandparent?.code || parent?.code || grandparent?.id || parent?.id,
+          province: provName ? `${provName} (${regName})` : undefined,
+          provinceCode:
+            parent?.level === "PROVINCIAL"
+              ? parent.code || parent.id
+              : undefined,
+          district: `${found.name}${provName ? ` (${provName})` : ""}`,
+          districtCode: found.code || found.id,
+          districtId: found.id,
+          fullLabel: [found.name, provName, regName].filter(Boolean).join(", "),
+        };
+      }
+
+      if (found.level === "PROVINCIAL") {
+        const reg = found.parent_id ? distMap.get(found.parent_id) : null;
+        const regName = reg?.name || "";
+        return {
+          department: regName || undefined,
+          departmentCode: reg?.code || reg?.id,
+          province: `${found.name} (${regName})`,
+          provinceCode: found.code || found.id,
+          district: undefined,
+          districtCode: undefined,
+          districtId: found.id,
+          fullLabel: `Provincia ${found.name}, ${regName}`,
+        };
+      }
+
+      // Nivel Región / Nacional
+      return {
+        department: found.name,
+        departmentCode: found.code || found.id,
+        province: undefined,
+        provinceCode: undefined,
+        district: undefined,
+        districtCode: undefined,
+        districtId: found.id,
+        fullLabel: `Región ${found.name}`,
+      };
+    }
+  }
+
+  // 2. Fallback a DEPARTMENTS_DATA (si distritos no está cargado)
   if (/^[0-9]+$/.test(clean)) {
     const depCode = clean.slice(0, 2);
     const provCode = clean.length >= 4 ? clean.slice(0, 4) : "";
@@ -155,9 +271,9 @@ export function resolveLocationFromParam(
           departmentCode: dep.dep_code,
           province: `${p.name} (${dep.name})`,
           provinceCode: p.ubigeo,
-          district: `${p.name} (${dep.name})`,
-          districtCode: p.ubigeo,
-          fullLabel: `${p.name}, ${dep.name}`,
+          district: undefined,
+          districtCode: undefined,
+          fullLabel: `Provincia ${p.name}, ${dep.name}`,
         };
       }
     }
@@ -165,21 +281,23 @@ export function resolveLocationFromParam(
     return {
       department: dep.name,
       departmentCode: dep.dep_code,
-      district: dep.name,
-      districtCode: dep.ubigeo,
+      province: undefined,
+      provinceCode: undefined,
+      district: undefined,
+      districtCode: undefined,
       fullLabel: `Región ${dep.name}`,
     };
   }
 
-  // Si es texto
+  // Si es texto en DEPARTMENTS_DATA
   const norm = normalizeText(clean);
   for (const dep of DEPARTMENTS_DATA) {
     if (normalizeText(dep.name) === norm) {
       return {
         department: dep.name,
         departmentCode: dep.dep_code,
-        district: dep.name,
-        districtCode: dep.ubigeo,
+        district: undefined,
+        districtCode: undefined,
         fullLabel: `Región ${dep.name}`,
       };
     }
@@ -194,9 +312,9 @@ export function resolveLocationFromParam(
           departmentCode: dep.dep_code,
           province: `${p.name} (${dep.name})`,
           provinceCode: p.ubigeo,
-          district: `${p.name} (${dep.name})`,
-          districtCode: p.ubigeo,
-          fullLabel: `${p.name}, ${dep.name}`,
+          district: undefined,
+          districtCode: undefined,
+          fullLabel: `Provincia ${p.name}, ${dep.name}`,
         };
       }
 
@@ -229,12 +347,14 @@ export function getScopeLabelForType(
   type: string,
   location?: UserLocationSelection | null,
   districtParam?: string,
-): { label: string; activeLocation?: string } {
-  const loc = location || resolveLocationFromParam(districtParam);
+  distritos?: ElectoralDistrictBase[],
+): { label: string; activeLocation?: string; displayLocation?: string } {
+  const loc = location || resolveLocationFromParam(districtParam, distritos);
 
   if (!loc) {
     switch (type) {
       case "GOBERNADOR_REGIONAL":
+      case "VICEGOBERNADOR_REGIONAL":
       case "CONSEJERO_REGIONAL":
         return { label: "Elegir Región" };
       case "ALCALDE_PROVINCIAL":
@@ -248,35 +368,66 @@ export function getScopeLabelForType(
     }
   }
 
+  let cleanDep = (loc.department || "").split(" (")[0].trim();
+  if (cleanDep.toUpperCase().includes("LIMA")) {
+    cleanDep = "LIMA";
+  }
+  const cleanProv = (loc.province || "").split(" (")[0].trim();
+  const cleanDist = (loc.district || "").split(" (")[0].trim();
+
   switch (type) {
     case "GOBERNADOR_REGIONAL":
+    case "VICEGOBERNADOR_REGIONAL":
     case "CONSEJERO_REGIONAL": {
-      const dep = loc.department || "";
       return {
-        label: dep ? `Región: ${dep}` : "Elegir Región",
-        activeLocation: dep,
+        label: cleanDep ? `Reg: ${cleanDep}` : "Elegir Región",
+        activeLocation: cleanDep,
+        displayLocation: cleanDep,
       };
     }
     case "ALCALDE_PROVINCIAL":
     case "REGIDOR_PROVINCIAL": {
-      const prov = loc.province || loc.department || "";
+      if (cleanProv) {
+        return {
+          label: `Prov: ${cleanProv}`,
+          activeLocation: cleanProv,
+          displayLocation: cleanProv,
+        };
+      }
       return {
-        label: prov ? `Prov: ${prov.split(" (")[0]}` : "Elegir Provincia",
-        activeLocation: prov,
+        label: cleanDep ? `Reg: ${cleanDep}` : "Elegir Provincia",
+        activeLocation: cleanDep,
+        displayLocation: `la región ${cleanDep}`,
       };
     }
     case "ALCALDE_DISTRITAL":
     case "REGIDOR_DISTRITAL": {
-      const dist = loc.district || loc.province || loc.department || "";
+      if (cleanDist) {
+        return {
+          label: `Dist: ${cleanDist}`,
+          activeLocation: cleanDist,
+          displayLocation: cleanDist,
+        };
+      }
+      if (cleanProv) {
+        return {
+          label: `Prov: ${cleanProv}`,
+          activeLocation: cleanProv,
+          displayLocation: `la provincia de ${cleanProv}`,
+        };
+      }
       return {
-        label: dist ? `Dist: ${dist.split(" (")[0]}` : "Elegir Distrito",
-        activeLocation: dist,
+        label: cleanDep ? `Reg: ${cleanDep}` : "Elegir Distrito",
+        activeLocation: cleanDep,
+        displayLocation: `la región ${cleanDep}`,
       };
     }
     default:
       return {
-        label: loc.fullLabel || loc.district || loc.department || "Ubicación",
-        activeLocation: loc.district || loc.department,
+        label:
+          loc.fullLabel || cleanDist || cleanProv || cleanDep || "Ubicación",
+        activeLocation: cleanDist || cleanProv || cleanDep,
+        displayLocation: cleanDist || cleanProv || cleanDep,
       };
   }
 }

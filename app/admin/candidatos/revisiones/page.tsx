@@ -68,14 +68,29 @@ export default async function RevisionesPage() {
       }),
     ]);
 
-  const validFindings = [
+  const rawFindings = [
     ...pendingProposals,
     ...approvedProposals,
     ...rejectedProposals,
-  ].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  ) as unknown as FindingItem[];
+  ];
+
+  const validFindings = rawFindings
+    .filter((f) => {
+      const p = f.proposed_data as Record<string, unknown> | null;
+      if (!p) return false;
+      const title = String(p.title || p.titulo || "").trim();
+      const summary = String(
+        p.summary || p.redaccion_final || p.descripcion || "",
+      ).trim();
+      if (title === "Hallazgo Web" && (!summary || summary === "Sin resumen")) {
+        return false;
+      }
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ) as unknown as FindingItem[];
 
   // Contadores calculados en servidor a partir del tipo propuesto
   const pendingItems = validFindings.filter((f) => f.status === "PENDING");

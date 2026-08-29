@@ -56,19 +56,34 @@ export async function POST(req: NextRequest) {
     });
 
     const createOps = proposals.map((p) => {
-      const normalizedData = normalizeFindingData(
-        (p.proposed_data || {}) as Record<string, unknown>,
-      );
+      const rawData = (p.proposed_data || {}) as Record<string, unknown>;
+      const normalizedData = normalizeFindingData(rawData);
+      const action = String(p.action || "INSERT").toUpperCase();
+
+      // Determinar status seguro: IGNORE nunca puede ser PENDING
+      let status = String(p.status || "PENDING").toUpperCase();
+      if (action === "IGNORE") {
+        status = "REJECTED";
+      } else if (
+        action !== "NONE" &&
+        action !== "ERROR" &&
+        normalizedData.title === "Hallazgo Web" &&
+        normalizedData.summary === "Sin resumen"
+      ) {
+        // Descartar automáticamente registros vacíos / basura
+        status = "REJECTED";
+      }
+
       return prisma.research_proposals.create({
         data: {
           id: createId(),
           person_id: String(p.person_id),
           batch_run_id: p.batch_run_id ? String(p.batch_run_id) : null,
-          action: String(p.action || "INSERT"),
+          action: action,
           target_id: p.target_id ? String(p.target_id) : null,
           reason: String(p.reason || ""),
           confidence: typeof p.confidence === "number" ? p.confidence : 0.8,
-          status: String(p.status || "PENDING"),
+          status: status,
           proposed_data: normalizedData as unknown as Prisma.InputJsonValue,
         },
       });

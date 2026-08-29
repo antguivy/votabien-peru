@@ -14,7 +14,7 @@ export const TAGS = {
 } as const;
 
 export const TTL = {
-  static: 86400, // 24h — candidatos, partidos, distritos
-  process: 3600, // 1h  — datos que podrían cambiar un poco más rápido
+  static: 2592000, // 30 días (1 mes) — candidatos, partidos, distritos
+  process: 3600, // 1h — datos que podrían cambiar un poco más rápido
   no_cache: 0, // Sin caché
 } as const;

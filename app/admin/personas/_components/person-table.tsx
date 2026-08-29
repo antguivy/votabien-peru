@@ -121,9 +121,19 @@ export function PersonTable({ promises }: PersonTableProps) {
 
       <BatchResearchDialog
         persons={batchCandidates}
-        onClose={() => {
+        onClose={(failedPersonIds = []) => {
           setBatchCandidates(null);
-          table.toggleAllRowsSelected(false);
+          if (!failedPersonIds || failedPersonIds.length === 0) {
+            table.toggleAllRowsSelected(false);
+          } else {
+            const newSelection: Record<string, boolean> = {};
+            table.getRowModel().rows.forEach((row) => {
+              if (failedPersonIds.includes(row.original.id)) {
+                newSelection[row.id] = true;
+              }
+            });
+            table.setRowSelection(newSelection);
+          }
         }}
       />
     </>

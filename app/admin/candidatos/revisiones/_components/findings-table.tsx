@@ -3,16 +3,16 @@
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -26,12 +26,8 @@ import {
   ExternalLink,
   Edit,
   GitCompare,
-  Scale,
-  Newspaper,
   Search,
   CheckCircle2,
-  BrainCircuit,
-  Database,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -522,7 +518,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginatedFindings.map((finding) => {
             const data = normalizeFindingData(finding.proposed_data);
             const rawType = data.type;
@@ -536,10 +532,10 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             const borderAccent = isPenal
               ? "border-l-4 border-l-destructive"
               : isEtica
-                ? "border-l-4 border-l-warning"
+                ? "border-l-4 border-l-amber-500"
                 : isCivil
-                  ? "border-l-4 border-l-warning"
-                  : "border-l-4 border-l-info";
+                  ? "border-l-4 border-l-amber-500"
+                  : "border-l-4 border-l-blue-500";
 
             const title = data.title;
             const summary = data.summary;
@@ -548,6 +544,14 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             const sanction = data.sanction;
             const date = data.publication_date;
             const isUpdate = finding.action === "UPDATE";
+
+            const primaryCandidacy = finding.person.candidate?.[0];
+            const candidacyLabel = [
+              primaryCandidacy?.politicalparty?.name,
+              primaryCandidacy?.electoraldistrict?.name,
+            ]
+              .filter(Boolean)
+              .join(" • ");
 
             return (
               <Card
@@ -558,260 +562,214 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                     : "hover:border-primary/40 hover:shadow-sm"
                 }`}
               >
-                <div className="space-y-3">
-                  <CardHeader className="pb-2 space-y-2.5">
-                    {/* Encabezado del Candidato */}
-                    <div className="flex items-center justify-between gap-2.5 min-w-0">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        {finding.status === "PENDING" && (
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() =>
-                              handleToggleSelect(finding.id)
-                            }
-                            className="shrink-0"
-                            aria-label={`Seleccionar ${finding.person.fullname}`}
-                          />
-                        )}
-                        <Avatar className="h-9 w-9 border shrink-0">
-                          <AvatarImage
-                            src={
-                              finding.person.image_url ||
-                              finding.person.image_candidate_url ||
-                              ""
-                            }
-                            alt={finding.person.fullname}
-                          />
-                          <AvatarFallback className="text-xs font-bold bg-muted text-muted-foreground">
-                            {finding.person.fullname
-                              .substring(0, 2)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className="text-xs font-bold leading-tight truncate text-foreground"
-                            title={finding.person.fullname}
-                          >
-                            {finding.person.fullname}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground truncate">
-                            DNI: {finding.person.dni || "Sin DNI"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Badge
-                        variant={
-                          isPenal
-                            ? "destructive"
-                            : isEtica
-                              ? "warning"
-                              : isCivil
-                                ? "secondary"
-                                : "default"
-                        }
-                        className="text-[10px] uppercase font-bold shrink-0"
-                      >
-                        {rawType || "NOTICIA"}
-                      </Badge>
-                    </div>
-
-                    {/* Contexto de BD y Candidatura activa */}
-                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      {typeof finding.person._count?.background ===
-                        "number" && (
-                        <Badge
-                          variant="outline"
-                          className={`text-[9px] px-1.5 py-0 font-medium shrink-0 ${
-                            finding.person._count.background > 0
-                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
-                              : "bg-muted/40 text-muted-foreground border-border/40"
-                          }`}
-                          title={
-                            finding.person._count.background > 0
-                              ? `Este candidato ya cuenta con ${finding.person._count.background} antecedente(s) registrado(s) en la BD.`
-                              : "Sin antecedentes legales previos en la base de datos."
+                <div className="p-4 pb-3 space-y-3">
+                  {/* Encabezado: Candidato + Tipo */}
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      {finding.status === "PENDING" && (
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => handleToggleSelect(finding.id)}
+                          className="shrink-0 mt-0.5"
+                          aria-label={`Seleccionar ${finding.person.fullname}`}
+                        />
+                      )}
+                      <Avatar className="h-9 w-9 border shrink-0">
+                        <AvatarImage
+                          src={
+                            finding.person.image_candidate_url ||
+                            finding.person.image_url ||
+                            ""
                           }
+                          alt={finding.person.fullname}
+                        />
+                        <AvatarFallback className="text-xs font-bold bg-muted text-muted-foreground">
+                          {finding.person.fullname
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="text-xs sm:text-sm font-bold leading-tight text-foreground"
+                          title={finding.person.fullname}
                         >
-                          <Database className="h-2.5 w-2.5 mr-1" />
-                          BD: {finding.person._count.background}{" "}
-                          {finding.person._count.background === 1
-                            ? "ant."
-                            : "ants."}
-                        </Badge>
-                      )}
-
-                      {finding.person.has_penal_sentence && (
-                        <Badge
-                          variant="destructive"
-                          className="text-[9px] px-1.5 py-0 font-semibold"
-                          title="El candidato registra sentencia penal condenatoria previa en BD."
+                          {finding.person.fullname}
+                        </p>
+                        <p
+                          className="text-[11px] text-muted-foreground mt-0.5"
+                          title={candidacyLabel || finding.person.dni || ""}
                         >
-                          Sentencia Penal Previa
-                        </Badge>
-                      )}
-
-                      {finding.person.candidate &&
-                        finding.person.candidate.length > 0 &&
-                        finding.person.candidate
-                          .slice(0, 2)
-                          .map((c: FindingCandidacy, i: number) => {
-                            const label = [
-                              c.electoraldistrict?.name,
-                              c.politicalparty?.name,
-                            ]
-                              .filter(Boolean)
-                              .join(" • ");
-                            return (
-                              <Badge
-                                key={i}
-                                variant="secondary"
-                                className="text-[9px] px-1.5 py-0 font-normal truncate max-w-[200px]"
-                                title={`${c.type} - ${label}`}
-                              >
-                                {label}
-                              </Badge>
-                            );
-                          })}
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-2.5 text-xs">
-                    {/* Título del Hallazgo */}
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        {isPenal || isEtica || isCivil ? (
-                          <Scale className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        ) : (
-                          <Newspaper className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        )}
-                        <span className="font-semibold text-foreground line-clamp-1">
-                          {title}
-                        </span>
+                          {candidacyLabel ||
+                            (finding.person.dni
+                              ? `DNI: ${finding.person.dni}`
+                              : "Candidato")}
+                        </p>
                       </div>
-                      <p className="text-muted-foreground line-clamp-4 leading-relaxed text-[11px]">
-                        {summary}
-                      </p>
                     </div>
+                  </div>
+                  <div className="flex flex-row items-end justify-start gap-2 shrink-0">
+                    {finding.person.has_penal_sentence && (
+                      <span
+                        className="text-[9px] font-semibold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded shrink-0"
+                        title="Registra sentencia condenatoria previa en BD"
+                      >
+                        Sentencia previa
+                      </span>
+                    )}
+                    <Badge
+                      variant={
+                        isPenal
+                          ? "destructive"
+                          : isEtica
+                            ? "warning"
+                            : isCivil
+                              ? "secondary"
+                              : "default"
+                      }
+                      className="text-[10px] uppercase font-bold tracking-wide px-2 py-0.5"
+                    >
+                      {rawType || "NOTICIA"}
+                    </Badge>
+                    {isUpdate && (
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5">
+                        <GitCompare className="h-3 w-3" /> Actualización
+                      </span>
+                    )}
+                  </div>
+                  {/* Cuerpo: Título + Resumen + Sanción */}
+                  <div className="space-y-1.5 pt-0.5">
+                    <h4
+                      className="text-sm font-semibold text-foreground line-clamp-2 leading-snug"
+                      title={title}
+                    >
+                      {title}
+                    </h4>
 
-                    {/* Sanción (si aplica) */}
+                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                      {summary}
+                    </p>
+
                     {sanction && (
-                      <div className="p-2 rounded bg-destructive/10 text-destructive text-[11px] border border-destructive/20 font-medium">
-                        ⚖️ Sanción: {sanction}
+                      <div className="text-xs px-2.5 py-1.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 font-medium flex items-center gap-1.5">
+                        <span className="shrink-0 font-bold">⚖️ Sanción:</span>
+                        <span className="truncate" title={sanction}>
+                          {sanction}
+                        </span>
                       </div>
                     )}
+                  </div>
 
-                    {/* Metadatos: Fuente, Fecha, Confianza */}
-                    <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-medium truncate max-w-[140px]">
-                          {source}
-                        </span>
-                        {sourceUrl && (
-                          <a
-                            href={sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-0.5 shrink-0"
-                            title="Ver enlace original"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                  {/* Metadatos y Herramientas secundarias */}
+                  <div className="pt-2 border-t flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                      <span className="font-medium text-foreground truncate max-w-[130px]">
+                        {source}
+                      </span>
+                      {sourceUrl && (
+                        <a
+                          href={sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline inline-flex items-center shrink-0"
+                          title="Abrir fuente original"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+
+                      {date && (
+                        <>
+                          <span className="text-muted-foreground/40">•</span>
+                          <span className="text-[11px] whitespace-nowrap">
+                            {date}
+                          </span>
+                        </>
+                      )}
+
+                      {typeof finding.person._count?.background === "number" &&
+                        finding.person._count.background > 0 && (
+                          <>
+                            <span className="text-muted-foreground/40">•</span>
+                            <span
+                              className="text-[11px] text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap"
+                              title={`El candidato registra ${finding.person._count.background} antecedente(s) previo(s) en BD`}
+                            >
+                              {finding.person._count.background} ant. BD
+                            </span>
+                          </>
                         )}
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        {date && <span>📅 {date}</span>}
-                        <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded">
-                          {Math.round((finding.confidence || 0.8) * 100)}% conf.
-                        </span>
-                      </div>
                     </div>
 
-                    {/* Razón del LLM */}
-                    {finding.reason && (
-                      <div className="p-2 rounded bg-muted/40 text-[10px] text-muted-foreground italic border flex items-start gap-1.5">
-                        <BrainCircuit className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">
-                          &quot;{finding.reason}&quot;
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </div>
-
-                <CardFooter className="pt-3 pb-3 border-t bg-muted/20 flex flex-col gap-2">
-                  {finding.status === "PENDING" ? (
-                    <>
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-1.5">
-                          {isUpdate ? (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/30 font-semibold flex items-center gap-1"
-                            >
-                              <GitCompare className="h-3 w-3" /> Actualización
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold"
-                            >
-                              Nuevo
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {isUpdate && finding.target_id && (
+                    {/* Botones de acción secundaria (Diff / Editar) */}
+                    {finding.status === "PENDING" && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isUpdate && finding.target_id && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDiffFinding(finding)}
+                                disabled={isProcessing}
+                                className="h-7 w-7 text-primary hover:bg-primary/10"
+                                aria-label="Ver diferencias con base de datos"
+                              >
+                                <GitCompare className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Ver diferencias con BD
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => setDiffFinding(finding)}
+                              size="icon"
+                              onClick={() => setEditingFinding(finding)}
                               disabled={isProcessing}
-                              className="h-7 text-xs px-2 text-primary"
-                              title="Comparar con la versión actual en base de datos"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                              aria-label="Editar hallazgo"
                             >
-                              <GitCompare className="h-3.5 w-3.5 mr-1" /> Diff
+                              <Edit className="h-3.5 w-3.5" />
                             </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingFinding(finding)}
-                            disabled={isProcessing}
-                            className="h-7 text-xs px-2"
-                            title="Editar texto, fuente o fecha antes de aprobar"
-                          >
-                            <Edit className="h-3.5 w-3.5 mr-1" /> Editar
-                          </Button>
-                        </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Editar antes de aprobar
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
+                    )}
+                  </div>
+                </div>
 
-                      <div className="grid grid-cols-2 gap-2 w-full pt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRejectSingle(finding.id)}
-                          disabled={isProcessing}
-                          className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <X className="h-3.5 w-3.5 mr-1" /> Ignorar
-                        </Button>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleApproveSingle(finding.id)}
-                          disabled={isProcessing}
-                          className="h-8 text-xs bg-success hover:bg-success/90"
-                        >
-                          <Check className="h-3.5 w-3.5 mr-1" /> Aprobar
-                        </Button>
-                      </div>
-                    </>
+                {/* Footer de Triage */}
+                <div className="p-3 pt-0 mt-auto">
+                  {finding.status === "PENDING" ? (
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRejectSingle(finding.id)}
+                        disabled={isProcessing}
+                        className="h-8.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-colors font-medium"
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" /> Ignorar
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleApproveSingle(finding.id)}
+                        disabled={isProcessing}
+                        className="h-8.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-none"
+                      >
+                        <Check className="h-3.5 w-3.5 mr-1" /> Aprobar
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-between w-full text-[11px] text-muted-foreground gap-2">
+                    <div className="flex items-center justify-between w-full text-xs text-muted-foreground pt-2 border-t">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <Badge
                           variant={
@@ -826,7 +784,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                             : "RECHAZADO"}
                         </Badge>
                         <span
-                          className="truncate max-w-[140px]"
+                          className="truncate text-[11px] max-w-[140px]"
                           title={
                             finding.reviewed_by
                               ? `Por ${finding.reviewed_by}`
@@ -848,13 +806,12 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                           className="h-7 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                           title="Deshacer aprobación y regresar a pendiente"
                         >
-                          <RotateCcw className="h-3 w-3 mr-1" />
-                          Revertir
+                          <RotateCcw className="h-3 w-3 mr-1" /> Revertir
                         </Button>
                       )}
                     </div>
                   )}
-                </CardFooter>
+                </div>
               </Card>
             );
           })}
