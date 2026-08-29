@@ -61,27 +61,46 @@ export function BatchResearchDialog({
 
   const total = persons?.length || 0;
 
-  React.useEffect(() => {
-    if (!persons || persons.length === 0) {
-      return;
-    }
+  const handleClose = (failedIds?: string[]) => {
+    setBatchId(null);
+    setProgress(0);
+    setCompletedCount(0);
+    setFailedCount(0);
+    setFailedPersonIds([]);
+    setIsRetrying(false);
+    setStatus("idle");
+    setErrorMsg("");
+    onClose(failedIds);
+  };
 
+  React.useEffect(() => {
+    if (!persons || persons.length === 0) return;
+
+    let ignore = false;
     async function loadWorkflows() {
       setIsLoadingWorkflows(true);
       try {
         const res = await getActiveWorkflows();
-        if (res.success && res.workflows && res.workflows.length > 0) {
+        if (
+          !ignore &&
+          res.success &&
+          res.workflows &&
+          res.workflows.length > 0
+        ) {
           setWorkflows(res.workflows);
           setSelectedWorkflowId(res.workflows[0].id);
         }
       } catch (err) {
         console.error("Error loading workflows:", err);
       } finally {
-        setIsLoadingWorkflows(false);
+        if (!ignore) setIsLoadingWorkflows(false);
       }
     }
 
     loadWorkflows();
+    return () => {
+      ignore = true;
+    };
   }, [persons]);
 
   const handleStartBatch = async () => {
@@ -155,7 +174,7 @@ export function BatchResearchDialog({
       open={!!persons}
       onOpenChange={(open) => {
         if (!open && status !== "running") {
-          onClose(status === "completed" ? failedPersonIds : undefined);
+          handleClose(status === "completed" ? failedPersonIds : undefined);
         }
       }}
     >
@@ -236,7 +255,7 @@ export function BatchResearchDialog({
               )}
 
               <div className="flex gap-2 justify-end pt-2">
-                <Button variant="outline" onClick={() => onClose()}>
+                <Button variant="outline" onClick={() => handleClose()}>
                   Cerrar
                 </Button>
                 <Button
@@ -318,7 +337,7 @@ export function BatchResearchDialog({
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => onClose(failedPersonIds)}
+                      onClick={() => handleClose(failedPersonIds)}
                       className="w-full"
                     >
                       Cerrar (mantener {failedCount} seleccionados)
@@ -334,7 +353,10 @@ export function BatchResearchDialog({
                   <p className="text-xs text-muted-foreground text-center">
                     Se procesaron los {completedCount} candidatos correctamente.
                   </p>
-                  <Button onClick={() => onClose([])} className="mt-4 w-full">
+                  <Button
+                    onClick={() => handleClose([])}
+                    className="mt-4 w-full"
+                  >
                     Cerrar y continuar
                   </Button>
                 </>
