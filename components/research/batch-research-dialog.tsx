@@ -15,7 +15,6 @@ import {
 } from "@/lib/actions/research";
 import { getActiveWorkflows } from "@/app/admin/workflows/_lib/actions";
 import { Loader2, CheckCircle2, Play, Bot, Lock } from "lucide-react";
-import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -33,7 +32,7 @@ interface BatchItem {
 
 interface BatchResearchDialogProps {
   persons: BatchItem[] | null;
-  onClose: () => void;
+  onClose: (failedPersonIds?: string[]) => void;
 }
 
 export function BatchResearchDialog({
@@ -152,8 +151,25 @@ export function BatchResearchDialog({
   const percent = total > 0 ? (progress / total) * 100 : 0;
 
   return (
-    <Dialog open={!!persons} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[450px]">
+    <Dialog
+      open={!!persons}
+      onOpenChange={(open) => {
+        if (!open && status !== "running") {
+          onClose(status === "completed" ? failedPersonIds : undefined);
+        }
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-[450px]"
+        showCloseButton={status !== "running"}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          if (status === "running") {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
@@ -220,7 +236,7 @@ export function BatchResearchDialog({
               )}
 
               <div className="flex gap-2 justify-end pt-2">
-                <Button variant="outline" onClick={onClose}>
+                <Button variant="outline" onClick={() => onClose()}>
                   Cerrar
                 </Button>
                 <Button
@@ -254,8 +270,8 @@ export function BatchResearchDialog({
               </p>
               <Progress value={percent} className="w-full" />
               <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                El lote corre en segundo plano usando el pool de modelos con
-                conmutación automática de cuota. Puedes cerrar esta ventana.
+                El lote se está ejecutando. Por favor espera a que finalice el
+                proceso.
               </p>
             </div>
           )}
@@ -278,14 +294,14 @@ export function BatchResearchDialog({
               {failedCount > 0 ? (
                 <>
                   <div className="flex items-center gap-2 text-amber-600 font-medium">
-                    <span>⚠️ Lote terminado con observaciones</span>
+                    <span>⚠️ Lote finalizado con observaciones</span>
                   </div>
                   <div className="text-xs text-muted-foreground text-center space-y-1">
                     <p className="text-emerald-600 font-medium">
                       ✅ {completedCount} completado(s) con éxito
                     </p>
                     <p className="text-rose-600 font-medium">
-                      ❌ {failedCount} con problemas / cuota agotada
+                      ❌ {failedCount} con error o incompletos
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 w-full mt-2">
@@ -300,10 +316,12 @@ export function BatchResearchDialog({
                       ) : null}
                       Reintentar {failedCount} fallido(s)
                     </Button>
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href="/admin/candidatos/revisiones">
-                        Ir a la bandeja de revisiones
-                      </Link>
+                    <Button
+                      variant="outline"
+                      onClick={() => onClose(failedPersonIds)}
+                      className="w-full"
+                    >
+                      Cerrar (mantener {failedCount} seleccionados)
                     </Button>
                   </div>
                 </>
@@ -314,13 +332,10 @@ export function BatchResearchDialog({
                     ¡Lote completado con éxito!
                   </p>
                   <p className="text-xs text-muted-foreground text-center">
-                    Se han generado propuestas de actualización (
-                    {completedCount} candidatos).
+                    Se procesaron los {completedCount} candidatos correctamente.
                   </p>
-                  <Button asChild className="mt-4 w-full">
-                    <Link href="/admin/candidatos/revisiones">
-                      Ir a la bandeja de revisiones
-                    </Link>
+                  <Button onClick={() => onClose([])} className="mt-4 w-full">
+                    Cerrar y continuar
                   </Button>
                 </>
               )}

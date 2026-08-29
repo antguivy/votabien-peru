@@ -305,9 +305,12 @@ export function useDataTable<TData>({
           }
         });
 
-        void setPage(1);
+        // Schedule URL updates outside of the pure state updater to prevent React render conflict
+        setTimeout(() => {
+          void setPage(1);
+          debouncedSetFilterValues(filterUpdates);
+        }, 0);
 
-        debouncedSetFilterValues(filterUpdates);
         return next;
       });
     },

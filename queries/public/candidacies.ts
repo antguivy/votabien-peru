@@ -6,7 +6,7 @@ import {
   CandidatePresidentials,
 } from "@/interfaces/candidate";
 import { RnasSanction } from "@/interfaces/person";
-import { TAGS } from "@/lib/cache-tags";
+import { TAGS, TTL } from "@/lib/cache-tags";
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 import { Prisma } from "@/prisma/generated/client";
@@ -57,28 +57,6 @@ function parseRnasSanctions(val: unknown): RnasSanction[] | null {
   });
   return parsed as RnasSanction[];
 }
-
-import ubigeoTreeData from "@/lib/ubigeo-tree.json";
-
-interface UbigeoDistrict {
-  dist_code: string;
-  name: string;
-  ubigeo: string;
-}
-interface UbigeoProvince {
-  prov_code: string;
-  name: string;
-  ubigeo: string;
-  distritos: UbigeoDistrict[];
-}
-interface UbigeoDepartment {
-  dep_code: string;
-  name: string;
-  ubigeo: string;
-  provincias: UbigeoProvince[];
-}
-const DEPARTMENTS = ubigeoTreeData as UbigeoDepartment[];
-
 function buildDistrictFilter(
   type: string,
   districts?: string[],
@@ -90,138 +68,6 @@ function buildDistrictFilter(
   for (const d of districts) {
     if (!d || !d.trim()) continue;
     const cleanD = d.trim();
-
-    const isNumeric = /^[0-9]+$/.test(cleanD);
-    if (isNumeric) {
-      const depCode = cleanD.slice(0, 2);
-      const provCode =
-        cleanD.length >= 4 && cleanD.slice(2, 4) !== "00"
-          ? cleanD.slice(0, 4)
-          : "";
-      const distCode =
-        cleanD.length >= 6 && cleanD.slice(4, 6) !== "00"
-          ? cleanD.slice(0, 6)
-          : "";
-
-      const dep = DEPARTMENTS.find((dep) => dep.dep_code === depCode);
-      const depName = dep?.name || "";
-
-      let provName = "";
-      let distName = "";
-      if (dep && provCode) {
-        const p = dep.provincias.find((prov) =>
-          prov.ubigeo.startsWith(provCode),
-        );
-        if (p) {
-          provName = p.name;
-          if (distCode) {
-            const dist = p.distritos.find((dst) => dst.ubigeo === distCode);
-            if (dist) distName = dist.name;
-          }
-        }
-      }
-
-      if (
-        type === "GOBERNADOR_REGIONAL" ||
-        type === "VICEGOBERNADOR_REGIONAL"
-      ) {
-        orConditions.push(
-          { code: depCode },
-          { code: depCode + "0000" },
-          { code: { startsWith: depCode } },
-          { ubigeo: { startsWith: depCode } },
-          ...(depName
-            ? [
-                { name: { equals: depName, mode: "insensitive" as const } },
-                {
-                  name: {
-                    startsWith: depName + " -",
-                    mode: "insensitive" as const,
-                  },
-                },
-              ]
-            : []),
-        );
-      } else if (
-        type === "CONSEJERO_REGIONAL" ||
-        type === "ALCALDE_PROVINCIAL" ||
-        type === "REGIDOR_PROVINCIAL"
-      ) {
-        if (provCode) {
-          orConditions.push(
-            { code: provCode + "00" },
-            { ubigeo: provCode + "00" },
-            { code: { startsWith: provCode } },
-            ...(provName
-              ? [
-                  { name: { equals: provName, mode: "insensitive" as const } },
-                  {
-                    name: {
-                      startsWith: provName + " -",
-                      mode: "insensitive" as const,
-                    },
-                  },
-                ]
-              : []),
-          );
-        } else {
-          orConditions.push(
-            { code: { startsWith: depCode } },
-            { ubigeo: { startsWith: depCode } },
-            ...(depName
-              ? [{ name: { contains: depName, mode: "insensitive" as const } }]
-              : []),
-          );
-        }
-      } else if (type === "ALCALDE_DISTRITAL" || type === "REGIDOR_DISTRITAL") {
-        if (distCode) {
-          orConditions.push(
-            { code: distCode },
-            { ubigeo: distCode },
-            ...(distName
-              ? [
-                  {
-                    name: {
-                      startsWith: distName + " -",
-                      mode: "insensitive" as const,
-                    },
-                  },
-                  { name: { equals: distName, mode: "insensitive" as const } },
-                ]
-              : []),
-          );
-        } else if (provCode) {
-          orConditions.push(
-            { code: { startsWith: provCode } },
-            { ubigeo: { startsWith: provCode } },
-            ...(provName
-              ? [
-                  {
-                    name: {
-                      contains: ` - ${provName} - `,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                ]
-              : []),
-          );
-        } else {
-          orConditions.push(
-            { code: { startsWith: depCode } },
-            { ubigeo: { startsWith: depCode } },
-            ...(depName
-              ? [{ name: { contains: depName, mode: "insensitive" as const } }]
-              : []),
-          );
-        }
-      } else {
-        orConditions.push(
-          { code: { startsWith: depCode } },
-          { ubigeo: { startsWith: depCode } },
-        );
-      }
-      continue;
-    }
 
     let baseName = cleanD;
     let parentName = "";
@@ -238,38 +84,123 @@ function buildDistrictFilter(
     if (type === "GOBERNADOR_REGIONAL" || type === "VICEGOBERNADOR_REGIONAL") {
       const depSearch = parentName || baseName;
       orConditions.push(
-        { name: { contains: depSearch, mode: "insensitive" as const } },
-        { code: { in: districts } },
-        { id: { in: districts } },
+        { id: cleanD },
+        { code: cleanD },
+        { children: { some: { id: cleanD } } },
+        { children: { some: { children: { some: { id: cleanD } } } } },
+        { children: { some: { code: cleanD } } },
+        { children: { some: { children: { some: { code: cleanD } } } } },
       );
-    } else if (
-      type === "CONSEJERO_REGIONAL" ||
-      type === "ALCALDE_PROVINCIAL" ||
-      type === "REGIDOR_PROVINCIAL"
-    ) {
+      if (cleanD.toUpperCase() === "LIMA") {
+        orConditions.push(
+          { code: "LMP" },
+          {
+            name: { contains: "LIMA PROVINCIAS", mode: "insensitive" as const },
+          },
+        );
+      } else {
+        orConditions.push(
+          { name: { equals: depSearch, mode: "insensitive" as const } },
+          { name: { contains: depSearch, mode: "insensitive" as const } },
+        );
+      }
+    } else if (type === "CONSEJERO_REGIONAL") {
+      const depSearch = parentName || baseName;
       orConditions.push(
-        { name: { startsWith: baseName + " -", mode: "insensitive" as const } },
-        { name: { equals: baseName, mode: "insensitive" as const } },
-        ...(parentName
-          ? [{ name: { contains: parentName, mode: "insensitive" as const } }]
-          : []),
-        { code: { in: districts } },
-        { id: { in: districts } },
+        { id: cleanD },
+        { parent_id: cleanD },
+        { parent: { id: cleanD } },
+        { parent: { code: cleanD } },
+        { parent: { children: { some: { id: cleanD } } } },
+        {
+          parent: {
+            children: { some: { children: { some: { id: cleanD } } } },
+          },
+        },
       );
+      if (cleanD.toUpperCase() === "LIMA") {
+        orConditions.push(
+          { parent: { code: "LMP" } },
+          {
+            parent: {
+              name: { contains: "LIMA", mode: "insensitive" as const },
+            },
+          },
+        );
+      } else {
+        orConditions.push(
+          {
+            parent: {
+              name: { equals: depSearch, mode: "insensitive" as const },
+            },
+          },
+          {
+            parent: {
+              name: { contains: depSearch, mode: "insensitive" as const },
+            },
+          },
+        );
+      }
+    } else if (type === "ALCALDE_PROVINCIAL" || type === "REGIDOR_PROVINCIAL") {
+      orConditions.push(
+        { id: cleanD },
+        { code: cleanD },
+        // Si cleanD es un distrito, encontrar su provincia padre:
+        { children: { some: { id: cleanD } } },
+        { children: { some: { code: cleanD } } },
+        // Si cleanD es una región, encontrar todas sus provincias hijas:
+        { parent_id: cleanD },
+        { parent: { code: cleanD } },
+      );
+      if (cleanD.toUpperCase() === "LIMA") {
+        orConditions.push(
+          { code: "LIM" },
+          { parent: { code: "LMP" } },
+          { name: { contains: "LIMA", mode: "insensitive" as const } },
+        );
+      } else {
+        orConditions.push(
+          { name: { equals: baseName, mode: "insensitive" as const } },
+          {
+            name: { startsWith: baseName + " -", mode: "insensitive" as const },
+          },
+          ...(parentName
+            ? [{ name: { contains: parentName, mode: "insensitive" as const } }]
+            : []),
+        );
+      }
     } else if (type === "ALCALDE_DISTRITAL" || type === "REGIDOR_DISTRITAL") {
       orConditions.push(
-        { name: { startsWith: baseName + " -", mode: "insensitive" as const } },
-        { name: { equals: baseName, mode: "insensitive" as const } },
-        { code: { in: districts } },
-        { ubigeo: { in: districts } },
-        { id: { in: districts } },
+        { id: cleanD },
+        { code: cleanD },
+        { ubigeo: cleanD },
+        // Si cleanD es una provincia, encontrar todos sus distritos hijos:
+        { parent_id: cleanD },
+        { parent: { code: cleanD } },
+        // Si cleanD es una región, encontrar todos sus distritos nietos:
+        { parent: { parent_id: cleanD } },
+        { parent: { parent: { code: cleanD } } },
       );
+      if (cleanD.toUpperCase() === "LIMA") {
+        orConditions.push(
+          { parent: { code: "LIM" } },
+          { parent: { parent: { code: "LMP" } } },
+        );
+      } else {
+        orConditions.push(
+          { name: { equals: baseName, mode: "insensitive" as const } },
+          {
+            name: { startsWith: baseName + " -", mode: "insensitive" as const },
+          },
+        );
+      }
     } else {
       orConditions.push(
+        { id: cleanD },
+        { code: cleanD },
+        { ubigeo: cleanD },
         { name: { contains: cleanD, mode: "insensitive" as const } },
-        { code: { in: districts } },
-        { ubigeo: { in: districts } },
-        { id: { in: districts } },
+        { parent_id: cleanD },
       );
     }
   }
@@ -545,7 +476,10 @@ export const getCandidatesCards = cache(
       }
     },
     ["candidates-cards-list"],
-    { tags: [TAGS.candidates] },
+    {
+      tags: [TAGS.candidates],
+      revalidate: TTL.static,
+    },
   ),
 );
 

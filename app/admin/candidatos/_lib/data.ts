@@ -50,9 +50,21 @@ export async function getCandidates(
         : [input.district as string].filter(Boolean);
 
       if (terms.length > 0) {
+        const expandedTerms = terms.flatMap((term) => {
+          const upper = term.toUpperCase().trim();
+          if (
+            upper === "LIMA" ||
+            upper === "REGIÓN LIMA" ||
+            upper === "REGION LIMA"
+          ) {
+            return ["LIM", "LMP", "LIMA METROPOLITANA", "LIMA PROVINCIAS"];
+          }
+          return [term];
+        });
+
         const matchedDistricts = await prisma.electoraldistrict.findMany({
           where: {
-            OR: terms.flatMap((term) => [
+            OR: expandedTerms.flatMap((term) => [
               { id: term },
               { code: term },
               { ubigeo: term },
@@ -87,6 +99,8 @@ export async function getCandidates(
 
         if (targetDistrictIds.size > 0) {
           where.electoral_district_id = { in: Array.from(targetDistrictIds) };
+        } else {
+          where.electoral_district_id = { in: ["__NO_MATCH__"] };
         }
       }
     }

@@ -5,6 +5,18 @@ import { UserRole } from "@/interfaces/auth";
  * Ruta prefijo -> Roles con permiso de acceso
  */
 export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
+  // ── Módulos en Staging / Preview (Voluntarios, Editores, Admins) ──
+  "/candidatos": ["volunteer", "editor", "admin", "super_admin"],
+  "/partidos": ["volunteer", "editor", "admin", "super_admin"],
+  "/comparador": ["volunteer", "editor", "admin", "super_admin"],
+  "/match": ["volunteer", "editor", "admin", "super_admin"],
+  "/simulador": ["volunteer", "editor", "admin", "super_admin"],
+  "/trivia": ["volunteer", "editor", "admin", "super_admin"],
+  "/aprende": ["volunteer", "editor", "admin", "super_admin"],
+  "/api/candidates": ["volunteer", "editor", "admin", "super_admin"],
+  "/api/trivia": ["volunteer", "editor", "admin", "super_admin"],
+  "/api/match": ["volunteer", "editor", "admin", "super_admin"],
+
   // ── Módulos de Investigación y Juegos (Voluntarios, Editores, Admins) ──
   "/admin/candidatos": ["volunteer", "editor", "admin", "super_admin"],
   "/admin/guias": ["volunteer", "editor", "admin", "super_admin"],

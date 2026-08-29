@@ -9,10 +9,8 @@ import { cn } from "@/lib/utils";
 import { CandidateCard, FiltersCandidates } from "@/interfaces/candidate";
 import { getTextColor } from "@/lib/utils/color-utils";
 import { shuffleArray } from "@/lib/utils/arrays";
-import {
-  isCapitalDistrict,
-  resolveLocationFromParam,
-} from "@/lib/ubigeo-helpers";
+import { isCapitalDistrict, getScopeLabelForType } from "@/lib/ubigeo-helpers";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import { Badge } from "../ui/badge";
 import {
   AlertBadge,
@@ -376,22 +374,23 @@ const DISTRICT_TYPES = [
 const DistrictHintBanner = ({
   currentType,
   currentDistrict,
+  distritos,
   onOpenFilters,
 }: {
   currentType: string;
   currentDistrict: string;
+  distritos?: ElectoralDistrictBase[];
   onOpenFilters: () => void;
 }) => {
   const isSelected = !!currentDistrict;
-  const resolvedLoc = resolveLocationFromParam(currentDistrict);
+  const scopeInfo = getScopeLabelForType(
+    currentType,
+    null,
+    currentDistrict,
+    distritos,
+  );
   const displayDistrict =
-    currentType === "GOBERNADOR_REGIONAL" ||
-    currentType === "CONSEJERO_REGIONAL"
-      ? resolvedLoc?.department || currentDistrict
-      : resolvedLoc?.district?.split(" (")[0] ||
-        resolvedLoc?.province?.split(" (")[0] ||
-        resolvedLoc?.department ||
-        currentDistrict;
+    scopeInfo.displayLocation || scopeInfo.activeLocation || currentDistrict;
 
   const label = (() => {
     switch (currentType) {
@@ -475,6 +474,7 @@ interface CandidatosListProps {
   candidaturas: CandidateCard[];
   procesoId: string;
   currentFilters: FiltersCandidates;
+  distritos?: ElectoralDistrictBase[];
   infiniteScroll?: boolean;
 }
 
@@ -488,6 +488,7 @@ const CandidatosList = ({
   candidaturas: initialCandidaturas,
   procesoId,
   currentFilters,
+  distritos,
   infiniteScroll = true,
 }: CandidatosListProps) => {
   const router = useRouter();
@@ -638,6 +639,7 @@ const CandidatosList = ({
           <DistrictHintBanner
             currentType={currentFilters.type}
             currentDistrict={currentDistrict}
+            distritos={distritos}
             onOpenFilters={handleOpenFilters}
           />
         )}
