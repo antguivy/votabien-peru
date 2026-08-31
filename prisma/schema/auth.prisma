@@ -62,6 +62,13 @@ model user {
   role          String    @default("user")
   account       account[]
   session       session[]
+
+  // Relaciones del Gestor de Proyectos y Tareas
+  created_boards    project_board[]           @relation("BoardCreator")
+  created_tasks     project_task[]            @relation("TaskCreator")
+  task_assignments  project_task_assignment[]
+  task_comments     project_task_comment[]
+  task_activities   project_task_activity[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

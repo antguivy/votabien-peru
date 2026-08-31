@@ -22,6 +22,7 @@ import {
 import { BiographyDetail } from "@/interfaces/person";
 import { toast } from "sonner";
 import { queueResearchProposals } from "@/lib/actions/research";
+import { Bot } from "lucide-react";
 
 function normalizeType(raw: string | null | undefined): BackgroundType {
   const map: Record<string, BackgroundType> = {
@@ -159,16 +160,19 @@ export default function ResearchPageDialog({
   return (
     <Credenza open={open} onOpenChange={handleOpenChange}>
       <CredenzaContent
-        className="min-w-5xl"
+        className="sm:max-w-5xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <CredenzaHeader>
-          <CredenzaTitle>
-            {showForm && "Investigación Asistida por IA"}
-            {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
-              "Procesando investigación..."}
-            {resultadoFinal && `Resultados — ${resultadoFinal.investigado}`}
+          <CredenzaTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary shrink-0" />
+            <span>
+              {showForm && "Investigación Asistida por IA"}
+              {(isStreaming || (logs.length > 0 && !resultadoFinal)) &&
+                "Procesando investigación..."}
+              {resultadoFinal && `Resultados — ${resultadoFinal.investigado}`}
+            </span>
           </CredenzaTitle>
           <CredenzaDescription>
             {showForm &&

@@ -1,0 +1,108 @@
+model project_board {
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(150)
+  description   String?          @db.Text
+  icon          String?          @default("FolderKanban") @db.VarChar(50)
+  color         String?          @default("indigo") @db.VarChar(30)
+  area          String           @default("GENERAL") // INVESTIGACION, CONTENIDO, RECLUTAMIENTO, LEGAL, DESARROLLO, GENERAL
+  is_default    Boolean          @default(false)
+  created_by_id String?
+  created_at    DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime         @default(now()) @updatedAt @db.Timestamptz(6)
+
+  created_by    user?            @relation("BoardCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+  columns       project_column[]
+  tasks         project_task[]
+
+  @@index([created_by_id])
+  @@index([area])
+}
+
+model project_column {
+  id           String         @id @default(cuid())
+  board_id     String
+  title        String         @db.VarChar(100)
+  position     Int            @default(0)
+  color        String?        @db.VarChar(30)
+  is_completed Boolean        @default(false)
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+
+  board        project_board  @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  tasks        project_task[]
+
+  @@index([board_id, position])
+}
+
+model project_task {
+  id            String                    @id @default(cuid())
+  board_id      String
+  column_id     String
+  title         String                    @db.VarChar(255)
+  description   String?                   @db.Text
+  priority      String                    @default("MEDIA") // BAJA, MEDIA, ALTA, URGENTE
+  position      Int                       @default(0)
+  due_date      DateTime?                 @db.Timestamptz(6)
+  tags          String[]                  @default([])
+  created_by_id String?
+  resources     Json?                     @default("[]") // [{ id, title, url, type }]
+  checklist     Json?                     @default("[]") // [{ id, text, completed, assigned_user_id }]
+  completed_at  DateTime?                 @db.Timestamptz(6)
+  created_at    DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime                  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  board         project_board             @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  column        project_column            @relation(fields: [column_id], references: [id], onDelete: Cascade)
+  created_by    user?                     @relation("TaskCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+  assignments   project_task_assignment[]
+  comments      project_task_comment[]
+  activities    project_task_activity[]
+
+  @@index([board_id, column_id, position])
+  @@index([priority])
+  @@index([due_date])
+}
+
+model project_task_assignment {
+  id           String       @id @default(cuid())
+  task_id      String
+  user_id      String
+  status       String       @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  notes        String?      @db.Text
+  completed_at DateTime?    @db.Timestamptz(6)
+  created_at   DateTime     @default(now()) @db.Timestamptz(6)
+
+  task         project_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user         user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, user_id])
+  @@index([user_id])
+}
+
+model project_task_comment {
+  id         String       @id @default(cuid())
+  task_id    String
+  user_id    String
+  content    String       @db.Text
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+
+  task       project_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user       user         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id, created_at])
+}
+
+model project_task_activity {
+  id         String       @id @default(cuid())
+  task_id    String
+  user_id    String?
+  action     String       // CREATED, MOVED_COLUMN, ASSIGNED, UNASSIGNED, STATUS_CHANGED, PRIORITY_CHANGED, CHECKLIST_UPDATED, RESOURCE_ADDED, COMPLETED, COMMENTED
+  details    Json?
+  created_at DateTime     @default(now()) @db.Timestamptz(6)
+
+  task       project_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user       user?        @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([task_id, created_at])
+}

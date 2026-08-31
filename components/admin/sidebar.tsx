@@ -40,10 +40,12 @@ export function Sidebar({ userRole }: { userRole?: string }) {
               )}
             >
               <Image
-                src={"/logo_completo.png"}
-                alt="Logo"
-                width={100}
-                height={60}
+                src="/logo_completo.png"
+                alt="VotaBien Perú"
+                width={115}
+                height={36}
+                className="object-contain h-8 w-auto drop-shadow-xs"
+                priority
               />
             </h1>
           </Link>

@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
 import {
   queueBatchResearch,
@@ -170,7 +171,7 @@ export function BatchResearchDialog({
   const percent = total > 0 ? (progress / total) * 100 : 0;
 
   return (
-    <Dialog
+    <Credenza
       open={!!persons}
       onOpenChange={(open) => {
         if (!open && status !== "running") {
@@ -178,29 +179,27 @@ export function BatchResearchDialog({
         }
       }}
     >
-      <DialogContent
+      <CredenzaContent
         className="sm:max-w-[450px]"
-        showCloseButton={status !== "running"}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => {
+        onInteractOutside={(e: Event) => e.preventDefault()}
+        onEscapeKeyDown={(e: KeyboardEvent) => {
           if (status === "running") {
             e.preventDefault();
           }
         }}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+        <CredenzaHeader>
+          <CredenzaTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
             Investigación por Lotes
-          </DialogTitle>
-          <DialogDescription>
+          </CredenzaTitle>
+          <CredenzaDescription>
             {total} candidato(s) seleccionados. Rastrea antecedentes y noticias
             públicas con scraping e IA.
-          </DialogDescription>
-        </DialogHeader>
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        <div className="flex flex-col gap-4 py-2">
+        <CredenzaBody className="flex flex-col gap-4 py-2 px-1 sm:px-4">
           {status === "idle" && (
             <div className="space-y-4">
               <div className="space-y-2 border rounded-lg p-3.5 bg-slate-50 dark:bg-slate-900/50">
@@ -363,8 +362,8 @@ export function BatchResearchDialog({
               )}
             </div>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </CredenzaBody>
+      </CredenzaContent>
+    </Credenza>
   );
 }

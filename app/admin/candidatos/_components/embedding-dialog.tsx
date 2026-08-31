@@ -335,8 +335,7 @@ export function EmbeddingDialog({
           )}
         </CredenzaBody>
 
-        {/* ── Footer ── */}
-        <CredenzaFooter className="px-5 py-4 border-t border-border/70 bg-muted/20 flex items-center justify-between gap-3">
+        <CredenzaFooter className="px-5 py-4 border-t border-border/70 bg-muted/20 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
           <p className="text-xs text-muted-foreground hidden sm:block">
             {!isAdmin
               ? "Vectores almacenados para búsqueda semántica. La generación se ejecuta por el equipo técnico."
@@ -344,14 +343,14 @@ export function EmbeddingDialog({
                 ? "Los vectores se usan para búsqueda semántica en el chat IA."
                 : "Genera vectores para habilitar el contexto IA."}
           </p>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex flex-col-reverse sm:flex-row items-center gap-2 w-full sm:w-auto sm:ml-auto">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => onOpenChange(false)}
               disabled={isGenerating}
-              className="h-8 px-4 text-xs"
+              className="h-9 sm:h-8 px-4 text-xs w-full sm:w-auto"
             >
               Cerrar
             </Button>
@@ -360,7 +359,7 @@ export function EmbeddingDialog({
               size="sm"
               onClick={handleGenerate}
               disabled={!isAdmin || isGenerating || isLoading}
-              className="h-8 px-4 text-xs bg-primary hover:bg-primary/90 text-primary-foreground min-w-[148px] gap-1.5"
+              className="h-9 sm:h-8 px-4 text-xs bg-primary hover:bg-primary/90 text-primary-foreground min-w-[148px] gap-1.5 w-full sm:w-auto"
             >
               {!isAdmin ? (
                 <>

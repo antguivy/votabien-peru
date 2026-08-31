@@ -40,6 +40,7 @@ interface CollapseMenuButtonProps {
   href?: string; // Nuevo: ruta directa
   submenus?: Submenu[];
   isOpen: boolean | undefined;
+  onNavigate?: () => void;
 }
 
 export function CollapseMenuButton({
@@ -48,6 +49,7 @@ export function CollapseMenuButton({
   href,
   submenus = [],
   isOpen,
+  onNavigate,
 }: CollapseMenuButtonProps) {
   const pathname = usePathname();
 
@@ -72,7 +74,7 @@ export function CollapseMenuButton({
               className={cn("w-full justify-start h-10 mb-1", isSimpleActive)}
               asChild
             >
-              <Link href={href || "#"}>
+              <Link href={href || "#"} onClick={onNavigate}>
                 <span className={cn(isOpen === false ? "" : "mr-4")}>
                   <Icon size={18} />
                 </span>
@@ -152,7 +154,7 @@ export function CollapseMenuButton({
             className="w-full justify-start h-10 mb-1"
             asChild
           >
-            <Link href={submenu.href}>
+            <Link href={submenu.href} onClick={onNavigate}>
               <span className="mr-4 ml-2">
                 <Dot size={18} />
               </span>
@@ -212,7 +214,11 @@ export function CollapseMenuButton({
         <DropdownMenuSeparator />
         {submenus.map((submenu, index) => (
           <DropdownMenuItem key={index} asChild>
-            <Link className="cursor-pointer" href={submenu.href}>
+            <Link
+              className="cursor-pointer"
+              href={submenu.href}
+              onClick={onNavigate}
+            >
               <p className="max-w-[180px] truncate">{submenu.label}</p>
             </Link>
           </DropdownMenuItem>

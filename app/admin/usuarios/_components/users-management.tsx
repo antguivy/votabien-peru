@@ -54,12 +54,19 @@ import { UserPlus, UserMinus } from "lucide-react";
 const ROLE_LABELS: Record<string, string> = {
   user: "Usuario",
   volunteer: "Voluntario",
+  lead: "Líder de Área",
   editor: "Editor",
   admin: "Admin",
   super_admin: "Super Admin",
 };
 
-const ASSIGNABLE_ROLES: UserRole[] = ["user", "volunteer", "editor", "admin"];
+const ASSIGNABLE_ROLES: UserRole[] = [
+  "user",
+  "volunteer",
+  "lead",
+  "editor",
+  "admin",
+];
 
 interface ManagedUser {
   id: string;
@@ -317,11 +324,18 @@ export function UsersManagement({ currentUserId }: UsersManagementProps) {
                       variant={
                         u.role === "admin" || u.role === "super_admin"
                           ? "default"
-                          : u.role === "editor"
-                            ? "secondary"
-                            : u.role === "volunteer"
-                              ? "outline"
-                              : "destructive"
+                          : u.role === "lead"
+                            ? "default"
+                            : u.role === "editor"
+                              ? "secondary"
+                              : u.role === "volunteer"
+                                ? "outline"
+                                : "destructive"
+                      }
+                      className={
+                        u.role === "lead"
+                          ? "bg-purple-600 hover:bg-purple-700 text-white border-transparent"
+                          : ""
                       }
                     >
                       {ROLE_LABELS[u.role ?? "user"] ?? u.role}

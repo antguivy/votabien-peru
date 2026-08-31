@@ -17,11 +17,12 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/api/trivia": ["volunteer", "editor", "admin", "super_admin"],
   "/api/match": ["volunteer", "editor", "admin", "super_admin"],
 
-  // ── Módulos de Investigación y Juegos (Voluntarios, Editores, Admins) ──
-  "/admin/candidatos": ["volunteer", "editor", "admin", "super_admin"],
-  "/admin/guias": ["volunteer", "editor", "admin", "super_admin"],
-  "/admin/guia": ["volunteer", "editor", "admin", "super_admin"],
-  "/admin/trivia": ["volunteer", "editor", "admin", "super_admin"],
+  // ── Módulos de Colaboración y Trabajo (Voluntarios, Líderes, Editores, Admins) ──
+  "/admin/tareas": ["volunteer", "lead", "editor", "admin", "super_admin"],
+  "/admin/candidatos": ["volunteer", "lead", "editor", "admin", "super_admin"],
+  "/admin/guias": ["volunteer", "lead", "editor", "admin", "super_admin"],
+  "/admin/guia": ["volunteer", "lead", "editor", "admin", "super_admin"],
+  "/admin/trivia": ["volunteer", "lead", "editor", "admin", "super_admin"],
 
   // ── Módulos de Gestión (Exclusivos de Admins) ──
   "/admin/periodos": ["admin", "super_admin"],
