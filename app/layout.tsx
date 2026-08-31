@@ -9,6 +9,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import PWARegister from "@/components/pwa-register";
+import { AdminShortcutListener } from "@/components/auth/admin-shortcut-listener";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,6 +51,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <PWARegister />
+        <AdminShortcutListener />
 
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

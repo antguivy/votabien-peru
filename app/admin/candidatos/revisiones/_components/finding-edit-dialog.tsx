@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+  CredenzaFooter,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +37,7 @@ interface FindingEditDialogProps {
 }
 
 interface FindingEditFormProps {
+  formId: string;
   finding: {
     id: string;
     action: string;
@@ -47,10 +49,11 @@ interface FindingEditFormProps {
 }
 
 function FindingEditForm({
+  formId,
   finding,
   onSaveAndApprove,
-  onCancel,
-  isProcessing,
+  onCancel: _onCancel,
+  isProcessing: _isProcessing,
 }: FindingEditFormProps) {
   const normalized = normalizeFindingData(finding.proposed_data);
   const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
@@ -108,7 +111,7 @@ function FindingEditForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-4 py-2">
       <div className="space-y-1">
         <Label htmlFor="title" className="text-xs font-semibold">
           Título / Encabezado
@@ -252,29 +255,6 @@ function FindingEditForm({
           placeholder="https://..."
         />
       </div>
-
-      <DialogFooter className="pt-4 border-t border-border">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isProcessing}
-        >
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          disabled={isProcessing}
-          className="bg-success hover:bg-success/90 text-success-foreground"
-        >
-          {isProcessing ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
-          ) : (
-            <Check className="h-4 w-4 mr-1" />
-          )}
-          Guardar y Aprobar
-        </Button>
-      </DialogFooter>
     </form>
   );
 }
@@ -287,26 +267,54 @@ export function FindingEditDialog({
   isProcessing,
 }: FindingEditDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar y Aprobar Hallazgo</DialogTitle>
-          <DialogDescription>
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="max-w-2xl">
+        <CredenzaHeader>
+          <CredenzaTitle>Editar y Aprobar Hallazgo</CredenzaTitle>
+          <CredenzaDescription>
             Ajusta los datos del hallazgo antes de guardarlo definitivamente en
             el perfil del candidato.
-          </DialogDescription>
-        </DialogHeader>
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        {finding && (
-          <FindingEditForm
-            key={finding.id}
-            finding={finding}
-            onSaveAndApprove={onSaveAndApprove}
-            onCancel={() => onOpenChange(false)}
-            isProcessing={isProcessing}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+        <CredenzaBody className="max-h-[70vh] sm:max-h-[65vh] overflow-y-auto px-1 sm:px-4">
+          {finding && (
+            <FindingEditForm
+              key={finding.id}
+              formId={`finding-edit-form-${finding.id}`}
+              finding={finding}
+              onSaveAndApprove={onSaveAndApprove}
+              onCancel={() => onOpenChange(false)}
+              isProcessing={isProcessing}
+            />
+          )}
+        </CredenzaBody>
+
+        <CredenzaFooter className="pt-3 border-t border-border flex flex-col-reverse sm:flex-row sm:justify-end gap-2 shrink-0 bg-background">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isProcessing}
+            className="w-full sm:w-auto"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form={finding ? `finding-edit-form-${finding.id}` : undefined}
+            disabled={isProcessing}
+            className="w-full sm:w-auto bg-success hover:bg-success/90 text-success-foreground"
+          >
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <Check className="h-4 w-4 mr-1" />
+            )}
+            Guardar y Aprobar
+          </Button>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { MAIN_NAV_ITEMS, NAV_MOBILE_ITEMS } from "./navbar-config";
@@ -39,9 +39,46 @@ interface MobileBottomNavProps {
 
 export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
   const pathname = usePathname();
+  const router = useRouter();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hasAnimated = useRef(false);
+
+  // Gesto mágico: 1.2s de pulsación sobre el logo en el Drawer para ir a /auth/login
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressTriggered = useRef(false);
+
+  const startPress = useCallback(() => {
+    isLongPressTriggered.current = false;
+    pressTimer.current = setTimeout(() => {
+      isLongPressTriggered.current = true;
+      if (typeof window !== "undefined" && "vibrate" in navigator) {
+        try {
+          navigator.vibrate([40, 60, 40]);
+        } catch {
+          // Ignorar si no está permitido
+        }
+      }
+      setIsMenuOpen(false);
+      router.push("/auth/login?callbackUrl=/admin");
+    }, 1200);
+  }, [router]);
+
+  const cancelPress = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }, []);
+
+  const handleLogoClick = useCallback((e: React.MouseEvent) => {
+    if (isLongPressTriggered.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsMenuOpen(false);
+  }, []);
 
   const isActiveLink = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -156,14 +193,30 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
           </DrawerHeader>
 
           <div className="flex items-center justify-center pt-2 pb-4 border-b border-border/50">
-            <Link href="/" onClick={() => setIsMenuOpen(false)}>
+            <Link
+              href="/"
+              onClick={handleLogoClick}
+              onTouchStart={startPress}
+              onTouchEnd={cancelPress}
+              onTouchCancel={cancelPress}
+              onMouseDown={startPress}
+              onMouseUp={cancelPress}
+              onMouseLeave={cancelPress}
+              onContextMenu={(e) => {
+                // Prevenir el menú contextual para no interrumpir el long-press
+                if (isLongPressTriggered.current) {
+                  e.preventDefault();
+                }
+              }}
+              className="select-none active:scale-95 transition-transform"
+            >
               <Image
                 src="/logo_completo.png"
                 alt="VotaBien Perú"
                 width={110}
                 height={36}
                 priority
-                className="drop-shadow-sm"
+                className="drop-shadow-sm pointer-events-none"
               />
             </Link>
           </div>

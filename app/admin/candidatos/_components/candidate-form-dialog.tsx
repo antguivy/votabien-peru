@@ -930,16 +930,21 @@ export function CandidateFormDialog({
                 )}
               </CredenzaBody>
 
-              <CredenzaFooter className="px-4 py-4 mt-auto border-t flex items-center justify-end gap-2">
+              <CredenzaFooter className="px-4 py-4 mt-auto border-t flex flex-col-reverse sm:flex-row sm:justify-end gap-2 shrink-0 bg-background">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
                   disabled={form.formState.isSubmitting}
+                  className="w-full sm:w-auto"
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                  className="w-full sm:w-auto"
+                >
                   {form.formState.isSubmitting && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}

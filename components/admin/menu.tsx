@@ -20,9 +20,10 @@ import { UserRole } from "@/interfaces/auth";
 interface MenuProps {
   isOpen: boolean | undefined;
   userRole?: string;
+  onNavigate?: () => void;
 }
 
-export function Menu({ isOpen, userRole }: MenuProps) {
+export function Menu({ isOpen, userRole, onNavigate }: MenuProps) {
   const allowedGroups = adminNavGroups
     .map((group) => ({
       ...group,
@@ -71,6 +72,7 @@ export function Menu({ isOpen, userRole }: MenuProps) {
                     href={link.href}
                     submenus={link.submenus}
                     isOpen={isOpen}
+                    onNavigate={onNavigate}
                   />
                 </div>
               ))}

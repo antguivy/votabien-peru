@@ -1,3 +1,4 @@
+import { Prisma } from "@/prisma/generated/client";
 import { prisma } from "@/lib/prisma";
 import { serverRequireReviewer } from "@/lib/auth-actions";
 import { ContentLayout } from "@/components/admin/content-layout";
@@ -19,7 +20,7 @@ const HISTORY_LIMIT = 150;
 export default async function RevisionesPage() {
   await serverRequireReviewer();
 
-  const personSelect = {
+  const personSelect: Prisma.personDefaultArgs = {
     select: {
       id: true,
       fullname: true,
@@ -31,11 +32,32 @@ export default async function RevisionesPage() {
       has_sanction: true,
       is_under_investigation: true,
       candidate: {
-        where: { electoralprocess: { active: true } },
+        where: {
+          active: true,
+          electoralprocess: { active: true },
+        },
+        orderBy: [{ type: "asc" }, { list_number: "asc" }],
         select: {
           type: true,
           politicalparty: { select: { name: true } },
-          electoraldistrict: { select: { name: true, level: true } },
+          electoraldistrict: {
+            select: {
+              name: true,
+              level: true,
+              parent: {
+                select: {
+                  name: true,
+                  level: true,
+                  parent: {
+                    select: {
+                      name: true,
+                      level: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
       _count: {
@@ -44,7 +66,7 @@ export default async function RevisionesPage() {
         },
       },
     },
-  } as const;
+  };
 
   const [pendingProposals, approvedProposals, rejectedProposals] =
     await Promise.all([
@@ -119,30 +141,32 @@ export default async function RevisionesPage() {
     <ContentLayout title="Bandeja de Revisiones IA">
       <div className="flex w-full flex-col gap-4 min-w-0">
         {/* Badges de Conteo Rápido */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge
-            variant="destructive"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold shadow-none"
-          >
-            <Gavel className="h-3.5 w-3.5" />
-            <span>Penales: {penalPending.length}</span>
-          </Badge>
+        <div className="w-full overflow-x-auto no-scrollbar -mx-1 px-1">
+          <div className="flex items-center gap-2 flex-nowrap sm:flex-wrap py-0.5">
+            <Badge
+              variant="destructive"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold shadow-none shrink-0"
+            >
+              <Gavel className="h-3.5 w-3.5" />
+              <span>Penales: {penalPending.length}</span>
+            </Badge>
 
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 shadow-none"
-          >
-            <Scale className="h-3.5 w-3.5" />
-            <span>Éticos / Admin: {eticaPending.length}</span>
-          </Badge>
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 shadow-none shrink-0"
+            >
+              <Scale className="h-3.5 w-3.5" />
+              <span>Éticos / Admin: {eticaPending.length}</span>
+            </Badge>
 
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 shadow-none"
-          >
-            <Newspaper className="h-3.5 w-3.5" />
-            <span>Noticias y Posturas: {newsPending.length}</span>
-          </Badge>
+            <Badge
+              variant="outline"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 shadow-none shrink-0"
+            >
+              <Newspaper className="h-3.5 w-3.5" />
+              <span>Noticias y Posturas: {newsPending.length}</span>
+            </Badge>
+          </div>
         </div>
 
         {/* Tabla y Filtros Interactivos */}

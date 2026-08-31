@@ -148,12 +148,21 @@ const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
 
 const CredenzaFooter = ({ className, children, ...props }: CredenzaProps) => {
   const { isMobile } = useCredenzaContext();
-  const CredenzaFooter = isMobile ? DrawerFooter : DialogFooter;
+  const Component = isMobile ? DrawerFooter : DialogFooter;
 
   return (
-    <CredenzaFooter className={className} {...props}>
+    <Component
+      className={cn(
+        "shrink-0 bg-background",
+        isMobile
+          ? "flex flex-col-reverse gap-2 p-4 pt-2 border-t border-border/80 w-full"
+          : "flex flex-row justify-end gap-2 p-4 border-t border-border/80",
+        className,
+      )}
+      {...props}
+    >
       {children}
-    </CredenzaFooter>
+    </Component>
   );
 };
 

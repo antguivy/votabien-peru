@@ -18,6 +18,7 @@ export interface AuthTokens {
 export type UserRole =
   | "user"
   | "volunteer"
+  | "lead"
   | "editor"
   | "admin"
   | "super_admin";

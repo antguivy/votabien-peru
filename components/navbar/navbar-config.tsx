@@ -29,6 +29,7 @@ import {
   Bot,
   FileText,
   BookOpen,
+  FolderKanban,
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
@@ -82,6 +83,17 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 ];
 
 export const adminNavGroups: NavGroup[] = [
+  {
+    label: "Colaboración",
+    requiresRole: ["admin", "super_admin", "lead", "editor", "volunteer"],
+    links: [
+      {
+        href: "/admin/tareas",
+        label: "Proyectos y Tareas",
+        icon: FolderKanban,
+      },
+    ],
+  },
   {
     label: "Gestión",
     requiresRole: ["admin", "super_admin"],

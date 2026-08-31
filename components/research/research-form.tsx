@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, Cpu, Fingerprint, Lock } from "lucide-react";
+import { Search, Loader2, Cpu, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -68,28 +66,11 @@ export function InvestigacionForm({
   };
 
   return (
-    <Card className="w-full max-w-5xl shadow-xl overflow-hidden border-border/60">
-      <CardContent className="flex flex-col md:flex-row p-0">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row border rounded-xl overflow-hidden border-border/60 bg-card shadow-xs">
         {/* Lado Izquierdo: Objetivo y Workflow */}
         <div className="flex-1 flex flex-col gap-4 p-5">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-              <Fingerprint className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold tracking-tight">
-                Investigación Asistida por IA
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Selecciona el workflow y fuentes de extracción configuradas para
-                este candidato.
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3 flex-1 flex flex-col justify-start mt-2">
+          <div className="space-y-3 flex-1 flex flex-col justify-start">
             <Label className="text-[11px] uppercase text-muted-foreground font-bold tracking-wider">
               Nombres y Apellidos del Objetivo
             </Label>
@@ -202,7 +183,7 @@ export function InvestigacionForm({
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
