@@ -51,12 +51,18 @@ import { BulkActionsBar } from "./bulk-actions-bar";
 export interface FindingDistrictHierarchy {
   name: string;
   level: string;
+  code?: string | null;
+  is_national?: boolean | null;
   parent?: {
     name: string;
     level: string;
+    code?: string | null;
+    is_national?: boolean | null;
     parent?: {
       name: string;
       level: string;
+      code?: string | null;
+      is_national?: boolean | null;
     } | null;
   } | null;
 }
@@ -73,15 +79,36 @@ export function resolveCanonicalRegion(
 ): string {
   if (!candidacy?.electoraldistrict) return "Sin región";
   const dist = candidacy.electoraldistrict;
-  if (dist.level === "NACIONAL") return "Ámbito Nacional";
-  if (dist.level === "REGIONAL") return dist.name;
-  if (dist.level === "PROVINCIAL") {
-    return dist.parent?.name || dist.name;
+
+  // 1. Si es de ámbito nacional explícito
+  if (
+    dist.is_national ||
+    dist.name?.trim().toLowerCase() === "nacional" ||
+    dist.code === "NAC"
+  ) {
+    return "Ámbito Nacional";
   }
-  if (dist.level === "DISTRITAL") {
-    return dist.parent?.parent?.name || dist.parent?.name || dist.name;
+
+  // 2. Si es extranjero
+  if (dist.name?.toUpperCase().includes("EXTRANJERO") || dist.code === "EXT") {
+    return "Extranjero";
   }
-  return dist.name;
+
+  // 3. Obtener la entidad raíz en la jerarquía (departamento / región)
+  // En la BD peruana: distrital -> parent (provincial) -> parent (departamental/nacional)
+  // o provincial -> parent (departamental/nacional)
+  // o ya es departamental (parent null)
+  const rootDistrict = dist.parent?.parent || dist.parent || dist;
+
+  if (
+    rootDistrict.is_national ||
+    rootDistrict.name?.trim().toLowerCase() === "nacional" ||
+    rootDistrict.code === "NAC"
+  ) {
+    return "Ámbito Nacional";
+  }
+
+  return rootDistrict.name ? rootDistrict.name.trim() : "Sin región";
 }
 
 // Prioriza cargos ejecutivos principales (Gobernador, Alcalde) sobre regidurías/consejerías
@@ -430,15 +457,21 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
     });
   };
 
+  // Solo selecciona los elementos pendientes realmente VISIBLES en la página actual
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      const allPendingInView = filteredFindings
-        .filter((f) => f.status === "PENDING")
-        .map((f) => f.id);
-      setSelectedIds(new Set(allPendingInView));
-    } else {
-      setSelectedIds(new Set());
-    }
+    const visiblePendingIds = paginatedFindings
+      .filter((f) => f.status === "PENDING")
+      .map((f) => f.id);
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        visiblePendingIds.forEach((id) => next.add(id));
+      } else {
+        visiblePendingIds.forEach((id) => next.delete(id));
+      }
+      return next;
+    });
   };
 
   // Acciones individuales
@@ -619,12 +652,13 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
   const approvedCount = findings.filter((f) => f.status === "APPROVED").length;
   const rejectedCount = findings.filter((f) => f.status === "REJECTED").length;
 
+  // Elementos pendientes en la página actual (visibles en pantalla)
+  const visiblePendingOnPage = paginatedFindings.filter(
+    (f) => f.status === "PENDING",
+  );
   const isAllSelected =
-    filteredFindings.length > 0 &&
-    filteredFindings.filter((f) => f.status === "PENDING").length > 0 &&
-    filteredFindings
-      .filter((f) => f.status === "PENDING")
-      .every((f) => selectedIds.has(f.id));
+    visiblePendingOnPage.length > 0 &&
+    visiblePendingOnPage.every((f) => selectedIds.has(f.id));
 
   return (
     <div className="space-y-6 min-w-0">
@@ -744,29 +778,29 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             </SelectContent>
           </Select>
 
-          {/* Seleccionar Todos */}
-          {selectedTab.startsWith("PENDING") && filteredFindings.length > 0 && (
-            <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 py-1 sm:py-0 px-2 sm:pl-2 sm:border-l border-border shrink-0 bg-muted/40 sm:bg-transparent rounded-lg sm:rounded-none">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="select-all"
-                  checked={isAllSelected}
-                  onCheckedChange={handleSelectAll}
-                  className="h-4 w-4"
-                />
-                <label
-                  htmlFor="select-all"
-                  className="text-xs font-medium cursor-pointer select-none text-muted-foreground hover:text-foreground"
-                >
-                  Seleccionar visibles
-                </label>
+          {/* Seleccionar Visibles de la Página Actual */}
+          {selectedTab.startsWith("PENDING") &&
+            visiblePendingOnPage.length > 0 && (
+              <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 py-1 sm:py-0 px-2 sm:pl-2 sm:border-l border-border shrink-0 bg-muted/40 sm:bg-transparent rounded-lg sm:rounded-none">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    className="h-4 w-4"
+                  />
+                  <label
+                    htmlFor="select-all"
+                    className="text-xs font-medium cursor-pointer select-none text-muted-foreground hover:text-foreground"
+                  >
+                    Seleccionar visibles
+                  </label>
+                </div>
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  ({visiblePendingOnPage.length})
+                </span>
               </div>
-              <span className="text-[11px] font-semibold text-muted-foreground">
-                ({filteredFindings.filter((f) => f.status === "PENDING").length}
-                )
-              </span>
-            </div>
-          )}
+            )}
         </div>
       </div>
 

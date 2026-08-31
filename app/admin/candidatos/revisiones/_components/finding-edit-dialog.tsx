@@ -116,7 +116,7 @@ function FindingEditForm({
         <Label htmlFor="title" className="text-xs font-semibold">
           Título / Encabezado
         </Label>
-        <Input
+        <Textarea
           id="title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -248,7 +248,7 @@ function FindingEditForm({
         <Label htmlFor="sourceUrl" className="text-xs font-semibold">
           URL de la Noticia / Enlace
         </Label>
-        <Input
+        <Textarea
           id="sourceUrl"
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}

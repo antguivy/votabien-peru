@@ -12,9 +12,8 @@ export const metadata = {
     "Bandeja de moderación y aprobación de hallazgos detectados por IA",
 };
 
-// Cotas para no cargar toda la tabla: los pendientes se revisan hasta agotarlos,
-// el historial aprobado/rechazado solo se consulta de forma reciente.
-const PENDING_LIMIT = 1000;
+// Cota para historial: los pendientes se cargan completos para triaje,
+// mientras que el historial aprobado/rechazado solo consulta lo reciente.
 const HISTORY_LIMIT = 150;
 
 export default async function RevisionesPage() {
@@ -44,14 +43,20 @@ export default async function RevisionesPage() {
             select: {
               name: true,
               level: true,
+              code: true,
+              is_national: true,
               parent: {
                 select: {
                   name: true,
                   level: true,
+                  code: true,
+                  is_national: true,
                   parent: {
                     select: {
                       name: true,
                       level: true,
+                      code: true,
+                      is_national: true,
                     },
                   },
                 },
@@ -74,7 +79,6 @@ export default async function RevisionesPage() {
         where: { status: "PENDING", action: { not: "NONE" } },
         include: { person: personSelect },
         orderBy: { created_at: "desc" },
-        take: PENDING_LIMIT,
       }),
       prisma.research_proposals.findMany({
         where: { status: "APPROVED", action: { not: "NONE" } },
