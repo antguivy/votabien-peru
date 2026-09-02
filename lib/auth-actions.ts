@@ -323,3 +323,84 @@ export async function serverGetAllUsers() {
     };
   }
 }
+
+// ============================================
+// CAMBIAR / RESETEAR CONTRASEÑA (Solo admins)
+// Hashea con scrypt de Better-Auth y actualiza la cuenta.
+// Opcionalmente revoca todas las sesiones activas del usuario.
+// ============================================
+export async function serverAdminResetPassword(input: {
+  userId: string;
+  newPassword: string;
+  revokeSessions?: boolean;
+}): Promise<AuthActionResponse> {
+  const { user: currentUser } = await serverGetUser();
+
+  if (!currentUser || !["admin", "super_admin"].includes(currentUser.role)) {
+    return { error: "No tienes permisos para realizar esta acción" };
+  }
+
+  const { userId, newPassword, revokeSessions = true } = input;
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: "La nueva contraseña debe tener al menos 6 caracteres" };
+  }
+
+  try {
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!targetUser) {
+      return { error: "Usuario no encontrado" };
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    await prisma.$transaction(async (tx) => {
+      const existingAccount = await tx.account.findFirst({
+        where: {
+          userId,
+          providerId: "credential",
+        },
+      });
+
+      if (existingAccount) {
+        await tx.account.update({
+          where: { id: existingAccount.id },
+          data: {
+            password: hashedPassword,
+            updatedAt: new Date(),
+          },
+        });
+      } else {
+        await tx.account.create({
+          data: {
+            id: createId(),
+            accountId: userId,
+            providerId: "credential",
+            userId,
+            password: hashedPassword,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      if (revokeSessions) {
+        await tx.session.deleteMany({
+          where: { userId },
+        });
+      }
+    });
+
+    revalidatePath("/admin/usuarios");
+    return { success: true };
+  } catch (error) {
+    console.error("Error en serverAdminResetPassword:", error);
+    return {
+      error: error instanceof Error ? error.message : "Algo salió mal",
+    };
+  }
+}
