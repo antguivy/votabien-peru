@@ -36,7 +36,8 @@ interface RootCredenzaProps extends BaseProps {
 
 interface CredenzaProps extends BaseProps {
   className?: string;
-  asChild?: true;
+  asChild?: boolean;
+  noScroll?: boolean;
   onInteractOutside?: (e: Event) => void;
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
 }

@@ -108,7 +108,19 @@ export function resolveCanonicalRegion(
     return "Ámbito Nacional";
   }
 
-  return rootDistrict.name ? rootDistrict.name.trim() : "Sin región";
+  const regionName = rootDistrict.name
+    ? rootDistrict.name.trim()
+    : "Sin región";
+  const upperRegion = regionName.toUpperCase();
+  if (
+    upperRegion === "LIMA METROPOLITANA" ||
+    upperRegion === "LIMA PROVINCIAS" ||
+    upperRegion === "LIMA"
+  ) {
+    return "Lima";
+  }
+
+  return regionName;
 }
 
 // Prioriza cargos ejecutivos principales (Gobernador, Alcalde) sobre regidurías/consejerías
@@ -252,10 +264,24 @@ export function formatLocationName(
     .filter(Boolean);
   if (parts.length > 1) {
     // Si viene "CHUPACA - JUNÍN", convertir a "Chupaca (Junín)" o primera parte capitalizada
-    const capitalize = (s: string) =>
-      s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    const capitalize = (s: string) => {
+      const upper = s.toUpperCase();
+      if (upper === "LIMA METROPOLITANA" || upper === "LIMA PROVINCIAS")
+        return "Lima";
+      return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    };
     return parts.map(capitalize).join(", ");
   }
+
+  const upperRaw = raw.toUpperCase();
+  if (
+    upperRaw === "LIMA METROPOLITANA" ||
+    upperRaw === "LIMA PROVINCIAS" ||
+    upperRaw === "LIMA"
+  ) {
+    return "Lima";
+  }
+
   return raw;
 }
 
