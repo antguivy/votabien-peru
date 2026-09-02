@@ -47,9 +47,10 @@ import {
   serverUpdateUserRole,
   serverCreateUser,
   serverDeactivateUser,
+  serverAdminResetPassword,
 } from "@/lib/auth-actions";
 import type { UserRole } from "@/interfaces/user";
-import { UserPlus, UserMinus } from "lucide-react";
+import { UserPlus, UserMinus, KeyRound, Eye, EyeOff, Copy } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
   user: "Usuario",
@@ -145,6 +146,65 @@ export function UsersManagement({ currentUserId }: UsersManagementProps) {
   // Estado del diálogo de baja
   const [deactivateTarget, setDeactivateTarget] =
     React.useState<ManagedUser | null>(null);
+
+  // Estado del diálogo de cambio de contraseña
+  const [passwordTarget, setPasswordTarget] =
+    React.useState<ManagedUser | null>(null);
+  const [newPassword, setNewPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [revokeSessions, setRevokeSessions] = React.useState(true);
+  const [savingPassword, setSavingPassword] = React.useState(false);
+
+  function generateRandomPassword() {
+    const chars =
+      "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewPassword(pwd);
+    setShowPassword(true);
+    toast.info("Contraseña aleatoria generada");
+  }
+
+  function copyPassword() {
+    if (!newPassword) return;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(newPassword);
+      toast.success("Contraseña copiada al portapapeles");
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!passwordTarget) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast.warning("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const res = await serverAdminResetPassword({
+        userId: passwordTarget.id,
+        newPassword,
+        revokeSessions,
+      });
+
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+
+      toast.success(
+        `Contraseña actualizada para ${passwordTarget.name || passwordTarget.email}`,
+      );
+      setPasswordTarget(null);
+      setNewPassword("");
+      setShowPassword(false);
+    } finally {
+      setSavingPassword(false);
+    }
+  }
 
   async function handleDeactivate(user: ManagedUser) {
     setDeactivatingId(user.id);
@@ -368,11 +428,27 @@ export function UsersManagement({ currentUserId }: UsersManagementProps) {
                           ))}
                         </SelectContent>
                       </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary cursor-pointer"
+                        title="Cambiar contraseña"
+                        onClick={() => {
+                          setPasswordTarget(u);
+                          setNewPassword("");
+                          setShowPassword(false);
+                          setRevokeSessions(true);
+                        }}
+                        disabled={savingId === u.id || deactivatingId === u.id}
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+
                       {currentUserId !== u.id && u.role !== "user" && (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive cursor-pointer"
                           title="Dar de baja (cierra todas sus sesiones)"
                           onClick={() => setDeactivateTarget(u)}
                           disabled={
@@ -394,6 +470,132 @@ export function UsersManagement({ currentUserId }: UsersManagementProps) {
           </Table>
         </div>
       )}
+
+      {/* Diálogo de Cambio de Contraseña */}
+      <Dialog
+        open={!!passwordTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPasswordTarget(null);
+            setNewPassword("");
+            setShowPassword(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Cambiar Contraseña
+            </DialogTitle>
+            <DialogDescription>
+              Asigna una nueva contraseña para{" "}
+              <strong>{passwordTarget?.name || passwordTarget?.email}</strong> (
+              {passwordTarget?.email}).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="admin-new-password">Nueva Contraseña</Label>
+                <button
+                  type="button"
+                  onClick={generateRandomPassword}
+                  className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                >
+                  Generar aleatoria
+                </button>
+              </div>
+
+              <div className="relative flex items-center">
+                <Input
+                  id="admin-new-password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres..."
+                  className="pr-16"
+                  autoComplete="new-password"
+                />
+                <div className="absolute right-1 flex items-center gap-0.5">
+                  {newPassword && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                      onClick={copyPassword}
+                      title="Copiar contraseña"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? "Ocultar" : "Mostrar"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Mínimo 6 caracteres. Se almacenará hasheada de forma
+                irreversible con el algoritmo scrypt.
+              </p>
+            </div>
+
+            {/* Opción de revocar sesiones activas */}
+            <div className="flex items-center gap-2 rounded-lg border p-2.5 bg-muted/30">
+              <input
+                id="revoke-sessions-check"
+                type="checkbox"
+                checked={revokeSessions}
+                onChange={(e) => setRevokeSessions(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary cursor-pointer accent-primary"
+              />
+              <Label
+                htmlFor="revoke-sessions-check"
+                className="text-xs cursor-pointer font-normal text-muted-foreground"
+              >
+                Cerrar todas las sesiones activas en otros dispositivos
+              </Label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordTarget(null)}
+                disabled={savingPassword}
+                className="cursor-pointer text-xs"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={
+                  savingPassword || !newPassword || newPassword.length < 6
+                }
+                className="gap-2 cursor-pointer font-semibold text-xs"
+              >
+                {savingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                Guardar Contraseña
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmación de baja */}
       <AlertDialog
