@@ -35,9 +35,9 @@ export interface ChecklistItem {
 export interface TaskAssignmentUser {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   image?: string | null;
-  role: string;
+  role?: string;
 }
 
 export interface TaskAssignment {
@@ -139,4 +139,12 @@ export interface TaskFilters {
   priority?: PriorityLevel | "ALL";
   userId?: string | "ALL" | "MINE";
   dueDate?: "OVERDUE" | "TODAY" | "THIS_WEEK" | "ALL";
+}
+
+export interface BoardColumnDraft {
+  id?: string;
+  title: string;
+  color?: string;
+  position?: number;
+  is_completed?: boolean;
 }

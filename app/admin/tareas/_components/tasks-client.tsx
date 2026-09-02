@@ -43,16 +43,23 @@ export function TasksClient({
   });
 
   // Modales
-  const [selectedTask, setSelectedTask] = useState<KanbanTask | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [createTaskColumnId, setCreateTaskColumnId] = useState<
     string | undefined
   >();
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false);
+  const [isEditBoardOpen, setIsEditBoardOpen] = useState(false);
+
+  const activeTask = selectedTaskId
+    ? initialBoard.columns
+        .flatMap((c) => c.tasks)
+        .find((t) => t.id === selectedTaskId) || null
+    : null;
 
   const handleOpenDetail = (task: KanbanTask) => {
-    setSelectedTask(task);
+    setSelectedTaskId(task.id);
     setIsDetailOpen(true);
   };
 
@@ -70,7 +77,7 @@ export function TasksClient({
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-3">
       <WorkspaceHeader
         boards={boards}
         activeBoard={initialBoard}
@@ -87,6 +94,7 @@ export function TasksClient({
           setIsCreateTaskOpen(true);
         }}
         onOpenCreateBoard={() => setIsCreateBoardOpen(true)}
+        onOpenEditBoard={() => setIsEditBoardOpen(true)}
       />
 
       {/* Contenedor Principal: Tablero Kanban o Vista Lista */}
@@ -112,10 +120,10 @@ export function TasksClient({
       </div>
 
       {/* Diálogo Detalle & Comentarios & Recursos */}
-      {selectedTask && (
+      {activeTask && (
         <TaskDetailDialog
-          key={selectedTask.id}
-          task={selectedTask}
+          key={activeTask.id}
+          task={activeTask}
           columns={initialBoard.columns}
           teamMembers={teamMembers}
           currentUserId={currentUserId}
@@ -123,7 +131,7 @@ export function TasksClient({
           isOpen={isDetailOpen}
           onClose={() => {
             setIsDetailOpen(false);
-            setSelectedTask(null);
+            setSelectedTaskId(null);
           }}
           onTaskUpdated={handleRefresh}
         />
@@ -142,10 +150,26 @@ export function TasksClient({
 
       {/* Diálogo Crear Tablero */}
       <BoardFormDialog
+        mode="create"
         isOpen={isCreateBoardOpen}
         onClose={() => setIsCreateBoardOpen(false)}
-        onBoardCreated={(newId) => {
+        onBoardSaved={(newId) => {
           router.push(`/admin/tareas?boardId=${newId}`);
+          handleRefresh();
+        }}
+      />
+
+      {/* Diálogo Editar / Configurar Tablero y Fases */}
+      <BoardFormDialog
+        mode="edit"
+        initialBoard={initialBoard}
+        isOpen={isEditBoardOpen}
+        onClose={() => setIsEditBoardOpen(false)}
+        onBoardSaved={() => {
+          handleRefresh();
+        }}
+        onBoardDeleted={() => {
+          router.push("/admin/tareas");
         }}
       />
     </div>
