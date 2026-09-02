@@ -9,6 +9,8 @@ import {
   SharedResource,
   ChecklistItem,
   AssignmentStatus,
+  TaskComment,
+  TaskAssignment,
 } from "../_lib/types";
 import {
   Credenza,
@@ -52,8 +54,8 @@ import {
   MessageSquare,
   Plus,
   Send,
-  Sparkles,
   Trash2,
+  UserCheck,
   Users,
   Video,
   X,
@@ -128,13 +130,37 @@ export function TaskDetailDialog({
     task?.assignments?.map((a) => a.user_id) || [],
   );
 
-  // Estados de colecciones (recursos y checklist)
+  // Estados de colecciones (recursos, checklist, comentarios y asignaciones)
   const [resources, setResources] = useState<SharedResource[]>(
     task?.resources || [],
   );
   const [checklist, setChecklist] = useState<ChecklistItem[]>(
     task?.checklist || [],
   );
+  const [localAssignments, setLocalAssignments] = useState<TaskAssignment[]>(
+    task?.assignments || [],
+  );
+  const [localComments, setLocalComments] = useState<TaskComment[]>(
+    task?.comments || [],
+  );
+
+  // Sincronizar estados cuando cambia el prop `task`
+  /* eslint-disable react-hooks/set-state-in-effect */
+  React.useEffect(() => {
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setPriority(task.priority || "MEDIA");
+      setDueDate(task.due_date ? task.due_date.split("T")[0] : null);
+      setColumnId(task.column_id || "");
+      setAssignedUserIds(task.assignments?.map((a) => a.user_id) || []);
+      setResources(task.resources || []);
+      setChecklist(task.checklist || []);
+      setLocalAssignments(task.assignments || []);
+      setLocalComments(task.comments || []);
+    }
+  }, [task]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Estados locales para nuevas entradas
   const [newResourceTitle, setNewResourceTitle] = useState("");
@@ -174,7 +200,7 @@ export function TaskDetailDialog({
     userRole || "",
   );
 
-  const currentAssignment = task.assignments?.find(
+  const currentAssignment = localAssignments.find(
     (a) => a.user_id === currentUserId,
   );
 
@@ -224,6 +250,13 @@ export function TaskDetailDialog({
 
   // Manejar cambio de estado del propio voluntario asignado
   const handleToggleMyStatus = (newStatus: AssignmentStatus) => {
+    // Actualización optimista instantánea
+    setLocalAssignments((prev) =>
+      prev.map((a) =>
+        a.user_id === currentUserId ? { ...a, status: newStatus } : a,
+      ),
+    );
+
     startTransition(async () => {
       try {
         await updateAssignmentStatus(task.id, newStatus);
@@ -234,6 +267,7 @@ export function TaskDetailDialog({
         );
         onTaskUpdated?.();
       } catch (err: unknown) {
+        setLocalAssignments(task.assignments || []);
         const msg =
           err instanceof Error ? err.message : "Error al actualizar asignación";
         toast.error(msg);
@@ -416,11 +450,24 @@ export function TaskDetailDialog({
   // Comentarios (in-situ)
   const handleSendComment = () => {
     if (!commentText.trim()) return;
+    const content = commentText.trim();
+    setCommentText("");
 
     startTransition(async () => {
       try {
-        await addComment(task.id, commentText.trim());
-        setCommentText("");
+        const res = await addComment(task.id, content);
+        if (res?.comment) {
+          setLocalComments((prev) => [
+            ...prev,
+            {
+              ...res.comment,
+              created_at:
+                typeof res.comment.created_at === "string"
+                  ? res.comment.created_at
+                  : (res.comment.created_at as Date).toISOString(),
+            } as TaskComment,
+          ]);
+        }
         toast.success("Comentario publicado");
         onTaskUpdated?.();
       } catch (err: unknown) {
@@ -456,17 +503,17 @@ export function TaskDetailDialog({
     <Credenza open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <CredenzaContent
         noScroll
-        className="sm:max-w-4xl p-0 overflow-hidden flex flex-col h-[94vh] sm:h-[88vh] rounded-2xl border bg-background shadow-2xl"
+        className="sm:max-w-4xl p-0 overflow-hidden flex flex-col h-[88dvh] max-h-[88dvh] rounded-2xl border bg-background shadow-2xl"
       >
         {/* Cabecera del diálogo */}
-        <CredenzaHeader className="px-4 sm:px-6 py-3.5 border-b bg-muted/30 space-y-2 shrink-0">
+        <CredenzaHeader className="px-4 sm:px-6 py-3 border-b bg-muted/30 space-y-1.5 shrink-0">
           <div className="flex items-center justify-between gap-3 pr-6 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Badge de Prioridad */}
               <Badge
                 variant="outline"
                 className={cn(
-                  "text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full border shadow-2xs gap-1.5",
+                  "text-[10px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full border shadow-2xs gap-1.5",
                   PRIORITY_STYLES[priority]?.badge,
                 )}
               >
@@ -483,7 +530,7 @@ export function TaskDetailDialog({
               {currentColumn && (
                 <Badge
                   variant="secondary"
-                  className="text-[11px] font-medium px-2.5 py-0.5 rounded-full border bg-background/80"
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full border bg-background/80"
                 >
                   Fase: {currentColumn.title}
                 </Badge>
@@ -525,29 +572,88 @@ export function TaskDetailDialog({
 
         {/* Cuerpo con 2 columnas (Contenido a la izquierda, Metadatos a la derecha) */}
         <CredenzaBody className="overflow-y-auto px-4 sm:px-6 py-4 flex-1">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* BANNER DE ACCIÓN RÁPIDA: Si el usuario actual está asignado (1 toque en móvil sin scroll) */}
+          {currentAssignment && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-primary/10 border border-primary/25 gap-2.5 mb-4 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary shrink-0" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-foreground">
+                    Tu participación:
+                  </span>
+                  <Badge
+                    variant={
+                      currentAssignment.status === "COMPLETED"
+                        ? "default"
+                        : "secondary"
+                    }
+                    className={cn(
+                      "text-[10px] px-2 py-0",
+                      currentAssignment.status === "COMPLETED"
+                        ? "bg-emerald-600 text-white"
+                        : "",
+                    )}
+                  >
+                    {currentAssignment.status === "COMPLETED"
+                      ? "✓ Completada"
+                      : "En progreso"}
+                  </Badge>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                variant={
+                  currentAssignment.status === "COMPLETED"
+                    ? "outline"
+                    : "default"
+                }
+                className={cn(
+                  "h-7 text-xs font-semibold px-3 cursor-pointer shrink-0 transition-colors",
+                  currentAssignment.status === "COMPLETED"
+                    ? "border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white",
+                )}
+                onClick={() =>
+                  handleToggleMyStatus(
+                    currentAssignment.status === "COMPLETED"
+                      ? "IN_PROGRESS"
+                      : "COMPLETED",
+                  )
+                }
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                {currentAssignment.status === "COMPLETED"
+                  ? "Reabrir mi asignación"
+                  : "Marcar mi parte lista"}
+              </Button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Columna Izquierda (7/12 en escritorio): Descripción, Recursos, Checklist y Comentarios */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-5">
               {/* Sección 1: Descripción */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <AlignLeft className="h-3.5 w-3.5 text-primary" />
-                  Descripción & Alcance
+                  Descripción & Pautas
                 </label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Detalla pautas, instrucciones, objetivos específicos o entregables esperados..."
-                  className="text-xs sm:text-sm min-h-[95px] resize-none leading-relaxed rounded-xl focus-visible:ring-primary"
+                  className="text-xs sm:text-sm min-h-[85px] resize-none leading-relaxed rounded-xl focus-visible:ring-primary"
                   disabled={!isLeaderOrAdmin}
                 />
               </div>
 
               {/* Sección 2: Enlaces y Recursos Compartidos */}
-              <div className="p-3.5 sm:p-4 rounded-2xl border bg-secondary/30 space-y-3.5 shadow-2xs">
+              <div className="p-3.5 rounded-2xl border bg-secondary/30 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <LinkIcon className="h-4 w-4 text-primary" />
+                    <LinkIcon className="h-3.5 w-3.5 text-primary" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Enlaces y Recursos ({resources.length})
                     </h4>
@@ -555,33 +661,33 @@ export function TaskDetailDialog({
                 </div>
 
                 {/* Lista de recursos actuales */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {resources.map((res) => (
                     <div
                       key={res.id}
-                      className="group flex items-center justify-between p-2.5 rounded-xl bg-card border text-xs gap-2 transition-all hover:border-primary/40 shadow-2xs"
+                      className="group flex items-center justify-between p-2 rounded-xl bg-card border text-xs gap-2 transition-all hover:border-primary/40 shadow-2xs"
                     >
                       <a
                         href={res.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2.5 text-foreground hover:text-primary font-medium truncate flex-1 min-w-0"
+                        className="flex items-center gap-2 text-foreground hover:text-primary font-medium truncate flex-1 min-w-0"
                       >
                         <div className="p-1 rounded-md bg-secondary shrink-0">
                           {res.type === "drive" && (
-                            <FolderArchive className="h-4 w-4 text-emerald-500" />
+                            <FolderArchive className="h-3.5 w-3.5 text-emerald-500" />
                           )}
                           {res.type === "doc" && (
-                            <FileText className="h-4 w-4 text-blue-500" />
+                            <FileText className="h-3.5 w-3.5 text-blue-500" />
                           )}
                           {res.type === "figma" && (
-                            <Figma className="h-4 w-4 text-purple-500" />
+                            <Figma className="h-3.5 w-3.5 text-purple-500" />
                           )}
                           {res.type === "meet" && (
-                            <Video className="h-4 w-4 text-rose-500" />
+                            <Video className="h-3.5 w-3.5 text-rose-500" />
                           )}
                           {res.type === "link" && (
-                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                         </div>
                         <div className="truncate flex flex-col">
@@ -594,7 +700,7 @@ export function TaskDetailDialog({
                         </div>
                       </a>
 
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         <Button
                           type="button"
                           variant="ghost"
@@ -621,21 +727,20 @@ export function TaskDetailDialog({
 
                   {resources.length === 0 && (
                     <p className="text-xs text-muted-foreground italic py-1">
-                      Sin enlaces aún. Añade Google Drive, Docs, Figma, Canva o
-                      Meet.
+                      Sin enlaces aún. Añade Drive, Docs, Figma, Canva o Meet.
                     </p>
                   )}
                 </div>
 
                 {/* Formulario para agregar nuevo recurso */}
-                <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row gap-2">
+                <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row gap-1.5">
                   <Select
                     value={newResourceType}
                     onValueChange={(val: SharedResource["type"]) =>
                       setNewResourceType(val)
                     }
                   >
-                    <SelectTrigger className="h-8 text-xs sm:w-32 shrink-0">
+                    <SelectTrigger className="h-7 text-xs sm:w-28 shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -651,36 +756,35 @@ export function TaskDetailDialog({
                     placeholder="Nombre (ej. Guion v2)"
                     value={newResourceTitle}
                     onChange={(e) => setNewResourceTitle(e.target.value)}
-                    className="h-8 text-xs sm:w-36 shrink-0"
+                    className="h-7 text-xs sm:w-32 shrink-0"
                   />
 
                   <Input
                     placeholder="https://drive.google.com/..."
                     value={newResourceUrl}
                     onChange={(e) => handleUrlChange(e.target.value)}
-                    className="h-8 text-xs flex-1 min-w-0"
+                    className="h-7 text-xs flex-1 min-w-0"
                   />
 
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleAddResource}
-                    className="h-8 text-xs gap-1 shrink-0 cursor-pointer"
+                    className="h-7 text-xs gap-1 shrink-0 cursor-pointer"
                     disabled={!newResourceUrl.trim() || isPending}
                   >
-                    <Plus className="h-3.5 w-3.5" /> Añadir
+                    <Plus className="h-3 w-3" /> Añadir
                   </Button>
                 </div>
               </div>
 
               {/* Sección 3: Checklist de Verificación */}
-              <div className="p-3.5 sm:p-4 rounded-2xl border bg-secondary/30 space-y-3.5 shadow-2xs">
+              <div className="p-3.5 rounded-2xl border bg-secondary/30 space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <CheckSquare className="h-4 w-4 text-primary" />
+                    <CheckSquare className="h-3.5 w-3.5 text-primary" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Checklist de Verificación ({completedChecklist}/
-                      {totalChecklist})
+                      Checklist ({completedChecklist}/{totalChecklist})
                     </h4>
                   </div>
                   {totalChecklist > 0 && (
@@ -696,13 +800,13 @@ export function TaskDetailDialog({
                 )}
 
                 {/* Lista de ítems */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {checklist.map((item) => (
                     <div
                       key={item.id}
-                      className="group flex items-start justify-between gap-2.5 p-2 rounded-xl bg-card border text-xs shadow-2xs hover:border-primary/40 transition-colors"
+                      className="group flex items-start justify-between gap-2 p-1.5 rounded-lg bg-card border text-xs shadow-2xs hover:border-primary/40 transition-colors"
                     >
-                      <div className="flex items-start gap-2.5 flex-1 min-w-0 pt-0.5">
+                      <div className="flex items-start gap-2 flex-1 min-w-0 pt-0.5">
                         <input
                           type="checkbox"
                           checked={item.completed}
@@ -734,15 +838,14 @@ export function TaskDetailDialog({
                   ))}
 
                   {checklist.length === 0 && (
-                    <p className="text-xs text-muted-foreground italic py-1">
-                      Sin ítems aún. Agrega pasos o criterios de aceptación para
-                      el equipo.
+                    <p className="text-xs text-muted-foreground italic py-0.5">
+                      Sin pasos de verificación aún.
                     </p>
                   )}
                 </div>
 
                 {/* Agregar nuevo ítem */}
-                <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                <div className="flex items-center gap-1.5 pt-1.5 border-t border-border/50">
                   <Input
                     placeholder="Añadir ítem al checklist (presiona Enter)..."
                     value={newChecklistText}
@@ -750,45 +853,45 @@ export function TaskDetailDialog({
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleAddChecklistItem()
                     }
-                    className="h-8 text-xs flex-1"
+                    className="h-7 text-xs flex-1"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleAddChecklistItem}
-                    className="h-8 text-xs shrink-0 cursor-pointer"
+                    className="h-7 text-xs shrink-0 cursor-pointer px-2"
                     disabled={!newChecklistText.trim() || isPending}
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
 
               {/* Sección 4: Comentarios & Bitácora */}
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <MessageSquare className="h-3.5 w-3.5 text-primary" />
                   <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    Comentarios & Feedback ({task.comments?.length || 0})
+                    Comentarios & Dudas ({localComments.length})
                   </h4>
                 </div>
 
-                <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                  {task.comments?.map((cm) => (
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                  {localComments.map((cm) => (
                     <div
                       key={cm.id}
-                      className="p-3 rounded-xl bg-card border text-xs space-y-1.5 shadow-2xs"
+                      className="p-2.5 rounded-xl bg-card border text-xs space-y-1 shadow-2xs"
                     >
                       <div className="flex items-center justify-between gap-2 font-semibold">
                         <div className="flex items-center gap-2 truncate">
                           <Avatar className="h-5 w-5 shrink-0">
-                            <AvatarImage src={cm.user.image || ""} />
+                            <AvatarImage src={cm.user?.image || ""} />
                             <AvatarFallback className="text-[8px]">
-                              {cm.user.name?.slice(0, 2) || "US"}
+                              {cm.user?.name?.slice(0, 2) || "US"}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-foreground truncate">
-                            {cm.user.name}
+                          <span className="text-foreground truncate text-[11px]">
+                            {cm.user?.name}
                           </span>
                         </div>
                         <span className="text-muted-foreground text-[10px] shrink-0">
@@ -800,21 +903,21 @@ export function TaskDetailDialog({
                           })}
                         </span>
                       </div>
-                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap break-words pl-7">
+                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap break-words pl-7 text-[11px]">
                         {cm.content}
                       </p>
                     </div>
                   ))}
 
-                  {(!task.comments || task.comments.length === 0) && (
-                    <p className="text-xs text-muted-foreground italic py-1">
-                      Aún no hay comentarios. Deja notas, dudas o avances para
-                      el equipo.
+                  {(!localComments || localComments.length === 0) && (
+                    <p className="text-xs text-muted-foreground italic py-0.5">
+                      Aún no hay comentarios. Deja notas o avances para el
+                      equipo.
                     </p>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <Input
                     placeholder="Escribe un comentario o actualización..."
                     value={commentText}
@@ -825,82 +928,26 @@ export function TaskDetailDialog({
                         handleSendComment();
                       }
                     }}
-                    className="h-9 text-xs flex-1"
+                    className="h-8 text-xs flex-1"
                   />
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleSendComment}
-                    className="h-9 text-xs gap-1.5 shrink-0 cursor-pointer"
+                    className="h-8 text-xs gap-1 shrink-0 cursor-pointer"
                     disabled={!commentText.trim() || isPending}
                   >
-                    <Send className="h-3.5 w-3.5" /> Enviar
+                    <Send className="h-3 w-3" /> Enviar
                   </Button>
                 </div>
               </div>
             </div>
 
             {/* Columna Derecha (5/12 en escritorio): Asignaciones, Columna, Prioridad y Fechas */}
-            <div className="lg:col-span-5 space-y-5 bg-card/60 p-4 rounded-2xl border shadow-2xs h-fit">
-              {/* Acción rápida para el voluntario actual si está asignado */}
-              {currentAssignment && (
-                <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5" /> Tu participación
-                    </p>
-                    <Badge
-                      variant={
-                        currentAssignment.status === "COMPLETED"
-                          ? "default"
-                          : "secondary"
-                      }
-                      className={cn(
-                        "text-[10px] px-2 py-0",
-                        currentAssignment.status === "COMPLETED"
-                          ? "bg-emerald-600 text-white"
-                          : "",
-                      )}
-                    >
-                      {currentAssignment.status === "COMPLETED"
-                        ? "Completada"
-                        : "En curso"}
-                    </Badge>
-                  </div>
-
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={
-                      currentAssignment.status === "COMPLETED"
-                        ? "outline"
-                        : "default"
-                    }
-                    className={cn(
-                      "w-full h-8 text-xs font-semibold cursor-pointer transition-colors",
-                      currentAssignment.status === "COMPLETED"
-                        ? "border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white",
-                    )}
-                    onClick={() =>
-                      handleToggleMyStatus(
-                        currentAssignment.status === "COMPLETED"
-                          ? "IN_PROGRESS"
-                          : "COMPLETED",
-                      )
-                    }
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                    {currentAssignment.status === "COMPLETED"
-                      ? "Reabrir mi asignación"
-                      : "Marcar mi parte lista"}
-                  </Button>
-                </div>
-              )}
-
+            <div className="lg:col-span-5 space-y-4 bg-card/60 p-3.5 rounded-2xl border shadow-2xs h-fit">
               {/* Selector de Columna / Fase del Tablero */}
               {columns.length > 0 && (
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                     Fase / Columna
                   </label>
@@ -909,7 +956,7 @@ export function TaskDetailDialog({
                     onValueChange={setColumnId}
                     disabled={!isLeaderOrAdmin}
                   >
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -928,7 +975,7 @@ export function TaskDetailDialog({
               )}
 
               {/* Selector de Prioridad */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                   Prioridad
                 </label>
@@ -937,7 +984,7 @@ export function TaskDetailDialog({
                   onValueChange={(val: PriorityLevel) => setPriority(val)}
                   disabled={!isLeaderOrAdmin}
                 >
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -970,7 +1017,7 @@ export function TaskDetailDialog({
               </div>
 
               {/* Selector de Fecha Límite con TaskDatePicker */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                   Fecha Límite
                 </label>
@@ -983,7 +1030,7 @@ export function TaskDetailDialog({
               </div>
 
               {/* Asignación de Voluntarios */}
-              <div className="space-y-2 pt-1">
+              <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Users className="h-3.5 w-3.5" /> Voluntarios Asignados
@@ -993,10 +1040,10 @@ export function TaskDetailDialog({
                   </span>
                 </label>
 
-                <div className="space-y-1 max-h-48 overflow-y-auto pr-1 border rounded-xl p-1.5 bg-background/50">
+                <div className="space-y-1 max-h-44 overflow-y-auto pr-1 border rounded-xl p-1.5 bg-background/50">
                   {teamMembers.map((member) => {
                     const isAssigned = assignedUserIds.includes(member.id);
-                    const asg = task.assignments?.find(
+                    const asg = localAssignments.find(
                       (a) => a.user_id === member.id,
                     );
 
@@ -1014,7 +1061,7 @@ export function TaskDetailDialog({
                           }
                         }}
                         className={cn(
-                          "flex items-center justify-between p-2 rounded-lg border text-xs transition-colors",
+                          "flex items-center justify-between p-1.5 rounded-lg border text-xs transition-colors",
                           isLeaderOrAdmin ? "cursor-pointer" : "cursor-default",
                           isAssigned
                             ? "bg-primary/10 border-primary/30 font-medium"
@@ -1022,13 +1069,15 @@ export function TaskDetailDialog({
                         )}
                       >
                         <div className="flex items-center gap-2 truncate min-w-0">
-                          <Avatar className="h-6 w-6 shrink-0">
+                          <Avatar className="h-5 w-5 shrink-0">
                             <AvatarImage src={member.image || ""} />
                             <AvatarFallback className="text-[9px]">
                               {member.name.slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="truncate">{member.name}</span>
+                          <span className="truncate text-[11px]">
+                            {member.name}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -1041,7 +1090,7 @@ export function TaskDetailDialog({
                                     : "secondary"
                                 }
                                 className={cn(
-                                  "text-[10px] px-1.5 py-0",
+                                  "text-[9px] px-1.5 py-0",
                                   asg?.status === "COMPLETED"
                                     ? "bg-emerald-500 text-white"
                                     : "",
@@ -1062,6 +1111,15 @@ export function TaskDetailDialog({
                                       asg?.status === "COMPLETED"
                                         ? "IN_PROGRESS"
                                         : "COMPLETED";
+
+                                    setLocalAssignments((prev) =>
+                                      prev.map((a) =>
+                                        a.user_id === member.id
+                                          ? { ...a, status: nextStatus }
+                                          : a,
+                                      ),
+                                    );
+
                                     startTransition(async () => {
                                       try {
                                         await updateAssignmentStatus(
@@ -1075,6 +1133,9 @@ export function TaskDetailDialog({
                                         );
                                         onTaskUpdated?.();
                                       } catch (err: unknown) {
+                                        setLocalAssignments(
+                                          task.assignments || [],
+                                        );
                                         const msg =
                                           err instanceof Error
                                             ? err.message
@@ -1088,7 +1149,7 @@ export function TaskDetailDialog({
                                       ? "Reabrir para este voluntario"
                                       : "Completar por este voluntario"
                                   }
-                                  className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                                  className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                                 >
                                   <CheckCircle2
                                     className={cn(
@@ -1112,8 +1173,8 @@ export function TaskDetailDialog({
           </div>
         </CredenzaBody>
 
-        {/* Pie de diálogo: Botón Guardar Cambios habilitado sólo si hay cambios en los campos principales */}
-        <CredenzaFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex items-center justify-between gap-2 shrink-0">
+        {/* Pie de diálogo: Guardar Cambios habilitado si hay cambios principales */}
+        <CredenzaFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
           <div className="text-xs text-muted-foreground hidden sm:block">
             {isDirty ? (
               <span className="text-amber-600 dark:text-amber-400 font-medium">
@@ -1129,18 +1190,20 @@ export function TaskDetailDialog({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="text-xs cursor-pointer"
+              className="w-full sm:w-auto text-xs cursor-pointer"
             >
               {isDirty ? "Cancelar" : "Cerrar"}
             </Button>
-            <Button
-              type="button"
-              onClick={handleSaveMain}
-              disabled={!isDirty || isPending}
-              className="text-xs gap-1.5 cursor-pointer font-semibold"
-            >
-              {isPending ? "Guardando..." : "Guardar Cambios"}
-            </Button>
+            {isLeaderOrAdmin && (
+              <Button
+                type="button"
+                onClick={handleSaveMain}
+                disabled={!isDirty || isPending}
+                className="w-full sm:w-auto text-xs gap-1.5 cursor-pointer font-semibold"
+              >
+                {isPending ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            )}
           </div>
         </CredenzaFooter>
       </CredenzaContent>

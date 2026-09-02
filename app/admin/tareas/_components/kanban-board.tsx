@@ -266,21 +266,48 @@ export function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex-1 w-full overflow-x-auto pb-4 pt-1 snap-x snap-mandatory flex gap-4 min-h-[calc(100vh-280px)]">
-        {filteredColumns.map((column) => (
-          <KanbanColumn
-            key={column.id}
-            column={column}
-            allColumns={board.columns}
-            currentUserId={currentUserId}
-            canCreate={["admin", "super_admin", "lead", "editor"].includes(
-              userRole || "",
-            )}
-            onOpenDetail={onOpenDetail}
-            onMoveQuick={handleQuickMove}
-            onQuickAddTask={onQuickAddTask}
-          />
-        ))}
+      <div className="flex flex-col h-full w-full">
+        {/* Barra de Pestañas de Columna para Móvil */}
+        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto pb-2 mb-1 no-scrollbar w-full shrink-0">
+          {filteredColumns.map((col) => (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => {
+                const el = document.getElementById(`col-${col.id}`);
+                el?.scrollIntoView({
+                  behavior: "smooth",
+                  inline: "center",
+                  block: "nearest",
+                });
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-secondary/40 hover:bg-secondary text-foreground shrink-0 transition-colors cursor-pointer"
+            >
+              <span>{col.title}</span>
+              <span className="text-[10px] px-1 rounded-full bg-background font-bold text-muted-foreground border">
+                {col.tasks.length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Tablero Kanban */}
+        <div className="flex-1 w-full overflow-x-auto pb-3 pt-0.5 snap-x snap-mandatory flex gap-3 min-h-[calc(100vh-270px)]">
+          {filteredColumns.map((column) => (
+            <KanbanColumn
+              key={column.id}
+              column={column}
+              allColumns={board.columns}
+              currentUserId={currentUserId}
+              canCreate={["admin", "super_admin", "lead", "editor"].includes(
+                userRole || "",
+              )}
+              onOpenDetail={onOpenDetail}
+              onMoveQuick={handleQuickMove}
+              onQuickAddTask={onQuickAddTask}
+            />
+          ))}
+        </div>
       </div>
 
       <DragOverlay>

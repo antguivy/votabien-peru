@@ -449,7 +449,10 @@ export async function createBoard(data: {
   icon?: string;
   color?: string;
   area: ProjectArea;
-  columns?: string[];
+  columns?: (
+    | string
+    | { title: string; color?: string; is_completed?: boolean }
+  )[];
 }) {
   const user = await requireAuthUser();
   const canManage = ["lead", "editor", "admin", "super_admin"].includes(
@@ -461,10 +464,32 @@ export async function createBoard(data: {
     );
   }
 
-  const defaultCols =
+  const defaultCols: {
+    title: string;
+    color?: string;
+    is_completed?: boolean;
+  }[] =
     data.columns && data.columns.length > 0
-      ? data.columns
-      : ["Pendiente", "En Proceso", "Revisión", "Completado"];
+      ? data.columns.map((c, index) =>
+          typeof c === "string"
+            ? {
+                title: c.trim(),
+                color: "slate",
+                is_completed: index === data.columns!.length - 1,
+              }
+            : {
+                title: c.title.trim(),
+                color: c.color || "slate",
+                is_completed:
+                  c.is_completed ?? index === data.columns!.length - 1,
+              },
+        )
+      : [
+          { title: "Pendiente", color: "slate", is_completed: false },
+          { title: "En Proceso", color: "blue", is_completed: false },
+          { title: "Revisión", color: "amber", is_completed: false },
+          { title: "Completado", color: "emerald", is_completed: true },
+        ];
 
   const board = await prisma.project_board.create({
     data: {
@@ -475,10 +500,11 @@ export async function createBoard(data: {
       area: data.area || "GENERAL",
       created_by_id: user.id,
       columns: {
-        create: defaultCols.map((colName, index) => ({
-          title: colName,
+        create: defaultCols.map((col, index) => ({
+          title: col.title,
           position: index,
-          is_completed: index === defaultCols.length - 1,
+          color: col.color || "slate",
+          is_completed: col.is_completed ?? index === defaultCols.length - 1,
         })),
       },
     },
@@ -486,4 +512,153 @@ export async function createBoard(data: {
 
   revalidatePath("/admin/tareas");
   return { success: true, boardId: board.id };
+}
+
+export async function updateBoard(data: {
+  boardId: string;
+  title: string;
+  description?: string | null;
+  icon?: string;
+  color?: string;
+  area: ProjectArea;
+  columns: {
+    id?: string;
+    title: string;
+    color?: string;
+    is_completed?: boolean;
+  }[];
+}) {
+  const user = await requireAuthUser();
+  const canManage = ["lead", "editor", "admin", "super_admin"].includes(
+    user.role,
+  );
+  if (!canManage) {
+    throw new Error(
+      "Solo los líderes de área y administradores pueden editar tableros.",
+    );
+  }
+
+  if (!data.title.trim()) {
+    throw new Error("El título del tablero no puede estar vacío.");
+  }
+
+  if (!data.columns || data.columns.length === 0) {
+    throw new Error("El tablero debe tener al menos una columna o fase.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.project_board.findUnique({
+      where: { id: data.boardId },
+      include: {
+        columns: {
+          include: {
+            _count: { select: { tasks: true } },
+          },
+        },
+      },
+    });
+
+    if (!existing) throw new Error("Tablero no encontrado");
+
+    const existingColMap = new Map(existing.columns.map((c) => [c.id, c]));
+    const incomingIds = new Set(
+      data.columns.filter((c) => c.id).map((c) => c.id!),
+    );
+
+    // 1. Eliminar columnas que ya no están en la lista (siempre que no tengan tareas)
+    for (const oldCol of existing.columns) {
+      if (!incomingIds.has(oldCol.id)) {
+        if (oldCol._count.tasks > 0) {
+          throw new Error(
+            `No se puede eliminar la fase "${oldCol.title}" porque contiene ${oldCol._count.tasks} tarea(s). Muévelas a otra columna primero.`,
+          );
+        }
+        await tx.project_column.delete({
+          where: { id: oldCol.id },
+        });
+      }
+    }
+
+    // 2. Crear o actualizar columnas con sus posiciones y colores
+    for (let i = 0; i < data.columns.length; i++) {
+      const col = data.columns[i];
+      const isLast = i === data.columns.length - 1;
+      const isCompleted = col.is_completed ?? isLast;
+
+      if (col.id && existingColMap.has(col.id)) {
+        await tx.project_column.update({
+          where: { id: col.id },
+          data: {
+            title: col.title.trim(),
+            color: col.color || "slate",
+            position: i,
+            is_completed: isCompleted,
+          },
+        });
+      } else {
+        await tx.project_column.create({
+          data: {
+            board_id: data.boardId,
+            title: col.title.trim(),
+            color: col.color || "slate",
+            position: i,
+            is_completed: isCompleted,
+          },
+        });
+      }
+    }
+
+    // 3. Actualizar datos base del tablero
+    await tx.project_board.update({
+      where: { id: data.boardId },
+      data: {
+        title: data.title.trim(),
+        description: data.description?.trim() || null,
+        area: data.area,
+        color: data.color || "indigo",
+        icon: data.icon || "FolderKanban",
+      },
+    });
+  });
+
+  revalidatePath("/admin/tareas");
+  return { success: true };
+}
+
+export async function deleteBoard(boardId: string) {
+  const user = await requireAuthUser();
+  const canManage = ["lead", "editor", "admin", "super_admin"].includes(
+    user.role,
+  );
+  if (!canManage) {
+    throw new Error(
+      "Solo los líderes de área y administradores pueden eliminar tableros.",
+    );
+  }
+
+  const board = await prisma.project_board.findUnique({
+    where: { id: boardId },
+    include: { _count: { select: { tasks: true } } },
+  });
+
+  if (!board) throw new Error("Tablero no encontrado");
+
+  if (board.is_default) {
+    throw new Error(
+      "No se puede eliminar el tablero predeterminado del sistema.",
+    );
+  }
+
+  if (board._count.tasks > 0) {
+    throw new Error(
+      `El tablero contiene ${board._count.tasks} tarea(s). Elimina o mueve las tareas antes de borrar el tablero.`,
+    );
+  }
+
+  await prisma.project_board.delete({
+    where: { id: boardId },
+  });
+
+  revalidatePath("/admin/tareas");
+  return { success: true };
 }

@@ -157,9 +157,9 @@ export function TaskCreateDialog({
     <Credenza open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <CredenzaContent
         noScroll
-        className="sm:max-w-xl p-0 overflow-hidden flex flex-col h-[90vh] sm:h-auto rounded-2xl border bg-background shadow-2xl"
+        className="sm:max-w-xl p-0 overflow-hidden flex flex-col h-[88dvh] max-h-[88dvh] sm:h-auto rounded-2xl border bg-background shadow-2xl"
       >
-        <CredenzaHeader className="px-6 py-4 border-b bg-muted/30">
+        <CredenzaHeader className="px-6 py-4 border-b bg-muted/30 shrink-0">
           <CredenzaTitle className="text-base sm:text-lg font-bold">
             Nueva Tarea
           </CredenzaTitle>
@@ -393,12 +393,12 @@ export function TaskCreateDialog({
           </form>
         </CredenzaBody>
 
-        <CredenzaFooter className="px-6 py-3 border-t bg-muted/20 flex items-center justify-end gap-2">
+        <CredenzaFooter className="px-6 py-3 border-t bg-muted/20 flex flex-col sm:flex-row items-center justify-end gap-2 shrink-0">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="text-xs cursor-pointer"
+            className="w-full sm:w-auto text-xs cursor-pointer"
           >
             Cancelar
           </Button>
@@ -406,7 +406,7 @@ export function TaskCreateDialog({
             type="submit"
             form="create-task-form"
             disabled={isPending}
-            className="text-xs gap-1.5 cursor-pointer font-semibold"
+            className="w-full sm:w-auto text-xs gap-1.5 cursor-pointer font-semibold"
           >
             <Plus className="h-4 w-4" />
             {isPending ? "Creando..." : "Crear Tarea"}

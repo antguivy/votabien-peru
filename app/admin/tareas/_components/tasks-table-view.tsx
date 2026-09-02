@@ -75,69 +75,36 @@ export function TasksTableView({
   }
 
   return (
-    <div className="w-full rounded-2xl border bg-card overflow-hidden shadow-sm">
-      <Table>
-        <TableHeader className="bg-muted/50">
-          <TableRow>
-            <TableHead className="text-xs font-bold">Tarea / Tema</TableHead>
-            <TableHead className="text-xs font-bold">Fase / Estado</TableHead>
-            <TableHead className="text-xs font-bold">Prioridad</TableHead>
-            <TableHead className="text-xs font-bold">
-              Voluntarios Asignados
-            </TableHead>
-            <TableHead className="text-xs font-bold">Recursos</TableHead>
-            <TableHead className="text-xs font-bold">Checklist</TableHead>
-            <TableHead className="text-xs font-bold">Fecha Límite</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {allTasks.map((task) => {
-            const isAssignedToMe = task.assignments?.some(
-              (a) => a.user_id === currentUserId,
-            );
-            const totalAssigned = task.assignments?.length || 0;
-            const completedAssigned =
-              task.assignments?.filter((a) => a.status === "COMPLETED")
-                .length || 0;
+    <div className="w-full rounded-2xl border bg-card overflow-hidden shadow-2xs">
+      {/* Vista de lista compacta para móviles */}
+      <div className="block md:hidden divide-y divide-border/50">
+        {allTasks.map((task) => {
+          const isAssignedToMe = task.assignments?.some(
+            (a) => a.user_id === currentUserId,
+          );
+          const totalCheck = task.checklist?.length || 0;
+          const completedCheck =
+            task.checklist?.filter((c) => c.completed).length || 0;
+          const isOverdue =
+            task.due_date &&
+            !task.completed_at &&
+            new Date(task.due_date) < new Date();
 
-            const totalCheck = task.checklist?.length || 0;
-            const completedCheck =
-              task.checklist?.filter((c) => c.completed).length || 0;
-
-            const isOverdue =
-              task.due_date &&
-              !task.completed_at &&
-              new Date(task.due_date) < new Date();
-
-            return (
-              <TableRow
-                key={task.id}
-                onClick={() => onOpenDetail(task)}
-                className="cursor-pointer hover:bg-muted/60 transition-colors"
-              >
-                {/* Título */}
-                <TableCell className="font-medium text-xs sm:text-sm max-w-[280px]">
-                  <div className="flex items-center gap-2">
-                    {isAssignedToMe && (
-                      <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                    )}
-                    <span className="truncate">{task.title}</span>
-                  </div>
-                </TableCell>
-
-                {/* Columna */}
-                <TableCell>
-                  <Badge variant="outline" className="text-[11px] font-normal">
+          return (
+            <div
+              key={task.id}
+              onClick={() => onOpenDetail(task)}
+              className="p-3 hover:bg-muted/50 cursor-pointer space-y-2 transition-colors"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0">
                     {task.column_title}
                   </Badge>
-                </TableCell>
-
-                {/* Prioridad */}
-                <TableCell>
                   <Badge
                     variant="secondary"
                     className={cn(
-                      "text-[10px] uppercase font-semibold",
+                      "text-[9px] uppercase font-semibold",
                       task.priority === "URGENTE" &&
                         "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400",
                       task.priority === "ALTA" &&
@@ -150,128 +117,275 @@ export function TasksTableView({
                   >
                     {task.priority}
                   </Badge>
-                </TableCell>
+                </div>
 
-                {/* Asignados */}
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex -space-x-1.5 overflow-hidden">
-                      {task.assignments?.map((asg) => (
-                        <Avatar
-                          key={asg.id}
-                          className="h-6 w-6 border-2 border-background"
-                          title={`${asg.user.name} (${asg.status})`}
-                        >
-                          <AvatarImage src={asg.user.image || ""} />
-                          <AvatarFallback className="text-[9px]">
-                            {asg.user.name.slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                    </div>
-                    {totalAssigned > 0 && (
-                      <span className="text-[11px] text-muted-foreground font-medium">
-                        ({completedAssigned}/{totalAssigned})
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
+                {isAssignedToMe && (
+                  <span className="text-[9px] font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10">
+                    Asignado a ti
+                  </span>
+                )}
+              </div>
 
-                {/* Recursos */}
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    {task.resources?.slice(0, 2).map((r) => (
-                      <a
-                        key={r.id}
-                        href={r.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-                        title={r.title}
-                      >
-                        {r.type === "drive" && (
-                          <FolderArchive className="h-3.5 w-3.5 text-emerald-500" />
-                        )}
-                        {r.type === "doc" && (
-                          <FileText className="h-3.5 w-3.5 text-blue-500" />
-                        )}
-                        {r.type === "figma" && (
-                          <Figma className="h-3.5 w-3.5 text-purple-500" />
-                        )}
-                        {r.type === "meet" && (
-                          <Video className="h-3.5 w-3.5 text-rose-500" />
-                        )}
-                        {r.type === "link" && (
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        )}
-                      </a>
-                    ))}
-                    {task.resources && task.resources.length > 2 && (
-                      <span className="text-[10px] text-muted-foreground">
-                        +{task.resources.length - 2}
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
+              <h4 className="text-xs sm:text-sm font-semibold text-foreground leading-snug">
+                {task.title}
+              </h4>
 
-                {/* Checklist */}
-                <TableCell>
-                  {totalCheck > 0 ? (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckSquare className="h-3.5 w-3.5" />
-                      <span>
-                        {completedCheck}/{totalCheck}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">-</span>
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground pt-1">
+                <div className="flex items-center gap-2 text-[10px]">
+                  {totalCheck > 0 && (
+                    <span className="flex items-center gap-1">
+                      <CheckSquare className="h-3 w-3" /> {completedCheck}/
+                      {totalCheck}
+                    </span>
                   )}
-                </TableCell>
-
-                {/* Fecha */}
-                <TableCell>
-                  {task.due_date ? (
-                    <div
+                  {task.due_date && (
+                    <span
                       className={cn(
-                        "flex items-center gap-1 text-xs",
-                        isOverdue
-                          ? "text-rose-500 font-semibold"
-                          : "text-muted-foreground",
+                        "flex items-center gap-1",
+                        isOverdue ? "text-rose-500 font-semibold" : "",
                       )}
                     >
                       {isOverdue ? (
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3 w-3 text-rose-500" />
                       ) : (
-                        <Calendar className="h-3.5 w-3.5" />
+                        <Calendar className="h-3 w-3" />
                       )}
-                      <span>
-                        {new Date(task.due_date).toLocaleDateString("es-PE", {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">-</span>
+                      {new Date(task.due_date).toLocaleDateString("es-PE", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
                   )}
+                </div>
+
+                <div className="flex -space-x-1.5 overflow-hidden">
+                  {task.assignments?.map((asg) => (
+                    <Avatar
+                      key={asg.id}
+                      className="h-5 w-5 border border-background"
+                      title={`${asg.user.name} (${asg.status})`}
+                    >
+                      <AvatarImage src={asg.user.image || ""} />
+                      <AvatarFallback className="text-[8px]">
+                        {asg.user.name.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {allTasks.length === 0 && (
+          <div className="h-28 flex items-center justify-center text-xs text-muted-foreground">
+            No hay tareas que coincidan con los filtros aplicados.
+          </div>
+        )}
+      </div>
+
+      {/* Tabla completa para pantallas de escritorio */}
+      <div className="hidden md:block overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="text-xs font-bold">Tarea / Tema</TableHead>
+              <TableHead className="text-xs font-bold">Fase / Estado</TableHead>
+              <TableHead className="text-xs font-bold">Prioridad</TableHead>
+              <TableHead className="text-xs font-bold">
+                Voluntarios Asignados
+              </TableHead>
+              <TableHead className="text-xs font-bold">Recursos</TableHead>
+              <TableHead className="text-xs font-bold">Checklist</TableHead>
+              <TableHead className="text-xs font-bold">Fecha Límite</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allTasks.map((task) => {
+              const isAssignedToMe = task.assignments?.some(
+                (a) => a.user_id === currentUserId,
+              );
+              const totalAssigned = task.assignments?.length || 0;
+              const completedAssigned =
+                task.assignments?.filter((a) => a.status === "COMPLETED")
+                  .length || 0;
+
+              const totalCheck = task.checklist?.length || 0;
+              const completedCheck =
+                task.checklist?.filter((c) => c.completed).length || 0;
+
+              const isOverdue =
+                task.due_date &&
+                !task.completed_at &&
+                new Date(task.due_date) < new Date();
+
+              return (
+                <TableRow
+                  key={task.id}
+                  onClick={() => onOpenDetail(task)}
+                  className="cursor-pointer hover:bg-muted/60 transition-colors"
+                >
+                  {/* Título */}
+                  <TableCell className="font-medium text-xs sm:text-sm max-w-[280px]">
+                    <div className="flex items-center gap-2">
+                      {isAssignedToMe && (
+                        <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
+                      <span className="truncate">{task.title}</span>
+                    </div>
+                  </TableCell>
+
+                  {/* Columna */}
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-normal"
+                    >
+                      {task.column_title}
+                    </Badge>
+                  </TableCell>
+
+                  {/* Prioridad */}
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "text-[10px] uppercase font-semibold",
+                        task.priority === "URGENTE" &&
+                          "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400",
+                        task.priority === "ALTA" &&
+                          "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400",
+                        task.priority === "MEDIA" &&
+                          "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400",
+                        task.priority === "BAJA" &&
+                          "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400",
+                      )}
+                    >
+                      {task.priority}
+                    </Badge>
+                  </TableCell>
+
+                  {/* Asignados */}
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex -space-x-1.5 overflow-hidden">
+                        {task.assignments?.map((asg) => (
+                          <Avatar
+                            key={asg.id}
+                            className="h-6 w-6 border-2 border-background"
+                            title={`${asg.user.name} (${asg.status})`}
+                          >
+                            <AvatarImage src={asg.user.image || ""} />
+                            <AvatarFallback className="text-[9px]">
+                              {asg.user.name.slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      {totalAssigned > 0 && (
+                        <span className="text-[11px] text-muted-foreground font-medium">
+                          ({completedAssigned}/{totalAssigned})
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  {/* Recursos */}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {task.resources?.slice(0, 2).map((r) => (
+                        <a
+                          key={r.id}
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                          title={r.title}
+                        >
+                          {r.type === "drive" && (
+                            <FolderArchive className="h-3.5 w-3.5 text-emerald-500" />
+                          )}
+                          {r.type === "doc" && (
+                            <FileText className="h-3.5 w-3.5 text-blue-500" />
+                          )}
+                          {r.type === "figma" && (
+                            <Figma className="h-3.5 w-3.5 text-purple-500" />
+                          )}
+                          {r.type === "meet" && (
+                            <Video className="h-3.5 w-3.5 text-rose-500" />
+                          )}
+                          {r.type === "link" && (
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          )}
+                        </a>
+                      ))}
+                      {task.resources && task.resources.length > 2 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          +{task.resources.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  {/* Checklist */}
+                  <TableCell>
+                    {totalCheck > 0 ? (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckSquare className="h-3.5 w-3.5" />
+                        <span>
+                          {completedCheck}/{totalCheck}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
+
+                  {/* Fecha */}
+                  <TableCell>
+                    {task.due_date ? (
+                      <div
+                        className={cn(
+                          "flex items-center gap-1 text-xs",
+                          isOverdue
+                            ? "text-rose-500 font-semibold"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {isOverdue ? (
+                          <Clock className="h-3.5 w-3.5" />
+                        ) : (
+                          <Calendar className="h-3.5 w-3.5" />
+                        )}
+                        <span>
+                          {new Date(task.due_date).toLocaleDateString("es-PE", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+
+            {allTasks.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  className="h-28 text-center text-xs text-muted-foreground"
+                >
+                  No hay tareas que coincidan con los filtros aplicados.
                 </TableCell>
               </TableRow>
-            );
-          })}
-
-          {allTasks.length === 0 && (
-            <TableRow>
-              <TableCell
-                colSpan={7}
-                className="h-28 text-center text-xs text-muted-foreground"
-              >
-                No hay tareas que coincidan con los filtros aplicados.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
