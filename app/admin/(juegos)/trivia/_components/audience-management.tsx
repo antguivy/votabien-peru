@@ -87,9 +87,9 @@ export function AudienceManagement({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center bg-card/60 border p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-card/60 border p-3.5 sm:p-4 rounded-xl shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-foreground">
+          <h2 className="text-sm sm:text-base font-bold text-foreground">
             Públicos / Audiencias
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -98,18 +98,18 @@ export function AudienceManagement({
         </div>
         <Button
           onClick={() => setIsCreating(true)}
-          className="gap-1.5 font-bold text-xs h-9"
+          className="w-full sm:w-auto gap-1.5 font-bold text-xs h-9 shadow-sm shrink-0"
         >
           <Plus size={15} /> Nueva Audiencia
         </Button>
       </div>
 
       {/* Grilla de Audiencias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
         {audiences.map((aud) => (
           <Card
             key={aud.id}
-            className={`flex flex-col justify-between overflow-hidden shadow-sm transition-all hover:shadow-md ${
+            className={`flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-md rounded-2xl ${
               !aud.is_active ? "opacity-60 border-dashed" : ""
             }`}
           >
@@ -117,10 +117,10 @@ export function AudienceManagement({
               className="h-1.5 w-full"
               style={{ backgroundColor: aud.color || "#3b82f6" }}
             />
-            <CardHeader className="pb-2 space-y-2">
+            <CardHeader className="pt-3.5 pb-2 px-3.5 sm:px-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-xs"
                   style={{ backgroundColor: aud.color || "#3b82f6" }}
                 >
                   {renderAudienceIcon(aud.icon || aud.slug, { size: 18 })}
@@ -138,7 +138,7 @@ export function AudienceManagement({
                 </div>
               </div>
 
-              <CardTitle className="text-base font-bold leading-snug mt-1 flex items-center gap-2">
+              <CardTitle className="text-sm sm:text-base font-bold leading-snug mt-1 flex items-center gap-2">
                 <span>{aud.name}</span>
               </CardTitle>
               <CardDescription className="text-xs line-clamp-2">
@@ -146,22 +146,22 @@ export function AudienceManagement({
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="pb-2">
+            <CardContent className="pb-2 px-3.5 sm:px-4">
               <div className="text-[10px] text-muted-foreground font-mono">
                 slug: {aud.slug}
               </div>
             </CardContent>
 
-            <CardFooter className="pt-2 border-t flex justify-between items-center bg-muted/10">
+            <CardFooter className="pt-2 border-t flex justify-between items-center bg-muted/10 px-3.5 sm:px-4 py-2">
               <span className="text-[10px] text-muted-foreground">
                 Orden: {aud.order_index}
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5 sm:gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setEditingAudience(aud)}
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 sm:h-7 sm:w-7 p-0"
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </Button>
@@ -169,7 +169,7 @@ export function AudienceManagement({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteId(aud.id)}
-                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -273,16 +273,19 @@ function AudienceFormDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-md max-h-[90vh] flex flex-col">
-        <CredenzaHeader className="border-b pb-3">
-          <CredenzaTitle className="text-base font-bold">
+      <CredenzaContent
+        noScroll
+        className="sm:max-w-md p-0 overflow-hidden flex flex-col h-[88dvh] max-h-[88dvh] sm:h-auto rounded-2xl border bg-background shadow-2xl"
+      >
+        <CredenzaHeader className="px-4 sm:px-6 py-3 border-b bg-muted/20 shrink-0">
+          <CredenzaTitle className="text-base sm:text-lg font-bold">
             {initialData
               ? `Editar Audiencia: ${initialData.name}`
               : "Crear Nueva Audiencia"}
           </CredenzaTitle>
         </CredenzaHeader>
 
-        <CredenzaBody className="overflow-y-auto py-3 space-y-4 flex-1">
+        <CredenzaBody className="overflow-y-auto px-4 sm:px-6 py-4 space-y-4 flex-1 min-h-0">
           <Form {...form}>
             <form
               id="audience-form"
@@ -470,15 +473,22 @@ function AudienceFormDialog({
           </Form>
         </CredenzaBody>
 
-        <CredenzaFooter className="border-t pt-3 flex justify-between">
+        <CredenzaFooter className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 mt-auto flex flex-row items-center justify-between gap-2 shadow-xs">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => onOpenChange(false)}
+            className="h-9 px-3 text-xs"
           >
             Cancelar
           </Button>
-          <Button type="submit" form="audience-form" className="font-bold">
+          <Button
+            type="submit"
+            form="audience-form"
+            size="sm"
+            className="font-bold h-9 px-3.5 text-xs shadow-xs"
+          >
             {initialData ? "Guardar Cambios" : "Crear Audiencia"}
           </Button>
         </CredenzaFooter>

@@ -21,10 +21,10 @@ export function CreateTriviaButton({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="gap-1.5 font-bold shadow-sm"
+        className="w-full sm:w-auto gap-1.5 font-bold text-xs h-9 shadow-sm"
       >
-        <Plus className="h-4 w-4" />
-        Nueva Pregunta
+        <Plus className="h-3.5 w-3.5" />
+        <span className="truncate">Nueva Pregunta</span>
       </Button>
       <TriviaFormDialog
         open={isOpen}
@@ -50,10 +50,10 @@ export function BulkImportButton({
       <Button
         variant="outline"
         onClick={() => setIsOpen(true)}
-        className="gap-1.5 font-semibold text-xs h-9"
+        className="w-full sm:w-auto gap-1.5 font-semibold text-xs h-9 bg-background shadow-xs"
       >
         <FileUp className="h-3.5 w-3.5" />
-        Carga Masiva
+        <span className="truncate">Carga Masiva</span>
       </Button>
       <BulkImportDialog
         open={isOpen}

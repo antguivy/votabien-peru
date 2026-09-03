@@ -26,12 +26,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectTrigger,
+  ResponsiveSelectValue,
+} from "@/components/ui/responsive-select";
 import { Input } from "@/components/ui/input";
 import {
   Edit,
@@ -46,6 +46,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  X,
 } from "lucide-react";
 import { TriviaFormDialog } from "./trivia-form-dialog";
 import {
@@ -178,8 +179,8 @@ export function TriviaList({
   return (
     <div className="space-y-4">
       {/* Barra de Filtros y Acciones */}
-      <div className="p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="p-3 sm:p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
+        <div className="flex flex-col md:flex-row gap-2.5">
           {/* Buscador */}
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -187,65 +188,97 @@ export function TriviaList({
               placeholder="Buscar por enunciado o explicación..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-background h-9 text-xs"
+              className="pl-9 pr-8 bg-background h-9 text-xs"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          {/* Filtro Tema */}
-          <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-            <SelectTrigger className="w-full sm:w-[220px] h-9 text-xs bg-background">
-              <Filter className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-              <SelectValue placeholder="Todos los temas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los temas</SelectItem>
-              {topics.map((top) => (
-                <SelectItem key={top.id} value={top.id}>
-                  {top.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Filtro Tema */}
+            <ResponsiveSelect
+              title="Filtrar por Tema"
+              value={selectedTopic}
+              onValueChange={setSelectedTopic}
+            >
+              <ResponsiveSelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 text-xs bg-background">
+                <Filter className="w-3.5 h-3.5 mr-1 text-muted-foreground shrink-0" />
+                <ResponsiveSelectValue placeholder="Todos los temas" />
+              </ResponsiveSelectTrigger>
+              <ResponsiveSelectContent>
+                <ResponsiveSelectItem value="all">
+                  Todos los temas
+                </ResponsiveSelectItem>
+                {topics.map((top) => (
+                  <ResponsiveSelectItem key={top.id} value={top.id}>
+                    {top.title}
+                  </ResponsiveSelectItem>
+                ))}
+              </ResponsiveSelectContent>
+            </ResponsiveSelect>
 
-          {/* Filtro Audiencia */}
-          <Select value={selectedAudience} onValueChange={setSelectedAudience}>
-            <SelectTrigger className="w-full sm:w-[190px] h-9 text-xs bg-background">
-              <SelectValue placeholder="Todas las audiencias" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las audiencias</SelectItem>
-              {audiences.map((aud) => (
-                <SelectItem key={aud.id} value={aud.id}>
-                  <div className="flex items-center gap-1.5">
-                    {renderAudienceIcon(aud.icon || aud.slug, { size: 12 })}
-                    <span>{aud.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {/* Filtro Audiencia */}
+            <ResponsiveSelect
+              title="Filtrar por Audiencia"
+              value={selectedAudience}
+              onValueChange={setSelectedAudience}
+            >
+              <ResponsiveSelectTrigger className="w-full sm:w-[170px] md:w-[180px] h-9 text-xs bg-background">
+                <ResponsiveSelectValue placeholder="Todas las audiencias" />
+              </ResponsiveSelectTrigger>
+              <ResponsiveSelectContent>
+                <ResponsiveSelectItem value="all">
+                  Todas las audiencias
+                </ResponsiveSelectItem>
+                {audiences.map((aud) => (
+                  <ResponsiveSelectItem key={aud.id} value={aud.id}>
+                    <div className="flex items-center gap-1.5">
+                      {renderAudienceIcon(aud.icon || aud.slug, { size: 12 })}
+                      <span>{aud.name}</span>
+                    </div>
+                  </ResponsiveSelectItem>
+                ))}
+              </ResponsiveSelectContent>
+            </ResponsiveSelect>
 
-          {/* Filtro Dificultad */}
-          <Select
-            value={selectedDifficulty}
-            onValueChange={setSelectedDifficulty}
-          >
-            <SelectTrigger className="w-full sm:w-[130px] h-9 text-xs bg-background">
-              <SelectValue placeholder="Dificultad" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="FACIL">Fácil</SelectItem>
-              <SelectItem value="MEDIO">Medio</SelectItem>
-              <SelectItem value="DIFICIL">Difícil</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Filtro Dificultad */}
+            <ResponsiveSelect
+              title="Filtrar por Dificultad"
+              value={selectedDifficulty}
+              onValueChange={setSelectedDifficulty}
+            >
+              <ResponsiveSelectTrigger className="w-full sm:w-[120px] h-9 text-xs bg-background">
+                <ResponsiveSelectValue placeholder="Dificultad" />
+              </ResponsiveSelectTrigger>
+              <ResponsiveSelectContent>
+                <ResponsiveSelectItem value="all">
+                  Todas dif.
+                </ResponsiveSelectItem>
+                <ResponsiveSelectItem value="FACIL">Fácil</ResponsiveSelectItem>
+                <ResponsiveSelectItem value="MEDIO">Medio</ResponsiveSelectItem>
+                <ResponsiveSelectItem value="DIFICIL">
+                  Difícil
+                </ResponsiveSelectItem>
+              </ResponsiveSelectContent>
+            </ResponsiveSelect>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs text-muted-foreground pt-1 border-t">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-2">
             <span>
-              Mostrando {filteredTrivias.length} de {trivias.length} preguntas
+              Mostrando{" "}
+              <strong className="text-foreground">
+                {filteredTrivias.length}
+              </strong>{" "}
+              de {trivias.length} preguntas
             </span>
             {(searchTerm ||
               selectedTopic !== "all" ||
@@ -272,7 +305,7 @@ export function TriviaList({
             size="sm"
             onClick={handleExportJson}
             disabled={filteredTrivias.length === 0}
-            className="h-7 text-xs gap-1.5 self-start sm:self-auto"
+            className="h-7 text-xs gap-1.5 self-start sm:self-auto bg-background"
           >
             <Download size={13} /> Exportar JSON ({filteredTrivias.length})
           </Button>
@@ -287,7 +320,7 @@ export function TriviaList({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4.5">
           {filteredTrivias.map((trivia) => (
             <TriviaItem
               key={trivia.id}
@@ -359,6 +392,8 @@ function TriviaItem({
   onDuplicate: () => void;
   onTogglePublish: () => void;
 }) {
+  const [showExplanation, setShowExplanation] = useState(false);
+
   let options: TriviaOption[] = [];
   try {
     options =
@@ -383,17 +418,17 @@ function TriviaItem({
 
   return (
     <Card
-      className={`flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow ${
+      className={`flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-shadow rounded-2xl ${
         !trivia.is_published ? "opacity-70 border-dashed" : ""
       }`}
     >
-      <CardHeader className="pt-4 pb-2 space-y-2.5">
+      <CardHeader className="pt-3.5 pb-2 px-3.5 sm:px-4 space-y-2">
         {/* Meta / Badges */}
-        <div className="flex justify-between items-center gap-2">
-          <div className="flex items-center gap-1.5">
+        <div className="flex justify-between items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1.5 min-w-0">
             <Badge
               variant="outline"
-              className="gap-0.5 font-mono text-[11px] px-1.5 py-0.5"
+              className="gap-0.5 font-mono text-[10px] px-1.5 py-0.5 shrink-0"
             >
               <Hash className="w-3 h-3 text-muted-foreground" />
               {trivia.global_index}
@@ -401,7 +436,7 @@ function TriviaItem({
             {trivia.topic && (
               <Badge
                 variant="secondary"
-                className="text-[10px] truncate max-w-[150px] flex items-center gap-1"
+                className="text-[10px] truncate max-w-[140px] flex items-center gap-1 shrink-0"
                 style={{
                   borderLeftColor: trivia.topic.badge_color || undefined,
                   borderLeftWidth: trivia.topic.badge_color ? 3 : undefined,
@@ -413,13 +448,13 @@ function TriviaItem({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <Badge
-              className={`${difficultyColor[trivia.difficulty]} border text-[10px] px-1.5`}
+              className={`${difficultyColor[trivia.difficulty]} border text-[10px] px-1.5 py-0`}
             >
               {trivia.difficulty}
             </Badge>
-            <Badge variant="secondary" className="text-[10px] px-1.5">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
               {trivia.category}
             </Badge>
           </div>
@@ -431,7 +466,7 @@ function TriviaItem({
             {trivia.audiences.map((aud) => (
               <span
                 key={aud.id}
-                className="text-[10px] font-medium bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded flex items-center gap-1"
+                className="text-[10px] font-medium bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded-md flex items-center gap-1"
               >
                 {renderAudienceIcon(aud.icon || aud.slug, { size: 10 })}
                 <span>{aud.name.split("/")[0].trim()}</span>
@@ -441,14 +476,14 @@ function TriviaItem({
         )}
 
         {/* La Pregunta */}
-        <div className="min-h-[50px] flex items-center pt-1">
-          <p className="font-semibold text-sm leading-snug text-foreground line-clamp-3">
+        <div className="min-h-[44px] flex items-center pt-0.5">
+          <p className="font-semibold text-xs sm:text-sm leading-snug text-foreground line-clamp-3">
             “{trivia.quote}”
           </p>
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 space-y-2 bg-muted/10 py-3">
+      <CardContent className="flex-1 space-y-2 bg-muted/10 py-3 px-3.5 sm:px-4">
         {/* Opciones */}
         <div className="space-y-1.5">
           {options.slice(0, 4).map((opt, idx) => {
@@ -461,7 +496,7 @@ function TriviaItem({
                   ${
                     isCorrect
                       ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 font-medium"
-                      : "bg-background border-border text-muted-foreground"
+                      : "bg-background border-border/70 text-muted-foreground"
                   }
                 `}
               >
@@ -483,20 +518,42 @@ function TriviaItem({
             );
           })}
         </div>
+
+        {/* Explicación expandible en 1 toque (móvil y desktop) */}
+        {showExplanation && trivia.explanation && (
+          <div className="mt-2 p-2.5 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-xs text-blue-900 dark:text-blue-200 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+            <p className="font-bold text-[11px] flex items-center gap-1 text-blue-800 dark:text-blue-300">
+              <Info className="w-3.5 h-3.5" />
+              Explicación educativa:
+            </p>
+            <p className="text-[11px] leading-relaxed text-blue-950/80 dark:text-blue-200/90">
+              {trivia.explanation}
+            </p>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="border-t flex justify-between items-center py-2 px-3 bg-card">
         {/* Iconos de Información y Estado */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {trivia.explanation && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-1.5 rounded-md hover:bg-muted text-muted-foreground cursor-help">
-                    <Info className="w-3.5 h-3.5" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowExplanation((prev) => !prev)}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      showExplanation
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                        : "hover:bg-muted text-muted-foreground"
+                    }`}
+                    title="Ver explicación educativa"
+                  >
+                    <Info className="w-4 h-4" />
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs p-3">
+                <TooltipContent className="max-w-xs p-3 hidden sm:block">
                   <p className="font-bold text-xs mb-1">
                     Explicación educativa:
                   </p>
@@ -516,9 +573,9 @@ function TriviaItem({
                     href={trivia.source_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-blue-500"
+                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-blue-500 transition-colors"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-4 h-4" />
                   </a>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -535,12 +592,12 @@ function TriviaItem({
                 <button
                   type="button"
                   onClick={onTogglePublish}
-                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
                 >
                   {trivia.is_published ? (
-                    <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                    <Eye className="w-4 h-4 text-emerald-600" />
                   ) : (
-                    <EyeOff className="w-3.5 h-3.5 text-amber-600" />
+                    <EyeOff className="w-4 h-4 text-amber-600" />
                   )}
                 </button>
               </TooltipTrigger>
@@ -556,7 +613,7 @@ function TriviaItem({
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -564,7 +621,7 @@ function TriviaItem({
                   variant="ghost"
                   size="sm"
                   onClick={onDuplicate}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
@@ -577,7 +634,7 @@ function TriviaItem({
             variant="ghost"
             size="sm"
             onClick={onEdit}
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 sm:h-7 sm:w-7 p-0"
           >
             <Edit className="w-3.5 h-3.5" />
           </Button>
@@ -585,7 +642,7 @@ function TriviaItem({
             variant="ghost"
             size="sm"
             onClick={onDelete}
-            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>

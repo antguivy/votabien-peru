@@ -91,14 +91,26 @@ const CredenzaClose = ({ className, children, ...props }: CredenzaProps) => {
   );
 };
 
-const CredenzaContent = ({ className, children, ...props }: CredenzaProps) => {
+const CredenzaContent = ({
+  className,
+  children,
+  noScroll,
+  ...props
+}: CredenzaProps) => {
   const { isMobile } = useCredenzaContext();
-  const CredenzaContent = isMobile ? DrawerContent : DialogContent;
+
+  if (isMobile) {
+    return (
+      <DrawerContent className={className} noScroll={noScroll} {...props}>
+        {children}
+      </DrawerContent>
+    );
+  }
 
   return (
-    <CredenzaContent className={className} {...props}>
+    <DialogContent className={className} {...props}>
       {children}
-    </CredenzaContent>
+    </DialogContent>
   );
 };
 
@@ -139,7 +151,12 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
   );
 };
 
-const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
+const CredenzaBody = ({
+  className,
+  children,
+  noScroll: _noScroll,
+  ...props
+}: CredenzaProps) => {
   return (
     <div className={cn("px-4 sm:px-6 py-2", className)} {...props}>
       {children}

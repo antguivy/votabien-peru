@@ -88,9 +88,9 @@ export function TopicManagement({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center bg-card/60 border p-4 rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-card/60 border p-3.5 sm:p-4 rounded-xl shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-foreground">
+          <h2 className="text-sm sm:text-base font-bold text-foreground">
             Ejes Temáticos
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -100,18 +100,18 @@ export function TopicManagement({
         </div>
         <Button
           onClick={() => setIsCreating(true)}
-          className="gap-1.5 font-bold text-xs h-9"
+          className="w-full sm:w-auto gap-1.5 font-bold text-xs h-9 shadow-sm shrink-0"
         >
           <Plus size={15} /> Nuevo Tema
         </Button>
       </div>
 
       {/* Grilla de Temas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
         {topics.map((topic) => (
           <Card
             key={topic.id}
-            className={`flex flex-col justify-between overflow-hidden shadow-sm transition-all hover:shadow-md ${
+            className={`flex flex-col justify-between overflow-hidden shadow-xs transition-all hover:shadow-md rounded-2xl ${
               !topic.is_active ? "opacity-60 border-dashed" : ""
             }`}
           >
@@ -119,10 +119,10 @@ export function TopicManagement({
               className="h-1.5 w-full"
               style={{ backgroundColor: topic.badge_color || "#3b82f6" }}
             />
-            <CardHeader className="pb-2 space-y-2">
+            <CardHeader className="pt-3.5 pb-2 px-3.5 sm:px-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-sm"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-white shadow-xs"
                   style={{ backgroundColor: topic.badge_color || "#3b82f6" }}
                 >
                   {renderTopicIcon(topic.icon, { size: 18 })}
@@ -140,7 +140,7 @@ export function TopicManagement({
                 </div>
               </div>
 
-              <CardTitle className="text-base font-bold leading-snug">
+              <CardTitle className="text-sm sm:text-base font-bold leading-snug">
                 {topic.title}
               </CardTitle>
               <CardDescription className="text-xs line-clamp-2">
@@ -148,7 +148,7 @@ export function TopicManagement({
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="pb-3 space-y-2">
+            <CardContent className="pb-3 px-3.5 sm:px-4 space-y-2">
               <div className="flex flex-wrap gap-1.5">
                 {topic.audiences && topic.audiences.length > 0 ? (
                   topic.audiences.map((aud) => (
@@ -170,16 +170,16 @@ export function TopicManagement({
               </div>
             </CardContent>
 
-            <CardFooter className="pt-2 border-t flex justify-between items-center bg-muted/10">
-              <span className="text-[10px] text-muted-foreground font-mono">
+            <CardFooter className="pt-2 border-t flex justify-between items-center bg-muted/10 px-3.5 sm:px-4 py-2">
+              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[140px]">
                 slug: {topic.slug}
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5 sm:gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setEditingTopic(topic)}
-                  className="h-7 w-7 p-0"
+                  className="h-8 w-8 sm:h-7 sm:w-7 p-0"
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </Button>
@@ -187,7 +187,7 @@ export function TopicManagement({
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteId(topic.id)}
-                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 sm:h-7 sm:w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -296,16 +296,19 @@ function TopicFormDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-xl max-h-[90vh] flex flex-col">
-        <CredenzaHeader className="border-b pb-3">
-          <CredenzaTitle className="text-base font-bold">
+      <CredenzaContent
+        noScroll
+        className="sm:max-w-xl p-0 overflow-hidden flex flex-col h-[88dvh] max-h-[88dvh] sm:h-auto rounded-2xl border bg-background shadow-2xl"
+      >
+        <CredenzaHeader className="px-4 sm:px-6 py-3 border-b bg-muted/20 shrink-0">
+          <CredenzaTitle className="text-base sm:text-lg font-bold">
             {initialData
               ? `Editar Tema: ${initialData.title}`
               : "Crear Nuevo Eje Temático"}
           </CredenzaTitle>
         </CredenzaHeader>
 
-        <CredenzaBody className="overflow-y-auto py-3 space-y-4 flex-1">
+        <CredenzaBody className="overflow-y-auto px-4 sm:px-6 py-4 space-y-4 flex-1 min-h-0">
           <Form {...form}>
             <form
               id="topic-form"
@@ -547,15 +550,22 @@ function TopicFormDialog({
           </Form>
         </CredenzaBody>
 
-        <CredenzaFooter className="border-t pt-3 flex justify-between">
+        <CredenzaFooter className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 mt-auto flex flex-row items-center justify-between gap-2 shadow-xs">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => onOpenChange(false)}
+            className="h-9 px-3 text-xs"
           >
             Cancelar
           </Button>
-          <Button type="submit" form="topic-form" className="font-bold">
+          <Button
+            type="submit"
+            form="topic-form"
+            size="sm"
+            className="font-bold h-9 px-3.5 text-xs shadow-xs"
+          >
             {initialData ? "Guardar Cambios" : "Crear Tema"}
           </Button>
         </CredenzaFooter>
