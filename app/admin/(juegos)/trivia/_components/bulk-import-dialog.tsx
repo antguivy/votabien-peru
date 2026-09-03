@@ -15,12 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectTrigger,
+  ResponsiveSelectValue,
+} from "@/components/ui/responsive-select";
 import { FileUp, Copy, Check, AlertCircle, AlertTriangle } from "lucide-react";
 import { bulkImportTrivias, type BulkImportFailure } from "../_lib/actions";
 import { TriviaTopic, TriviaAudience } from "@/interfaces/trivia";
@@ -143,36 +143,40 @@ export function BulkImportDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-        <CredenzaHeader className="border-b pb-3">
-          <CredenzaTitle className="flex items-center gap-2 text-lg font-black">
-            <FileUp className="w-5 h-5 text-primary" /> Carga masiva de
+      <CredenzaContent
+        noScroll
+        className="sm:max-w-2xl p-0 overflow-hidden flex flex-col h-[88dvh] max-h-[88dvh] sm:h-auto rounded-2xl border bg-background shadow-2xl"
+      >
+        <CredenzaHeader className="px-4 sm:px-6 py-3 border-b bg-muted/20 shrink-0">
+          <CredenzaTitle className="flex items-center gap-2 text-base sm:text-lg font-bold">
+            <FileUp className="w-4 h-4 text-primary" /> Carga masiva de
             preguntas
           </CredenzaTitle>
         </CredenzaHeader>
 
-        <CredenzaBody className="space-y-4 py-3 overflow-y-auto flex-1">
+        <CredenzaBody className="space-y-4 px-4 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0">
           {/* Asignar Tema y Audiencias */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-muted-foreground">
                 Asignar al tema
               </Label>
-              <Select
+              <ResponsiveSelect
+                title="Asignar al Tema"
                 value={selectedTopicId}
                 onValueChange={setSelectedTopicId}
               >
-                <SelectTrigger className="text-xs h-9">
-                  <SelectValue placeholder="Selecciona un tema..." />
-                </SelectTrigger>
-                <SelectContent>
+                <ResponsiveSelectTrigger className="text-xs h-9">
+                  <ResponsiveSelectValue placeholder="Selecciona un tema..." />
+                </ResponsiveSelectTrigger>
+                <ResponsiveSelectContent>
                   {topics.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
+                    <ResponsiveSelectItem key={t.id} value={t.id}>
                       {t.title}
-                    </SelectItem>
+                    </ResponsiveSelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </ResponsiveSelectContent>
+              </ResponsiveSelect>
             </div>
 
             <div className="space-y-1.5">
@@ -295,25 +299,28 @@ export function BulkImportDialog({
           </div>
         </CredenzaBody>
 
-        <CredenzaFooter className="border-t pt-3 flex justify-between">
+        <CredenzaFooter className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 mt-auto flex flex-row items-center justify-between gap-2 shadow-xs">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
+            className="h-9 px-3 text-xs"
           >
             Cancelar
           </Button>
           <Button
             type="button"
+            size="sm"
             onClick={handleImport}
             disabled={parsedCount === null || parsedCount <= 0 || isSubmitting}
-            className="gap-1.5 font-bold"
+            className="gap-1.5 font-bold h-9 px-3.5 text-xs shadow-xs"
           >
-            <FileUp size={15} />
+            <FileUp size={14} />
             {isSubmitting
               ? "Guardando..."
-              : `Guardar ${parsedCount ? `${parsedCount} preguntas` : ""}`}
+              : `Guardar ${parsedCount ? `(${parsedCount})` : ""}`}
           </Button>
         </CredenzaFooter>
       </CredenzaContent>

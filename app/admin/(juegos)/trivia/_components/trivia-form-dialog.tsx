@@ -26,12 +26,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectTrigger,
+  ResponsiveSelectValue,
+} from "@/components/ui/responsive-select";
 import {
   Credenza,
   CredenzaBody,
@@ -122,7 +122,7 @@ function SortableOptionItem({
     displayType === "TEXT_ONLY" || displayType === "TRUE_FALSE";
 
   return (
-    <div ref={setNodeRef} style={style} className="mb-2 touch-none">
+    <div ref={setNodeRef} style={style} className="mb-2">
       <Card
         className={`relative flex flex-row items-center p-2.5 transition-all ${
           isSelected
@@ -134,7 +134,7 @@ function SortableOptionItem({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab p-1.5 hover:bg-muted rounded mr-1 text-muted-foreground"
+          className="touch-none cursor-grab p-1.5 hover:bg-muted rounded mr-1 text-muted-foreground shrink-0"
         >
           <GripVertical size={16} />
         </div>
@@ -422,9 +422,12 @@ export function TriviaFormDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-3xl flex flex-col max-h-[92vh]">
-        <CredenzaHeader className="pb-2 border-b space-y-2">
-          <CredenzaTitle className="text-xl font-black">
+      <CredenzaContent
+        noScroll
+        className="sm:max-w-3xl p-0 overflow-hidden flex flex-col h-[90dvh] max-h-[90dvh] sm:h-[86vh] sm:max-h-[86vh] rounded-2xl border bg-background shadow-2xl"
+      >
+        <CredenzaHeader className="px-4 sm:px-6 py-3 border-b bg-muted/20 shrink-0">
+          <CredenzaTitle className="text-base sm:text-lg font-bold">
             {mode === "edit"
               ? "Editar Pregunta de Trivia"
               : "Nueva Pregunta de Trivia"}
@@ -434,38 +437,45 @@ export function TriviaFormDialog({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col flex-1 overflow-hidden"
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
           >
-            <div className="px-5 pt-3">
+            {/* Tabs fijas arriba */}
+            <div className="px-4 sm:px-6 pt-3 pb-2 border-b bg-background shrink-0">
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-3 mb-2">
-                  <TabsTrigger value="general">
-                    1. Datos principales
+                <TabsList className="grid w-full grid-cols-3 h-9 p-1">
+                  <TabsTrigger
+                    value="general"
+                    className="text-xs px-2 truncate"
+                  >
+                    1. Datos
                   </TabsTrigger>
-                  <TabsTrigger value="options">
-                    2. Alternativas{" "}
+                  <TabsTrigger
+                    value="options"
+                    className="text-xs px-2 truncate"
+                  >
+                    2. Alternativas
                     <Badge
                       variant="secondary"
-                      className="ml-1.5 h-4 min-w-4 px-1 text-[10px]"
+                      className="ml-1 px-1.5 py-0 h-4 text-[9px] font-bold"
                     >
                       {fields.length}
                     </Badge>
                   </TabsTrigger>
                   <TabsTrigger
                     value="preview"
-                    className="flex items-center gap-1.5"
+                    className="text-xs px-2 truncate flex items-center gap-1"
                   >
-                    <Eye size={13} /> 3. Vista previa
+                    <Eye size={12} className="shrink-0" /> 3. Preview
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
-            <CredenzaBody className="flex-1 overflow-y-auto px-5 pb-5 overflow-x-hidden">
+            <CredenzaBody className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-4 min-h-0">
               {/* --- TAB 1: GENERAL --- */}
               {activeTab === "general" && (
                 <div className="space-y-4 py-2 animate-in fade-in duration-200">
@@ -500,23 +510,27 @@ export function TriviaFormDialog({
                           <FormLabel className="font-bold text-xs">
                             Eje temático
                           </FormLabel>
-                          <Select
+                          <ResponsiveSelect
+                            title="Seleccionar Eje Temático"
                             onValueChange={field.onChange}
                             value={field.value || ""}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-xs">
-                                <SelectValue placeholder="Seleccionar tema..." />
-                              </SelectTrigger>
+                              <ResponsiveSelectTrigger className="text-xs">
+                                <ResponsiveSelectValue placeholder="Seleccionar tema..." />
+                              </ResponsiveSelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <ResponsiveSelectContent>
                               {topics.map((top) => (
-                                <SelectItem key={top.id} value={top.id}>
+                                <ResponsiveSelectItem
+                                  key={top.id}
+                                  value={top.id}
+                                >
                                   {top.title}
-                                </SelectItem>
+                                </ResponsiveSelectItem>
                               ))}
-                            </SelectContent>
-                          </Select>
+                            </ResponsiveSelectContent>
+                          </ResponsiveSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -530,39 +544,40 @@ export function TriviaFormDialog({
                           <FormLabel className="font-bold text-xs">
                             Categoría
                           </FormLabel>
-                          <Select
+                          <ResponsiveSelect
+                            title="Seleccionar Categoría"
                             onValueChange={field.onChange}
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
+                              <ResponsiveSelectTrigger className="text-xs">
+                                <ResponsiveSelectValue />
+                              </ResponsiveSelectTrigger>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="CONSTITUCION">
+                            <ResponsiveSelectContent>
+                              <ResponsiveSelectItem value="CONSTITUCION">
                                 Constitución
-                              </SelectItem>
-                              <SelectItem value="PODERES">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="PODERES">
                                 Poderes del Estado
-                              </SelectItem>
-                              <SelectItem value="DERECHOS">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="DERECHOS">
                                 Derechos y Deberes
-                              </SelectItem>
-                              <SelectItem value="PROPUESTA">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="PROPUESTA">
                                 Propuestas
-                              </SelectItem>
-                              <SelectItem value="POLEMICO">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="POLEMICO">
                                 Frases y Coyuntura
-                              </SelectItem>
-                              <SelectItem value="HISTORICO">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="HISTORICO">
                                 Historia Electoral
-                              </SelectItem>
-                              <SelectItem value="CORRUPCION">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="CORRUPCION">
                                 Fiscalización
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                              </ResponsiveSelectItem>
+                            </ResponsiveSelectContent>
+                          </ResponsiveSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -579,21 +594,28 @@ export function TriviaFormDialog({
                           <FormLabel className="font-bold text-xs">
                             Dificultad
                           </FormLabel>
-                          <Select
+                          <ResponsiveSelect
+                            title="Nivel de Dificultad"
                             onValueChange={field.onChange}
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
+                              <ResponsiveSelectTrigger className="text-xs">
+                                <ResponsiveSelectValue />
+                              </ResponsiveSelectTrigger>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="FACIL">Fácil</SelectItem>
-                              <SelectItem value="MEDIO">Medio</SelectItem>
-                              <SelectItem value="DIFICIL">Difícil</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            <ResponsiveSelectContent>
+                              <ResponsiveSelectItem value="FACIL">
+                                Fácil
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="MEDIO">
+                                Medio
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="DIFICIL">
+                                Difícil
+                              </ResponsiveSelectItem>
+                            </ResponsiveSelectContent>
+                          </ResponsiveSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -607,32 +629,33 @@ export function TriviaFormDialog({
                           <FormLabel className="font-bold text-xs">
                             Tipo de alternativas
                           </FormLabel>
-                          <Select
+                          <ResponsiveSelect
+                            title="Tipo de Alternativas"
                             onValueChange={(val) =>
                               handleDisplayTypeChange(val as OptionDisplayType)
                             }
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
+                              <ResponsiveSelectTrigger className="text-xs">
+                                <ResponsiveSelectValue />
+                              </ResponsiveSelectTrigger>
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="TEXT_ONLY">
+                            <ResponsiveSelectContent>
+                              <ResponsiveSelectItem value="TEXT_ONLY">
                                 Texto (Educación Cívica)
-                              </SelectItem>
-                              <SelectItem value="TRUE_FALSE">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="TRUE_FALSE">
                                 Verdadero / Falso
-                              </SelectItem>
-                              <SelectItem value="PERSON">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="PERSON">
                                 Candidato o figura pública
-                              </SelectItem>
-                              <SelectItem value="PARTY">
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="PARTY">
                                 Partido u organización
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                              </ResponsiveSelectItem>
+                            </ResponsiveSelectContent>
+                          </ResponsiveSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -961,37 +984,155 @@ export function TriviaFormDialog({
               )}
             </CredenzaBody>
 
-            <CredenzaFooter className="flex justify-between pt-3 mt-auto border-t bg-background px-5 pb-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-
-              <div className="flex gap-2">
-                {activeTab !== "preview" && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() =>
-                      setActiveTab(
-                        activeTab === "general" ? "options" : "preview",
-                      )
-                    }
-                  >
-                    Siguiente
-                  </Button>
+            {/* Footer fijo / estático abajo */}
+            <CredenzaFooter className="shrink-0 border-t bg-background px-4 sm:px-6 py-3 mt-auto shadow-xs">
+              {/* Layout Mobile: Botón Principal Prominente + Botones Secundarios */}
+              <div className="flex flex-col gap-2 w-full sm:hidden">
+                {activeTab === "general" && (
+                  <>
+                    <Button
+                      type="button"
+                      size="default"
+                      onClick={() => setActiveTab("options")}
+                      className="w-full h-10 font-bold bg-primary text-primary-foreground shadow-xs text-xs"
+                    >
+                      Continuar a Alternativas (2) →
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onOpenChange(false)}
+                      className="h-8 text-xs text-muted-foreground"
+                    >
+                      Cancelar
+                    </Button>
+                  </>
                 )}
 
+                {activeTab === "options" && (
+                  <>
+                    <Button
+                      type="button"
+                      size="default"
+                      onClick={() => setActiveTab("preview")}
+                      className="w-full h-10 font-bold bg-primary text-primary-foreground shadow-xs text-xs"
+                    >
+                      Continuar a Vista Previa (3) →
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab("general")}
+                        className="flex-1 h-8.5 text-xs font-medium"
+                      >
+                        ← Volver a Datos
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpenChange(false)}
+                        className="flex-1 h-8.5 text-xs text-muted-foreground"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "preview" && (
+                  <>
+                    <Button
+                      type="submit"
+                      size="default"
+                      disabled={fields.length < 2 || !correctAnswerId}
+                      className="w-full h-10 font-bold bg-primary text-primary-foreground shadow-sm text-xs"
+                    >
+                      {mode === "edit"
+                        ? "✓ Guardar Cambios"
+                        : "✓ Crear Pregunta"}
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setActiveTab("options")}
+                        className="flex-1 h-8.5 text-xs font-medium"
+                      >
+                        ← Volver a Alternativas
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpenChange(false)}
+                        className="flex-1 h-8.5 text-xs text-muted-foreground"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Layout Desktop: Barra Horizontal */}
+              <div className="hidden sm:flex items-center justify-between w-full">
                 <Button
-                  type="submit"
-                  disabled={fields.length < 2 || !correctAnswerId}
-                  className="bg-primary text-primary-foreground font-bold"
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="h-9 px-3 text-xs"
                 >
-                  {mode === "edit" ? "Guardar Cambios" : "Crear Pregunta"}
+                  Cancelar
                 </Button>
+
+                <div className="flex items-center gap-2">
+                  {activeTab !== "general" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setActiveTab(
+                          activeTab === "preview" ? "options" : "general",
+                        )
+                      }
+                      className="h-9 px-3 text-xs"
+                    >
+                      ← Anterior
+                    </Button>
+                  )}
+
+                  {activeTab !== "preview" ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setActiveTab(
+                          activeTab === "general" ? "options" : "preview",
+                        )
+                      }
+                      className="h-9 px-3.5 text-xs font-semibold"
+                    >
+                      Siguiente →
+                    </Button>
+                  ) : null}
+
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={fields.length < 2 || !correctAnswerId}
+                    className="bg-primary text-primary-foreground font-bold shadow-xs h-9 px-3.5 text-xs"
+                  >
+                    {mode === "edit" ? "Guardar Cambios" : "Crear Pregunta"}
+                  </Button>
+                </div>
               </div>
             </CredenzaFooter>
           </form>

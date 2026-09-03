@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { PanelsTopLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Menu } from "@/components/admin/menu";
 import { useSidebarToggle } from "@/hooks/use-sidebar-toggle";
 import Image from "next/image";
@@ -20,36 +18,33 @@ export function Sidebar({ userRole }: { userRole?: string }) {
       )}
     >
       <SidebarToggle isOpen={sidebar?.isOpen} setIsOpen={sidebar?.setIsOpen} />
-      <div className="relative h-full flex flex-col px-3 py-4 overflow-y-auto shadow-md dark:shadow-zinc-700">
-        <Button
-          className={cn(
-            "transition-transform ease-in-out duration-300 mb-1",
-            sidebar?.isOpen === false ? "translate-x-1" : "translate-x-0",
-          )}
-          variant="link"
-          asChild
-        >
-          <Link href={`/admin`} className="flex items-center gap-2">
-            <PanelsTopLeft className="w-6 h-6 mr-1" />
-            <h1
+      <div className="relative h-full flex flex-col overflow-hidden bg-background border-r shadow-xs">
+        <div className="px-4 py-3 border-b bg-muted/20 shrink-0 flex items-center h-14">
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-2 transition-transform ease-in-out duration-300",
+              sidebar?.isOpen === false ? "translate-x-1" : "translate-x-0",
+            )}
+          >
+            <Image
+              src="/logo_completo.png"
+              alt="VotaBien Perú"
+              width={105}
+              height={30}
               className={cn(
-                "font-bold text-lg whitespace-nowrap transition-[transform,opacity,display] ease-in-out duration-300",
-                sidebar?.isOpen === false
-                  ? "-translate-x-96 opacity-0 hidden"
-                  : "translate-x-0 opacity-100",
+                "object-contain h-7 w-auto drop-shadow-xs transition-[opacity,display] duration-300",
+                sidebar?.isOpen === false ? "opacity-0 hidden" : "opacity-100",
               )}
-            >
-              <Image
-                src="/logo_completo.png"
-                alt="VotaBien Perú"
-                width={115}
-                height={36}
-                className="object-contain h-8 w-auto drop-shadow-xs"
-                priority
-              />
-            </h1>
+              priority
+            />
+            {sidebar?.isOpen === false && (
+              <span className="font-black text-sm text-primary tracking-tight">
+                VB
+              </span>
+            )}
           </Link>
-        </Button>
+        </div>
         <Menu isOpen={sidebar?.isOpen} userRole={userRole} />
       </div>
     </aside>

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MenuIcon, PanelsTopLeft } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Menu } from "@/components/admin/menu";
 import {
   Sheet,
@@ -26,38 +27,40 @@ export function SheetMenu({ userRole }: SheetMenuProps) {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger className="lg:hidden" asChild>
         <Button
-          className="h-8"
+          className="h-9 w-9 rounded-xl"
           variant="outline"
           size="icon"
           aria-label="Abrir menú de navegación"
         >
-          <MenuIcon size={20} />
+          <MenuIcon size={19} />
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:w-72 px-3 h-full flex flex-col" side="left">
-        <SheetHeader>
+      <SheetContent
+        className="w-[285px] max-w-[85vw] p-0 flex flex-col h-full overflow-hidden bg-background border-r gap-0"
+        side="left"
+      >
+        <SheetHeader className="px-4 py-3 border-b bg-muted/20 shrink-0 flex flex-row items-center justify-between space-y-0 pr-12">
           <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-          <Button
-            className="flex justify-start items-center pb-2 pt-1 h-auto"
-            variant="link"
-            asChild
+          <Link
+            href="/admin"
+            className="flex items-center gap-2"
+            onClick={() => setIsOpen(false)}
           >
-            <Link
-              href={`/admin`}
-              className="flex items-center gap-2.5"
-              onClick={() => setIsOpen(false)}
+            <Image
+              src="/logo_completo.png"
+              alt="VotaBien Perú"
+              width={105}
+              height={30}
+              className="object-contain h-7 w-auto drop-shadow-xs"
+              priority
+            />
+            <Badge
+              variant="outline"
+              className="text-[9px] font-mono uppercase tracking-wider bg-primary/10 text-primary border-primary/20 px-1.5 py-0"
             >
-              <PanelsTopLeft className="w-5 h-5 text-muted-foreground shrink-0" />
-              <Image
-                src="/logo_completo.png"
-                alt="VotaBien Perú"
-                width={115}
-                height={36}
-                className="object-contain h-8 w-auto drop-shadow-xs"
-                priority
-              />
-            </Link>
-          </Button>
+              {userRole || "Admin"}
+            </Badge>
+          </Link>
         </SheetHeader>
         <Menu isOpen userRole={userRole} onNavigate={() => setIsOpen(false)} />
       </SheetContent>
