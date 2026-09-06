@@ -48,7 +48,7 @@ export const triviaSchema = z.object({
     .max(4, "Máximo 4 opciones"),
 
   audience_ids: z.array(z.string()).optional(),
-  is_published: z.boolean().default(true),
+  is_published: z.boolean().default(false),
 
   // Para retrocompatibilidad
   person_id: z.string().optional().nullable(),

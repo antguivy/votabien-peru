@@ -1,8 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Plus, FileUp } from "lucide-react";
-import { useState } from "react";
+import { Plus, FileUp, BookOpen } from "lucide-react";
+import { useState, useMemo } from "react";
+import Link from "next/link";
 import { TriviaFormDialog } from "./trivia-form-dialog";
 import { BulkImportDialog } from "./bulk-import-dialog";
 import { TriviaTopic, TriviaAudience } from "@/interfaces/trivia";
@@ -11,12 +12,19 @@ export function CreateTriviaButton({
   nextOrderIndex,
   topics = [],
   audiences = [],
+  canPublishDirectly = false,
 }: {
   nextOrderIndex: number;
   topics?: TriviaTopic[];
   audiences?: TriviaAudience[];
+  canPublishDirectly?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const activeAudiences = useMemo(
+    () => audiences.filter((a) => a.is_active),
+    [audiences],
+  );
+
   return (
     <>
       <Button
@@ -31,7 +39,8 @@ export function CreateTriviaButton({
         onOpenChange={setIsOpen}
         nextOrderIndex={nextOrderIndex}
         topics={topics}
-        audiences={audiences}
+        audiences={activeAudiences}
+        canPublishDirectly={canPublishDirectly}
       />
     </>
   );
@@ -45,6 +54,11 @@ export function BulkImportButton({
   audiences?: TriviaAudience[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const activeAudiences = useMemo(
+    () => audiences.filter((a) => a.is_active),
+    [audiences],
+  );
+
   return (
     <>
       <Button
@@ -59,8 +73,25 @@ export function BulkImportButton({
         open={isOpen}
         onOpenChange={setIsOpen}
         topics={topics}
-        audiences={audiences}
+        audiences={activeAudiences}
       />
     </>
+  );
+}
+
+export function GuideLinkButton() {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      asChild
+      className="gap-1.5 text-xs h-9 bg-background shadow-xs font-semibold text-foreground hover:text-primary"
+    >
+      <Link href="/admin/guias/trivia">
+        <BookOpen className="h-3.5 w-3.5 text-primary" />
+        <span className="hidden sm:inline">Guía de Creación</span>
+        <span className="sm:hidden">Guía</span>
+      </Link>
+    </Button>
   );
 }

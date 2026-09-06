@@ -47,12 +47,16 @@ import {
   Eye,
   EyeOff,
   X,
+  CheckCheck,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TriviaFormDialog } from "./trivia-form-dialog";
 import {
   deleteTrivia,
   duplicateTrivia,
   togglePublishTrivia,
+  bulkPublishTrivias,
+  bulkUnpublishTrivias,
 } from "../_lib/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -69,6 +73,7 @@ interface TriviaListProps {
   nextOrderIndex: number;
   topics: TriviaTopic[];
   audiences: TriviaAudience[];
+  canPublishDirectly?: boolean;
 }
 
 export function TriviaList({
@@ -76,6 +81,7 @@ export function TriviaList({
   nextOrderIndex,
   topics,
   audiences,
+  canPublishDirectly = false,
 }: TriviaListProps) {
   const [editingTrivia, setEditingTrivia] = useState<TriviaBasic | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -83,7 +89,15 @@ export function TriviaList({
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedAudience, setSelectedAudience] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const router = useRouter();
+
+  // Solo audiencias activas para filtrar preguntas
+  const activeAudiences = useMemo(
+    () => audiences.filter((a) => a.is_active),
+    [audiences],
+  );
 
   const confirmDelete = async () => {
     if (!deleteId) return;
@@ -92,6 +106,7 @@ export function TriviaList({
       loading: "Eliminando pregunta...",
       success: () => {
         setDeleteId(null);
+        setSelectedIds((prev) => prev.filter((id) => id !== deleteId));
         router.refresh();
         return "Pregunta eliminada correctamente";
       },
@@ -123,8 +138,44 @@ export function TriviaList({
     });
   };
 
+  const handleBulkPublish = async () => {
+    if (selectedIds.length === 0) return;
+    toast.promise(bulkPublishTrivias(selectedIds), {
+      loading: `Publicando ${selectedIds.length} preguntas...`,
+      success: (data) => {
+        if (!data.success) throw new Error(data.error);
+        setSelectedIds([]);
+        router.refresh();
+        return data.message;
+      },
+      error: (err) => err.message || "Error al publicar",
+    });
+  };
+
+  const handleBulkUnpublish = async () => {
+    if (selectedIds.length === 0) return;
+    toast.promise(bulkUnpublishTrivias(selectedIds), {
+      loading: `Moviendo ${selectedIds.length} preguntas a borrador...`,
+      success: (data) => {
+        if (!data.success) throw new Error(data.error);
+        setSelectedIds([]);
+        router.refresh();
+        return data.message;
+      },
+      error: (err) => err.message || "Error al actualizar",
+    });
+  };
+
   const filteredTrivias = useMemo(() => {
     return trivias.filter((t) => {
+      // Filtro por estado de publicación
+      if (selectedStatus === "published" && !t.is_published) {
+        return false;
+      }
+      if (selectedStatus === "draft" && t.is_published) {
+        return false;
+      }
+
       // Búsqueda por texto
       if (
         searchTerm &&
@@ -159,10 +210,29 @@ export function TriviaList({
   }, [
     trivias,
     searchTerm,
+    selectedStatus,
     selectedTopic,
     selectedDifficulty,
     selectedAudience,
   ]);
+
+  const isAllSelected =
+    filteredTrivias.length > 0 &&
+    filteredTrivias.every((t) => selectedIds.includes(t.id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredTrivias.map((t) => t.id));
+    }
+  };
+
+  const handleToggleSelectOne = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
 
   const handleExportJson = () => {
     const dataStr = JSON.stringify(filteredTrivias, null, 2);
@@ -201,14 +271,36 @@ export function TriviaList({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Filtro Estado de Publicación */}
+            <ResponsiveSelect
+              title="Filtrar por Estado"
+              value={selectedStatus}
+              onValueChange={setSelectedStatus}
+            >
+              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+                <ResponsiveSelectValue placeholder="Estado" />
+              </ResponsiveSelectTrigger>
+              <ResponsiveSelectContent>
+                <ResponsiveSelectItem value="all">
+                  Todos los estados
+                </ResponsiveSelectItem>
+                <ResponsiveSelectItem value="published">
+                  🟢 Publicadas (Activas)
+                </ResponsiveSelectItem>
+                <ResponsiveSelectItem value="draft">
+                  🟡 Borradores (Pendientes)
+                </ResponsiveSelectItem>
+              </ResponsiveSelectContent>
+            </ResponsiveSelect>
+
             {/* Filtro Tema */}
             <ResponsiveSelect
               title="Filtrar por Tema"
               value={selectedTopic}
               onValueChange={setSelectedTopic}
             >
-              <ResponsiveSelectTrigger className="w-full sm:w-[180px] md:w-[200px] h-9 text-xs bg-background">
+              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
                 <Filter className="w-3.5 h-3.5 mr-1 text-muted-foreground shrink-0" />
                 <ResponsiveSelectValue placeholder="Todos los temas" />
               </ResponsiveSelectTrigger>
@@ -224,20 +316,20 @@ export function TriviaList({
               </ResponsiveSelectContent>
             </ResponsiveSelect>
 
-            {/* Filtro Audiencia */}
+            {/* Filtro Audiencia (Solo activas) */}
             <ResponsiveSelect
               title="Filtrar por Audiencia"
               value={selectedAudience}
               onValueChange={setSelectedAudience}
             >
-              <ResponsiveSelectTrigger className="w-full sm:w-[170px] md:w-[180px] h-9 text-xs bg-background">
-                <ResponsiveSelectValue placeholder="Todas las audiencias" />
+              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+                <ResponsiveSelectValue placeholder="Audiencias activas" />
               </ResponsiveSelectTrigger>
               <ResponsiveSelectContent>
                 <ResponsiveSelectItem value="all">
                   Todas las audiencias
                 </ResponsiveSelectItem>
-                {audiences.map((aud) => (
+                {activeAudiences.map((aud) => (
                   <ResponsiveSelectItem key={aud.id} value={aud.id}>
                     <div className="flex items-center gap-1.5">
                       {renderAudienceIcon(aud.icon || aud.slug, { size: 12 })}
@@ -254,7 +346,7 @@ export function TriviaList({
               value={selectedDifficulty}
               onValueChange={setSelectedDifficulty}
             >
-              <ResponsiveSelectTrigger className="w-full sm:w-[120px] h-9 text-xs bg-background">
+              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
                 <ResponsiveSelectValue placeholder="Dificultad" />
               </ResponsiveSelectTrigger>
               <ResponsiveSelectContent>
@@ -272,15 +364,35 @@ export function TriviaList({
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            {canPublishDirectly && filteredTrivias.length > 0 && (
+              <label className="flex items-center gap-1.5 cursor-pointer select-none text-foreground font-medium">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={handleToggleSelectAll}
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-xs">
+                  Seleccionar todo ({filteredTrivias.length})
+                </span>
+              </label>
+            )}
+
             <span>
               Mostrando{" "}
               <strong className="text-foreground">
                 {filteredTrivias.length}
               </strong>{" "}
               de {trivias.length} preguntas
+              {selectedIds.length > 0 && (
+                <span className="text-primary font-bold ml-1">
+                  ({selectedIds.length} seleccionadas)
+                </span>
+              )}
             </span>
+
             {(searchTerm ||
+              selectedStatus !== "all" ||
               selectedTopic !== "all" ||
               selectedAudience !== "all" ||
               selectedDifficulty !== "all") && (
@@ -289,6 +401,7 @@ export function TriviaList({
                 size="sm"
                 onClick={() => {
                   setSearchTerm("");
+                  setSelectedStatus("all");
                   setSelectedTopic("all");
                   setSelectedAudience("all");
                   setSelectedDifficulty("all");
@@ -305,12 +418,56 @@ export function TriviaList({
             size="sm"
             onClick={handleExportJson}
             disabled={filteredTrivias.length === 0}
-            className="h-7 text-xs gap-1.5 self-start sm:self-auto bg-background"
+            className="h-7 text-xs gap-1.5 self-end sm:self-auto bg-background"
           >
             <Download size={13} /> Exportar JSON ({filteredTrivias.length})
           </Button>
         </div>
       </div>
+
+      {/* BARRA FLOTANTE DE ACCIONES MASIVAS */}
+      {canPublishDirectly && selectedIds.length > 0 && (
+        <div className="sticky top-16 z-30 flex flex-wrap items-center justify-between gap-2.5 p-3 bg-card border border-primary/40 rounded-2xl shadow-lg ring-1 ring-primary/20 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="default"
+              className="text-xs font-bold px-2 py-0.5 bg-primary text-primary-foreground"
+            >
+              {selectedIds.length} seleccionadas
+            </Badge>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Acciones de moderación:
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleBulkPublish}
+              className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+            >
+              <CheckCheck size={14} /> Aprobar y Publicar ({selectedIds.length})
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleBulkUnpublish}
+              className="h-8 gap-1.5 text-xs border-amber-500/50 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            >
+              <EyeOff size={14} /> Mover a Borrador ({selectedIds.length})
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedIds([])}
+              className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
+              title="Deseleccionar todas"
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Grid de Preguntas */}
       {filteredTrivias.length === 0 ? (
@@ -325,6 +482,13 @@ export function TriviaList({
             <TriviaItem
               key={trivia.id}
               trivia={trivia}
+              isSelected={selectedIds.includes(trivia.id)}
+              canPublishDirectly={canPublishDirectly}
+              onToggleSelect={
+                canPublishDirectly
+                  ? () => handleToggleSelectOne(trivia.id)
+                  : undefined
+              }
               onEdit={() => setEditingTrivia(trivia)}
               onDelete={() => setDeleteId(trivia.id)}
               onDuplicate={() => handleDuplicate(trivia.id)}
@@ -345,6 +509,7 @@ export function TriviaList({
         nextOrderIndex={nextOrderIndex}
         topics={topics}
         audiences={audiences}
+        canPublishDirectly={canPublishDirectly}
       />
 
       {/* DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN */}
@@ -381,12 +546,18 @@ export function TriviaList({
 
 function TriviaItem({
   trivia,
+  isSelected = false,
+  canPublishDirectly = false,
+  onToggleSelect,
   onEdit,
   onDelete,
   onDuplicate,
   onTogglePublish,
 }: {
   trivia: TriviaBasic;
+  isSelected?: boolean;
+  canPublishDirectly?: boolean;
+  onToggleSelect?: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
@@ -418,14 +589,26 @@ function TriviaItem({
 
   return (
     <Card
-      className={`flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-shadow rounded-2xl ${
-        !trivia.is_published ? "opacity-70 border-dashed" : ""
+      className={`relative flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-all rounded-2xl ${
+        isSelected
+          ? "border-primary ring-2 ring-primary/40 bg-primary/[0.02]"
+          : !trivia.is_published
+            ? "opacity-85 border-dashed border-amber-500/40 bg-amber-500/[0.02]"
+            : ""
       }`}
     >
       <CardHeader className="pt-3.5 pb-2 px-3.5 sm:px-4 space-y-2">
         {/* Meta / Badges */}
         <div className="flex justify-between items-center gap-1.5 flex-wrap">
           <div className="flex items-center gap-1.5 min-w-0">
+            {onToggleSelect && (
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={onToggleSelect}
+                className="h-4 w-4 rounded border-muted-foreground/60 data-[state=checked]:bg-primary shrink-0"
+                aria-label={`Seleccionar pregunta ${trivia.global_index}`}
+              />
+            )}
             <Badge
               variant="outline"
               className="gap-0.5 font-mono text-[10px] px-1.5 py-0.5 shrink-0"
@@ -433,10 +616,18 @@ function TriviaItem({
               <Hash className="w-3 h-3 text-muted-foreground" />
               {trivia.global_index}
             </Badge>
+            {!trivia.is_published && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 shrink-0 font-bold"
+              >
+                Borrador
+              </Badge>
+            )}
             {trivia.topic && (
               <Badge
                 variant="secondary"
-                className="text-[10px] truncate max-w-[140px] flex items-center gap-1 shrink-0"
+                className="text-[10px] truncate max-w-[130px] flex items-center gap-1 shrink-0"
                 style={{
                   borderLeftColor: trivia.topic.badge_color || undefined,
                   borderLeftWidth: trivia.topic.badge_color ? 3 : undefined,
@@ -586,30 +777,53 @@ function TriviaItem({
           )}
 
           {/* Toggle Publicado */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={onTogglePublish}
-                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
-                >
-                  {trivia.is_published ? (
-                    <Eye className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-amber-600" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {trivia.is_published
-                    ? "Pregunta publicada (activa)"
-                    : "Borrador (oculta)"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {canPublishDirectly ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={onTogglePublish}
+                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
+                  >
+                    {trivia.is_published ? (
+                      <Eye className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-amber-600" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {trivia.is_published
+                      ? "Pregunta publicada (activa). Clic para despublicar."
+                      : "Borrador (oculta). Clic para aprobar y publicar."}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="p-1.5 rounded-lg text-muted-foreground/60 cursor-default inline-flex">
+                    {trivia.is_published ? (
+                      <Eye className="w-4 h-4 text-emerald-600/70" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-amber-600/70" />
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {trivia.is_published
+                      ? "Pregunta publicada (activa)"
+                      : "Borrador (Pendiente de ser revisado y aprobado)"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
 
         {/* Acciones */}

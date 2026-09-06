@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
   Trash2,
   HelpCircle,
   Eye,
+  EyeOff,
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import {
   Credenza,
   CredenzaBody,
   CredenzaContent,
+  CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
   CredenzaTitle,
@@ -47,6 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { triviaSchema, type TriviaFormValues } from "../_lib/validation";
 import { createTrivia, updateTrivia } from "../_lib/actions";
 import { PersonSelector } from "@/components/person-selector";
@@ -215,6 +218,7 @@ interface TriviaFormDialogProps {
   nextOrderIndex?: number;
   topics?: TriviaTopic[];
   audiences?: TriviaAudience[];
+  canPublishDirectly?: boolean;
 }
 
 const defaultFormValues: TriviaFormValues = {
@@ -236,7 +240,7 @@ const defaultFormValues: TriviaFormValues = {
   source_url: "",
   image_url: "",
   audience_ids: [],
-  is_published: true,
+  is_published: false,
 };
 
 export function TriviaFormDialog({
@@ -247,8 +251,13 @@ export function TriviaFormDialog({
   nextOrderIndex,
   topics = [],
   audiences = [],
+  canPublishDirectly = false,
 }: TriviaFormDialogProps) {
   const router = useRouter();
+  const activeAudiences = useMemo(
+    () => audiences.filter((a) => a.is_active),
+    [audiences],
+  );
   const [activeTab, setActiveTab] = useState("general");
   const [globalSearch, setGlobalSearch] = useState("");
   const form = useForm({
@@ -278,50 +287,57 @@ export function TriviaFormDialog({
   );
 
   useEffect(() => {
-    if (open) {
-      setActiveTab("general");
+    if (!open) return;
 
-      if (mode === "edit" && initialData) {
-        const optionsWithFormId = (initialData.options || []).map((opt, i) => ({
-          option_id: opt.option_id || `opt_${i + 1}`,
-          name: opt.name,
-          subtitle: opt.subtitle || null,
-          image_url: opt.image_url || null,
-        }));
+    setActiveTab("general");
 
-        const initialAudienceIds =
-          initialData.audiences?.map((a) => a.id) || [];
+    if (mode === "edit" && initialData) {
+      const optionsWithFormId = (initialData.options || []).map((opt, i) => ({
+        option_id: opt.option_id || `opt_${i + 1}`,
+        name: opt.name,
+        subtitle: opt.subtitle || null,
+        image_url: opt.image_url || null,
+      }));
 
-        form.reset({
-          id: String(initialData.id),
-          quote: initialData.quote,
-          title: initialData.title || "",
-          category: initialData.category,
-          difficulty: initialData.difficulty,
-          display_type: initialData.display_type || "TEXT_ONLY",
-          topic_id: initialData.topic_id || "",
-          correct_answer_id: initialData.correct_answer_id || "",
-          options: optionsWithFormId,
-          global_index: initialData.global_index,
-          explanation: initialData.explanation || "",
-          source_url: initialData.source_url || "",
-          image_url: initialData.image_url || "",
-          audience_ids: initialAudienceIds,
-          is_published: initialData.is_published ?? true,
-          person_id: initialData.person_id || null,
-          political_party_id: initialData.political_party_id || null,
-        });
-      } else {
-        const firstTopicId = topics.length > 0 ? topics[0].id : "";
-        form.reset({
-          ...defaultFormValues,
-          topic_id: firstTopicId,
-          global_index: nextOrderIndex || 1,
-          audience_ids: audiences.map((a) => a.id),
-        });
-      }
+      const initialAudienceIds = initialData.audiences?.map((a) => a.id) || [];
+
+      form.reset({
+        id: String(initialData.id),
+        quote: initialData.quote,
+        title: initialData.title || "",
+        category: initialData.category,
+        difficulty: initialData.difficulty,
+        display_type: initialData.display_type || "TEXT_ONLY",
+        topic_id: initialData.topic_id || "",
+        correct_answer_id: initialData.correct_answer_id || "",
+        options: optionsWithFormId,
+        global_index: initialData.global_index,
+        explanation: initialData.explanation || "",
+        source_url: initialData.source_url || "",
+        image_url: initialData.image_url || "",
+        audience_ids: initialAudienceIds,
+        is_published: canPublishDirectly
+          ? (initialData.is_published ?? false)
+          : false,
+        person_id: initialData.person_id || null,
+        political_party_id: initialData.political_party_id || null,
+      });
+    } else {
+      const firstTopicId = topics.length > 0 ? topics[0].id : "";
+      const defaultAudienceIds = audiences
+        .filter((a) => a.is_active)
+        .map((a) => a.id);
+
+      form.reset({
+        ...defaultFormValues,
+        topic_id: firstTopicId,
+        global_index: nextOrderIndex || 1,
+        audience_ids: defaultAudienceIds,
+        is_published: false,
+      });
     }
-  }, [open, mode, initialData, form, nextOrderIndex, topics, audiences]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mode, initialData?.id]);
 
   const handleDisplayTypeChange = (newType: OptionDisplayType) => {
     form.setValue("display_type", newType);
@@ -404,9 +420,13 @@ export function TriviaFormDialog({
 
   const onSubmit = async (values: TriviaFormValues) => {
     const isEditing = mode === "edit";
+    const payload: TriviaFormValues = {
+      ...values,
+      is_published: canPublishDirectly ? values.is_published : false,
+    };
     const promise = isEditing
-      ? updateTrivia(initialData!.id, values)
-      : createTrivia(values);
+      ? updateTrivia(initialData!.id, payload)
+      : createTrivia(payload);
 
     toast.promise(promise, {
       loading: isEditing ? "Actualizando pregunta..." : "Creando pregunta...",
@@ -432,6 +452,11 @@ export function TriviaFormDialog({
               ? "Editar Pregunta de Trivia"
               : "Nueva Pregunta de Trivia"}
           </CredenzaTitle>
+          <CredenzaDescription className="text-xs text-muted-foreground">
+            {mode === "edit"
+              ? "Modifica el enunciado, alternativas, explicación pedagógica y fuente de la pregunta."
+              : "Completa el enunciado, alternativas, explicación pedagógica y fuente verificable."}
+          </CredenzaDescription>
         </CredenzaHeader>
 
         <Form {...form}>
@@ -687,14 +712,14 @@ export function TriviaFormDialog({
                     />
                   </div>
 
-                  {/* Checkboxes de Audiencias */}
-                  {audiences.length > 0 && (
+                  {/* Checkboxes de Audiencias (Solo activas) */}
+                  {activeAudiences.length > 0 && (
                     <div className="space-y-2 pt-2 border-t">
                       <Label className="font-bold text-xs text-muted-foreground">
-                        Público recomendado
+                        Público recomendado (Audiencias activas)
                       </Label>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {audiences.map((aud) => {
+                        {activeAudiences.map((aud) => {
                           const isChecked = selectedAudiences.includes(aud.id);
                           return (
                             <label
@@ -736,6 +761,64 @@ export function TriviaFormDialog({
                     </div>
                   )}
 
+                  {/* Estado de Publicación / Aprobación */}
+                  <FormField
+                    control={form.control}
+                    name="is_published"
+                    render={({ field }) => {
+                      // El switch representa "Guardar como borrador".
+                      // Está activado si NO está publicado (!field.value) o si no tiene permiso para publicar directamente.
+                      const isDraft = !canPublishDirectly || !field.value;
+
+                      return (
+                        <FormItem className="flex flex-row items-center justify-between rounded-xl border p-3.5 bg-muted/20">
+                          <div className="space-y-1 pr-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <FormLabel className="text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+                                {isDraft ? (
+                                  <EyeOff className="w-4 h-4 text-amber-600" />
+                                ) : (
+                                  <Eye className="w-4 h-4 text-emerald-600" />
+                                )}
+                                <span>Guardar como borrador</span>
+                              </FormLabel>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] px-1.5 py-0 font-semibold ${
+                                  isDraft
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                                    : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                                }`}
+                              >
+                                {isDraft
+                                  ? "Pendiente de ser revisado y aprobado"
+                                  : "Publicación directa"}
+                              </Badge>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-tight">
+                              {isDraft
+                                ? !canPublishDirectly
+                                  ? "Como voluntario, tus preguntas se guardan como borrador pendiente de ser revisado y aprobado por el equipo de coordinación."
+                                  : "Permanecerá oculta hasta ser revisada y aprobada por el equipo de coordinación."
+                                : "Visible de inmediato para los ciudadanos en la plataforma /trivia."}
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={isDraft}
+                              disabled={!canPublishDirectly}
+                              onCheckedChange={(checked) => {
+                                // Switch ON (checked = true) => Guardar como borrador (is_published = false)
+                                // Switch OFF (checked = false) => Publicación directa (is_published = true)
+                                field.onChange(!checked);
+                              }}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      );
+                    }}
+                  />
+
                   {/* Explicación Contextual */}
                   <FormField
                     control={form.control}
@@ -758,7 +841,7 @@ export function TriviaFormDialog({
                     )}
                   />
 
-                  {/* Enlace de Fuente */}
+                  {/* Enlace de Fuente (Textarea resistente a links largos) */}
                   <FormField
                     control={form.control}
                     name="source_url"
@@ -769,13 +852,18 @@ export function TriviaFormDialog({
                           oficial
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="https://..."
+                          <Textarea
+                            placeholder="Pega aquí el enlace de YouTube o TikTok (ej: https://www.tiktok.com/@noticias/video/1234567890 o https://youtube.com/watch?v=xyz?t=45s)"
                             {...field}
                             value={field.value || ""}
-                            className="text-xs"
+                            className="text-xs font-mono resize-none h-16 break-all leading-relaxed"
                           />
                         </FormControl>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          💡 En TikTok usa el enlace completo con{" "}
+                          <code>/video/ID</code>. En YouTube puedes añadir{" "}
+                          <code>?t=45s</code> para iniciar en el segundo exacto.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}

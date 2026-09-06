@@ -13,7 +13,8 @@ import { useGameStore } from "@/store/game-store";
 import { GameLevel, GameRegion, TriviaQuestion } from "@/interfaces/game-types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReadiness } from "@/store/readiness-store";
-import { Microscope } from "lucide-react";
+import { Microscope, Compass } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const NODE_SPACING = 160;
 const MAP_WIDTH = 390;
@@ -191,6 +192,35 @@ export default function TriviaMapClient({
   const mapHeight = levels.length * NODE_SPACING + 200;
   const totalScrollHeight =
     SCROLL_PADDING_TOP + mapHeight + SCROLL_PADDING_BOTTOM;
+
+  if (levels.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 h-[100dvh] lg:h-[calc(100dvh-56px)] text-center space-y-4 bg-background">
+        <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-inner">
+          <Compass size={32} />
+        </div>
+        <div className="space-y-1.5 max-w-xs">
+          <h3 className="font-bold text-base text-foreground">
+            Aún no hay niveles en este eje
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Nuestro equipo de investigación está formulando las preguntas para
+            este eje temático. ¡Vuelve muy pronto!
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            window.location.href = "/trivia";
+          }}
+          variant="outline"
+          size="sm"
+          className="text-xs rounded-xl"
+        >
+          Volver al Selector de Temas
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col h-[100dvh] lg:h-[calc(100dvh-56px)] overflow-hidden">

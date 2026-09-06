@@ -58,11 +58,12 @@ export function BulkImportDialog({
 }) {
   const router = useRouter();
   const [jsonText, setJsonText] = useState("");
+  const activeAudiences = audiences.filter((a) => a.is_active);
   const [selectedTopicId, setSelectedTopicId] = useState<string>(
     topics[0]?.id || "",
   );
   const [selectedAudienceIds, setSelectedAudienceIds] = useState<string[]>(
-    audiences.map((a) => a.id),
+    activeAudiences.map((a) => a.id),
   );
   const [parsedCount, setParsedCount] = useState<number | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -184,7 +185,7 @@ export function BulkImportDialog({
                 Dirigido al público
               </Label>
               <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {audiences.map((aud) => {
+                {activeAudiences.map((aud) => {
                   const isChecked = selectedAudienceIds.includes(aud.id);
                   return (
                     <button
