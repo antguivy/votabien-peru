@@ -19,7 +19,12 @@ import { Prisma } from "@/prisma/generated/client";
 // =========================================================================
 
 export async function createTrivia(data: TriviaFormValues) {
-  await serverRequireReviewer();
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -50,7 +55,7 @@ export async function createTrivia(data: TriviaFormValues) {
         explanation: fields.explanation || null,
         source_url: fields.source_url || null,
         image_url: fields.image_url || null,
-        is_published: fields.is_published,
+        is_published: canPublishDirectly ? fields.is_published : false,
         options: fields.options as Prisma.InputJsonValue,
         person_id: personId,
         political_party_id: politicalPartyId,
@@ -80,7 +85,12 @@ export async function createTrivia(data: TriviaFormValues) {
 }
 
 export async function updateTrivia(id: number, data: TriviaFormValues) {
-  await serverRequireReviewer();
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+
   const validation = triviaSchema.safeParse(data);
   if (!validation.success) {
     return { success: false, error: validation.error.message };
@@ -112,7 +122,7 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
         explanation: fields.explanation || null,
         source_url: fields.source_url || null,
         image_url: fields.image_url || null,
-        is_published: fields.is_published,
+        is_published: canPublishDirectly ? fields.is_published : false,
         options: fields.options as Prisma.InputJsonValue,
         person_id: personId,
         political_party_id: politicalPartyId,
@@ -143,7 +153,19 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
 }
 
 export async function togglePublishTrivia(id: number, is_published: boolean) {
-  await serverRequireReviewer();
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+  if (!canPublishDirectly) {
+    return {
+      success: false,
+      error:
+        "Solo el equipo de coordinación o moderación puede cambiar el estado de publicación.",
+    };
+  }
+
   try {
     await prisma.triviagame.update({
       where: { id: BigInt(id) },
@@ -153,7 +175,77 @@ export async function togglePublishTrivia(id: number, is_published: boolean) {
     revalidatePath("/trivia");
     return {
       success: true,
-      message: is_published ? "Pregunta publicada" : "Pregunta despublicada",
+      message: is_published
+        ? "Pregunta publicada"
+        : "Pregunta movida a borrador",
+    };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function bulkPublishTrivias(ids: number[]) {
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+  if (!canPublishDirectly) {
+    return {
+      success: false,
+      error:
+        "Solo el equipo de coordinación o moderación puede aprobar y publicar preguntas.",
+    };
+  }
+
+  try {
+    if (!ids || ids.length === 0) {
+      return { success: false, error: "No se seleccionaron preguntas" };
+    }
+    const bigIntIds = ids.map((id) => BigInt(id));
+    await prisma.triviagame.updateMany({
+      where: { id: { in: bigIntIds } },
+      data: { is_published: true },
+    });
+    revalidatePath("/admin/trivia");
+    revalidatePath("/trivia");
+    return {
+      success: true,
+      message: `Se publicaron y aprobaron ${ids.length} preguntas correctamente`,
+    };
+  } catch (error) {
+    return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+export async function bulkUnpublishTrivias(ids: number[]) {
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+  if (!canPublishDirectly) {
+    return {
+      success: false,
+      error:
+        "Solo el equipo de coordinación o moderación puede mover preguntas a borrador.",
+    };
+  }
+
+  try {
+    if (!ids || ids.length === 0) {
+      return { success: false, error: "No se seleccionaron preguntas" };
+    }
+    const bigIntIds = ids.map((id) => BigInt(id));
+    await prisma.triviagame.updateMany({
+      where: { id: { in: bigIntIds } },
+      data: { is_published: false },
+    });
+    revalidatePath("/admin/trivia");
+    revalidatePath("/trivia");
+    return {
+      success: true,
+      message: `Se movieron ${ids.length} preguntas a borrador`,
     };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };

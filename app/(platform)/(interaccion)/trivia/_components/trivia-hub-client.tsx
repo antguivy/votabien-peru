@@ -249,6 +249,9 @@ export function TriviaHubClient({
             const questionsInTopic = initialQuestions.filter(
               (q) => q.topic_id === topic.id,
             );
+            const totalQuestionsCount =
+              (topic.total_questions ?? questionsInTopic.length) || 0;
+            const hasQuestions = totalQuestionsCount > 0;
 
             return (
               <Card
@@ -282,12 +285,12 @@ export function TriviaHubClient({
                         </Badge>
                       )}
                       <Badge
-                        variant="outline"
+                        variant={hasQuestions ? "outline" : "secondary"}
                         className="text-[10px] font-mono"
                       >
-                        {(topic.total_questions ?? questionsInTopic.length) ||
-                          0}{" "}
-                        preguntas
+                        {hasQuestions
+                          ? `${totalQuestionsCount} preguntas`
+                          : "Próximamente"}
                       </Badge>
                     </div>
                   </div>
@@ -317,20 +320,33 @@ export function TriviaHubClient({
 
                 <CardFooter className="pt-3 border-t flex items-center justify-between bg-muted/20">
                   <span className="text-xs text-muted-foreground font-medium">
-                    {progress.topicXp > 0
-                      ? `${progress.topicXp} XP ganados`
-                      : "Comienza ahora"}
+                    {hasQuestions
+                      ? progress.topicXp > 0
+                        ? `${progress.topicXp} XP ganados`
+                        : "Comienza ahora"
+                      : "En formulación"}
                   </span>
 
-                  <Button
-                    onClick={() => setActiveModalTopic(topic)}
-                    size="sm"
-                    className="gap-1.5 font-bold text-xs rounded-xl shadow"
-                    style={{ backgroundColor: topic.badge_color || undefined }}
-                  >
-                    <Play size={13} fill="currentColor" /> Jugar{" "}
-                    <ArrowRight size={13} />
-                  </Button>
+                  {hasQuestions ? (
+                    <Button
+                      onClick={() => setActiveModalTopic(topic)}
+                      size="sm"
+                      className="gap-1.5 font-bold text-xs rounded-xl shadow"
+                      style={{
+                        backgroundColor: topic.badge_color || undefined,
+                      }}
+                    >
+                      <Play size={13} fill="currentColor" /> Jugar{" "}
+                      <ArrowRight size={13} />
+                    </Button>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-medium py-1 px-2.5 bg-muted/50 text-muted-foreground border-dashed"
+                    >
+                      Próximamente
+                    </Badge>
+                  )}
                 </CardFooter>
               </Card>
             );
