@@ -683,7 +683,7 @@ function TriviaItem({
               <div
                 key={opt.option_id || idx}
                 className={`
-                  relative flex items-center p-2 rounded-lg text-xs border transition-colors
+                  relative flex items-start sm:items-center p-2 rounded-lg text-xs border transition-colors
                   ${
                     isCorrect
                       ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 font-medium"
@@ -693,17 +693,19 @@ function TriviaItem({
               >
                 <span
                   className={`
-                    w-4 h-4 flex items-center justify-center rounded text-[9px] font-black mr-2 flex-shrink-0
+                    w-4 h-4 flex items-center justify-center rounded text-[9px] font-black mr-2 flex-shrink-0 mt-0.5 sm:mt-0
                     ${isCorrect ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}
                   `}
                 >
                   {letters[idx]}
                 </span>
 
-                <span className="flex-1 truncate">{opt.name}</span>
+                <span className="flex-1 leading-snug break-words whitespace-normal text-xs">
+                  {opt.name}
+                </span>
 
                 {isCorrect && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-1.5 flex-shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-1.5 flex-shrink-0 mt-0.5 sm:mt-0" />
                 )}
               </div>
             );
