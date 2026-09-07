@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -84,15 +84,23 @@ import { CSS } from "@dnd-kit/utilities";
 
 const OPTION_LABELS = ["A", "B", "C", "D"] as const;
 
+import { z } from "zod";
+
+type FormTriviaControl = Control<
+  z.input<typeof triviaSchema>,
+  unknown,
+  TriviaFormValues
+>;
+
 interface SortableOptionProps {
   id: string;
   index: number;
   option: TriviaOption;
   isSelected: boolean;
   displayType: OptionDisplayType;
+  control: FormTriviaControl;
   onSelect: (value: string) => void;
   onRemove: () => void;
-  onChangeName?: (val: string) => void;
 }
 
 function SortableOptionItem({
@@ -101,9 +109,9 @@ function SortableOptionItem({
   option,
   isSelected,
   displayType,
+  control,
   onSelect,
   onRemove,
-  onChangeName,
 }: SortableOptionProps) {
   const {
     attributes,
@@ -158,14 +166,12 @@ function SortableOptionItem({
 
         {/* Radio selector for correct answer */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <FormControl>
-            <RadioGroupItem
-              value={option.option_id}
-              id={`rb-${option.option_id}`}
-              className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 border-muted-foreground/40"
-              onClick={() => onSelect(option.option_id)}
-            />
-          </FormControl>
+          <RadioGroupItem
+            value={option.option_id}
+            id={`rb-${option.option_id}`}
+            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 border-muted-foreground/40 shrink-0"
+            onClick={() => onSelect(option.option_id)}
+          />
 
           {!isTextOnly && (
             <Avatar className="h-8 w-8 border bg-white flex-shrink-0">
@@ -179,17 +185,23 @@ function SortableOptionItem({
 
           {isTextOnly ? (
             <div className="flex-1">
-              <Input
-                value={option.name}
-                onChange={(e) => onChangeName?.(e.target.value)}
-                placeholder={`Texto de la opción ${OPTION_LABELS[index] || ""}`}
-                className="h-8 text-xs font-medium"
+              <FormField
+                control={control}
+                name={`options.${index}.name`}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={`Texto de la opción ${OPTION_LABELS[index] || ""}`}
+                    className="h-8 text-xs font-medium"
+                  />
+                )}
               />
             </div>
           ) : (
             <Label
               htmlFor={`rb-${option.option_id}`}
-              className="font-medium cursor-pointer text-sm truncate flex-1"
+              className="font-medium cursor-pointer text-xs sm:text-sm break-words flex-1 leading-tight"
             >
               {option.name}
             </Label>
@@ -266,7 +278,7 @@ export function TriviaFormDialog({
     mode: "onChange",
   });
 
-  const { fields, append, remove, replace, move, update } = useFieldArray({
+  const { fields, append, remove, replace, move } = useFieldArray({
     control: form.control,
     name: "options",
   });
@@ -906,7 +918,6 @@ export function TriviaFormDialog({
                       render={({ field }) => (
                         <FormItem className="space-y-0">
                           <RadioGroup
-                            key={field.value}
                             onValueChange={field.onChange}
                             value={field.value}
                             className="flex flex-col gap-1"
@@ -926,24 +937,17 @@ export function TriviaFormDialog({
                                     id={option.id}
                                     index={index}
                                     option={option}
+                                    control={form.control}
                                     displayType={displayType}
                                     isSelected={
                                       field.value === option.option_id
                                     }
-                                    onSelect={(val) =>
-                                      form.setValue("correct_answer_id", val)
-                                    }
+                                    onSelect={(val) => field.onChange(val)}
                                     onRemove={() => {
                                       remove(index);
                                       if (field.value === option.option_id) {
-                                        form.setValue("correct_answer_id", "");
+                                        field.onChange("");
                                       }
-                                    }}
-                                    onChangeName={(newName) => {
-                                      update(index, {
-                                        ...option,
-                                        name: newName,
-                                      });
                                     }}
                                   />
                                 ))}
@@ -1010,66 +1014,77 @@ export function TriviaFormDialog({
               )}
 
               {/* --- TAB 3: VISTA PREVIA --- */}
-              {activeTab === "preview" && (
-                <div className="py-4 space-y-4 animate-in fade-in duration-200">
-                  <div className="max-w-md mx-auto p-5 rounded-2xl bg-slate-900 text-white shadow-2xl border border-white/10 space-y-4">
-                    {/* Badge */}
-                    <div className="flex justify-between items-center">
-                      <Badge className="bg-amber-400 text-black font-black text-[10px]">
-                        {formCategory || "CÍVICA"}
-                      </Badge>
-                      <span className="text-xs font-bold text-white/60">
-                        Pregunta 1/1
-                      </span>
-                    </div>
+              {activeTab === "preview" &&
+                (() => {
+                  const currentFormOptions = form.getValues("options") || [];
+                  const previewOptions =
+                    currentFormOptions.length > 0 ? currentFormOptions : fields;
 
-                    {/* Pregunta */}
-                    <p className="font-bold text-sm text-center leading-snug">
-                      ❝{formQuote || "Pregunta de ejemplo..."}❞
-                    </p>
+                  return (
+                    <div className="py-4 space-y-4 animate-in fade-in duration-200">
+                      <div className="max-w-md mx-auto p-5 rounded-2xl bg-slate-900 text-white shadow-2xl border border-white/10 space-y-4">
+                        {/* Badge */}
+                        <div className="flex justify-between items-center">
+                          <Badge className="bg-amber-400 text-black font-black text-[10px]">
+                            {formCategory || "CÍVICA"}
+                          </Badge>
+                          <span className="text-xs font-bold text-white/60">
+                            Pregunta 1/1
+                          </span>
+                        </div>
 
-                    {/* Opciones */}
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                      {fields.map((opt, i) => {
-                        const isCorrect = opt.option_id === correctAnswerId;
-                        return (
-                          <div
-                            key={opt.id}
-                            className={`p-2.5 rounded-xl border flex items-center gap-2 text-left text-xs font-bold ${
-                              isCorrect
-                                ? "bg-emerald-500/20 border-emerald-400 text-emerald-300"
-                                : "bg-white/10 border-white/20 text-white/90"
-                            }`}
-                          >
-                            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-black flex-shrink-0">
-                              {OPTION_LABELS[i] || i + 1}
-                            </span>
-                            <span className="truncate flex-1">
-                              {opt.name || `Opción ${OPTION_LABELS[i]}`}
-                            </span>
-                            {isCorrect && (
-                              <CheckCircle2
-                                size={14}
-                                className="text-emerald-400 flex-shrink-0"
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Contexto */}
-                    {formExplanation && (
-                      <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white/80">
-                        <p className="font-bold text-amber-400 mb-0.5">
-                          Contexto / Explicación:
+                        {/* Pregunta */}
+                        <p className="font-bold text-sm text-center leading-snug">
+                          ❝{formQuote || "Pregunta de ejemplo..."}❞
                         </p>
-                        <p>{formExplanation}</p>
+
+                        {/* Opciones */}
+                        <div className="flex flex-col gap-2 pt-2">
+                          {previewOptions.map((opt, i) => {
+                            const isCorrect = opt.option_id === correctAnswerId;
+                            const optionText =
+                              opt.name?.trim() ||
+                              `Opción ${OPTION_LABELS[i] || i + 1}`;
+
+                            return (
+                              <div
+                                key={opt.option_id || i}
+                                className={`p-3 rounded-xl border flex items-start sm:items-center gap-2.5 text-left text-xs font-semibold transition-colors ${
+                                  isCorrect
+                                    ? "bg-emerald-500/20 border-emerald-400 text-emerald-300"
+                                    : "bg-white/10 border-white/20 text-white/90"
+                                }`}
+                              >
+                                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-0.5 sm:mt-0">
+                                  {OPTION_LABELS[i] || i + 1}
+                                </span>
+                                <span className="flex-1 leading-snug break-words whitespace-normal text-xs font-medium">
+                                  {optionText}
+                                </span>
+                                {isCorrect && (
+                                  <CheckCircle2
+                                    size={16}
+                                    className="text-emerald-400 flex-shrink-0 mt-0.5 sm:mt-0"
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Contexto */}
+                        {formExplanation && (
+                          <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white/80">
+                            <p className="font-bold text-amber-400 mb-0.5">
+                              Contexto / Explicación:
+                            </p>
+                            <p className="leading-relaxed">{formExplanation}</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  );
+                })()}
             </CredenzaBody>
 
             {/* Footer fijo / estático abajo */}
