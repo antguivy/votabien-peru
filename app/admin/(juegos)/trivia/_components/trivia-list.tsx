@@ -67,6 +67,7 @@ import {
   TriviaAudience,
 } from "@/interfaces/trivia";
 import { renderTopicIcon, renderAudienceIcon } from "@/lib/trivia-icons";
+import { TRIVIA_CATEGORY_LABELS } from "@/interfaces/game-types";
 
 interface TriviaListProps {
   trivias: TriviaBasic[];
@@ -646,7 +647,7 @@ function TriviaItem({
               {trivia.difficulty}
             </Badge>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-              {trivia.category}
+              {TRIVIA_CATEGORY_LABELS[trivia.category] || trivia.category}
             </Badge>
           </div>
         </div>

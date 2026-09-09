@@ -6,14 +6,27 @@ export type GameRegion = "costa" | "sierra" | "selva" | "hanan_pacha";
 export type LevelStatus = "locked" | "unlocked" | "completed";
 
 export type QuestionCategory =
-  | "CONSTITUCION"
+  | "GESTION"
   | "PODERES"
-  | "DERECHOS"
-  | "PROPUESTA"
+  | "CONSTITUCION"
+  | "ELECTORAL"
+  | "FISCALIZACION"
   | "POLEMICO"
-  | "HISTORICO"
-  | "CORRUPCION"
   | string;
+
+export const TRIVIA_CATEGORY_LABELS: Record<string, string> = {
+  GESTION: "Gestión",
+  GESTION_LOCAL: "Gestión",
+  PODERES: "Poderes del Estado",
+  CONSTITUCION: "Constitución y Derechos",
+  DERECHOS: "Constitución y Derechos",
+  ELECTORAL: "Elecciones y Propuestas",
+  PROPUESTA: "Elecciones y Propuestas",
+  FISCALIZACION: "Fiscalización y Transparencia",
+  CORRUPCION: "Fiscalización y Transparencia",
+  POLEMICO: "Frases y Coyuntura",
+  HISTORICO: "Historia Electoral",
+};
 
 export type QuestionDifficulty = "FACIL" | "MEDIO" | "DIFICIL";
 
