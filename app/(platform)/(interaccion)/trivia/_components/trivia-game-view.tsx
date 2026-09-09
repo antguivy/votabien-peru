@@ -615,9 +615,6 @@ export function TriviaGameView({
           >
             {/* Question card */}
             <div className="bg-black/30 backdrop-blur-md rounded-2xl p-4 border border-white/15 flex-shrink-0 shadow-lg">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[9px] font-black uppercase tracking-widest mb-2">
-                {question?.category || "CÍVICA"}
-              </span>
               <p
                 className="text-white font-semibold text-sm sm:text-base leading-snug text-center"
                 style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}

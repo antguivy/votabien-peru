@@ -310,13 +310,7 @@ export function TriviaQuickQuizView({
 
       {/* Tarjeta de Pregunta */}
       <div className="p-5 rounded-2xl bg-card border shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <Badge
-            variant="secondary"
-            className="text-[10px] font-bold uppercase"
-          >
-            {question?.category || "CÍVICA"}
-          </Badge>
+        <div className="flex items-center justify-end">
           <Badge variant="outline" className="text-[10px]">
             {question?.difficulty}
           </Badge>

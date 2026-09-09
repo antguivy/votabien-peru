@@ -63,6 +63,7 @@ import {
   OptionDisplayType,
 } from "@/interfaces/trivia";
 import { renderAudienceIcon } from "@/lib/trivia-icons";
+import { TRIVIA_CATEGORY_LABELS } from "@/interfaces/game-types";
 import { PersonBasicInfo } from "@/interfaces/person";
 import { PoliticalPartyBase } from "@/interfaces/political-party";
 import {
@@ -236,7 +237,7 @@ interface TriviaFormDialogProps {
 const defaultFormValues: TriviaFormValues = {
   quote: "",
   title: "",
-  category: "CONSTITUCION",
+  category: "GESTION",
   difficulty: "FACIL",
   display_type: "TEXT_ONLY",
   topic_id: "",
@@ -592,26 +593,23 @@ export function TriviaFormDialog({
                               </ResponsiveSelectTrigger>
                             </FormControl>
                             <ResponsiveSelectContent>
-                              <ResponsiveSelectItem value="CONSTITUCION">
-                                Constitución
+                              <ResponsiveSelectItem value="GESTION">
+                                Gestión
                               </ResponsiveSelectItem>
                               <ResponsiveSelectItem value="PODERES">
                                 Poderes del Estado
                               </ResponsiveSelectItem>
-                              <ResponsiveSelectItem value="DERECHOS">
-                                Derechos y Deberes
+                              <ResponsiveSelectItem value="CONSTITUCION">
+                                Constitución y Derechos
                               </ResponsiveSelectItem>
-                              <ResponsiveSelectItem value="PROPUESTA">
-                                Propuestas
+                              <ResponsiveSelectItem value="ELECTORAL">
+                                Elecciones y Propuestas
+                              </ResponsiveSelectItem>
+                              <ResponsiveSelectItem value="FISCALIZACION">
+                                Fiscalización y Transparencia
                               </ResponsiveSelectItem>
                               <ResponsiveSelectItem value="POLEMICO">
                                 Frases y Coyuntura
-                              </ResponsiveSelectItem>
-                              <ResponsiveSelectItem value="HISTORICO">
-                                Historia Electoral
-                              </ResponsiveSelectItem>
-                              <ResponsiveSelectItem value="CORRUPCION">
-                                Fiscalización
                               </ResponsiveSelectItem>
                             </ResponsiveSelectContent>
                           </ResponsiveSelect>
@@ -1026,7 +1024,9 @@ export function TriviaFormDialog({
                         {/* Badge */}
                         <div className="flex justify-between items-center">
                           <Badge className="bg-amber-400 text-black font-black text-[10px]">
-                            {formCategory || "CÍVICA"}
+                            {TRIVIA_CATEGORY_LABELS[formCategory] ||
+                              formCategory ||
+                              "CÍVICA"}
                           </Badge>
                           <span className="text-xs font-bold text-white/60">
                             Pregunta 1/1
