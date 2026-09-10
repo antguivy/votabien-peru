@@ -107,7 +107,7 @@ function IntroScreen({ onSelect }: { onSelect: (m: SimulatorMode) => void }) {
   const [showColumns, setShowColumns] = useState(false);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col h-full overflow-y-auto min-h-0 gap-6 pb-6 pr-0.5">
       {/* Brand */}
       <div>
         <h1 className="text-[28px] font-bold tracking-tight text-foreground leading-[1.15]">

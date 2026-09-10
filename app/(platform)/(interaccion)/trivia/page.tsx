@@ -5,8 +5,8 @@ import {
   getPlayableAudiences,
   getPlayableQuestions,
 } from "./_lib/data";
-import UnderConstruction from "@/components/under-construction";
-import { serverGetUser } from "@/lib/auth-actions";
+// import UnderConstruction from "@/components/under-construction";
+// import { serverGetUser } from "@/lib/auth-actions";
 
 export const metadata = {
   title: "Trivia Cívica & Electoral | VotaBien Perú",
@@ -15,15 +15,15 @@ export const metadata = {
 };
 
 export default async function TriviaPage() {
-  const { user } = await serverGetUser();
-
-  if (!user) {
-    return (
-      <ContentPlatformLayout>
-        <UnderConstruction feature="trivia" isTeam />
-      </ContentPlatformLayout>
-    );
-  }
+  // Habilitado para demostración a aliados / Fundación BBVA
+  // const { user } = await serverGetUser();
+  // if (!user) {
+  //   return (
+  //     <ContentPlatformLayout>
+  //       <UnderConstruction feature="trivia" isTeam />
+  //     </ContentPlatformLayout>
+  //   );
+  // }
 
   const [topics, audiences, questions] = await Promise.all([
     getPlayableTopics(),

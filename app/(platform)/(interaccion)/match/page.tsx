@@ -1,7 +1,7 @@
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import MatchScreen from "./_components/match-screen";
 import UnderConstruction from "@/components/under-construction";
-import { getDistritos } from "@/queries/public/electoral-districts";
+import { getRegiones } from "@/queries/public/electoral-districts";
 import { getPartidosListSimple } from "@/queries/public/parties";
 import { serverGetUser } from "@/lib/auth-actions";
 
@@ -22,19 +22,15 @@ export default async function MatchPage() {
   }
 
   const [districts, parties] = await Promise.all([
-    getDistritos(),
-    getPartidosListSimple({ active: true }),
+    getRegiones(),
+    getPartidosListSimple({ active: true, onlyNational: true }),
   ]);
-
-  const filteredDistricts = districts.filter(
-    (d) => !d.name.toUpperCase().includes("NACIONAL"),
-  );
 
   return (
     <ContentPlatformLayout fullHeight>
       <div className="h-full overflow-hidden flex justify-center bg-background px-4 pt-4">
         <div className="w-full max-w-[480px] flex flex-col min-h-0 h-full">
-          <MatchScreen districts={filteredDistricts} parties={parties} />
+          <MatchScreen districts={districts} parties={parties} />
         </div>
       </div>
     </ContentPlatformLayout>

@@ -114,12 +114,13 @@ export async function submitMatchAction(
     // Usamos Promise.all para ejecutar las 3 consultas en paralelo y sea más rápido.
     const [presidenteRaw, senadorNacionalRaw, senadorRegionalRaw] =
       await Promise.all([
-        getCandidatesCards({ type: "PRESIDENTE" }),
-        getCandidatesCards({ type: "SENADOR_NACIONAL" }),
+        getCandidatesCards({ type: "PRESIDENTE", active: false }),
+        getCandidatesCards({ type: "SENADOR_NACIONAL", active: false }),
         electoral_district_id
           ? getCandidatesCards({
               type: "SENADOR_REGIONAL",
               districts: [electoral_district_id],
+              active: false,
             })
           : Promise.resolve([]), // Si no hay distrito, devolvemos vacío
       ]);

@@ -25,33 +25,48 @@ import {
   PartyFinancingBasic,
 } from "@/interfaces/party-financing";
 
+interface GetPartidosListSimpleParams {
+  active: boolean;
+  onlyNational?: boolean;
+}
+
 export const getPartidosListSimple = cache(
-  unstable_cache(
-    async ({ active }: { active: boolean }): Promise<PoliticalPartyBase[]> => {
-      try {
-        const data = await prisma.politicalparty.findMany({
-          where: { active },
-          select: {
-            id: true,
-            name: true,
-            acronym: true,
-            logo_url: true,
-            color_hex: true,
-            active: true,
-            foundation_date: true,
+  async ({
+    active,
+    onlyNational = false,
+  }: GetPartidosListSimpleParams): Promise<PoliticalPartyBase[]> => {
+    try {
+      const where: Prisma.politicalpartyWhereInput = { active };
+      if (onlyNational) {
+        where.scope_district_id = null;
+        where.candidate = {
+          some: {
+            electoralprocess: {
+              name: { contains: "Generales", mode: "insensitive" },
+            },
           },
-          orderBy: { name: "asc" },
-        });
-        return data as unknown as PoliticalPartyBase[];
-      } catch (error) {
-        throw new Error(
-          `Error al obtener partidos: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        };
       }
-    },
-    ["partidos-list-simple"],
-    { tags: [TAGS.parties] },
-  ),
+
+      const data = await prisma.politicalparty.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          acronym: true,
+          logo_url: true,
+          color_hex: true,
+          active: true,
+          foundation_date: true,
+        },
+        orderBy: { name: "asc" },
+      });
+      return data as unknown as PoliticalPartyBase[];
+    } catch (error) {
+      console.error("Error al obtener partidos:", error);
+      return [];
+    }
+  },
 );
 
 interface GetPartidosListParams {

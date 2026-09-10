@@ -13,7 +13,7 @@ import { useGameStore } from "@/store/game-store";
 import { GameLevel, GameRegion, TriviaQuestion } from "@/interfaces/game-types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReadiness } from "@/store/readiness-store";
-import { Microscope, Compass } from "lucide-react";
+import { Microscope, Compass, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const NODE_SPACING = 160;
@@ -27,8 +27,10 @@ const MAX_LEVELS = 14;
 
 export default function TriviaMapClient({
   initialQuestions,
+  onExit,
 }: {
   initialQuestions: TriviaQuestion[];
+  onExit?: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -499,6 +501,19 @@ export default function TriviaMapClient({
         avatarSrc={avatarAsset ?? null}
         onContinue={() => setShowRegionTransition(false)}
       />
+
+      {/* Botón flotante para salir al Hub — abajo a la derecha */}
+      {onExit && activeLevelId === null && (
+        <button
+          type="button"
+          onClick={onExit}
+          className="absolute bottom-5 right-4 z-20 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-card/95 backdrop-blur-md border border-border/80 text-foreground hover:bg-muted font-bold text-xs shadow-lg hover:shadow-xl transition-all cursor-pointer select-none"
+          title="Volver al selector de temas"
+        >
+          <ArrowLeft size={14} />
+          <span>Salir al Hub</span>
+        </button>
+      )}
     </div>
   );
 }

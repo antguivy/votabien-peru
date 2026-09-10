@@ -16,18 +16,21 @@ export async function searchPresidentialCandidates(
   extras?: SearchExtras,
 ): Promise<SearchableEntity[]> {
   try {
-    const procesos = (await getElectoralProcess({
-      active: true,
-    })) as ElectoralProcess[];
-    const procesoId = procesos[0]?.id;
+    // Buscamos el proceso de Elecciones Generales (incluso si está inactivo)
+    const procesos = (await getElectoralProcess()) as ElectoralProcess[];
+    const procesoGenerales =
+      procesos.find((p) => p.name.toLowerCase().includes("generales")) ??
+      procesos.find((p) => p.id === "dclcgoqihesl49kyjgnjcf9a");
+    const procesoId = procesoGenerales?.id ?? "dclcgoqihesl49kyjgnjcf9a";
 
     const response = await getCandidatesCards({
       search: query.trim() || undefined, // undefined = sin filtro de texto = todos
       electoral_process_id: procesoId,
       type: CandidacyType.PRESIDENTE,
       parties: extras?.parties,
+      active: false,
       limit: 60,
-      pageSize: 40,
+      pageSize: 60,
     });
 
     if (!Array.isArray(response)) return [];
