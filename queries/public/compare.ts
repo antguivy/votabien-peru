@@ -43,7 +43,6 @@ export const getPresidentialFormulasComparison = cache(
           where: {
             id: { in: uniqueIds },
             type: "PRESIDENTE",
-            active: true,
           },
           select: {
             id: true,
@@ -89,7 +88,6 @@ export const getPresidentialFormulasComparison = cache(
                 political_party_id: pres.political_party_id,
                 electoral_process_id: pres.electoral_process_id,
                 type: { in: FORMULA_TYPES },
-                active: true,
               },
               select: {
                 id: true,

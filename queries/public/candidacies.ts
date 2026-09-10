@@ -26,6 +26,7 @@ interface GetCandidatesParams {
   no_sentencias?: boolean;
   min_work?: number;
   education?: string;
+  active?: boolean;
 }
 
 function normalizeSearchTerm(term: string): string {
@@ -223,6 +224,7 @@ export const getCandidatesCards = cache(
       no_sentencias,
       min_work,
       education,
+      active,
     }: GetCandidatesParams): Promise<CandidateCard[]> => {
       try {
         const searchWords = search?.trim() ? parseSearchWords(search) : [];
@@ -238,7 +240,9 @@ export const getCandidatesCards = cache(
         const skip = hasSearch ? 0 : (page - 1) * pageSize;
         const take = hasSearch ? 100 : pageSize;
 
-        const whereClause: Prisma.candidateWhereInput = { active: true };
+        const whereClause: Prisma.candidateWhereInput = {
+          active: active !== undefined ? active : true,
+        };
 
         if (electoral_process_id)
           whereClause.electoral_process_id = electoral_process_id;

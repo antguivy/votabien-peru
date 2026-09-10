@@ -16,7 +16,9 @@ export async function getEntitiesByIds(
     const response = await getCandidatesCards({
       ids,
       type: CandidacyType.PRESIDENTE,
+      active: false,
       limit: ids.length,
+      pageSize: ids.length,
     });
     if (!Array.isArray(response)) return [];
     return response.map(adaptCandidateFromSearch);

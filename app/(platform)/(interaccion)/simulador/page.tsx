@@ -22,7 +22,11 @@ export default async function SimuladorPage() {
 
   return (
     <ContentPlatformLayout fullHeight>
-      <SimuladorView />
+      <div className="h-full overflow-hidden flex justify-center bg-background px-4 py-3 md:py-4">
+        <div className="w-full max-w-[460px] flex flex-col min-h-0 h-full">
+          <SimuladorView />
+        </div>
+      </div>
     </ContentPlatformLayout>
   );
 }
