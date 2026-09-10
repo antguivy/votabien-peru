@@ -4,10 +4,7 @@ import UnderConstruction from "@/components/under-construction";
 export default async function PartidoDetailPage() {
   return (
     <ContentPlatformLayout>
-      <UnderConstruction
-        title="Sección en Actualización"
-        description="Estamos adaptando y consolidando la información de las organizaciones políticas para el proceso electoral."
-      />
+      <UnderConstruction feature="partidos" backHref="/partidos" isTeam />
     </ContentPlatformLayout>
   );
 }

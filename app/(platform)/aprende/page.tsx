@@ -1,3 +1,4 @@
+import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import VisualLearn from "./_components/visual_learn";
 import {
   getEmbedUrl,
@@ -25,7 +26,11 @@ const AprendePage = async () => {
     }),
   );
 
-  return <VisualLearn videos={enrichedVideos} />;
+  return (
+    <ContentPlatformLayout>
+      <VisualLearn videos={enrichedVideos} />
+    </ContentPlatformLayout>
+  );
 };
 
 export default AprendePage;

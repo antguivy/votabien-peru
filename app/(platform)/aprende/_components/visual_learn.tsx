@@ -83,10 +83,10 @@ export default function VisualLearn({ videos }: { videos: Video[] }) {
   }, [playingVideoId]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background text-foreground pb-24 lg:pb-16">
       {/* HERO DESTACADO */}
       {featuredVideo && (
-        <section className="relative pt-16 md:pt-20 pb-8 md:pb-16 px-4 overflow-hidden">
+        <section className="relative pt-8 md:pt-12 pb-8 md:pb-16 px-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-brand/10 via-transparent to-background" />
           <div className="absolute top-20 right-0 w-96 h-96 bg-brand/5 blur-3xl rounded-full" />
 
@@ -130,7 +130,7 @@ export default function VisualLearn({ videos }: { videos: Video[] }) {
       )}
 
       {/* FILTROS STICKY */}
-      <section className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border shadow-lg">
+      <section className="sticky top-0 lg:top-[72px] z-10 bg-background/90 backdrop-blur-xl border-b border-border shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-3 md:py-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((cat) => {

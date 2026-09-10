@@ -1,16 +1,11 @@
 import {
   Home, // Inicio
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   UserCheck, // Candidatos — persona con check de verificación
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Flag, // Partidos — bandera
   Landmark, // Congresistas — edificio institucional (congreso)
   Scale, // Comparador — balanza, justicia
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   HelpCircle, // Trivia — pregunta
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Heart, // Match — compatibilidad
-  // Simulador — papeleta de voto
+  Vote, // Simulador
   Users, // Equipo
   Target, // Misión y Visión — objetivo/meta
   Mail, // Contacto
@@ -47,12 +42,12 @@ export const NAV_MOBILE_ITEMS = [
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Inicio", icon: Home },
-  // {
-  //   type: "link",
-  //   href: "/candidatos",
-  //   label: "Candidatos ERM",
-  //   icon: UserCheck,
-  // },
+  {
+    type: "link",
+    href: "/candidatos",
+    label: "Candidatos ERM",
+    icon: UserCheck,
+  },
   // { type: "link", href: "/partidos", label: "Partidos", icon: Flag },
   {
     type: "link",
@@ -60,16 +55,16 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Congresistas",
     icon: Landmark,
   },
-  // { type: "link", href: "/simulador", label: "Simulador", icon: Vote },
-  // {
-  //   type: "dropdown",
-  //   label: "Aprendiendo",
-  //   children: [
-  //     { href: "/comparador", label: "Comparador", icon: Scale },
-  //     { href: "/trivia", label: "Trivia", icon: HelpCircle },
-  //     { href: "/match", label: "Mi Candidato", icon: Heart },
-  //   ],
-  // },
+  {
+    type: "dropdown",
+    label: "Aprendiendo",
+    children: [
+      { href: "/simulador", label: "Simulador", icon: Vote },
+      { href: "/trivia", label: "Trivia", icon: HelpCircle },
+      { href: "/match", label: "Mi Candidato", icon: Heart },
+      { href: "/comparador", label: "Comparador", icon: Scale },
+    ],
+  },
   {
     type: "dropdown",
     label: "Nosotros",
