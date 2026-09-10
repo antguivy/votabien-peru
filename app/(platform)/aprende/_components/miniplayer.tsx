@@ -22,7 +22,7 @@ export default function MiniPlayer({
     : `${video.embed_url}?autoplay=1`;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 md:w-96 shadow-2xl rounded-xl overflow-hidden border-2 border-brand">
+    <div className="fixed bottom-20 lg:bottom-4 right-4 z-50 w-80 md:w-96 shadow-2xl rounded-xl overflow-hidden border-2 border-brand">
       <div className="relative bg-card">
         <div className={isShort ? "aspect-[9/16]" : "aspect-video"}>
           <iframe

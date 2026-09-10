@@ -6,12 +6,24 @@ import {
   getCandidateById,
   getFormulaPorPartido,
 } from "@/queries/public/candidacies";
+import UnderConstruction from "@/components/under-construction";
+import { serverGetUser } from "@/lib/auth-actions";
 
 interface PageProps {
   params: Promise<{ candidatosId: string }>;
 }
 
 export default async function CandidatoDetailPage({ params }: PageProps) {
+  const { user } = await serverGetUser();
+
+  if (!user) {
+    return (
+      <ContentPlatformLayout>
+        <UnderConstruction feature="candidatos" backHref="/candidatos" isTeam />
+      </ContentPlatformLayout>
+    );
+  }
+
   const { candidatosId } = await params;
 
   const candidato = await getCandidateById(candidatosId);
