@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import { RevisionesCounts } from "../_lib/queries";
+import { RevisionesCounts, ROOT_DISTRICT_TO_REGION } from "../_lib/constants";
 import { toast } from "sonner";
 import {
   applyResearchFinding,
@@ -78,54 +78,38 @@ export interface FindingCandidacy {
   electoraldistrict: FindingDistrictHierarchy | null;
 }
 
-// Resuelve la región canónica a partir de la jerarquía distrital
+// Resuelve la región canónica a partir de la jerarquía distrital (ERM 2026)
 export function resolveCanonicalRegion(
   candidacy?: FindingCandidacy | null,
 ): string {
   if (!candidacy?.electoraldistrict) return "Sin región";
   const dist = candidacy.electoraldistrict;
 
-  // 1. Si es de ámbito nacional explícito
-  if (
-    dist.is_national ||
-    dist.name?.trim().toLowerCase() === "nacional" ||
-    dist.code === "NAC"
-  ) {
-    return "Ámbito Nacional";
-  }
-
-  // 2. Si es extranjero
-  if (dist.name?.toUpperCase().includes("EXTRANJERO") || dist.code === "EXT") {
-    return "Extranjero";
-  }
-
-  // 3. Obtener la entidad raíz en la jerarquía (departamento / región)
-  // En la BD peruana: distrital -> parent (provincial) -> parent (departamental/nacional)
-  // o provincial -> parent (departamental/nacional)
-  // o ya es departamental (parent null)
+  // Obtener la entidad raíz en la jerarquía (departamento / región)
+  // distrital -> parent (provincial) -> parent (departamental)
+  // provincial -> parent (departamental)
+  // departamental (parent null)
   const rootDistrict = dist.parent?.parent || dist.parent || dist;
+  const rootName = rootDistrict.name ? rootDistrict.name.trim() : "";
+  const upperName = rootName.toUpperCase();
+
+  if (ROOT_DISTRICT_TO_REGION[upperName]) {
+    return ROOT_DISTRICT_TO_REGION[upperName];
+  }
 
   if (
     rootDistrict.is_national ||
-    rootDistrict.name?.trim().toLowerCase() === "nacional" ||
+    rootName.toLowerCase() === "nacional" ||
     rootDistrict.code === "NAC"
   ) {
     return "Ámbito Nacional";
   }
 
-  const regionName = rootDistrict.name
-    ? rootDistrict.name.trim()
-    : "Sin región";
-  const upperRegion = regionName.toUpperCase();
-  if (
-    upperRegion === "LIMA METROPOLITANA" ||
-    upperRegion === "LIMA PROVINCIAS" ||
-    upperRegion === "LIMA"
-  ) {
-    return "Lima";
+  if (upperName.includes("EXTRANJERO") || rootDistrict.code === "EXT") {
+    return "Extranjero";
   }
 
-  return regionName;
+  return rootName || "Sin región";
 }
 
 // Prioriza cargos ejecutivos principales (Gobernador, Alcalde) sobre regidurías/consejerías
@@ -736,10 +720,6 @@ export function FindingsTable({
                 Alcaldes Provinciales
               </SelectItem>
               <SelectItem value="ALCALDE_DIST">Alcaldes Distritales</SelectItem>
-              <SelectItem value="NACIONAL">Candidaturas Nacionales</SelectItem>
-              <SelectItem value="REGIDOR_CONSEJERO">
-                Regidores y Consejeros
-              </SelectItem>
             </SelectContent>
           </Select>
 

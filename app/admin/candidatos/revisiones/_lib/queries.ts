@@ -55,44 +55,55 @@ export const personSelect: Prisma.personDefaultArgs = {
   },
 };
 
-export const CANONICAL_REGIONS = [
-  "Amazonas",
-  "Ancash",
-  "Apurímac",
-  "Arequipa",
-  "Ayacucho",
-  "Cajamarca",
-  "Callao",
-  "Cusco",
-  "Huancavelica",
-  "Huánuco",
-  "Ica",
-  "Junín",
-  "La Libertad",
-  "Lambayeque",
-  "Lima",
-  "Loreto",
-  "Madre de Dios",
-  "Moquegua",
-  "Pasco",
-  "Piura",
-  "Puno",
-  "San Martín",
-  "Tacna",
-  "Tumbes",
-  "Ucayali",
-  "Extranjero",
-  "Ámbito Nacional",
-];
+export {
+  CANONICAL_REGIONS,
+  REGION_ROOT_DISTRICTS,
+  ROOT_DISTRICT_TO_REGION,
+  type RevisionesCounts,
+} from "./constants";
+import { REGION_ROOT_DISTRICTS, RevisionesCounts } from "./constants";
 
-export interface RevisionesCounts {
-  pending: number;
-  approved: number;
-  rejected: number;
-  penal: number;
-  etica: number;
-  news: number;
-  legal: number;
+const regionDistrictIdsCache = new Map<string, string[]>();
+
+export async function getDistrictIdsForRegion(
+  region: string,
+): Promise<string[]> {
+  const normalizedKey = region.trim();
+  const cached = regionDistrictIdsCache.get(normalizedKey);
+  if (cached) return cached;
+
+  const rootNames = REGION_ROOT_DISTRICTS[normalizedKey] || [
+    normalizedKey.toUpperCase(),
+  ];
+
+  const matched = await prisma.electoraldistrict.findMany({
+    where: {
+      name: { in: rootNames, mode: "insensitive" },
+      parent_id: null,
+    },
+    include: {
+      children: {
+        include: {
+          children: true,
+        },
+      },
+    },
+  });
+
+  const ids = new Set<string>();
+  for (const root of matched) {
+    ids.add(root.id);
+    for (const prov of root.children || []) {
+      ids.add(prov.id);
+      for (const dist of prov.children || []) {
+        ids.add(dist.id);
+      }
+    }
+  }
+
+  const result = Array.from(ids);
+  regionDistrictIdsCache.set(normalizedKey, result);
+  return result;
 }
 
 export async function getRevisionCounts(): Promise<RevisionesCounts> {
@@ -169,13 +180,6 @@ export interface GetRevisionesParams {
   action?: string;
 }
 
-function normalizeSearch(term: string): string {
-  return term
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
-
 export async function getPaginatedRevisiones(params: GetRevisionesParams) {
   const page = Math.max(1, params.page || 1);
   const pageSize = Math.max(1, Math.min(100, params.pageSize || 20));
@@ -234,9 +238,10 @@ export async function getPaginatedRevisiones(params: GetRevisionesParams) {
     where.action = action;
   }
 
-  // 3. Filtros relacionales de candidato (cargo y región)
+  // 3. Filtros relacionales de candidato (cargo y región en contexto ERM 2026)
   const candidateWhere: Prisma.candidateWhereInput = {
     active: true,
+    electoralprocess: { active: true },
   };
 
   const cargoMap: Record<string, candidacytype[]> = {
@@ -246,18 +251,6 @@ export async function getPaginatedRevisiones(params: GetRevisionesParams) {
     ],
     ALCALDE_PROV: [candidacytype.ALCALDE_PROVINCIAL],
     ALCALDE_DIST: [candidacytype.ALCALDE_DISTRITAL],
-    REGIDOR_CONSEJERO: [
-      candidacytype.CONSEJERO_REGIONAL,
-      candidacytype.REGIDOR_PROVINCIAL,
-      candidacytype.REGIDOR_DISTRITAL,
-    ],
-    NACIONAL: [
-      candidacytype.PRESIDENTE,
-      candidacytype.VICEPRESIDENTE_1,
-      candidacytype.VICEPRESIDENTE_2,
-      candidacytype.SENADOR,
-      candidacytype.DIPUTADO,
-    ],
   };
 
   if (cargo !== "ALL" && cargoMap[cargo]) {
@@ -265,68 +258,10 @@ export async function getPaginatedRevisiones(params: GetRevisionesParams) {
   }
 
   if (region !== "ALL") {
-    const regUpper = normalizeSearch(region).toUpperCase();
-    if (regUpper === "AMBITO NACIONAL") {
-      candidateWhere.OR = [
-        { electoraldistrict: { is_national: true } },
-        {
-          electoraldistrict: {
-            name: { contains: "nacional", mode: "insensitive" },
-          },
-        },
-        { electoraldistrict: { code: "NAC" } },
-      ];
-    } else if (regUpper === "EXTRANJERO") {
-      candidateWhere.OR = [
-        {
-          electoraldistrict: {
-            name: { contains: "extranjero", mode: "insensitive" },
-          },
-        },
-        { electoraldistrict: { code: "EXT" } },
-      ];
-    } else if (regUpper === "LIMA") {
-      candidateWhere.OR = [
-        {
-          electoraldistrict: {
-            name: { contains: "LIMA", mode: "insensitive" },
-          },
-        },
-        {
-          electoraldistrict: {
-            parent: { name: { contains: "LIMA", mode: "insensitive" } },
-          },
-        },
-        {
-          electoraldistrict: {
-            parent: {
-              parent: { name: { contains: "LIMA", mode: "insensitive" } },
-            },
-          },
-        },
-      ];
-    } else {
-      const cleanTerm = normalizeSearch(region);
-      candidateWhere.OR = [
-        {
-          electoraldistrict: {
-            name: { contains: cleanTerm, mode: "insensitive" },
-          },
-        },
-        {
-          electoraldistrict: {
-            parent: { name: { contains: cleanTerm, mode: "insensitive" } },
-          },
-        },
-        {
-          electoraldistrict: {
-            parent: {
-              parent: { name: { contains: cleanTerm, mode: "insensitive" } },
-            },
-          },
-        },
-      ];
-    }
+    const districtIds = await getDistrictIdsForRegion(region);
+    candidateWhere.electoral_district_id = {
+      in: districtIds.length > 0 ? districtIds : ["__NO_MATCH__"],
+    };
   }
 
   const andClauses: Prisma.research_proposalsWhereInput[] = [];
