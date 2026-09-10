@@ -34,7 +34,12 @@ import {
   ChevronsLeft,
   ChevronsRight,
   RotateCcw,
+  Gavel,
+  Newspaper,
 } from "lucide-react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { RevisionesCounts } from "../_lib/queries";
 import { toast } from "sonner";
 import {
   applyResearchFinding,
@@ -317,68 +322,116 @@ export interface FindingItem {
 
 interface FindingsTableProps {
   initialFindings: FindingItem[];
+  counts: RevisionesCounts;
+  pagination: {
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+  filters: {
+    tab: string;
+    q: string;
+    region: string;
+    cargo: string;
+    action: string;
+  };
+  availableRegions: readonly string[];
 }
 
-export function FindingsTable({ initialFindings }: FindingsTableProps) {
-  const [findings, setFindings] = React.useState<FindingItem[]>(
-    () => initialFindings,
-  );
+export function FindingsTable({
+  initialFindings,
+  counts,
+  pagination,
+  filters,
+  availableRegions,
+}: FindingsTableProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = React.useTransition();
+
+  const [prevInitialFindings, setPrevInitialFindings] =
+    React.useState(initialFindings);
+  const [optimisticOverrides, setOptimisticOverrides] = React.useState<
+    Record<string, Partial<FindingItem>>
+  >({});
+
+  if (initialFindings !== prevInitialFindings) {
+    setPrevInitialFindings(initialFindings);
+    setOptimisticOverrides({});
+  }
+
+  const findings = React.useMemo(() => {
+    return initialFindings.map((item) => {
+      const override = optimisticOverrides[item.id];
+      return override ? { ...item, ...override } : item;
+    });
+  }, [initialFindings, optimisticOverrides]);
+
+  const [prevQ, setPrevQ] = React.useState(filters.q || "");
+  const [searchQuery, setSearchQuery] = React.useState(filters.q || "");
+
+  if ((filters.q || "") !== prevQ) {
+    setPrevQ(filters.q || "");
+    setSearchQuery(filters.q || "");
+  }
+
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedAction, setSelectedAction] = React.useState<string>("ALL");
-  const [selectedRegion, setSelectedRegion] = React.useState<string>("ALL");
-  const [selectedCargo, setSelectedCargo] = React.useState<string>("ALL");
-  const [selectedTab, setSelectedTab] = React.useState<string>("PENDING_ALL");
 
-  // Paginación reactiva en cliente
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(20);
+  // Actualización fluida de parámetros en la URL con startTransition
+  const updateFilters = React.useCallback(
+    (updates: Record<string, string | number | null | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (
+          value === null ||
+          value === undefined ||
+          value === "" ||
+          value === "ALL" ||
+          (key === "page" && Number(value) === 1) ||
+          (key === "tab" && value === "PENDING_ALL") ||
+          (key === "pageSize" && Number(value) === 20)
+        ) {
+          params.delete(key);
+        } else {
+          params.set(key, String(value));
+        }
+      });
+      startTransition(() => {
+        const qs = params.toString();
+        router.push(`${pathname}${qs ? `?${qs}` : ""}`);
+      });
+    },
+    [searchParams, pathname, router],
+  );
 
-  const handleTabChange = (val: string) => {
-    setSelectedTab(val);
-    setSelectedIds(new Set());
-    setCurrentPage(1);
-  };
+  const debouncedSearch = useDebouncedCallback((val: string) => {
+    updateFilters({ q: val || null, page: 1 });
+  }, 350);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
+    const val = e.target.value;
+    setSearchQuery(val);
+    debouncedSearch(val);
+  };
+
+  const handleTabChange = (val: string) => {
+    setSelectedIds(new Set());
+    updateFilters({ tab: val, page: 1 });
   };
 
   const handleRegionChange = (val: string) => {
-    setSelectedRegion(val);
-    setCurrentPage(1);
+    updateFilters({ region: val, page: 1 });
   };
 
   const handleCargoChange = (val: string) => {
-    setSelectedCargo(val);
-    setCurrentPage(1);
+    updateFilters({ cargo: val, page: 1 });
   };
 
   const handleActionChange = (val: string) => {
-    setSelectedAction(val);
-    setCurrentPage(1);
+    updateFilters({ action: val, page: 1 });
   };
-
-  // Regiones canónicas únicas presentes en las candidaturas activas de los hallazgos cargados
-  const distinctRegions = React.useMemo(() => {
-    const regionCounts = new Map<string, number>();
-    findings.forEach((f) => {
-      f.person.candidate?.forEach((c) => {
-        const canonical = resolveCanonicalRegion(c);
-        if (canonical && canonical !== "Sin región") {
-          regionCounts.set(canonical, (regionCounts.get(canonical) || 0) + 1);
-        }
-      });
-    });
-
-    // Ordenar alfabéticamente pero dejando "Ámbito Nacional" al inicio si existe
-    return Array.from(regionCounts.keys()).sort((a, b) => {
-      if (a === "Ámbito Nacional") return -1;
-      if (b === "Ámbito Nacional") return 1;
-      return a.localeCompare(b, "es", { sensitivity: "base" });
-    });
-  }, [findings]);
 
   // Diálogo de edición
   const [editingFinding, setEditingFinding] =
@@ -389,86 +442,6 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
   );
   // Estados de carga
   const [isProcessing, setIsProcessing] = React.useState(false);
-
-  // Filtrado reactivo
-  const filteredFindings = React.useMemo(() => {
-    return findings.filter((f) => {
-      const normalized = normalizeFindingData(f.proposed_data);
-      const type = normalized.type;
-
-      // Filtro por Tab
-      if (selectedTab === "PENDING_ALL" && f.status !== "PENDING") return false;
-      if (selectedTab === "PENDING_LEGAL") {
-        if (f.status !== "PENDING") return false;
-        if (!["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(type))
-          return false;
-      }
-      if (selectedTab === "PENDING_NEWS") {
-        if (f.status !== "PENDING") return false;
-        if (["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(type))
-          return false;
-      }
-      if (selectedTab === "APPROVED" && f.status !== "APPROVED") return false;
-      if (selectedTab === "REJECTED" && f.status !== "REJECTED") return false;
-
-      // Filtro por Acción
-      if (selectedAction !== "ALL" && f.action !== selectedAction) return false;
-
-      // Filtro por Región (canónica)
-      if (selectedRegion !== "ALL") {
-        const matchesRegion = f.person.candidate?.some(
-          (c) => resolveCanonicalRegion(c) === selectedRegion,
-        );
-        if (!matchesRegion) return false;
-      }
-
-      // Filtro por Cargo
-      if (selectedCargo !== "ALL") {
-        const matchesCargo = f.person.candidate?.some((c) => {
-          const info = getCandidacyTypeInfo(c.type);
-          return info.category === selectedCargo;
-        });
-        if (!matchesCargo) return false;
-      }
-
-      // Filtro por Búsqueda
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const nameMatch = f.person.fullname.toLowerCase().includes(q);
-        const dniMatch = (f.person.dni || "").toLowerCase().includes(q);
-        const titleMatch = normalized.title.toLowerCase().includes(q);
-        const summaryMatch = normalized.summary.toLowerCase().includes(q);
-        const reasonMatch = (f.reason || "").toLowerCase().includes(q);
-        if (
-          !nameMatch &&
-          !dniMatch &&
-          !titleMatch &&
-          !summaryMatch &&
-          !reasonMatch
-        )
-          return false;
-      }
-
-      return true;
-    });
-  }, [
-    findings,
-    selectedTab,
-    selectedAction,
-    selectedRegion,
-    selectedCargo,
-    searchQuery,
-  ]);
-
-  // Cálculos de paginación
-  const totalItems = filteredFindings.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
-
-  const paginatedFindings = React.useMemo(() => {
-    const start = (safeCurrentPage - 1) * pageSize;
-    return filteredFindings.slice(start, start + pageSize);
-  }, [filteredFindings, safeCurrentPage, pageSize]);
 
   // Selección múltiple
   const handleToggleSelect = (id: string) => {
@@ -483,18 +456,23 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
     });
   };
 
-  // Solo selecciona los elementos pendientes realmente VISIBLES en la página actual
-  const handleSelectAll = (checked: boolean) => {
-    const visiblePendingIds = paginatedFindings
-      .filter((f) => f.status === "PENDING")
-      .map((f) => f.id);
+  // Elementos pendientes en la página actual (visibles en pantalla)
+  const visiblePendingOnPage = React.useMemo(
+    () => findings.filter((f) => f.status === "PENDING"),
+    [findings],
+  );
 
+  const isAllSelected =
+    visiblePendingOnPage.length > 0 &&
+    visiblePendingOnPage.every((f) => selectedIds.has(f.id));
+
+  const handleSelectAll = (checked: boolean) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (checked) {
-        visiblePendingIds.forEach((id) => next.add(id));
+        visiblePendingOnPage.forEach((f) => next.add(f.id));
       } else {
-        visiblePendingIds.forEach((id) => next.delete(id));
+        visiblePendingOnPage.forEach((f) => next.delete(f.id));
       }
       return next;
     });
@@ -507,16 +485,16 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await applyResearchFinding(findingId);
       if (res.success) {
         toast.success("Hallazgo aprobado e incorporado exitosamente");
-        setFindings((prev) =>
-          prev.map((f) =>
-            f.id === findingId ? { ...f, status: "APPROVED" } : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => ({
+          ...prev,
+          [findingId]: { status: "APPROVED" },
+        }));
         setSelectedIds((prev) => {
           const next = new Set(prev);
           next.delete(findingId);
           return next;
         });
+        router.refresh();
       } else {
         toast.error(`Error al aprobar: ${res.error}`);
       }
@@ -533,16 +511,16 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await rejectResearchFinding(findingId);
       if (res.success) {
         toast.info("Hallazgo rechazado");
-        setFindings((prev) =>
-          prev.map((f) =>
-            f.id === findingId ? { ...f, status: "REJECTED" } : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => ({
+          ...prev,
+          [findingId]: { status: "REJECTED" },
+        }));
         setSelectedIds((prev) => {
           const next = new Set(prev);
           next.delete(findingId);
           return next;
         });
+        router.refresh();
       } else {
         toast.error(`Error al rechazar: ${res.error}`);
       }
@@ -559,18 +537,15 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await revertResearchFinding(findingId);
       if (res.success) {
         toast.success("Hallazgo revertido a estado pendiente exitosamente");
-        setFindings((prev) =>
-          prev.map((f) =>
-            f.id === findingId
-              ? {
-                  ...f,
-                  status: "PENDING",
-                  reviewed_at: null,
-                  reviewed_by: null,
-                }
-              : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => ({
+          ...prev,
+          [findingId]: {
+            status: "PENDING",
+            reviewed_at: null,
+            reviewed_by: null,
+          },
+        }));
+        router.refresh();
       } else {
         toast.error(`Error al revertir: ${res.error}`);
       }
@@ -590,14 +565,15 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await applyResearchFinding(editingFinding.id, customData);
       if (res.success) {
         toast.success("Hallazgo editado y aprobado correctamente");
-        setFindings((prev) =>
-          prev.map((f) =>
-            f.id === editingFinding.id
-              ? { ...f, status: "APPROVED", proposed_data: customData }
-              : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => ({
+          ...prev,
+          [editingFinding.id]: {
+            status: "APPROVED",
+            proposed_data: customData,
+          },
+        }));
         setEditingFinding(null);
+        router.refresh();
       } else {
         toast.error(`Error al guardar: ${res.error}`);
       }
@@ -618,12 +594,15 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await bulkApplyFindings(ids);
       if (res.success) {
         toast.success(`Se aprobaron ${res.count} hallazgos con éxito`);
-        setFindings((prev) =>
-          prev.map((f) =>
-            selectedIds.has(f.id) ? { ...f, status: "APPROVED" } : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          ids.forEach((id) => {
+            next[id] = { status: "APPROVED" };
+          });
+          return next;
+        });
         setSelectedIds(new Set());
+        router.refresh();
       } else {
         toast.error(`Error en aprobación masiva: ${res.error}`);
       }
@@ -643,12 +622,15 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       const res = await bulkRejectFindings(ids);
       if (res.success) {
         toast.info(`Se rechazaron ${res.count} hallazgos`);
-        setFindings((prev) =>
-          prev.map((f) =>
-            selectedIds.has(f.id) ? { ...f, status: "REJECTED" } : f,
-          ),
-        );
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          ids.forEach((id) => {
+            next[id] = { status: "REJECTED" };
+          });
+          return next;
+        });
         setSelectedIds(new Set());
+        router.refresh();
       } else {
         toast.error(`Error en rechazo masivo: ${res.error}`);
       }
@@ -659,38 +641,11 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
     }
   };
 
-  // Conteos para tabs
-  const pendingCount = findings.filter((f) => f.status === "PENDING").length;
-  const legalCount = findings.filter((f) => {
-    if (f.status !== "PENDING") return false;
-    const type = String(
-      f.proposed_data?.type || f.proposed_data?.tipo || "",
-    ).toUpperCase();
-    return ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(type);
-  }).length;
-  const newsCount = findings.filter((f) => {
-    if (f.status !== "PENDING") return false;
-    const type = String(
-      f.proposed_data?.type || f.proposed_data?.tipo || "",
-    ).toUpperCase();
-    return !["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(type);
-  }).length;
-  const approvedCount = findings.filter((f) => f.status === "APPROVED").length;
-  const rejectedCount = findings.filter((f) => f.status === "REJECTED").length;
-
-  // Elementos pendientes en la página actual (visibles en pantalla)
-  const visiblePendingOnPage = paginatedFindings.filter(
-    (f) => f.status === "PENDING",
-  );
-  const isAllSelected =
-    visiblePendingOnPage.length > 0 &&
-    visiblePendingOnPage.every((f) => selectedIds.has(f.id));
-
   return (
     <div className="space-y-6 min-w-0">
       {/* Pestañas de Control Responsivas */}
       <Tabs
-        value={selectedTab}
+        value={filters.tab || "PENDING_ALL"}
         onValueChange={handleTabChange}
         className="w-full"
       >
@@ -702,25 +657,31 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             >
               <span>Pendientes</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
-                {pendingCount}
+                {counts.pending}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="PENDING_LEGAL"
               className="px-3 py-2 text-xs font-semibold shrink-0 whitespace-nowrap gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-lg"
             >
-              <span>Legales</span>
+              <div className="flex items-center gap-1">
+                <Gavel className="h-3 w-3 text-amber-500" />
+                <span>Legales</span>
+              </div>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
-                {legalCount}
+                {counts.legal}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="PENDING_NEWS"
               className="px-3 py-2 text-xs font-semibold shrink-0 whitespace-nowrap gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs rounded-lg"
             >
-              <span>Noticias</span>
+              <div className="flex items-center gap-1">
+                <Newspaper className="h-3 w-3 text-blue-500" />
+                <span>Noticias</span>
+              </div>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
-                {newsCount}
+                {counts.news}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -729,7 +690,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             >
               <span>Aprobadas</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                {approvedCount}
+                {counts.approved}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -738,7 +699,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             >
               <span>Rechazadas</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
-                {rejectedCount}
+                {counts.rejected}
               </span>
             </TabsTrigger>
           </TabsList>
@@ -759,7 +720,10 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
 
         <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 flex-wrap">
           {/* Filtro Cargo */}
-          <Select value={selectedCargo} onValueChange={handleCargoChange}>
+          <Select
+            value={filters.cargo || "ALL"}
+            onValueChange={handleCargoChange}
+          >
             <SelectTrigger className="w-full sm:w-[170px] text-xs h-9 sm:h-10">
               <SelectValue placeholder="Cargo" />
             </SelectTrigger>
@@ -772,28 +736,36 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 Alcaldes Provinciales
               </SelectItem>
               <SelectItem value="ALCALDE_DIST">Alcaldes Distritales</SelectItem>
+              <SelectItem value="NACIONAL">Candidaturas Nacionales</SelectItem>
+              <SelectItem value="REGIDOR_CONSEJERO">
+                Regidores y Consejeros
+              </SelectItem>
             </SelectContent>
           </Select>
 
           {/* Filtro Región */}
-          {distinctRegions.length > 0 && (
-            <Select value={selectedRegion} onValueChange={handleRegionChange}>
-              <SelectTrigger className="w-full sm:w-[165px] text-xs h-9 sm:h-10">
-                <SelectValue placeholder="Regiones" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todas las regiones</SelectItem>
-                {distinctRegions.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <Select
+            value={filters.region || "ALL"}
+            onValueChange={handleRegionChange}
+          >
+            <SelectTrigger className="w-full sm:w-[165px] text-xs h-9 sm:h-10">
+              <SelectValue placeholder="Regiones" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="ALL">Todas las regiones</SelectItem>
+              {availableRegions.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Filtro Acción */}
-          <Select value={selectedAction} onValueChange={handleActionChange}>
+          <Select
+            value={filters.action || "ALL"}
+            onValueChange={handleActionChange}
+          >
             <SelectTrigger className="w-full sm:w-[140px] text-xs h-9 sm:h-10">
               <SelectValue placeholder="Acciones" />
             </SelectTrigger>
@@ -805,7 +777,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
           </Select>
 
           {/* Seleccionar Visibles de la Página Actual */}
-          {selectedTab.startsWith("PENDING") &&
+          {(filters.tab || "PENDING_ALL").startsWith("PENDING") &&
             visiblePendingOnPage.length > 0 && (
               <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 py-1 sm:py-0 px-2 sm:pl-2 sm:border-l border-border shrink-0 bg-muted/40 sm:bg-transparent rounded-lg sm:rounded-none">
                 <div className="flex items-center gap-2">
@@ -831,29 +803,33 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       </div>
 
       {/* Grid de Hallazgos */}
-      {filteredFindings.length === 0 ? (
+      {findings.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
           <CheckCircle2 className="h-12 w-12 text-muted-foreground/40 mb-3" />
           <h3 className="text-lg font-semibold">
             No se encontraron revisiones
           </h3>
           <p className="text-sm text-muted-foreground max-w-md mt-1 mb-4">
-            {selectedTab.startsWith("PENDING")
+            {(filters.tab || "PENDING_ALL").startsWith("PENDING")
               ? "No hay hallazgos pendientes de revisión bajo los filtros seleccionados."
               : "No hay registros bajo los filtros seleccionados."}
           </p>
-          {(selectedRegion !== "ALL" ||
-            selectedCargo !== "ALL" ||
-            selectedAction !== "ALL" ||
-            searchQuery.trim()) && (
+          {(filters.region !== "ALL" ||
+            filters.cargo !== "ALL" ||
+            filters.action !== "ALL" ||
+            Boolean(filters.q)) && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                setSelectedRegion("ALL");
-                setSelectedCargo("ALL");
-                setSelectedAction("ALL");
                 setSearchQuery("");
+                updateFilters({
+                  region: "ALL",
+                  cargo: "ALL",
+                  action: "ALL",
+                  q: "",
+                  page: 1,
+                });
               }}
               className="text-xs gap-1.5"
             >
@@ -864,7 +840,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {paginatedFindings.map((finding) => {
+          {findings.map((finding) => {
             const data = normalizeFindingData(finding.proposed_data);
             const rawType = data.type;
             const isPenal = rawType === "PENAL";
@@ -1161,7 +1137,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                             : "RECHAZADO"}
                         </Badge>
                         <span
-                          className="truncate text-[11px] max-w-[140px]"
+                          className="truncate text-[11px] max-w-[130px]"
                           title={
                             finding.reviewed_by
                               ? `Por ${finding.reviewed_by}`
@@ -1172,6 +1148,25 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                             ? `Por ${finding.reviewed_by}`
                             : "Procesado"}
                         </span>
+                        {finding.reviewed_at && (
+                          <span
+                            className="text-[10px] text-muted-foreground whitespace-nowrap"
+                            title={new Date(finding.reviewed_at).toLocaleString(
+                              "es-PE",
+                            )}
+                          >
+                            •{" "}
+                            {new Date(finding.reviewed_at).toLocaleDateString(
+                              "es-PE",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </span>
+                        )}
                       </div>
 
                       {finding.status === "APPROVED" && (
@@ -1196,19 +1191,33 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
       )}
 
       {/* Barra de Paginación */}
-      {totalItems > 0 && (
+      {pagination.totalItems > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4 px-2 border-t mt-2">
           <div className="text-xs text-muted-foreground text-center sm:text-left">
             Mostrando{" "}
             <span className="font-medium text-foreground">
-              {Math.min((safeCurrentPage - 1) * pageSize + 1, totalItems)}
+              {Math.min(
+                (pagination.currentPage - 1) * pagination.pageSize + 1,
+                pagination.totalItems,
+              )}
             </span>{" "}
             a{" "}
             <span className="font-medium text-foreground">
-              {Math.min(safeCurrentPage * pageSize, totalItems)}
+              {Math.min(
+                pagination.currentPage * pagination.pageSize,
+                pagination.totalItems,
+              )}
             </span>{" "}
-            de <span className="font-medium text-foreground">{totalItems}</span>{" "}
+            de{" "}
+            <span className="font-medium text-foreground">
+              {pagination.totalItems}
+            </span>{" "}
             hallazgos
+            {isNavigating && (
+              <span className="ml-2 text-xs text-muted-foreground animate-pulse">
+                (cargando...)
+              </span>
+            )}
           </div>
 
           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-6">
@@ -1217,14 +1226,13 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 Por pág.
               </span>
               <Select
-                value={String(pageSize)}
+                value={String(pagination.pageSize)}
                 onValueChange={(val) => {
-                  setPageSize(Number(val));
-                  setCurrentPage(1);
+                  updateFilters({ pageSize: Number(val), page: 1 });
                 }}
               >
                 <SelectTrigger className="h-8 w-[68px] text-xs">
-                  <SelectValue placeholder={String(pageSize)} />
+                  <SelectValue placeholder={String(pagination.pageSize)} />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {[10, 20, 30, 50].map((size) => (
@@ -1241,7 +1249,7 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
             </div>
 
             <div className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-              {safeCurrentPage} / {totalPages}
+              {pagination.currentPage} / {pagination.totalPages}
             </div>
 
             <div className="flex items-center gap-1">
@@ -1249,8 +1257,10 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 variant="outline"
                 size="icon"
                 className="hidden sm:inline-flex h-8 w-8"
-                onClick={() => setCurrentPage(1)}
-                disabled={safeCurrentPage <= 1 || isProcessing}
+                onClick={() => updateFilters({ page: 1 })}
+                disabled={
+                  pagination.currentPage <= 1 || isProcessing || isNavigating
+                }
                 title="Primera página"
               >
                 <ChevronsLeft className="h-4 w-4" />
@@ -1259,8 +1269,14 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={safeCurrentPage <= 1 || isProcessing}
+                onClick={() =>
+                  updateFilters({
+                    page: Math.max(1, pagination.currentPage - 1),
+                  })
+                }
+                disabled={
+                  pagination.currentPage <= 1 || isProcessing || isNavigating
+                }
                 title="Página anterior"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -1270,9 +1286,18 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  updateFilters({
+                    page: Math.min(
+                      pagination.totalPages,
+                      pagination.currentPage + 1,
+                    ),
+                  })
                 }
-                disabled={safeCurrentPage >= totalPages || isProcessing}
+                disabled={
+                  pagination.currentPage >= pagination.totalPages ||
+                  isProcessing ||
+                  isNavigating
+                }
                 title="Página siguiente"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -1281,8 +1306,12 @@ export function FindingsTable({ initialFindings }: FindingsTableProps) {
                 variant="outline"
                 size="icon"
                 className="hidden sm:inline-flex h-8 w-8"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={safeCurrentPage >= totalPages || isProcessing}
+                onClick={() => updateFilters({ page: pagination.totalPages })}
+                disabled={
+                  pagination.currentPage >= pagination.totalPages ||
+                  isProcessing ||
+                  isNavigating
+                }
                 title="Última página"
               >
                 <ChevronsRight className="h-4 w-4" />
