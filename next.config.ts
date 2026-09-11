@@ -56,6 +56,26 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "senado.congreso.gob.pe",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "diputados.congreso.gob.pe",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.congreso.gob.pe",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "congreso.gob.pe",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "sroppublico.jne.gob.pe",
         pathname: "/**",
       },

@@ -35,6 +35,7 @@ export const getPersonas = cache(
           select: {
             id: true,
             fullname: true,
+            image_url: true,
             image_candidate_url: true,
             profession: true,
           },

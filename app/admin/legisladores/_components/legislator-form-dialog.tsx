@@ -1,8 +1,8 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -47,6 +47,7 @@ import { PersonBasicInfo } from "@/interfaces/person";
 import { PersonSelector } from "@/components/person-selector";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ensureDateString } from "@/lib/utils/date";
 
 const legislatorPeriodSchema = z.object({
   id: z.string(),
@@ -60,15 +61,13 @@ const legislatorPeriodSchema = z.object({
     .string()
     .min(1, "Debe seleccionar el partido original"),
   start_date: z.string().min(1, "La fecha de inicio es requerida"),
-  end_date: z
-    .string()
-    .nullable()
-    .transform((v) => v || null),
+  end_date: z.string().nullable().optional(),
   institutional_email: z
     .union([z.email({ message: "Email inválido" }), z.literal("")])
     .optional(),
   active: z.boolean(),
   legislative_period_id: z.string().optional(),
+  image_url: z.string().optional().nullable(),
 });
 
 type LegislatorPeriodFormValues = z.infer<typeof legislatorPeriodSchema>;
@@ -91,55 +90,68 @@ export function LegislatorFormDialog({
     AdminLegislatorContext,
   );
   const [selectedPerson, setSelectedPerson] = useState<PersonBasicInfo | null>(
-    null,
+    initialData?.person ?? null,
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
   const [globalSearch, setGlobalSearch] = useState("");
+  const [prevInitialData, setPrevInitialData] = useState(initialData);
 
-  const form = useForm<z.output<typeof legislatorPeriodSchema>>({
+  const form = useForm<LegislatorPeriodFormValues>({
     resolver: zodResolver(legislatorPeriodSchema),
     defaultValues: {
       id: initialData?.id || "",
       person_id: initialData?.person_id || "",
       chamber: initialData?.chamber || ChamberType.CONGRESO,
       condition: initialData?.condition || LegislatorCondition.EN_EJERCICIO,
-      electoral_district_id: "",
-      elected_by_party_id: "",
-      start_date: "",
-      end_date: "",
-      institutional_email: "",
-      active: true,
+      electoral_district_id: initialData?.electoral_district_id || "",
+      elected_by_party_id: initialData?.elected_by_party_id || "",
+      start_date: ensureDateString(initialData?.start_date),
+      end_date: ensureDateString(initialData?.end_date),
+      institutional_email: initialData?.institutional_email || "",
+      active: initialData?.active ?? true,
       legislative_period_id: initialData?.legislative_period?.id || "",
+      image_url: initialData?.person?.image_url || "",
     },
   });
 
-  // Actualizar formulario cuando cambian los datos iniciales
-  useEffect(() => {
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData);
+    setSelectedPerson(initialData?.person ?? null);
     if (initialData) {
       form.reset({
         ...form.getValues(),
         ...initialData,
+        electoral_district_id: initialData.electoral_district_id ?? "",
+        elected_by_party_id: initialData.elected_by_party_id ?? "",
         institutional_email: initialData.institutional_email ?? "",
-        end_date: initialData.end_date ?? "",
-        start_date: initialData.start_date ?? "",
+        end_date: ensureDateString(initialData.end_date),
+        start_date: ensureDateString(initialData.start_date),
+        legislative_period_id: initialData.legislative_period?.id ?? "",
+        image_url: initialData.person?.image_url ?? "",
       });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedPerson(initialData.person ?? null);
     }
-  }, [initialData, form]);
+  }
+
+  const watchedImageUrl = useWatch({
+    control: form.control,
+    name: "image_url",
+  });
 
   const handlePersonSelect = (person: PersonBasicInfo | null) => {
     setSelectedPerson(person);
     if (person) {
       form.setValue("person_id", person.id);
+      form.setValue("image_url", person.image_url || "");
     } else {
       form.setValue("person_id", "");
+      form.setValue("image_url", "");
     }
   };
   const handleRemovePerson = () => {
     setSelectedPerson(null);
     form.setValue("person_id", "");
+    form.setValue("image_url", "");
   };
 
   const onSubmit = async (values: LegislatorPeriodFormValues) => {
@@ -148,7 +160,10 @@ export function LegislatorFormDialog({
     const message = isEditing ? "actualizado" : "creado";
 
     try {
-      const result = await action(values);
+      const result = await action({
+        ...values,
+        end_date: values.end_date?.trim() ? values.end_date.trim() : null,
+      });
 
       if (result.success) {
         toast.success(`Periodo legislativo ${message} exitosamente`);
@@ -166,38 +181,44 @@ export function LegislatorFormDialog({
     }
   };
 
-  useEffect(() => {
-    if (!open) {
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
       form.reset();
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPerson(null);
+      setGlobalSearch("");
     }
-  }, [open, form]);
+    onOpenChange(newOpen);
+  };
 
   return (
-    <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col">
-        <CredenzaHeader>
+    <Credenza open={open} onOpenChange={handleOpenChange}>
+      <CredenzaContent className="sm:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <CredenzaHeader className="shrink-0">
           <CredenzaTitle>
             {mode === "create"
               ? "Nuevo Periodo Legislativo"
               : "Editar Periodo Legislativo"}
           </CredenzaTitle>
-          <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={"Buscar persona..."}
-              className="pl-9 bg-muted/30"
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              autoFocus
-            />
-          </div>
+          {!selectedPerson && (
+            <div className="relative animate-in fade-in slide-in-from-top-2 duration-300 mt-2">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={"Buscar persona..."}
+                className="pl-9 bg-muted/30"
+                value={globalSearch}
+                onChange={(e) => setGlobalSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+          )}
         </CredenzaHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="">
-            <CredenzaBody className="space-y-4 ">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <CredenzaBody className="space-y-4 overflow-y-auto px-4 sm:px-6 py-3 flex-1 min-h-0">
               {/* Selector de Persona */}
               <FormField
                 control={form.control}
@@ -206,37 +227,77 @@ export function LegislatorFormDialog({
                   <FormItem>
                     <FormControl>
                       {selectedPerson ? (
-                        <Card className="flex flex-row items-center justify-between p-2 border-primary/50 bg-primary/5">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border bg-white">
-                              <AvatarImage
-                                src={selectedPerson.image_candidate_url || ""}
-                              />
-                              <AvatarFallback>
-                                <User className="h-5 w-5" />
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">
-                                {selectedPerson.fullname}
-                              </p>
-                              {selectedPerson.profession && (
-                                <p className="text-xs text-muted-foreground">
-                                  {selectedPerson.profession}
+                        <div className="space-y-3">
+                          <Card className="flex flex-row items-center justify-between p-3 border-primary/40 bg-primary/5">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Avatar className="h-12 w-12 border bg-white shrink-0">
+                                <AvatarImage
+                                  src={
+                                    watchedImageUrl ||
+                                    selectedPerson.image_url ||
+                                    selectedPerson.image_candidate_url ||
+                                    ""
+                                  }
+                                  alt={selectedPerson.fullname}
+                                  className="object-cover"
+                                />
+                                <AvatarFallback>
+                                  <User className="h-5 w-5" />
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-sm truncate">
+                                  {selectedPerson.fullname}
                                 </p>
-                              )}
+                                {selectedPerson.profession && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {selectedPerson.profession}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleRemovePerson}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </Card>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleRemovePerson}
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                              title="Cambiar persona"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </Card>
+
+                          {/* Campo para modificar la imagen de person */}
+                          <FormField
+                            control={form.control}
+                            name="image_url"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center justify-between">
+                                  <span>URL Imagen Legislador (Person)</span>
+                                  {field.value && (
+                                    <span className="text-[11px] text-muted-foreground font-normal">
+                                      Vista previa en avatar
+                                    </span>
+                                  )}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="https://ejemplo.com/foto-legislador.jpg"
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormDescription className="text-xs">
+                                  Actualiza la foto oficial de la persona
+                                  asociada a este legislador.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       ) : (
                         <PersonSelector
                           onSelect={handlePersonSelect}
@@ -260,7 +321,7 @@ export function LegislatorFormDialog({
                       <FormLabel>Cámara *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -288,7 +349,7 @@ export function LegislatorFormDialog({
                       <FormLabel>Distrito Electoral *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -326,7 +387,10 @@ export function LegislatorFormDialog({
                           }}
                           onDateSelect={({ from }) => {
                             if (from) {
-                              form.setValue("start_date", from.toISOString());
+                              form.setValue("start_date", from.toISOString(), {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }
                           }}
                           variant="outline"
@@ -348,7 +412,7 @@ export function LegislatorFormDialog({
                   name="end_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fecha Fin *</FormLabel>
+                      <FormLabel>Fecha Fin</FormLabel>
                       <FormControl>
                         <CalendarDatePicker
                           date={{
@@ -359,7 +423,15 @@ export function LegislatorFormDialog({
                           }}
                           onDateSelect={({ from }) => {
                             if (from) {
-                              form.setValue("end_date", from.toISOString());
+                              form.setValue("end_date", from.toISOString(), {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                            } else {
+                              form.setValue("end_date", "", {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }
                           }}
                           variant="outline"
@@ -387,7 +459,7 @@ export function LegislatorFormDialog({
                       <FormLabel>Partido Original *</FormLabel>
                       <Select
                         onValueChange={(value) => field.onChange(value)}
-                        defaultValue={field.value}
+                        value={field.value}
                         disabled={mode === "edit"}
                       >
                         <FormControl>
@@ -444,7 +516,7 @@ export function LegislatorFormDialog({
                 </FormItem>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Grupo Parlamentario */}
+                {/* Condición */}
                 <FormField
                   control={form.control}
                   name="condition"
@@ -453,7 +525,7 @@ export function LegislatorFormDialog({
                       <FormLabel>Condición *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -501,7 +573,7 @@ export function LegislatorFormDialog({
                     <FormLabel>Periodo Legislativo</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -546,16 +618,21 @@ export function LegislatorFormDialog({
 
               {/* Botones */}
             </CredenzaBody>
-            <CredenzaFooter>
+            <CredenzaFooter className="px-4 sm:px-6 py-3 mt-auto border-t flex flex-col-reverse sm:flex-row sm:justify-end gap-2 shrink-0 bg-background">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={form.formState.isSubmitting}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="w-full sm:w-auto"
+              >
                 {form.formState.isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

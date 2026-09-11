@@ -11,6 +11,7 @@ import {
 } from "@/interfaces/political-party";
 import { BulkUpdatePartiesRequest } from "./types";
 import { serverRequireEditor } from "@/lib/auth-actions";
+import { parseToUtcDate } from "@/lib/utils/date";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -54,7 +55,7 @@ export async function createPoliticalParty(data: CreatePartyRequest) {
 
       // Datos fundacionales
       founder: toNullIfEmpty(data.founder),
-      foundation_date: toNullIfEmpty(data.foundation_date),
+      foundation_date: parseToUtcDate(data.foundation_date),
       ideology: toNullIfEmpty(data.ideology),
       party_president: toNullIfEmpty(data.party_president),
       purpose: toNullIfEmpty(data.purpose),
@@ -145,7 +146,7 @@ export async function updatePoliticalParty(data: Partial<UpdatePartyRequest>) {
       slogan: toNullIfEmpty(data.slogan),
 
       founder: toNullIfEmpty(data.founder),
-      foundation_date: toNullIfEmpty(data.foundation_date),
+      foundation_date: parseToUtcDate(data.foundation_date),
       ideology: toNullIfEmpty(data.ideology),
       party_president: toNullIfEmpty(data.party_president),
       purpose: toNullIfEmpty(data.purpose),

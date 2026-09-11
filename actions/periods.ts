@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { parseToUtcDate } from "@/lib/utils/date";
 
 // --- ELECTORAL PROCESS ---
 
@@ -21,7 +22,7 @@ export async function createElectoralProcess(data: {
         id: crypto.randomUUID(),
         name: data.name,
         year: data.year,
-        election_date: new Date(data.election_date),
+        election_date: parseToUtcDate(data.election_date) || new Date(),
         active: data.active,
         created_at: new Date(),
         updated_at: new Date(),
@@ -54,7 +55,7 @@ export async function updateElectoralProcess(
       data: {
         name: data.name,
         year: data.year,
-        election_date: new Date(data.election_date),
+        election_date: parseToUtcDate(data.election_date) || new Date(),
         active: data.active,
         updated_at: new Date(),
       },
@@ -86,8 +87,8 @@ export async function createLegislativePeriod(data: {
       data: {
         id: crypto.randomUUID(),
         name: data.name,
-        start_date: new Date(data.start_date),
-        end_date: new Date(data.end_date),
+        start_date: parseToUtcDate(data.start_date) || new Date(),
+        end_date: parseToUtcDate(data.end_date) || new Date(),
         active: data.active,
       },
     });
@@ -118,8 +119,8 @@ export async function updateLegislativePeriod(
       where: { id },
       data: {
         name: data.name,
-        start_date: new Date(data.start_date),
-        end_date: new Date(data.end_date),
+        start_date: parseToUtcDate(data.start_date) || new Date(),
+        end_date: parseToUtcDate(data.end_date) || new Date(),
         active: data.active,
         updated_at: new Date(),
       },

@@ -14,6 +14,8 @@ import { ChamberType, GroupChangeReason } from "@/interfaces/politics";
 import { createId } from "@paralleldrive/cuid2";
 import z from "zod";
 import { serverRequireEditor } from "@/lib/auth-actions";
+import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
+import { parseToUtcDate } from "@/lib/utils/date";
 
 // Helper para manejo de errores tipado
 const handleError = (error: unknown, msg: string) => {
@@ -28,8 +30,8 @@ const handleError = (error: unknown, msg: string) => {
 async function checkLegislatorOverlap(
   personId: string,
   chamber: ChamberType | undefined,
-  startDate: string | undefined,
-  endDate: string | null | undefined,
+  startDate: string | Date | undefined,
+  endDate: string | Date | null | undefined,
   excludeId?: string,
 ) {
   const existingPeriods = await prisma.legislator.findMany({
@@ -42,13 +44,15 @@ async function checkLegislatorOverlap(
   });
 
   if (existingPeriods && existingPeriods.length > 0) {
-    if (!startDate) {
+    const parsedStart = parseToUtcDate(startDate);
+    if (!parsedStart) {
       throw new Error(
         "La fecha de inicio es requerida para validar solapamientos.",
       );
     }
-    const newStart = new Date(startDate).getTime();
-    const newEnd = endDate ? new Date(endDate).getTime() : 32503680000000; // Año ~3000
+    const newStart = parsedStart.getTime();
+    const parsedEnd = parseToUtcDate(endDate);
+    const newEnd = parsedEnd ? parsedEnd.getTime() : 32503680000000; // Año ~3000
 
     for (const period of existingPeriods) {
       const pStart = new Date(period.start_date).getTime();
@@ -58,7 +62,7 @@ async function checkLegislatorOverlap(
 
       if (newStart <= pEnd && newEnd >= pStart) {
         throw new Error(
-          `Ya existe un periodo legislativo que se solapa (${period.start_date} - ${period.end_date || "Presente"})`,
+          `Ya existe un periodo legislativo que se solapa (${period.start_date.toISOString().slice(0, 10)} - ${period.end_date ? period.end_date.toISOString().slice(0, 10) : "Presente"})`,
         );
       }
     }
@@ -77,7 +81,24 @@ export async function createLegislatorPeriod(
       data.end_date,
     );
 
+    if (data.person_id && data.image_url !== undefined) {
+      await prisma.person.update({
+        where: { id: data.person_id },
+        data: {
+          image_url:
+            data.image_url && data.image_url.trim()
+              ? data.image_url.trim()
+              : null,
+        },
+      });
+    }
+
     const now = new Date();
+
+    const parsedStart = parseToUtcDate(data.start_date);
+    if (!parsedStart) {
+      throw new Error("La fecha de inicio es requerida");
+    }
 
     const dbData = {
       id: createId(),
@@ -86,8 +107,8 @@ export async function createLegislatorPeriod(
       electoral_district_id: data.electoral_district_id,
       elected_by_party_id: data.elected_by_party_id,
       condition: data.condition,
-      start_date: new Date(data.start_date),
-      end_date: data.end_date ? new Date(data.end_date) : null,
+      start_date: parsedStart,
+      end_date: parseToUtcDate(data.end_date),
       institutional_email: data.institutional_email,
       active: data.active,
       legislative_period_id: data.legislative_period_id || null,
@@ -97,8 +118,7 @@ export async function createLegislatorPeriod(
 
     const result = await prisma.legislator.create({ data: dbData });
 
-    revalidatePath("/admin/legisladores");
-    revalidateTag(TAGS.legislators, "max");
+    revalidatePersonEcosystem();
     return { success: true, data: result };
   } catch (error) {
     return handleError(error, "Error al crear periodo legislativo");
@@ -119,18 +139,27 @@ export async function updateLegislatorPeriod(
         data.id,
       );
     }
-    const { id, ...updateBody } = data;
+    const { id, image_url, ...updateBody } = data;
+
+    if (data.person_id && image_url !== undefined) {
+      await prisma.person.update({
+        where: { id: data.person_id },
+        data: {
+          image_url: image_url && image_url.trim() ? image_url.trim() : null,
+        },
+      });
+    }
 
     const payload = {
       ...updateBody,
       start_date: updateBody.start_date
-        ? new Date(updateBody.start_date)
+        ? (parseToUtcDate(updateBody.start_date) ?? undefined)
         : undefined,
       end_date:
         updateBody.end_date === null
           ? null
           : updateBody.end_date
-            ? new Date(updateBody.end_date)
+            ? parseToUtcDate(updateBody.end_date)
             : undefined,
     };
     Object.keys(payload).forEach((key) => {
@@ -143,8 +172,7 @@ export async function updateLegislatorPeriod(
       data: payload,
     });
 
-    revalidatePath("/admin/legisladores");
-    revalidateTag(TAGS.legislators, "max");
+    revalidatePersonEcosystem();
     return { success: true, data: result };
   } catch (error) {
     return handleError(error, "Error al actualizar periodo legislativo");
@@ -156,8 +184,7 @@ export async function deleteLegislatorPeriod(legislatorId: string) {
   try {
     await prisma.legislator.delete({ where: { id: legislatorId } });
 
-    revalidatePath("/admin/legisladores");
-    revalidateTag(TAGS.legislators, "max");
+    revalidatePersonEcosystem();
     return { success: true, data: { deleted_id: legislatorId } };
   } catch (error) {
     return handleError(error, "Error al eliminar periodo legislativo");
@@ -257,18 +284,23 @@ export async function createParliamentaryMembership(
     if (currentMembership) {
       updatedRecord = await prisma.parliamentarymembership.update({
         where: { id: currentMembership.id },
-        data: { end_date: new Date(data.start_date) },
+        data: { end_date: parseToUtcDate(data.start_date) },
         include: {
           parliamentarygroup: true,
         },
       });
     }
 
+    const parsedStartDate = parseToUtcDate(data.start_date);
+    if (!parsedStartDate) {
+      return { success: false, error: "Fecha de inicio inválida" };
+    }
+
     const payload: Prisma.parliamentarymembershipUncheckedCreateInput = {
       id: createId(),
       legislator_id: legislator_id,
       parliamentary_group_id: data.parliamentary_group_id,
-      start_date: new Date(data.start_date),
+      start_date: parsedStartDate,
       change_reason: data.change_reason as groupchangereason,
       source_url: data.source_url || null,
       end_date: null,
@@ -335,10 +367,15 @@ export async function updateParliamentaryMembership(
   const data = validation.data;
 
   try {
+    const parsedStartDate = parseToUtcDate(data.start_date);
+    if (!parsedStartDate) {
+      return { success: false, error: "Fecha de inicio inválida" };
+    }
+
     const payload: Prisma.parliamentarymembershipUncheckedUpdateInput = {
       parliamentary_group_id: data.parliamentary_group_id,
-      start_date: new Date(data.start_date),
-      end_date: data.end_date ? new Date(data.end_date) : null,
+      start_date: parsedStartDate,
+      end_date: parseToUtcDate(data.end_date),
       change_reason: data.change_reason as groupchangereason,
       source_url: data.source_url || null,
     };

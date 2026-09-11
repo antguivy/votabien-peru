@@ -6,6 +6,7 @@ import { hitoSchema, type HitoFormValues } from "./validation";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { serverRequireAdmin } from "@/lib/auth-actions";
 import { TAGS } from "@/lib/cache-tags";
+import { parseToUtcDate } from "@/lib/utils/date";
 
 export async function createTeamPhoto(data: HitoFormValues) {
   await serverRequireAdmin();
@@ -17,7 +18,7 @@ export async function createTeamPhoto(data: HitoFormValues) {
   try {
     const payload = {
       title: data.title,
-      date: data.date,
+      date: parseToUtcDate(data.date) || data.date,
       description: data.description || null,
       location: data.location || null,
       label: data.label || null,
@@ -48,7 +49,7 @@ export async function updateTeamPhoto(id: number, data: HitoFormValues) {
   try {
     const payload = {
       title: data.title,
-      date: data.date,
+      date: parseToUtcDate(data.date) || data.date,
       description: data.description || null,
       location: data.location || null,
       label: data.label || null,

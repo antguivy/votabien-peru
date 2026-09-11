@@ -70,7 +70,16 @@ export async function getLegislators(
         skip,
         take,
         include: {
-          person: { select: { id: true, fullname: true } },
+          person: {
+            select: {
+              id: true,
+              fullname: true,
+              image_url: true,
+              image_candidate_url: true,
+              profession: true,
+              dni: true,
+            },
+          },
           politicalparty: {
             select: { id: true, name: true, acronym: true, color_hex: true },
           },
