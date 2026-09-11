@@ -3,7 +3,8 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowRightLeft, Bot, Ellipsis, SquarePen } from "lucide-react";
+import { ArrowRightLeft, Bot, Ellipsis, SquarePen, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { formatterDate } from "@/lib/utils/date";
 import { Badge } from "@/components/ui/badge";
@@ -70,10 +71,22 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Apellidos y Nombres" />
       ),
       cell: ({ row }) => {
+        const person = row.original.person;
+        const photoUrl = person?.image_url || person?.image_candidate_url;
         return (
-          <div className="flex space-x-2">
-            <span className="min-w-[20rem] max-w-[31.25rem] break-words font-medium whitespace-normal">
-              {row.original.person?.fullname}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8 shrink-0 border bg-muted">
+              <AvatarImage
+                src={photoUrl || ""}
+                alt={person?.fullname || ""}
+                className="object-cover"
+              />
+              <AvatarFallback className="text-[10px]">
+                <User className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-[18rem] max-w-[31.25rem] break-words font-medium whitespace-normal">
+              {person?.fullname}
             </span>
           </div>
         );

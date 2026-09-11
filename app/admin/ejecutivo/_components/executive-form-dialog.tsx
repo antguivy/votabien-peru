@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/select";
 import { createExecutive, updateExecutive } from "../_lib/actions";
 import { toast } from "sonner";
-import { Loader2, Search, Trash2, User } from "lucide-react";
+import { Loader2, Search, Trash2, User, X } from "lucide-react";
 import { AdminExecutiveContext } from "@/components/context/admin-executive";
+import { ensureDateString } from "@/lib/utils/date";
 import {
   Credenza,
   CredenzaBody,
@@ -115,7 +116,13 @@ export function ExecutiveFormDialog({
         const data = await getExecutiveForEdit(executiveId);
         if (!isSubscribed || !data) return;
         const { person, ...formValues } = data;
-        form.reset(formValues);
+        form.reset({
+          ...formValues,
+          start_date: ensureDateString(formValues.start_date),
+          end_date: formValues.end_date
+            ? ensureDateString(formValues.end_date)
+            : null,
+        });
         setSelectedPerson(person as PersonBasicInfo);
         setGlobalSearch("");
       } finally {
@@ -344,26 +351,43 @@ export function ExecutiveFormDialog({
                     <FormItem>
                       <FormLabel>Fecha Fin</FormLabel>
                       <FormControl>
-                        <CalendarDatePicker
-                          date={{
-                            from: field.value
-                              ? new Date(field.value)
-                              : undefined,
-                            to: field.value ? new Date(field.value) : undefined,
-                          }}
-                          onDateSelect={({ from }) => {
-                            if (from) {
-                              form.setValue("end_date", from.toISOString());
-                            }
-                          }}
-                          variant="outline"
-                          numberOfMonths={1}
-                          withoutdropdown
-                          closeOnSelect
-                          yearsRange={13}
-                          centerCurrentYear
-                          className="w-full"
-                        />
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <CalendarDatePicker
+                              date={{
+                                from: field.value
+                                  ? new Date(field.value)
+                                  : undefined,
+                                to: field.value
+                                  ? new Date(field.value)
+                                  : undefined,
+                              }}
+                              onDateSelect={({ from }) => {
+                                if (from) {
+                                  form.setValue("end_date", from.toISOString());
+                                }
+                              }}
+                              variant="outline"
+                              numberOfMonths={1}
+                              withoutdropdown
+                              closeOnSelect
+                              yearsRange={13}
+                              centerCurrentYear
+                              className="w-full"
+                            />
+                          </div>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => form.setValue("end_date", null)}
+                              title="Limpiar fecha fin"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/credenza";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDatePicker } from "@/components/date-picker";
+import { ensureDateString } from "@/lib/utils/date";
 import { toast } from "sonner";
 import {
   Briefcase,
@@ -656,7 +657,12 @@ export function PersonFormDialog({
     getPersonForEdit(personId)
       .then((data) => {
         if (!data) return;
-        form.reset(data);
+        form.reset({
+          ...data,
+          birth_date: data.birth_date
+            ? ensureDateString(data.birth_date)
+            : null,
+        });
       })
       .finally(() => setIsLoadingData(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps

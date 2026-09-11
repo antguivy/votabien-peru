@@ -113,12 +113,13 @@ export interface CreateLegislatorPeriodRequest {
   electoral_district_id: string;
   chamber: ChamberType;
   condition: LegislatorCondition;
-  start_date: string;
-  end_date: string | null;
+  start_date: string | Date;
+  end_date?: string | Date | null;
   active: boolean;
   institutional_email?: string;
   parliamentary_group?: string;
   legislative_period_id?: string;
+  image_url?: string | null;
 }
 export interface LegislatorTableRow {
   id: string;

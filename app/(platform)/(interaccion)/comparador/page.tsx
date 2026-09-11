@@ -9,8 +9,8 @@ import { SearchableEntity } from "@/interfaces/ui-types";
 import { ComparisonResponse } from "@/interfaces/comparator";
 import { getPartidosListSimple } from "@/queries/public/parties";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
-// import UnderConstruction from "@/components/under-construction";
-// import { serverGetUser } from "@/lib/auth-actions";
+import UnderConstruction from "@/components/under-construction";
+import { serverGetUser } from "@/lib/auth-actions";
 
 export const metadata = {
   title: "Comparador de Fórmulas y Planes | VotaBien Perú",
@@ -23,15 +23,15 @@ interface PageProps {
 }
 
 export default async function ComparatorPage(props: PageProps) {
-  // Habilitado para demostración a aliados / Fundación BBVA
-  // const { user } = await serverGetUser();
-  // if (!user) {
-  //   return (
-  //     <ContentPlatformLayout>
-  //       <UnderConstruction feature="comparador" isTeam />
-  //     </ContentPlatformLayout>
-  //   );
-  // }
+  const { user } = await serverGetUser();
+
+  if (!user) {
+    return (
+      <ContentPlatformLayout fullHeight>
+        <UnderConstruction feature="comparador" isTeam />
+      </ContentPlatformLayout>
+    );
+  }
 
   const resolvedParams = await props.searchParams;
   const search = searchParamsCache.parse(

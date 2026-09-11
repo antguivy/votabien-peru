@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/credenza";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarDatePicker } from "@/components/date-picker";
+import { ensureDateString, formatterDate } from "@/lib/utils/date";
 import { toast } from "sonner";
 import {
   AlignLeft,
@@ -391,11 +392,7 @@ function TimelineManager({
                         }}
                         onDateSelect={({ from }) => {
                           if (from)
-                            updateItem(
-                              index,
-                              "date",
-                              from.toISOString().split("T")[0],
-                            );
+                            updateItem(index, "date", formatterDate(from));
                         }}
                         variant="outline"
                         numberOfMonths={1}
@@ -1438,7 +1435,9 @@ export function PartyFormDialog({
         logo_url: initialData.logo_url ?? "",
         slogan: initialData.slogan ?? "",
         founder: initialData.founder ?? "",
-        foundation_date: initialData.foundation_date ?? null,
+        foundation_date: initialData.foundation_date
+          ? ensureDateString(initialData.foundation_date)
+          : null,
         ideology: initialData.ideology ?? "",
         party_president: initialData.party_president ?? "",
         purpose: initialData.purpose ?? "",
@@ -1810,29 +1809,46 @@ export function PartyFormDialog({
                           <FormItem>
                             <FormLabel>Fecha de Fundación</FormLabel>
                             <FormControl>
-                              <CalendarDatePicker
-                                date={{
-                                  from: field.value
-                                    ? new Date(field.value)
-                                    : undefined,
-                                  to: field.value
-                                    ? new Date(field.value)
-                                    : undefined,
-                                }}
-                                onDateSelect={({ from }) => {
-                                  if (from)
-                                    form.setValue(
-                                      "foundation_date",
-                                      from.toISOString(),
-                                    );
-                                }}
-                                variant="outline"
-                                numberOfMonths={1}
-                                withoutdropdown={true}
-                                yearsRange={100}
-                                closeOnSelect
-                                className="w-full"
-                              />
+                              <div className="flex gap-2">
+                                <div className="flex-1">
+                                  <CalendarDatePicker
+                                    date={{
+                                      from: field.value
+                                        ? new Date(field.value)
+                                        : undefined,
+                                      to: field.value
+                                        ? new Date(field.value)
+                                        : undefined,
+                                    }}
+                                    onDateSelect={({ from }) => {
+                                      if (from)
+                                        form.setValue(
+                                          "foundation_date",
+                                          from.toISOString(),
+                                        );
+                                    }}
+                                    variant="outline"
+                                    numberOfMonths={1}
+                                    withoutdropdown={true}
+                                    yearsRange={100}
+                                    closeOnSelect
+                                    className="w-full"
+                                  />
+                                </div>
+                                {field.value && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      form.setValue("foundation_date", null)
+                                    }
+                                    title="Limpiar fecha de fundación"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>

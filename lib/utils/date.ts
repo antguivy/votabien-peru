@@ -143,3 +143,39 @@ export function getLastUpdated(
   if (dates.length === 0) return null;
   return new Date(Math.max(...dates.map((d) => d.getTime())));
 }
+
+/**
+ * Normaliza cualquier valor de fecha (Date, string, null, undefined) a string ISO o vacío.
+ * Esencial para evitar errores en React Hook Form y Zod ("expected string, received Date")
+ * cuando los datos iniciales provienen de Prisma o de APIs con objetos Date.
+ */
+export function ensureDateString(val: unknown): string {
+  if (!val) return "";
+  if (val instanceof Date) return isNaN(val.getTime()) ? "" : val.toISOString();
+  return String(val);
+}
+
+/**
+ * Convierte de forma segura un valor de fecha a un objeto Date en UTC.
+ * Si recibe una fecha en formato simple (ej. "YYYY-MM-DD"), la ancla a la medianoche de Lima (America/Lima)
+ * antes de convertir a UTC, evitando el típico desfase de -1 día ocasionado por UTC-5.
+ */
+export function parseToUtcDate(
+  val: string | Date | null | undefined,
+): Date | null {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    // Si ya incluye T o zona horaria (formato ISO completo)
+    if (trimmed.includes("T")) {
+      const d = new Date(trimmed);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    // Si viene solo fecha (ej: YYYY-MM-DD), anclar a medianoche Lima y convertir a UTC
+    const utcIso = limaDateToUtc(trimmed);
+    return utcIso ? new Date(utcIso) : new Date(trimmed);
+  }
+  return new Date(val);
+}

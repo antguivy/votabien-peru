@@ -38,6 +38,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CalendarDatePicker } from "@/components/date-picker";
+import { ensureDateString } from "@/lib/utils/date";
 import { toast } from "sonner";
 import { AdminLegislatorContext } from "@/components/context/admin-legislator";
 import { GroupChangeReason } from "@/interfaces/politics";
@@ -177,8 +178,10 @@ export function ParliamentaryMembershipDialog({
       form.reset({
         id: membership.id,
         parliamentary_group_id: membership.parliamentary_group_id,
-        start_date: membership.start_date,
-        end_date: membership.end_date || null,
+        start_date: ensureDateString(membership.start_date),
+        end_date: membership.end_date
+          ? ensureDateString(membership.end_date)
+          : null,
         change_reason: membership.change_reason,
         source_url: membership.source_url || "",
       });

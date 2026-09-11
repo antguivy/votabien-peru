@@ -10,6 +10,7 @@ import {
 } from "@/interfaces/executive";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { serverRequireEditor } from "@/lib/auth-actions";
+import { parseToUtcDate } from "@/lib/utils/date";
 
 const handleError = (error: unknown, msg: string) => {
   console.error(msg, error);
@@ -27,8 +28,8 @@ export async function createExecutive(data: CreateExecutiveRequest) {
       person_id: data.person_id,
       role: data.role,
       ministry: data.ministry ?? null,
-      start_date: new Date(data.start_date),
-      end_date: data.end_date ? new Date(data.end_date) : null,
+      start_date: parseToUtcDate(data.start_date) || new Date(),
+      end_date: parseToUtcDate(data.end_date),
       end_reason:
         (data.end_reason as
           | "RENUNCIA"
@@ -61,13 +62,13 @@ export async function updateExecutive(data: UpdateExecutiveRequest) {
     const payload: Record<string, unknown> = {
       ...updateBody,
       start_date: updateBody.start_date
-        ? new Date(updateBody.start_date)
+        ? (parseToUtcDate(updateBody.start_date) ?? undefined)
         : undefined,
       end_date:
         updateBody.end_date === null
           ? null
           : updateBody.end_date
-            ? new Date(updateBody.end_date)
+            ? (parseToUtcDate(updateBody.end_date) ?? undefined)
             : undefined,
     };
 
