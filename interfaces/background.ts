@@ -25,4 +25,7 @@ export interface BackgroundBase {
   source: string;
   source_url: string | null;
   updated_at?: string;
+  action?: string | null;
+  target_id?: string | null;
+  reason?: string | null;
 }

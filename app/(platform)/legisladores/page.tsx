@@ -12,6 +12,8 @@ import { LegisladoresStream } from "./_components/legisladores-stream";
 import { LegisladoresListSkeleton } from "./_components/legisladores-list-skeleton";
 import { getActiveLegislativePeriod } from "@/queries/public/legislators";
 
+export const dynamic = "force-dynamic";
+
 export default async function LegisladoresPage() {
   try {
     // 4. AQUÍ SOLO CARGAMOS DATOS PARA LOS FILTROS

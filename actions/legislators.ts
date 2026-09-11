@@ -13,6 +13,7 @@ interface GetLegislatorsParams {
   page?: number;
   pageSize?: number;
   limit?: number;
+  legislative_period_id?: string;
 }
 
 // Esta función es el "puente". El cliente la llama, Next.js hace una petición HTTP oculta

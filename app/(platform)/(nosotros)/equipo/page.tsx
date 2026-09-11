@@ -3,6 +3,8 @@ import Footer from "@/components/landing/footer";
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import TeamListV2 from "./_components/team-list-v2";
 
+export const dynamic = "force-dynamic";
+
 export default async function TeamPage() {
   const [team] = await Promise.all([getTeam()]);
 

@@ -2,22 +2,12 @@
 
 import { prisma } from "@/lib/prisma";
 import { serverRequireReviewer } from "@/lib/auth-actions";
-import { revalidatePath, revalidateTag } from "next/cache";
-import { TAGS } from "@/lib/cache-tags";
 import { createId } from "@paralleldrive/cuid2";
 import { BackgroundStatus, BackgroundType } from "@/interfaces/background";
 import { Prisma } from "@/prisma/generated/client";
 
 import { normalizeFindingData } from "@/interfaces/research";
-
-function revalidatePersonEcosystem() {
-  revalidatePath("/admin/personas");
-  revalidatePath("/admin/candidatos");
-  revalidatePath("/admin/candidatos/revisiones");
-  revalidateTag(TAGS.persons, "max");
-  revalidateTag(TAGS.candidates, "max");
-  revalidateTag(TAGS.legislators, "max");
-}
+import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
 
 export async function getExistingBackgroundForDiff(targetId: string) {
   await serverRequireReviewer();
@@ -128,7 +118,85 @@ export async function applyResearchFinding(
           : "EN_INVESTIGACION"
       ) as BackgroundStatus;
 
-      if (finding.action === "INSERT") {
+      if (finding.action === "UPDATE" && finding.target_id) {
+        const existing = await prisma.background.findUnique({
+          where: { id: finding.target_id },
+        });
+
+        if (existing) {
+          // Consolidar fuentes y URLs para preservar trazabilidad completa
+          const allSources = new Set<string>();
+          if (existing.source) {
+            existing.source.split(",").forEach((s) => {
+              const trimmed = s.trim();
+              if (trimmed) allSources.add(trimmed);
+            });
+          }
+          if (normalized.source) {
+            normalized.source.split(",").forEach((s) => {
+              const trimmed = s.trim();
+              if (trimmed) allSources.add(trimmed);
+            });
+          }
+          const finalSource =
+            allSources.size > 0
+              ? Array.from(allSources).join(", ")
+              : normalized.source || existing.source;
+
+          const allUrls = new Set<string>();
+          if (existing.source_url) {
+            existing.source_url.split(",").forEach((u) => {
+              const trimmed = u.trim();
+              if (trimmed) allUrls.add(trimmed);
+            });
+          }
+          if (normalized.source_url) {
+            normalized.source_url.split(",").forEach((u) => {
+              const trimmed = u.trim();
+              if (trimmed) allUrls.add(trimmed);
+            });
+          }
+          const finalSourceUrl =
+            allUrls.size > 0
+              ? Array.from(allUrls).join(", ")
+              : normalized.source_url || existing.source_url;
+
+          await prisma.background.update({
+            where: { id: finding.target_id },
+            data: {
+              publication_date:
+                normalized.publication_date || existing.publication_date,
+              type: typeEnum,
+              status: statusEnum,
+              summary: normalized.summary || existing.summary,
+              sanction: normalized.sanction || existing.sanction,
+              source: finalSource,
+              source_url: finalSourceUrl,
+              title: normalized.title || existing.title,
+              previous_version: existing as unknown as Prisma.InputJsonValue,
+              updated_at: new Date(),
+            },
+          });
+        } else {
+          // Fallback por si el registro original fue removido: crear como nuevo
+          const bgId = finding.target_id || createId();
+          finalTargetId = bgId;
+          await prisma.background.create({
+            data: {
+              id: bgId,
+              person_id: finding.person_id,
+              publication_date: normalized.publication_date,
+              type: typeEnum,
+              status: statusEnum,
+              summary: normalized.summary,
+              sanction: normalized.sanction,
+              source: normalized.source,
+              source_url: normalized.source_url,
+              title: normalized.title,
+            },
+          });
+        }
+      } else {
         const bgId = createId();
         finalTargetId = bgId;
 
@@ -146,29 +214,6 @@ export async function applyResearchFinding(
             title: normalized.title,
           },
         });
-      } else if (finding.action === "UPDATE" && finding.target_id) {
-        const existing = await prisma.background.findUnique({
-          where: { id: finding.target_id },
-        });
-
-        if (existing) {
-          await prisma.background.update({
-            where: { id: finding.target_id },
-            data: {
-              publication_date:
-                normalized.publication_date || existing.publication_date,
-              type: typeEnum,
-              status: statusEnum,
-              summary: normalized.summary || existing.summary,
-              sanction: normalized.sanction || existing.sanction,
-              source: normalized.source || existing.source,
-              source_url: normalized.source_url || existing.source_url,
-              title: normalized.title || existing.title,
-              previous_version: existing as unknown as Prisma.InputJsonValue,
-              updated_at: new Date(),
-            },
-          });
-        }
       }
 
       // Recalcular Flags Penales y Éticos en Person
@@ -229,14 +274,25 @@ export async function applyResearchFinding(
           source_url: normalized.source_url,
         };
 
-        // Deduplicación inteligente: por ID o por URL de fuente
-        const existingIdx = bio.findIndex(
-          (b) =>
-            b.id === postureId ||
-            (newItem.source_url &&
-              b.source_url &&
-              b.source_url === newItem.source_url),
-        );
+        // Deduplicación inteligente: por ID o por coincidencia de URL de fuente
+        const newUrls = newItem.source_url
+          ? String(newItem.source_url)
+              .split(",")
+              .map((u) => u.trim().toLowerCase())
+              .filter(Boolean)
+          : [];
+
+        const existingIdx = bio.findIndex((b) => {
+          if (b.id === postureId) return true;
+          if (newUrls.length > 0 && b.source_url) {
+            const bUrls = String(b.source_url)
+              .split(",")
+              .map((u) => u.trim().toLowerCase())
+              .filter(Boolean);
+            if (newUrls.some((u) => bUrls.includes(u))) return true;
+          }
+          return false;
+        });
 
         if (existingIdx >= 0) {
           bio[existingIdx] = { ...bio[existingIdx], ...newItem };

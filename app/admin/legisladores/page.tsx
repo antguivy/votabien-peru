@@ -18,6 +18,7 @@ import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
 import { ContentLayout } from "@/components/admin/content-layout";
 import { getDistritos } from "@/queries/public/electoral-districts";
 import { prisma } from "@/lib/prisma";
+import { serverHasAnyRole } from "@/lib/auth-actions";
 
 interface IndexPageProps {
   searchParams: Promise<SearchParams>;
@@ -31,19 +32,25 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
     getLegislatorConditionCounts(),
     getDistrictsCounts(),
   ]);
-  const [districts, parties, parliamentaryGroups, legislativePeriods] =
-    await Promise.all([
-      getDistritos(),
-      getPartidosList({
-        active: true,
-        limit: 100,
-      }),
-      getParliamentaryGroups(true),
-      prisma.legislativeperiod.findMany({
-        select: { id: true, name: true },
-        orderBy: { start_date: "desc" },
-      }),
-    ]);
+  const [
+    districts,
+    parties,
+    parliamentaryGroups,
+    legislativePeriods,
+    canLaunchResearch,
+  ] = await Promise.all([
+    getDistritos(),
+    getPartidosList({
+      active: true,
+      limit: 100,
+    }),
+    getParliamentaryGroups(true),
+    prisma.legislativeperiod.findMany({
+      select: { id: true, name: true },
+      orderBy: { start_date: "desc" },
+    }),
+    serverHasAnyRole(["admin", "super_admin"]),
+  ]);
   return (
     <ContentLayout title="Legisladores">
       <Shell className="gap-2 mx-auto">
@@ -86,6 +93,7 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
             <LegislatorsTable
               promises={promises}
               legislativePeriods={legislativePeriods}
+              canLaunchResearch={canLaunchResearch}
             />
           </Suspense>
           {/* </FeatureFlagsProvider> */}

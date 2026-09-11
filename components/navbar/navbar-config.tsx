@@ -114,7 +114,12 @@ export const adminNavGroups: NavGroup[] = [
       { href: "/admin/candidatos", label: "Candidatos", icon: UserCog },
       {
         href: "/admin/candidatos/revisiones",
-        label: "Revisiones IA",
+        label: "Revisiones Candidatos",
+        icon: Inbox,
+      },
+      {
+        href: "/admin/legisladores/revisiones",
+        label: "Revisiones Legisladores",
         icon: Inbox,
       },
       {

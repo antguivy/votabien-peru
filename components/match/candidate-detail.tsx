@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { parseSourceUrls } from "@/lib/utils/url";
 import {
   Credenza,
   CredenzaBody,
@@ -586,19 +587,24 @@ const TabPosturas = ({ biography }: { biography: BiographyDetail[] }) => (
                 {bio.description}
               </p>
               {bio.source_url && (
-                <div className="flex justify-end mt-3">
-                  <a
-                    href={bio.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 transition-colors px-3 py-1.5 rounded-lg"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="text-xs font-medium text-primary">
-                      {bio.source}
-                    </span>
-                    <ExternalLink size={11} className="text-primary" />
-                  </a>
+                <div className="flex flex-wrap justify-end gap-2 mt-3">
+                  {parseSourceUrls(bio.source_url).map((src, idx, arr) => (
+                    <a
+                      key={idx}
+                      href={src.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 transition-colors px-3 py-1.5 rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="text-xs font-medium text-primary">
+                        {arr.length === 1 && bio.source
+                          ? bio.source
+                          : src.domain}
+                      </span>
+                      <ExternalLink size={11} className="text-primary" />
+                    </a>
+                  ))}
                 </div>
               )}
             </div>

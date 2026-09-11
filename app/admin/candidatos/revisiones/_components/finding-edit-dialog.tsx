@@ -246,13 +246,13 @@ function FindingEditForm({
 
       <div className="space-y-1">
         <Label htmlFor="sourceUrl" className="text-xs font-semibold">
-          URL de la Noticia / Enlace
+          URL(s) de la Noticia / Enlaces (separadas por comas)
         </Label>
         <Textarea
           id="sourceUrl"
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
-          placeholder="https://..."
+          placeholder="https://fuente1.pe/..., https://fuente2.pe/..."
         />
       </div>
     </form>

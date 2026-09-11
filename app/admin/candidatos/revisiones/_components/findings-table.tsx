@@ -36,6 +36,7 @@ import {
   RotateCcw,
   Gavel,
   Newspaper,
+  Loader2,
 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
@@ -52,6 +53,7 @@ import { normalizeFindingData } from "@/interfaces/research";
 import { FindingEditDialog } from "./finding-edit-dialog";
 import { FindingDiffDialog } from "./finding-diff-dialog";
 import { BulkActionsBar } from "./bulk-actions-bar";
+import { parseSourceUrls } from "@/lib/utils/url";
 
 export interface FindingDistrictHierarchy {
   name: string;
@@ -274,6 +276,71 @@ export function formatLocationName(
   return raw;
 }
 
+// Obtiene el legislador activo principal
+export function getPrimaryLegislator(
+  legislators?: FindingLegislator[] | null,
+): FindingLegislator | undefined {
+  if (!legislators || legislators.length === 0) return undefined;
+  // Priorizar legislador activo
+  return legislators.find((l) => l.active) || legislators[0];
+}
+
+// Etiqueta de cámara legislativa
+export function getChamberInfo(chamber?: string | null): {
+  label: string;
+  badgeClass: string;
+} {
+  const c = (chamber || "").toUpperCase();
+  if (c === "SENADO") {
+    return {
+      label: "Senador",
+      badgeClass:
+        "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+    };
+  }
+  if (c === "DIPUTADOS") {
+    return {
+      label: "Diputado",
+      badgeClass:
+        "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
+    };
+  }
+  return {
+    label: c || "Legislador",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+  };
+}
+
+// Obtiene el nombre de la bancada actual del legislador
+export function getLegislatorBancada(
+  legislator?: FindingLegislator | null,
+): string | null {
+  if (!legislator?.parliamentarymembership?.length) return null;
+  // La membresía más reciente (última en el array) es la actual
+  const current =
+    legislator.parliamentarymembership[
+      legislator.parliamentarymembership.length - 1
+    ];
+  return (
+    current.parliamentarygroup.acronym ||
+    current.parliamentarygroup.name ||
+    null
+  );
+}
+
+export interface FindingLegislator {
+  chamber: string;
+  active: boolean;
+  condition?: string | null;
+  politicalparty: { name: string } | null;
+  electoraldistrict: FindingDistrictHierarchy | null;
+  parliamentarymembership?: {
+    parliamentarygroup: { name: string; acronym?: string | null };
+  }[];
+}
+
+export type FindingsContext = "candidatos" | "legisladores";
+
 export interface FindingItem {
   id: string;
   person_id: string;
@@ -298,6 +365,7 @@ export interface FindingItem {
     has_sanction?: boolean | null;
     is_under_investigation?: boolean | null;
     candidate?: FindingCandidacy[];
+    legislator?: FindingLegislator[];
     _count?: {
       background: number;
     };
@@ -321,6 +389,7 @@ interface FindingsTableProps {
     action: string;
   };
   availableRegions: readonly string[];
+  context?: FindingsContext;
 }
 
 export function FindingsTable({
@@ -329,6 +398,7 @@ export function FindingsTable({
   pagination,
   filters,
   availableRegions,
+  context = "candidatos",
 }: FindingsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -424,8 +494,38 @@ export function FindingsTable({
   const [diffFinding, setDiffFinding] = React.useState<FindingItem | null>(
     null,
   );
-  // Estados de carga
-  const [isProcessing, setIsProcessing] = React.useState(false);
+  // Estados de carga granular: IDs de tarjetas individuales en proceso
+  const [processingIds, setProcessingIds] = React.useState<Set<string>>(
+    new Set(),
+  );
+  // Procesamiento masivo (Aprobar/Rechazar en bloque)
+  const [isBulkProcessing, setIsBulkProcessing] = React.useState(false);
+
+  // Delta optimista de contadores para respuesta visual inmediata en las pestañas
+  const [countDelta, setCountDelta] = React.useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    legal: 0,
+    news: 0,
+  });
+
+  const [prevCounts, setPrevCounts] = React.useState(counts);
+  if (counts !== prevCounts) {
+    setPrevCounts(counts);
+    setCountDelta({ pending: 0, approved: 0, rejected: 0, legal: 0, news: 0 });
+  }
+
+  const displayCounts = React.useMemo(
+    () => ({
+      pending: Math.max(0, counts.pending + countDelta.pending),
+      approved: Math.max(0, counts.approved + countDelta.approved),
+      rejected: Math.max(0, counts.rejected + countDelta.rejected),
+      legal: Math.max(0, counts.legal + countDelta.legal),
+      news: Math.max(0, counts.news + countDelta.news),
+    }),
+    [counts, countDelta],
+  );
 
   // Selección múltiple
   const handleToggleSelect = (id: string) => {
@@ -462,81 +562,298 @@ export function FindingsTable({
     });
   };
 
-  // Acciones individuales
+  // Acciones individuales optimistas con rollback automático
   const handleApproveSingle = async (findingId: string) => {
-    setIsProcessing(true);
+    // 1. Inmediato (0ms): Marcar solo esta tarjeta individual y remover selección
+    setProcessingIds((prev) => new Set(prev).add(findingId));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(findingId);
+      return next;
+    });
+
+    const targetFinding = findings.find((f) => f.id === findingId);
+    const prevStatus = targetFinding?.status || "PENDING";
+    const rawType = String(
+      targetFinding?.proposed_data?.type ||
+        targetFinding?.proposed_data?.tipo ||
+        "",
+    ).toUpperCase();
+    const isLegal = [
+      "PENAL",
+      "CIVIL",
+      "ETICA",
+      "ETICO",
+      "ADMINISTRATIVO",
+    ].includes(rawType);
+
+    // Actualización optimista inmediata
+    setOptimisticOverrides((prev) => ({
+      ...prev,
+      [findingId]: {
+        status: "APPROVED",
+        reviewed_by: "Tú",
+        reviewed_at: new Date(),
+      },
+    }));
+
+    if (prevStatus === "PENDING") {
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending - 1,
+        approved: prev.approved + 1,
+        legal: isLegal ? prev.legal - 1 : prev.legal,
+        news: !isLegal ? prev.news - 1 : prev.news,
+      }));
+    }
+
     try {
       const res = await applyResearchFinding(findingId);
       if (res.success) {
-        toast.success("Hallazgo aprobado e incorporado exitosamente");
-        setOptimisticOverrides((prev) => ({
-          ...prev,
-          [findingId]: { status: "APPROVED" },
-        }));
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(findingId);
+        toast.success("Hallazgo aprobado e incorporado exitosamente", {
+          id: `approve-${findingId}`,
+        });
+        startTransition(() => {
+          router.refresh();
+        });
+      } else {
+        // Rollback seguro si el servidor falló
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          delete next[findingId];
           return next;
         });
-        router.refresh();
-      } else {
-        toast.error(`Error al aprobar: ${res.error}`);
+        if (prevStatus === "PENDING") {
+          setCountDelta((prev) => ({
+            ...prev,
+            pending: prev.pending + 1,
+            approved: prev.approved - 1,
+            legal: isLegal ? prev.legal + 1 : prev.legal,
+            news: !isLegal ? prev.news + 1 : prev.news,
+          }));
+        }
+        toast.error(`Error al aprobar: ${res.error}`, {
+          id: `approve-${findingId}`,
+        });
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error inesperado");
+      // Rollback seguro en excepción de red
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        delete next[findingId];
+        return next;
+      });
+      if (prevStatus === "PENDING") {
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending + 1,
+          approved: prev.approved - 1,
+          legal: isLegal ? prev.legal + 1 : prev.legal,
+          news: !isLegal ? prev.news + 1 : prev.news,
+        }));
+      }
+      toast.error(err instanceof Error ? err.message : "Error inesperado", {
+        id: `approve-${findingId}`,
+      });
     } finally {
-      setIsProcessing(false);
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(findingId);
+        return next;
+      });
     }
   };
 
   const handleRejectSingle = async (findingId: string) => {
-    setIsProcessing(true);
+    // 1. Inmediato (0ms)
+    setProcessingIds((prev) => new Set(prev).add(findingId));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(findingId);
+      return next;
+    });
+
+    const targetFinding = findings.find((f) => f.id === findingId);
+    const prevStatus = targetFinding?.status || "PENDING";
+    const rawType = String(
+      targetFinding?.proposed_data?.type ||
+        targetFinding?.proposed_data?.tipo ||
+        "",
+    ).toUpperCase();
+    const isLegal = [
+      "PENAL",
+      "CIVIL",
+      "ETICA",
+      "ETICO",
+      "ADMINISTRATIVO",
+    ].includes(rawType);
+
+    // Actualización optimista de estado
+    setOptimisticOverrides((prev) => ({
+      ...prev,
+      [findingId]: {
+        status: "REJECTED",
+        reviewed_by: "Tú",
+        reviewed_at: new Date(),
+      },
+    }));
+
+    if (prevStatus === "PENDING") {
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending - 1,
+        rejected: prev.rejected + 1,
+        legal: isLegal ? prev.legal - 1 : prev.legal,
+        news: !isLegal ? prev.news - 1 : prev.news,
+      }));
+    }
+
     try {
       const res = await rejectResearchFinding(findingId);
       if (res.success) {
-        toast.info("Hallazgo rechazado");
-        setOptimisticOverrides((prev) => ({
-          ...prev,
-          [findingId]: { status: "REJECTED" },
-        }));
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(findingId);
+        toast.info("Hallazgo rechazado", {
+          id: `reject-${findingId}`,
+        });
+        startTransition(() => {
+          router.refresh();
+        });
+      } else {
+        // Rollback
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          delete next[findingId];
           return next;
         });
-        router.refresh();
-      } else {
-        toast.error(`Error al rechazar: ${res.error}`);
+        if (prevStatus === "PENDING") {
+          setCountDelta((prev) => ({
+            ...prev,
+            pending: prev.pending + 1,
+            rejected: prev.rejected - 1,
+            legal: isLegal ? prev.legal + 1 : prev.legal,
+            news: !isLegal ? prev.news + 1 : prev.news,
+          }));
+        }
+        toast.error(`Error al rechazar: ${res.error}`, {
+          id: `reject-${findingId}`,
+        });
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error inesperado");
+      // Rollback
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        delete next[findingId];
+        return next;
+      });
+      if (prevStatus === "PENDING") {
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending + 1,
+          rejected: prev.rejected - 1,
+          legal: isLegal ? prev.legal + 1 : prev.legal,
+          news: !isLegal ? prev.news + 1 : prev.news,
+        }));
+      }
+      toast.error(err instanceof Error ? err.message : "Error inesperado", {
+        id: `reject-${findingId}`,
+      });
     } finally {
-      setIsProcessing(false);
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(findingId);
+        return next;
+      });
     }
   };
 
   const handleRevertSingle = async (findingId: string) => {
-    setIsProcessing(true);
+    setProcessingIds((prev) => new Set(prev).add(findingId));
+
+    const targetFinding = findings.find((f) => f.id === findingId);
+    const prevStatus = targetFinding?.status || "APPROVED";
+    const rawType = String(
+      targetFinding?.proposed_data?.type ||
+        targetFinding?.proposed_data?.tipo ||
+        "",
+    ).toUpperCase();
+    const isLegal = [
+      "PENAL",
+      "CIVIL",
+      "ETICA",
+      "ETICO",
+      "ADMINISTRATIVO",
+    ].includes(rawType);
+
+    setOptimisticOverrides((prev) => ({
+      ...prev,
+      [findingId]: {
+        status: "PENDING",
+        reviewed_at: null,
+        reviewed_by: null,
+      },
+    }));
+
+    setCountDelta((prev) => ({
+      ...prev,
+      pending: prev.pending + 1,
+      approved: prevStatus === "APPROVED" ? prev.approved - 1 : prev.approved,
+      rejected: prevStatus === "REJECTED" ? prev.rejected - 1 : prev.rejected,
+      legal: isLegal ? prev.legal + 1 : prev.legal,
+      news: !isLegal ? prev.news + 1 : prev.news,
+    }));
+
     try {
       const res = await revertResearchFinding(findingId);
       if (res.success) {
-        toast.success("Hallazgo revertido a estado pendiente exitosamente");
-        setOptimisticOverrides((prev) => ({
-          ...prev,
-          [findingId]: {
-            status: "PENDING",
-            reviewed_at: null,
-            reviewed_by: null,
-          },
-        }));
-        router.refresh();
+        toast.success("Hallazgo revertido a estado pendiente exitosamente", {
+          id: `revert-${findingId}`,
+        });
+        startTransition(() => {
+          router.refresh();
+        });
       } else {
-        toast.error(`Error al revertir: ${res.error}`);
+        // Rollback
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          delete next[findingId];
+          return next;
+        });
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending - 1,
+          approved:
+            prevStatus === "APPROVED" ? prev.approved + 1 : prev.approved,
+          rejected:
+            prevStatus === "REJECTED" ? prev.rejected + 1 : prev.rejected,
+          legal: isLegal ? prev.legal - 1 : prev.legal,
+          news: !isLegal ? prev.news - 1 : prev.news,
+        }));
+        toast.error(`Error al revertir: ${res.error}`, {
+          id: `revert-${findingId}`,
+        });
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Error inesperado");
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        delete next[findingId];
+        return next;
+      });
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending - 1,
+        approved: prevStatus === "APPROVED" ? prev.approved + 1 : prev.approved,
+        rejected: prevStatus === "REJECTED" ? prev.rejected + 1 : prev.rejected,
+        legal: isLegal ? prev.legal - 1 : prev.legal,
+        news: !isLegal ? prev.news - 1 : prev.news,
+      }));
+      toast.error(err instanceof Error ? err.message : "Error inesperado", {
+        id: `revert-${findingId}`,
+      });
     } finally {
-      setIsProcessing(false);
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(findingId);
+        return next;
+      });
     }
   };
 
@@ -544,56 +861,110 @@ export function FindingsTable({
     customData: Record<string, unknown>,
   ) => {
     if (!editingFinding) return;
-    setIsProcessing(true);
+    const findingId = editingFinding.id;
+    setProcessingIds((prev) => new Set(prev).add(findingId));
+    setEditingFinding(null);
+
+    setOptimisticOverrides((prev) => ({
+      ...prev,
+      [findingId]: {
+        status: "APPROVED",
+        proposed_data: customData,
+        reviewed_by: "Tú",
+        reviewed_at: new Date(),
+      },
+    }));
+
     try {
-      const res = await applyResearchFinding(editingFinding.id, customData);
+      const res = await applyResearchFinding(findingId, customData);
       if (res.success) {
         toast.success("Hallazgo editado y aprobado correctamente");
-        setOptimisticOverrides((prev) => ({
-          ...prev,
-          [editingFinding.id]: {
-            status: "APPROVED",
-            proposed_data: customData,
-          },
-        }));
-        setEditingFinding(null);
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       } else {
+        setOptimisticOverrides((prev) => {
+          const next = { ...prev };
+          delete next[findingId];
+          return next;
+        });
         toast.error(`Error al guardar: ${res.error}`);
       }
     } catch (err: unknown) {
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        delete next[findingId];
+        return next;
+      });
       toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
-      setIsProcessing(false);
+      setProcessingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(findingId);
+        return next;
+      });
     }
   };
 
-  // Acciones en bloque
+  // Acciones en bloque optimistas
   const handleBulkApprove = async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
-    setIsProcessing(true);
+    setIsBulkProcessing(true);
+    setOptimisticOverrides((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => {
+        next[id] = {
+          status: "APPROVED",
+          reviewed_by: "Tú",
+          reviewed_at: new Date(),
+        };
+      });
+      return next;
+    });
+    setSelectedIds(new Set());
+
+    setCountDelta((prev) => ({
+      ...prev,
+      pending: prev.pending - ids.length,
+      approved: prev.approved + ids.length,
+    }));
+
     try {
       const res = await bulkApplyFindings(ids);
       if (res.success) {
         toast.success(`Se aprobaron ${res.count} hallazgos con éxito`);
+        startTransition(() => {
+          router.refresh();
+        });
+      } else {
         setOptimisticOverrides((prev) => {
           const next = { ...prev };
-          ids.forEach((id) => {
-            next[id] = { status: "APPROVED" };
-          });
+          ids.forEach((id) => delete next[id]);
           return next;
         });
-        setSelectedIds(new Set());
-        router.refresh();
-      } else {
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending + ids.length,
+          approved: prev.approved - ids.length,
+        }));
         toast.error(`Error en aprobación masiva: ${res.error}`);
       }
     } catch (err: unknown) {
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        ids.forEach((id) => delete next[id]);
+        return next;
+      });
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending + ids.length,
+        approved: prev.approved - ids.length,
+      }));
       toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
-      setIsProcessing(false);
+      setIsBulkProcessing(false);
     }
   };
 
@@ -601,27 +972,60 @@ export function FindingsTable({
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
-    setIsProcessing(true);
+    setIsBulkProcessing(true);
+    setOptimisticOverrides((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => {
+        next[id] = {
+          status: "REJECTED",
+          reviewed_by: "Tú",
+          reviewed_at: new Date(),
+        };
+      });
+      return next;
+    });
+    setSelectedIds(new Set());
+
+    setCountDelta((prev) => ({
+      ...prev,
+      pending: prev.pending - ids.length,
+      rejected: prev.rejected + ids.length,
+    }));
+
     try {
       const res = await bulkRejectFindings(ids);
       if (res.success) {
         toast.info(`Se rechazaron ${res.count} hallazgos`);
+        startTransition(() => {
+          router.refresh();
+        });
+      } else {
         setOptimisticOverrides((prev) => {
           const next = { ...prev };
-          ids.forEach((id) => {
-            next[id] = { status: "REJECTED" };
-          });
+          ids.forEach((id) => delete next[id]);
           return next;
         });
-        setSelectedIds(new Set());
-        router.refresh();
-      } else {
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending + ids.length,
+          rejected: prev.rejected - ids.length,
+        }));
         toast.error(`Error en rechazo masivo: ${res.error}`);
       }
     } catch (err: unknown) {
+      setOptimisticOverrides((prev) => {
+        const next = { ...prev };
+        ids.forEach((id) => delete next[id]);
+        return next;
+      });
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending + ids.length,
+        rejected: prev.rejected - ids.length,
+      }));
       toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
-      setIsProcessing(false);
+      setIsBulkProcessing(false);
     }
   };
 
@@ -641,7 +1045,7 @@ export function FindingsTable({
             >
               <span>Pendientes</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
-                {counts.pending}
+                {displayCounts.pending}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -653,7 +1057,7 @@ export function FindingsTable({
                 <span>Legales</span>
               </div>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
-                {counts.legal}
+                {displayCounts.legal}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -665,7 +1069,7 @@ export function FindingsTable({
                 <span>Noticias</span>
               </div>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
-                {counts.news}
+                {displayCounts.news}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -674,7 +1078,7 @@ export function FindingsTable({
             >
               <span>Aprobadas</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
-                {counts.approved}
+                {displayCounts.approved}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -683,7 +1087,7 @@ export function FindingsTable({
             >
               <span>Rechazadas</span>
               <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold">
-                {counts.rejected}
+                {displayCounts.rejected}
               </span>
             </TabsTrigger>
           </TabsList>
@@ -697,29 +1101,50 @@ export function FindingsTable({
           <Input
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Buscar candidato, DNI o título..."
+            placeholder={
+              context === "legisladores"
+                ? "Buscar legislador, DNI o título..."
+                : "Buscar candidato, DNI o título..."
+            }
             className="pl-9 text-xs sm:text-sm w-full h-9 sm:h-10"
           />
         </div>
 
         <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 flex-wrap">
-          {/* Filtro Cargo */}
+          {/* Filtro Cargo / Cámara */}
           <Select
             value={filters.cargo || "ALL"}
             onValueChange={handleCargoChange}
           >
             <SelectTrigger className="w-full sm:w-[170px] text-xs h-9 sm:h-10">
-              <SelectValue placeholder="Cargo" />
+              <SelectValue
+                placeholder={context === "legisladores" ? "Cámara" : "Cargo"}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Todos los cargos</SelectItem>
-              <SelectItem value="GOBERNADOR">
-                Gobernadores Regionales
+              <SelectItem value="ALL">
+                {context === "legisladores"
+                  ? "Todas las cámaras"
+                  : "Todos los cargos"}
               </SelectItem>
-              <SelectItem value="ALCALDE_PROV">
-                Alcaldes Provinciales
-              </SelectItem>
-              <SelectItem value="ALCALDE_DIST">Alcaldes Distritales</SelectItem>
+              {context === "legisladores" ? (
+                <>
+                  <SelectItem value="SENADO">Senadores</SelectItem>
+                  <SelectItem value="DIPUTADOS">Diputados</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="GOBERNADOR">
+                    Gobernadores Regionales
+                  </SelectItem>
+                  <SelectItem value="ALCALDE_PROV">
+                    Alcaldes Provinciales
+                  </SelectItem>
+                  <SelectItem value="ALCALDE_DIST">
+                    Alcaldes Distritales
+                  </SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
 
@@ -849,10 +1274,39 @@ export function FindingsTable({
             const primaryCandidacy = getPrimaryCandidacy(
               finding.person.candidate,
             );
-            const cargoInfo = getCandidacyTypeInfo(primaryCandidacy?.type);
-            const partyName = primaryCandidacy?.politicalparty?.name;
-            const locationStr = formatLocationName(primaryCandidacy);
-            const regionCanonical = resolveCanonicalRegion(primaryCandidacy);
+            const primaryLegislator = getPrimaryLegislator(
+              finding.person.legislator,
+            );
+
+            // Context-aware badge data
+            const cargoInfo =
+              context === "legisladores" && primaryLegislator
+                ? getChamberInfo(primaryLegislator.chamber)
+                : getCandidacyTypeInfo(primaryCandidacy?.type);
+            const partyName =
+              context === "legisladores" && primaryLegislator
+                ? (getLegislatorBancada(primaryLegislator) ??
+                  primaryLegislator.politicalparty?.name)
+                : primaryCandidacy?.politicalparty?.name;
+            const locationStr =
+              context === "legisladores" && primaryLegislator
+                ? formatLocationName({
+                    type: primaryLegislator.chamber,
+                    politicalparty: primaryLegislator.politicalparty,
+                    electoraldistrict: primaryLegislator.electoraldistrict,
+                  })
+                : formatLocationName(primaryCandidacy);
+            const regionCanonical =
+              context === "legisladores" && primaryLegislator
+                ? resolveCanonicalRegion({
+                    type: primaryLegislator.chamber,
+                    politicalparty: primaryLegislator.politicalparty,
+                    electoraldistrict: primaryLegislator.electoraldistrict,
+                  })
+                : resolveCanonicalRegion(primaryCandidacy);
+
+            const isCardBusy =
+              processingIds.has(finding.id) || isBulkProcessing;
 
             return (
               <Card
@@ -861,7 +1315,7 @@ export function FindingsTable({
                   isSelected
                     ? "ring-2 ring-primary border-primary bg-primary/[0.02]"
                     : "hover:border-primary/40 hover:shadow-sm"
-                }`}
+                } ${isCardBusy ? "opacity-85 pointer-events-auto" : ""}`}
               >
                 <div className="p-4 pb-3 space-y-3">
                   {/* Encabezado: Candidato + Tipo */}
@@ -871,6 +1325,7 @@ export function FindingsTable({
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => handleToggleSelect(finding.id)}
+                          disabled={isCardBusy}
                           className="shrink-0 mt-0.5"
                           aria-label={`Seleccionar ${finding.person.fullname}`}
                         />
@@ -918,7 +1373,9 @@ export function FindingsTable({
                             <span className="text-[11px] text-muted-foreground">
                               {finding.person.dni
                                 ? `DNI: ${finding.person.dni}`
-                                : "Candidato"}
+                                : context === "legisladores"
+                                  ? "Legislador"
+                                  : "Candidato"}
                             </span>
                           )}
                         </div>
@@ -999,15 +1456,20 @@ export function FindingsTable({
                         {source}
                       </span>
                       {sourceUrl && (
-                        <a
-                          href={sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center shrink-0"
-                          title="Abrir fuente original"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+                        <div className="inline-flex items-center gap-1 shrink-0">
+                          {parseSourceUrls(sourceUrl).map((src, idx) => (
+                            <a
+                              key={idx}
+                              href={src.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline inline-flex items-center gap-0.5 text-[11px]"
+                              title={`Abrir fuente original (${src.domain})`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ))}
+                        </div>
                       )}
 
                       {date && (
@@ -1025,7 +1487,7 @@ export function FindingsTable({
                             <span className="text-muted-foreground/40">•</span>
                             <span
                               className="text-[11px] text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap"
-                              title={`El candidato registra ${finding.person._count.background} antecedente(s) previo(s) en BD`}
+                              title={`${context === "legisladores" ? "El legislador" : "El candidato"} registra ${finding.person._count.background} antecedente(s) previo(s) en BD`}
                             >
                               {finding.person._count.background} ant. BD
                             </span>
@@ -1043,7 +1505,7 @@ export function FindingsTable({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setDiffFinding(finding)}
-                                disabled={isProcessing}
+                                disabled={isCardBusy}
                                 className="h-7 w-7 text-primary hover:bg-primary/10"
                                 aria-label="Ver diferencias con base de datos"
                               >
@@ -1061,7 +1523,7 @@ export function FindingsTable({
                               variant="ghost"
                               size="icon"
                               onClick={() => setEditingFinding(finding)}
-                              disabled={isProcessing}
+                              disabled={isCardBusy}
                               className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                               aria-label="Editar hallazgo"
                             >
@@ -1085,19 +1547,28 @@ export function FindingsTable({
                         variant="outline"
                         size="sm"
                         onClick={() => handleRejectSingle(finding.id)}
-                        disabled={isProcessing}
+                        disabled={isCardBusy}
                         className="h-10 sm:h-8.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-colors font-medium active:scale-95"
                       >
-                        <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" /> Ignorar
+                        {processingIds.has(finding.id) ? (
+                          <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+                        )}
+                        Ignorar
                       </Button>
                       <Button
                         variant="default"
                         size="sm"
                         onClick={() => handleApproveSingle(finding.id)}
-                        disabled={isProcessing}
+                        disabled={isCardBusy}
                         className="h-10 sm:h-8.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-none active:scale-95"
                       >
-                        <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />{" "}
+                        {processingIds.has(finding.id) ? (
+                          <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+                        )}
                         Aprobar
                       </Button>
                     </div>
@@ -1154,11 +1625,16 @@ export function FindingsTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRevertSingle(finding.id)}
-                          disabled={isProcessing}
+                          disabled={isCardBusy}
                           className="h-7 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                           title="Deshacer aprobación y regresar a pendiente"
                         >
-                          <RotateCcw className="h-3 w-3 mr-1" /> Revertir
+                          {processingIds.has(finding.id) ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3 w-3 mr-1" />
+                          )}
+                          Revertir
                         </Button>
                       )}
                     </div>
@@ -1239,7 +1715,9 @@ export function FindingsTable({
                 className="hidden sm:inline-flex h-8 w-8"
                 onClick={() => updateFilters({ page: 1 })}
                 disabled={
-                  pagination.currentPage <= 1 || isProcessing || isNavigating
+                  pagination.currentPage <= 1 ||
+                  isBulkProcessing ||
+                  isNavigating
                 }
                 title="Primera página"
               >
@@ -1255,7 +1733,9 @@ export function FindingsTable({
                   })
                 }
                 disabled={
-                  pagination.currentPage <= 1 || isProcessing || isNavigating
+                  pagination.currentPage <= 1 ||
+                  isBulkProcessing ||
+                  isNavigating
                 }
                 title="Página anterior"
               >
@@ -1275,7 +1755,7 @@ export function FindingsTable({
                 }
                 disabled={
                   pagination.currentPage >= pagination.totalPages ||
-                  isProcessing ||
+                  isBulkProcessing ||
                   isNavigating
                 }
                 title="Página siguiente"
@@ -1289,7 +1769,7 @@ export function FindingsTable({
                 onClick={() => updateFilters({ page: pagination.totalPages })}
                 disabled={
                   pagination.currentPage >= pagination.totalPages ||
-                  isProcessing ||
+                  isBulkProcessing ||
                   isNavigating
                 }
                 title="Última página"
@@ -1307,7 +1787,10 @@ export function FindingsTable({
         onOpenChange={(open) => !open && setEditingFinding(null)}
         finding={editingFinding}
         onSaveAndApprove={handleSaveAndApproveEdit}
-        isProcessing={isProcessing}
+        isProcessing={
+          isBulkProcessing ||
+          (editingFinding ? processingIds.has(editingFinding.id) : false)
+        }
       />
 
       {/* Diálogo de Diff View */}
@@ -1325,7 +1808,10 @@ export function FindingsTable({
             handleRejectSingle(diffFinding.id);
             setDiffFinding(null);
           }}
-          isProcessing={isProcessing}
+          isProcessing={
+            isBulkProcessing ||
+            (diffFinding ? processingIds.has(diffFinding.id) : false)
+          }
         />
       )}
 
@@ -1335,7 +1821,7 @@ export function FindingsTable({
         onBulkApprove={handleBulkApprove}
         onBulkReject={handleBulkReject}
         onClearSelection={() => setSelectedIds(new Set())}
-        isProcessing={isProcessing}
+        isProcessing={isBulkProcessing}
       />
     </div>
   );
