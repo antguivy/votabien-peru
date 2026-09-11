@@ -2,6 +2,7 @@ import * as React from "react";
 import { SelectTrigger } from "@radix-ui/react-select";
 import { type Table } from "@tanstack/react-table";
 import {
+  Bot,
   CheckCircle2,
   Download,
   Loader,
@@ -32,10 +33,12 @@ import { AdminLegislator } from "@/interfaces/legislator";
 
 interface LegislatorsTableFloatingBarProps {
   table: Table<AdminLegislator>;
+  canLaunchResearch?: boolean;
 }
 
 export function LegislatorsTableFloatingBar({
   table,
+  canLaunchResearch = false,
 }: LegislatorsTableFloatingBarProps) {
   const rows = table.getFilteredSelectedRowModel().rows;
 
@@ -194,6 +197,38 @@ export function LegislatorsTableFloatingBar({
                   <p>Exportar Legisladores</p>
                 </TooltipContent>
               </Tooltip>
+
+              {canLaunchResearch && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="size-7 border text-primary"
+                      onClick={() => {
+                        const persons = Array.from(
+                          new Map(
+                            rows.map((r) => [
+                              r.original.person_id,
+                              { id: r.original.person_id },
+                            ]),
+                          ).values(),
+                        );
+                        const event = new CustomEvent("open-batch-research", {
+                          detail: { rows: persons },
+                        });
+                        window.dispatchEvent(event);
+                      }}
+                      disabled={isPending}
+                    >
+                      <Bot className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                    <p>Investigación por Lotes (IA)</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

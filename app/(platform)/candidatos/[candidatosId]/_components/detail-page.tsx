@@ -41,6 +41,7 @@ import {
   TYPE_LABELS,
   TYPE_LABELS_SINGULAR,
 } from "@/lib/utils/background-config";
+import { parseSourceUrls } from "@/lib/utils/url";
 
 const formatCurrency = (amount: string | number) => {
   if (!amount) return "S/ 0.00";
@@ -872,19 +873,24 @@ export default function DetailCandidato({
                             </span>
 
                             {bg.source_url && (
-                              <Link
-                                href={bg.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                {isJNE
-                                  ? "Revisar documento oficial"
-                                  : `Ver en ${new URL(
-                                      bg.source_url,
-                                    ).hostname.replace("www.", "")}`}
-                              </Link>
+                              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                {parseSourceUrls(bg.source_url).map(
+                                  (src, idx) => (
+                                    <Link
+                                      key={idx}
+                                      href={src.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-all active:scale-[0.98] w-full sm:w-auto"
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                      {isJNE
+                                        ? "Revisar documento oficial"
+                                        : `Ver en ${src.domain}`}
+                                    </Link>
+                                  ),
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1040,18 +1046,22 @@ export default function DetailCandidato({
                             {bio.description}
                           </p>
                           {bio.source_url && (
-                            <Link
-                              href={bio.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 mt-2 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors"
-                            >
-                              <ExternalLink size={10} />
-                              {new URL(bio.source_url).hostname.replace(
-                                "www.",
-                                "",
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              {parseSourceUrls(bio.source_url).map(
+                                (src, idx) => (
+                                  <Link
+                                    key={idx}
+                                    href={src.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors"
+                                  >
+                                    <ExternalLink size={10} />
+                                    {src.domain}
+                                  </Link>
+                                ),
                               )}
-                            </Link>
+                            </div>
                           )}
                         </div>
                       ))}

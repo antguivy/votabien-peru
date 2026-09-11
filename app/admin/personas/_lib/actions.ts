@@ -1,8 +1,5 @@
 "use server"; // <-- ¡Obligatorio para mutaciones!
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { TAGS } from "@/lib/cache-tags"; // <-- Importamos nuestros tags
-
 import { prisma } from "@/lib/prisma";
 import { serverGetUser, serverRequireEditor } from "@/lib/auth-actions";
 import { createId } from "@paralleldrive/cuid2";
@@ -23,14 +20,7 @@ import { isBlockedSourceUrl } from "@/lib/blocked-sources";
 import { toJsonInsert, toNullIfEmpty } from "@/lib/utils/text";
 import { limaDateToUtc } from "@/lib/utils/date";
 
-// Helper para detonar todas las cachés relacionadas a una persona
-// Cambiar a una persona afecta sus tarjetas de candidato y legislador
-function revalidatePersonEcosystem() {
-  revalidatePath("/admin/personas");
-  revalidateTag(TAGS.persons, "max");
-  revalidateTag(TAGS.candidates, "max");
-  revalidateTag(TAGS.legislators, "max");
-}
+import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
 
 export async function createPerson(data: CreatePersonRequest) {
   await serverRequireEditor();

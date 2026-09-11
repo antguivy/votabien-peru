@@ -32,6 +32,7 @@ import { getLuminance, getTextColor } from "@/lib/utils/color-utils";
 import { BiographyDetail, Assets } from "@/interfaces/person";
 import { NoDataMessage } from "@/components/no-data-message";
 import Image from "next/image";
+import { parseSourceUrls } from "@/lib/utils/url";
 
 // ─── Color helpers ────────────────────────────────────────────────────────────
 
@@ -299,15 +300,22 @@ function BackgroundCard({ background }: { background: BackgroundBase }) {
             </span>
           )}
           {background.source_url && (
-            <a
-              href={background.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {background.source}
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            <div className="flex flex-wrap items-center gap-2">
+              {parseSourceUrls(background.source_url).map((src, idx, arr) => (
+                <a
+                  key={idx}
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {arr.length === 1 && background.source
+                    ? background.source
+                    : src.domain}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -337,14 +345,20 @@ function BiographyCard({ entry }: { entry: BiographyDetail }) {
         {entry.description}
       </p>
       {entry.source_url && (
-        <a
-          href={entry.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          {entry.source} <ExternalLink className="h-2.5 w-2.5" />
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          {parseSourceUrls(entry.source_url).map((src, idx, arr) => (
+            <a
+              key={idx}
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {arr.length === 1 && entry.source ? entry.source : src.domain}{" "}
+              <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          ))}
+        </div>
       )}
     </div>
   );

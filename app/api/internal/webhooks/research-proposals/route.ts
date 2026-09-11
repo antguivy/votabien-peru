@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createId } from "@paralleldrive/cuid2";
-import { revalidateTag, revalidatePath } from "next/cache";
-import { TAGS } from "@/lib/cache-tags";
 import { BackgroundStatus, BackgroundType } from "@/interfaces/background";
 import { Prisma } from "@/prisma/generated/client";
 import { normalizeFindingData } from "@/interfaces/research";
 
-function revalidatePersonEcosystem() {
-  revalidatePath("/admin/personas");
-  revalidatePath("/admin/candidatos");
-  revalidatePath("/admin/candidatos/revisiones");
-  revalidateTag(TAGS.persons, "max");
-  revalidateTag(TAGS.candidates, "max");
-  revalidateTag(TAGS.legislators, "max");
-}
+import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,13 +53,16 @@ export async function POST(req: NextRequest) {
 
       // Determinar status seguro: IGNORE nunca puede ser PENDING
       let status = String(p.status || "PENDING").toUpperCase();
-      if (action === "IGNORE") {
-        status = "REJECTED";
+      if (action === "IGNORE" || action === "NONE") {
+        status = action === "NONE" ? "APPROVED" : "REJECTED";
       } else if (
-        action !== "NONE" &&
         action !== "ERROR" &&
-        normalizedData.title === "Hallazgo Web" &&
-        normalizedData.summary === "Sin resumen"
+        (!normalizedData.summary ||
+          normalizedData.summary === "Sin resumen" ||
+          normalizedData.summary.trim().length < 15 ||
+          normalizedData.title === "Hallazgo Web" ||
+          normalizedData.title === "Sin título" ||
+          !normalizedData.title.trim())
       ) {
         // Descartar automáticamente registros vacíos / basura
         status = "REJECTED";
@@ -176,6 +170,42 @@ async function applyProposalDirect(proposal: {
         where: { id: proposal.target_id },
       });
       if (existing) {
+        const allSources = new Set<string>();
+        if (existing.source) {
+          existing.source.split(",").forEach((s) => {
+            const trimmed = s.trim();
+            if (trimmed) allSources.add(trimmed);
+          });
+        }
+        if (normalized.source) {
+          normalized.source.split(",").forEach((s) => {
+            const trimmed = s.trim();
+            if (trimmed) allSources.add(trimmed);
+          });
+        }
+        const finalSource =
+          allSources.size > 0
+            ? Array.from(allSources).join(", ")
+            : normalized.source || existing.source;
+
+        const allUrls = new Set<string>();
+        if (existing.source_url) {
+          existing.source_url.split(",").forEach((u) => {
+            const trimmed = u.trim();
+            if (trimmed) allUrls.add(trimmed);
+          });
+        }
+        if (normalized.source_url) {
+          normalized.source_url.split(",").forEach((u) => {
+            const trimmed = u.trim();
+            if (trimmed) allUrls.add(trimmed);
+          });
+        }
+        const finalSourceUrl =
+          allUrls.size > 0
+            ? Array.from(allUrls).join(", ")
+            : normalized.source_url || existing.source_url;
+
         await prisma.background.update({
           where: { id: proposal.target_id },
           data: {
@@ -185,8 +215,8 @@ async function applyProposalDirect(proposal: {
             status: statusEnum,
             summary: normalized.summary || existing.summary,
             sanction: normalized.sanction || existing.sanction,
-            source: normalized.source || existing.source,
-            source_url: normalized.source_url || existing.source_url,
+            source: finalSource,
+            source_url: finalSourceUrl,
             title: normalized.title || existing.title,
             previous_version: existing as unknown as Prisma.InputJsonValue,
             updated_at: new Date(),
@@ -258,11 +288,24 @@ async function applyProposalDirect(proposal: {
           data: { target_id: postureId },
         });
       } else if (proposal.action === "UPDATE") {
-        const idx = bio.findIndex(
-          (b) =>
-            (proposal.target_id && b.id === proposal.target_id) ||
-            (newItem.source_url && b.source_url === newItem.source_url),
-        );
+        const newUrls = newItem.source_url
+          ? String(newItem.source_url)
+              .split(",")
+              .map((u) => u.trim().toLowerCase())
+              .filter(Boolean)
+          : [];
+
+        const idx = bio.findIndex((b) => {
+          if (proposal.target_id && b.id === proposal.target_id) return true;
+          if (newUrls.length > 0 && b.source_url) {
+            const bUrls = String(b.source_url)
+              .split(",")
+              .map((u) => u.trim().toLowerCase())
+              .filter(Boolean);
+            if (newUrls.some((u) => bUrls.includes(u))) return true;
+          }
+          return false;
+        });
         if (idx >= 0) {
           bio[idx] = { ...bio[idx], ...newItem };
         } else {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowRightLeft, Ellipsis, SquarePen } from "lucide-react";
+import { ArrowRightLeft, Bot, Ellipsis, SquarePen } from "lucide-react";
 
 import { formatterDate } from "@/lib/utils/date";
 import { Badge } from "@/components/ui/badge";
@@ -31,10 +31,12 @@ interface GetColumnsProps {
   setRowAction: React.Dispatch<
     React.SetStateAction<DataTableRowAction<AdminLegislator> | null>
   >;
+  canLaunchResearch?: boolean;
 }
 
 export function getColumns({
   setRowAction,
+  canLaunchResearch = false,
 }: GetColumnsProps): ColumnDef<AdminLegislator>[] {
   return [
     {
@@ -275,6 +277,15 @@ export function getColumns({
                 <ArrowRightLeft className="size-4" />
                 Cambios de Bancada
               </DropdownMenuItem>
+              {canLaunchResearch && (
+                <DropdownMenuItem
+                  onSelect={() => setRowAction({ type: "research", row })}
+                  className="text-violet-600 focus:text-violet-600 focus:bg-violet-50"
+                >
+                  <Bot className="size-4 mr-2" />
+                  Investigar (IA)
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );

@@ -12,6 +12,9 @@ export interface BiographyDetail {
   description: string;
   source: string;
   source_url: string | null;
+  action?: string | null;
+  target_id?: string | null;
+  reason?: string | null;
 }
 
 export interface WorkExperience {

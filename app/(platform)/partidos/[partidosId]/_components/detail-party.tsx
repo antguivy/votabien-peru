@@ -43,6 +43,7 @@ import Link from "next/link";
 import { getTextColor, needsOverlay } from "@/lib/utils/color-utils";
 import { cn } from "@/lib/utils";
 import PeruSeatsMapSimple from "@/components/politics/peru-seats-map";
+import { parseSourceUrls } from "@/lib/utils/url";
 import {
   Credenza,
   CredenzaBody,
@@ -88,17 +89,23 @@ const TimelineList = ({ items }: { items: PartyHistory[] }) => {
                 {item.event}
               </p>
               {item.source && (
-                <div className="mt-3 pt-2 border-t border-border/50 flex items-center gap-1.5">
+                <div className="mt-3 pt-2 border-t border-border/50 flex flex-wrap items-center gap-1.5">
                   <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                  {item.source_url ? (
-                    <a
-                      href={item.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline font-medium"
-                    >
-                      Fuente: {item.source}
-                    </a>
+                  {item.source_url &&
+                  parseSourceUrls(item.source_url).length > 0 ? (
+                    parseSourceUrls(item.source_url).map((src, idx, arr) => (
+                      <a
+                        key={idx}
+                        href={src.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline font-medium mr-2"
+                      >
+                        {arr.length === 1 && item.source
+                          ? `Fuente: ${item.source}`
+                          : src.label}
+                      </a>
+                    ))
                   ) : (
                     <span className="text-xs text-muted-foreground">
                       Fuente: {item.source}
@@ -655,14 +662,24 @@ export default function DetailParty({
                               {legalCase.description}
                             </p>
                             {legalCase.source_url && (
-                              <a
-                                href={legalCase.source_url}
-                                target="_blank"
-                                className="text-[10px] text-primary hover:underline flex items-center justify-end gap-1"
-                              >
-                                Fuente: {legalCase.source_name}{" "}
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
+                              <div className="flex flex-wrap items-center justify-end gap-2">
+                                {parseSourceUrls(legalCase.source_url).map(
+                                  (src, idx, arr) => (
+                                    <a
+                                      key={idx}
+                                      href={src.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                                    >
+                                      {arr.length === 1 && legalCase.source_name
+                                        ? `Fuente: ${legalCase.source_name}`
+                                        : src.label}{" "}
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  ),
+                                )}
+                              </div>
                             )}
                           </div>
                         ))}

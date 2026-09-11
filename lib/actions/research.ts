@@ -1,26 +1,15 @@
 "use server";
 
 import { createId } from "@paralleldrive/cuid2";
-import { revalidatePath, revalidateTag } from "next/cache";
-
 import { prisma } from "@/lib/prisma";
 import { serverRequireAdmin } from "@/lib/auth-actions";
-import { TAGS } from "@/lib/cache-tags";
 import { API_BASE_URL } from "@/lib/config";
 import { extractErrorMessage } from "@/lib/error-handler";
 import { isBlockedSourceUrl } from "@/lib/blocked-sources";
 import { BackgroundBase } from "@/interfaces/background";
 import { BiographyDetail } from "@/interfaces/person";
 import { Prisma } from "@/prisma/generated/client";
-
-function revalidatePersonEcosystem() {
-  revalidatePath("/admin/personas");
-  revalidatePath("/admin/candidatos");
-  revalidatePath("/admin/candidatos/revisiones");
-  revalidateTag(TAGS.persons, "max");
-  revalidateTag(TAGS.candidates, "max");
-  revalidateTag(TAGS.legislators, "max");
-}
+import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
 
 /**
  * Encola la investigación batch de un conjunto de personas en el servicio Python.
@@ -186,21 +175,42 @@ export async function queueResearchProposals(
         const cleanUrl = ant.source_url?.trim() || "";
         const cleanTitle = (ant.title || "").trim().toLowerCase();
 
-        // Detectar si ya existe en BD para proponer UPDATE en vez de INSERT
-        const matchedBg = existingBgs.find((ex) => {
-          if (cleanUrl && ex.source_url && ex.source_url.trim() === cleanUrl)
-            return true;
-          if (
-            cleanTitle &&
-            ex.title &&
-            ex.title.trim().toLowerCase() === cleanTitle
-          )
-            return true;
-          return false;
-        });
+        // 1. Usar directamente la decisión del motor de deduplicación si viene provista
+        let action = ant.action;
+        let target_id =
+          ant.target_id || (ant.id && ant.id !== "" ? ant.id : null);
+        let reason = ant.reason;
 
-        const action = matchedBg ? "UPDATE" : "INSERT";
-        const target_id = matchedBg ? matchedBg.id : null;
+        // 2. Fallback solo si no vino clasificado desde Python
+        if (!action) {
+          const antUrls = cleanUrl
+            ? cleanUrl
+                .split(",")
+                .map((u) => u.trim().toLowerCase())
+                .filter(Boolean)
+            : [];
+
+          const matchedBg = existingBgs.find((ex) => {
+            if (antUrls.length > 0 && ex.source_url) {
+              const exUrls = ex.source_url
+                .split(",")
+                .map((u) => u.trim().toLowerCase())
+                .filter(Boolean);
+              if (antUrls.some((u) => exUrls.includes(u))) return true;
+            }
+            if (
+              cleanTitle &&
+              ex.title &&
+              ex.title.trim().toLowerCase() === cleanTitle
+            )
+              return true;
+            return false;
+          });
+
+          action = matchedBg ? "UPDATE" : "INSERT";
+          target_id = matchedBg ? matchedBg.id : null;
+        }
+
         const titleVal = ant.title || "Hallazgo Web";
         const summaryVal = ant.summary || "";
         const typeVal = ant.type as string;
@@ -209,14 +219,19 @@ export async function queueResearchProposals(
         const sourceVal = ant.source || "Web";
         const dateVal = ant.publication_date || null;
 
+        if (!reason) {
+          reason =
+            action === "UPDATE"
+              ? `Actualización de antecedente existente — ${sourceVal}`
+              : `Investigación individual IA — ${sourceVal}`;
+        }
+
         return {
           person_id: personId,
           batch_run_id,
           action,
           target_id,
-          reason: matchedBg
-            ? `Actualización de antecedente existente — ${sourceVal}`
-            : `Investigación individual IA — ${sourceVal}`,
+          reason,
           confidence: 0.85,
           status: "PENDING",
           proposed_data: {
@@ -251,35 +266,64 @@ export async function queueResearchProposals(
         const cleanTitle = (pos.title || "").trim().toLowerCase();
         const cleanDesc = (pos.description || "").trim().toLowerCase();
 
-        // Detectar si ya existe en posturas
-        const matchedPos = existingPosturas.find((ex) => {
-          const exUrl = String(ex.source_url || ex.fuente_url || "").trim();
-          const exTitle = String(ex.title || ex.titulo || "")
-            .trim()
-            .toLowerCase();
-          const exDesc = String(
-            ex.description || ex.redaccion_final || ex.hecho || "",
-          )
-            .trim()
-            .toLowerCase();
+        // 1. Usar directamente la decisión del motor de deduplicación si viene provista
+        let action = pos.action;
+        let target_id =
+          pos.target_id || (pos.id && pos.id !== "" ? pos.id : null);
+        let reason = pos.reason;
 
-          if (cleanUrl && exUrl && cleanUrl === exUrl) return true;
-          if (cleanTitle && exTitle && cleanTitle === exTitle) return true;
-          if (
-            cleanDesc &&
-            exDesc &&
-            cleanDesc.length > 30 &&
-            (cleanDesc === exDesc || exDesc.includes(cleanDesc))
-          )
-            return true;
-          return false;
-        });
+        // 2. Fallback solo si no vino clasificado desde Python
+        if (!action) {
+          const posUrls = cleanUrl
+            ? cleanUrl
+                .split(",")
+                .map((u) => u.trim().toLowerCase())
+                .filter(Boolean)
+            : [];
 
-        const action = matchedPos ? "UPDATE" : "INSERT";
-        const target_id =
-          matchedPos && typeof matchedPos.id === "string"
-            ? matchedPos.id
-            : null;
+          const matchedPos = existingPosturas.find((ex) => {
+            const exUrlStr = String(ex.source_url || ex.fuente_url || "")
+              .trim()
+              .toLowerCase();
+            const exUrls = exUrlStr
+              ? exUrlStr
+                  .split(",")
+                  .map((u) => u.trim())
+                  .filter(Boolean)
+              : [];
+            const exTitle = String(ex.title || ex.titulo || "")
+              .trim()
+              .toLowerCase();
+            const exDesc = String(
+              ex.description || ex.redaccion_final || ex.hecho || "",
+            )
+              .trim()
+              .toLowerCase();
+
+            if (
+              posUrls.length > 0 &&
+              exUrls.length > 0 &&
+              posUrls.some((u) => exUrls.includes(u))
+            )
+              return true;
+            if (cleanTitle && exTitle && cleanTitle === exTitle) return true;
+            if (
+              cleanDesc &&
+              exDesc &&
+              cleanDesc.length > 30 &&
+              (cleanDesc === exDesc || exDesc.includes(cleanDesc))
+            )
+              return true;
+            return false;
+          });
+
+          action = matchedPos ? "UPDATE" : "INSERT";
+          target_id =
+            matchedPos && typeof matchedPos.id === "string"
+              ? matchedPos.id
+              : null;
+        }
+
         const titleVal =
           pos.title ||
           (pos.type
@@ -290,14 +334,19 @@ export async function queueResearchProposals(
         const sourceVal = pos.source || "Web";
         const dateVal = pos.date || null;
 
+        if (!reason) {
+          reason =
+            action === "UPDATE"
+              ? `Actualización de noticia existente — ${sourceVal}`
+              : `Noticia detectada por IA — ${sourceVal}`;
+        }
+
         return {
           person_id: personId,
           batch_run_id,
           action,
           target_id,
-          reason: matchedPos
-            ? `Actualización de noticia existente — ${sourceVal}`
-            : `Noticia detectada por IA — ${sourceVal}`,
+          reason,
           confidence: 0.85,
           status: "PENDING",
           proposed_data: {
@@ -324,20 +373,46 @@ export async function queueResearchProposals(
 
     const allProposals = [...backgroundProposals, ...newsProposals];
 
-    if (allProposals.length === 0) {
+    const validProposals = allProposals.filter((p) => {
+      const data = (p.proposed_data || {}) as Record<string, unknown>;
+      const title = String(data.title || data.titulo || "").trim();
+      const summary = String(
+        data.summary || data.redaccion_final || data.description || "",
+      ).trim();
+
+      if (
+        !title ||
+        title.toLowerCase() === "hallazgo web" ||
+        title.toLowerCase() === "sin título" ||
+        title.toLowerCase() === "sin titulo"
+      ) {
+        return false;
+      }
+      if (
+        !summary ||
+        summary.toLowerCase() === "sin resumen" ||
+        summary.length < 15
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    if (validProposals.length === 0) {
       return {
         success: false,
-        error: "No hay hallazgos válidos para enviar a revisión.",
+        error:
+          "No hay hallazgos con contenido sustantivo válido para enviar a revisión.",
       };
     }
 
-    await prisma.research_proposals.createMany({ data: allProposals });
+    await prisma.research_proposals.createMany({ data: validProposals });
 
     revalidatePersonEcosystem();
 
     return {
       success: true,
-      count: allProposals.length,
+      count: validProposals.length,
       batch_run_id,
     };
   } catch (error) {

@@ -607,12 +607,23 @@ export function ResultadoTablas({
                         className="group transition-colors hover:bg-muted/20"
                       >
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="font-normal bg-background"
-                          >
-                            {ant.estado}
-                          </Badge>
+                          <div className="flex flex-col gap-1 items-start">
+                            <Badge
+                              variant="outline"
+                              className="font-normal bg-background"
+                            >
+                              {ant.estado}
+                            </Badge>
+                            {ant.action === "UPDATE" && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[9px] font-bold tracking-tight bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 px-1.5 py-0"
+                                title="Actualización sobre antecedente ya existente en BD"
+                              >
+                                ACTUALIZACIÓN
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {ant.fecha || "N/A"}
@@ -697,12 +708,23 @@ export function ResultadoTablas({
                       }`}
                     >
                       <TableCell className="align-middle">
-                        <Badge
-                          variant={bio.es_nuevo ? "default" : "secondary"}
-                          className="text-[10px] whitespace-nowrap"
-                        >
-                          {bio.tema}
-                        </Badge>
+                        <div className="flex flex-col gap-1 items-start">
+                          <Badge
+                            variant={bio.es_nuevo ? "default" : "secondary"}
+                            className="text-[10px] whitespace-nowrap"
+                          >
+                            {bio.tema}
+                          </Badge>
+                          {bio.action === "UPDATE" && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[9px] font-bold tracking-tight bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 px-1.5 py-0"
+                              title="Actualización sobre postura o declaración existente en BD"
+                            >
+                              ACTUALIZACIÓN
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs font-medium text-muted-foreground align-middle">
                         {bio.fecha}

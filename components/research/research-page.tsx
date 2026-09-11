@@ -100,7 +100,10 @@ export default function ResearchPageDialog({
       const backgrounds: BackgroundBase[] =
         saveAntecedentes && tablas.antecedentes_validos
           ? tablas.antecedentes_validos.map((ant) => ({
-              id: "",
+              id: ant.target_id || "",
+              action: ant.action || (ant.target_id ? "UPDATE" : "INSERT"),
+              target_id: ant.target_id || null,
+              reason: ant.reason || null,
               type: normalizeType(ant.tipo),
               status: normalizeStatus(ant.estado),
               title: ant.titulo ?? "",
@@ -116,6 +119,10 @@ export default function ResearchPageDialog({
       const biography: BiographyDetail[] =
         saveNoticias && tablas.posturas_validas
           ? tablas.posturas_validas.map((pos) => ({
+              id: pos.target_id || "",
+              action: pos.action || (pos.target_id ? "UPDATE" : "INSERT"),
+              target_id: pos.target_id || null,
+              reason: pos.reason || null,
               title:
                 pos.titulo ||
                 (pos.tema
@@ -143,7 +150,7 @@ export default function ResearchPageDialog({
       }
 
       toast.success("Enviado a la bandeja de revisiones", {
-        description: `${res.count} hallazgos quedaron PENDIENTES de revisión en /admin/candidatos/revisiones.`,
+        description: `${res.count} hallazgo(s) quedaron PENDIENTES de revisión.`,
       });
 
       resetEstado();

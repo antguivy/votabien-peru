@@ -10,6 +10,8 @@ import HemicileLegislator from "@/components/landing/hemicicle";
 import { getSeatParliamentary } from "@/queries/public/seats";
 import { ChamberType } from "@/interfaces/politics";
 
+export const dynamic = "force-dynamic";
+
 export default async function VotaBienPage() {
   try {
     const [hitos, seatsDiputados, seatsSenado] = await Promise.all([

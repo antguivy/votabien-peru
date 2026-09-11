@@ -10,6 +10,9 @@ export interface Antecedente {
   sancion?: string | null;
   source_id?: number;
   fuente_url?: string | null;
+  action?: "INSERT" | "UPDATE" | "IGNORE";
+  target_id?: string | null;
+  reason?: string | null;
 }
 
 export interface EventoPostura {
@@ -23,6 +26,9 @@ export interface EventoPostura {
   es_nuevo?: boolean;
   source_id?: number;
   fuente_url?: string | null;
+  action?: "INSERT" | "UPDATE" | "IGNORE";
+  target_id?: string | null;
+  reason?: string | null;
 }
 
 export interface Alerta {
