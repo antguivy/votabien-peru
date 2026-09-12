@@ -88,7 +88,10 @@ export async function applyResearchFinding(
       where: { id: findingId },
     });
 
-    if (!finding || finding.status !== "PENDING") {
+    if (
+      !finding ||
+      (finding.status !== "PENDING" && finding.status !== "APPROVED")
+    ) {
       throw new Error("El hallazgo no es válido o ya fue procesado.");
     }
 
@@ -118,7 +121,7 @@ export async function applyResearchFinding(
           : "EN_INVESTIGACION"
       ) as BackgroundStatus;
 
-      if (finding.action === "UPDATE" && finding.target_id) {
+      if (finding.target_id) {
         const existing = await prisma.background.findUnique({
           where: { id: finding.target_id },
         });
@@ -261,42 +264,41 @@ export async function applyResearchFinding(
           ? [...(person.posturas as Record<string, unknown>[])]
           : [];
 
-        const postureId = finding.target_id || createId();
-        finalTargetId = postureId;
+        if (finding.target_id) {
+          // El servicio indicó UPDATE con target_id, o es una edición de un registro ya aprobado
+          const existingIdx = bio.findIndex((b) => b.id === finding.target_id);
+          const updatedItem = {
+            id: finding.target_id,
+            title: normalized.title,
+            type: normalized.type,
+            date: normalized.publication_date || "",
+            description: normalized.summary,
+            source: normalized.source,
+            source_url: normalized.source_url,
+          };
 
-        const newItem = {
-          id: postureId,
-          title: normalized.title,
-          type: normalized.type,
-          date: normalized.publication_date || "",
-          description: normalized.summary,
-          source: normalized.source,
-          source_url: normalized.source_url,
-        };
-
-        // Deduplicación inteligente: por ID o por coincidencia de URL de fuente
-        const newUrls = newItem.source_url
-          ? String(newItem.source_url)
-              .split(",")
-              .map((u) => u.trim().toLowerCase())
-              .filter(Boolean)
-          : [];
-
-        const existingIdx = bio.findIndex((b) => {
-          if (b.id === postureId) return true;
-          if (newUrls.length > 0 && b.source_url) {
-            const bUrls = String(b.source_url)
-              .split(",")
-              .map((u) => u.trim().toLowerCase())
-              .filter(Boolean);
-            if (newUrls.some((u) => bUrls.includes(u))) return true;
+          if (existingIdx >= 0) {
+            bio[existingIdx] = { ...bio[existingIdx], ...updatedItem };
+          } else {
+            bio.push(updatedItem);
           }
-          return false;
-        });
-
-        if (existingIdx >= 0) {
-          bio[existingIdx] = { ...bio[existingIdx], ...newItem };
+          finalTargetId = finding.target_id;
         } else {
+          // El servicio determinó INSERT: la deduplicación ya se hizo en el servicio,
+          // aquí en la UI solo se aprueba/modera e inserta directamente.
+          const postureId = createId();
+          finalTargetId = postureId;
+
+          const newItem = {
+            id: postureId,
+            title: normalized.title,
+            type: normalized.type,
+            date: normalized.publication_date || "",
+            description: normalized.summary,
+            source: normalized.source,
+            source_url: normalized.source_url,
+          };
+
           bio.push(newItem);
         }
 
@@ -315,6 +317,9 @@ export async function applyResearchFinding(
       data: {
         status: "APPROVED",
         target_id: finalTargetId,
+        ...(customData
+          ? { proposed_data: customData as Prisma.InputJsonValue }
+          : {}),
         reviewed_at: new Date(),
         reviewed_by: user.email || user.id,
       },
@@ -338,105 +343,113 @@ export async function revertResearchFinding(findingId: string) {
       where: { id: findingId },
     });
 
-    if (!finding || finding.status !== "APPROVED") {
-      throw new Error("El hallazgo no se encuentra en estado aprobado.");
+    if (
+      !finding ||
+      (finding.status !== "APPROVED" && finding.status !== "REJECTED")
+    ) {
+      throw new Error(
+        "El hallazgo no se encuentra en estado aprobado o rechazado.",
+      );
     }
 
-    const rawData = finding.proposed_data as Record<string, unknown>;
-    const normalized = normalizeFindingData(rawData);
-    const isBackground = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
-      normalized.type,
-    );
+    // Si estaba rechazado, simplemente vuelve a PENDING sin tener que retirar datos de BD
+    if (finding.status === "APPROVED") {
+      const rawData = finding.proposed_data as Record<string, unknown>;
+      const normalized = normalizeFindingData(rawData);
+      const isBackground = [
+        "PENAL",
+        "ETICA",
+        "CIVIL",
+        "ADMINISTRATIVO",
+      ].includes(normalized.type);
 
-    if (isBackground) {
-      if (finding.action === "INSERT" && finding.target_id) {
-        // Eliminar antecedente creado
-        await prisma.background.deleteMany({
-          where: { id: finding.target_id },
-        });
-      } else if (finding.action === "UPDATE" && finding.target_id) {
-        // Restaurar versión previa si existía
-        const existingBg = await prisma.background.findUnique({
-          where: { id: finding.target_id },
-        });
-        if (existingBg && existingBg.previous_version) {
-          const prev = existingBg.previous_version as Record<string, unknown>;
-          await prisma.background.update({
+      if (isBackground) {
+        if (finding.action === "INSERT" && finding.target_id) {
+          // Eliminar antecedente creado
+          await prisma.background.deleteMany({
             where: { id: finding.target_id },
-            data: {
-              title: String(prev.title || existingBg.title),
-              summary: String(prev.summary || existingBg.summary),
-              type: prev.type as BackgroundType,
-              status: prev.status as BackgroundStatus,
-              publication_date: prev.publication_date
-                ? String(prev.publication_date)
-                : null,
-              sanction: prev.sanction ? String(prev.sanction) : null,
-              source: String(prev.source || existingBg.source),
-              source_url: prev.source_url ? String(prev.source_url) : null,
-              previous_version: Prisma.DbNull,
-              updated_at: new Date(),
-            },
           });
+        } else if (finding.action === "UPDATE" && finding.target_id) {
+          // Restaurar versión previa si existía
+          const existingBg = await prisma.background.findUnique({
+            where: { id: finding.target_id },
+          });
+          if (existingBg && existingBg.previous_version) {
+            const prev = existingBg.previous_version as Record<string, unknown>;
+            await prisma.background.update({
+              where: { id: finding.target_id },
+              data: {
+                title: String(prev.title || existingBg.title),
+                summary: String(prev.summary || existingBg.summary),
+                type: prev.type as BackgroundType,
+                status: prev.status as BackgroundStatus,
+                publication_date: prev.publication_date
+                  ? String(prev.publication_date)
+                  : null,
+                sanction: prev.sanction ? String(prev.sanction) : null,
+                source: String(prev.source || existingBg.source),
+                source_url: prev.source_url ? String(prev.source_url) : null,
+                previous_version: Prisma.DbNull,
+                updated_at: new Date(),
+              },
+            });
+          }
         }
-      }
 
-      // Recalcular flags penales de la persona
-      const allBgs = await prisma.background.findMany({
-        where: { person_id: finding.person_id },
-        select: { type: true, status: true },
-      });
-
-      const has_criminal_record = allBgs.some(
-        (b) =>
-          b.type === "PENAL" &&
-          ["EN_INVESTIGACION", "SENTENCIADO"].includes(b.status),
-      );
-      const has_penal_sentence = allBgs.some(
-        (b) => b.type === "PENAL" && b.status === "SENTENCIADO",
-      );
-      const has_sanction = allBgs.some(
-        (b) =>
-          ["ETICA", "ADMINISTRATIVO"].includes(b.type) &&
-          b.status === "SANCIONADO",
-      );
-      const is_under_investigation = allBgs.some(
-        (b) => b.status === "EN_INVESTIGACION",
-      );
-
-      await prisma.person.update({
-        where: { id: finding.person_id },
-        data: {
-          has_criminal_record,
-          has_penal_sentence,
-          has_sanction,
-          is_under_investigation,
-          updated_at: new Date(),
-        },
-      });
-    } else {
-      // Revertir Postura / Noticia
-      const person = await prisma.person.findUnique({
-        where: { id: finding.person_id },
-        select: { posturas: true },
-      });
-
-      if (person && Array.isArray(person.posturas)) {
-        const bio = person.posturas as Record<string, unknown>[];
-        const filteredBio = bio.filter((p) => {
-          if (finding.target_id && p.id === finding.target_id) return false;
-          if (normalized.source_url && p.source_url === normalized.source_url)
-            return false;
-          return true;
+        // Recalcular flags penales de la persona
+        const allBgs = await prisma.background.findMany({
+          where: { person_id: finding.person_id },
+          select: { type: true, status: true },
         });
+
+        const has_criminal_record = allBgs.some(
+          (b) =>
+            b.type === "PENAL" &&
+            ["EN_INVESTIGACION", "SENTENCIADO"].includes(b.status),
+        );
+        const has_penal_sentence = allBgs.some(
+          (b) => b.type === "PENAL" && b.status === "SENTENCIADO",
+        );
+        const has_sanction = allBgs.some(
+          (b) =>
+            ["ETICA", "ADMINISTRATIVO"].includes(b.type) &&
+            b.status === "SANCIONADO",
+        );
+        const is_under_investigation = allBgs.some(
+          (b) => b.status === "EN_INVESTIGACION",
+        );
 
         await prisma.person.update({
           where: { id: finding.person_id },
           data: {
-            posturas: filteredBio as Prisma.InputJsonValue[],
+            has_criminal_record,
+            has_penal_sentence,
+            has_sanction,
+            is_under_investigation,
             updated_at: new Date(),
           },
         });
+      } else {
+        // Revertir Postura / Noticia
+        const person = await prisma.person.findUnique({
+          where: { id: finding.person_id },
+          select: { posturas: true },
+        });
+
+        if (person && Array.isArray(person.posturas)) {
+          const bio = person.posturas as Record<string, unknown>[];
+          const filteredBio = finding.target_id
+            ? bio.filter((p) => p.id !== finding.target_id)
+            : bio;
+
+          await prisma.person.update({
+            where: { id: finding.person_id },
+            data: {
+              posturas: filteredBio as Prisma.InputJsonValue[],
+              updated_at: new Date(),
+            },
+          });
+        }
       }
     }
 
@@ -445,6 +458,7 @@ export async function revertResearchFinding(findingId: string) {
       where: { id: findingId },
       data: {
         status: "PENDING",
+        target_id: finding.action === "INSERT" ? null : finding.target_id,
         reviewed_at: null,
         reviewed_by: null,
       },

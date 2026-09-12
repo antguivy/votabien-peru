@@ -52,6 +52,15 @@ export function BillsTable({ promises }: BillsTableProps) {
         placeholder: "Buscar por número, título o congresista...",
       },
       {
+        id: "chamber" as keyof AdminBillRow,
+        label: "Cámara",
+        options: [
+          { label: "Cámara de Diputados", value: "DIPUTADOS" },
+          { label: "Senado de la República", value: "SENADO" },
+          { label: "Congreso Unicameral (Legacy)", value: "CONGRESO" },
+        ],
+      },
+      {
         id: "period" as keyof AdminBillRow,
         label: "Periodo",
         options: periods.map((p) => ({

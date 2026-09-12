@@ -14,6 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Ellipsis,
   FileText,
   BrainCircuit,
@@ -23,6 +33,7 @@ import {
   FileSearch,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { regenerateBillTitleAction, deleteBillAction } from "../_lib/actions";
 import { AdminBillRow } from "../_lib/validation";
 
@@ -43,25 +54,75 @@ export function getColumns({
       cell: ({ row }) => {
         const number = row.getValue("number") as string;
         const period = row.original.period;
-        const baseYear = period?.includes("2021") ? "2021" : "2026";
+        const baseYear = period?.match(/\d{4}/)?.[0] || "2026";
         const numericMatch = number?.match(/(\d+)/);
-        const numericPart = numericMatch ? numericMatch[1] : "";
-        const spleyUrl = `https://wb2server.congreso.gob.pe/spley-portal/#/expediente/${baseYear}/${numericPart}`;
+        const numericPart = numericMatch ? parseInt(numericMatch[1], 10) : "";
+
+        let spleyRoute = `#/expediente/${baseYear}/${numericPart}`;
+        const numUpper = number ? number.toUpperCase().trim() : "";
+        if (
+          numUpper.endsWith("-CD") ||
+          numUpper.includes("-CD-") ||
+          numUpper.includes("/CD")
+        ) {
+          spleyRoute = `#/diputados/expediente/${baseYear}/${numericPart}`;
+        } else if (
+          numUpper.endsWith("-S") ||
+          numUpper.includes("-S-") ||
+          numUpper.includes("-CS") ||
+          numUpper.includes("/CS")
+        ) {
+          spleyRoute = `#/senado/expediente/${baseYear}/${numericPart}`;
+        }
+        const spleyUrl = `https://wb2server.congreso.gob.pe/spley-portal/${spleyRoute}`;
+
+        const isDiputados =
+          numUpper.endsWith("-CD") ||
+          numUpper.includes("-CD-") ||
+          numUpper.includes("/CD");
+        const isSenado =
+          numUpper.endsWith("-S") ||
+          numUpper.includes("-S-") ||
+          numUpper.includes("-CS") ||
+          numUpper.includes("/CS");
 
         return (
-          <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="font-bold px-2 py-0.5 rounded bg-muted text-foreground whitespace-nowrap">
-              {number}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-foreground"
-              title="Abrir en portal SPLey del Congreso"
-              onClick={() => window.open(spleyUrl, "_blank")}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Button>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 font-mono text-xs">
+              <span className="font-bold px-2 py-0.5 rounded bg-muted text-foreground whitespace-nowrap">
+                {number}
+              </span>
+              {numericPart && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  title="Abrir en portal SPLey del Congreso"
+                >
+                  <a
+                    href={spleyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              )}
+            </div>
+            <div>
+              {isDiputados && (
+                <span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  Diputados
+                </span>
+              )}
+              {isSenado && (
+                <span className="inline-block text-[10px] font-medium px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  Senado
+                </span>
+              )}
+            </div>
           </div>
         );
       },
@@ -245,13 +306,21 @@ export function getColumns({
 
         return (
           <Button
+            asChild
             variant="outline"
             size="sm"
             className="h-7 text-xs gap-1 font-medium text-emerald-700 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-            onClick={() => window.open(docUrl, "_blank")}
           >
-            <FileText className="h-3.5 w-3.5" />
-            PDF
+            <a
+              href={docUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              title="Abrir PDF oficial"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              PDF
+            </a>
           </Button>
         );
       },
@@ -261,74 +330,118 @@ export function getColumns({
       id: "actions",
       cell: function Cell({ row }) {
         const bill = row.original;
+        const router = useRouter();
+        const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+        const [isDeleting, setIsDeleting] = React.useState(false);
 
         const handleRegenerate = async () => {
           toast.info("Generando título ciudadano con Gemini...");
           const res = await regenerateBillTitleAction(bill.id);
           if (res.success) {
             toast.success("¡Título ciudadano generado!");
+            router.refresh();
           } else {
             toast.error(res.error || "Error al regenerar título.");
           }
         };
 
-        const handleDelete = async () => {
-          if (
-            confirm(`¿Estás seguro de eliminar el proyecto ${bill.number}?`)
-          ) {
+        const handleConfirmDelete = async () => {
+          try {
+            setIsDeleting(true);
             const res = await deleteBillAction(bill.id);
             if (res.success) {
               toast.success("Proyecto eliminado.");
+              router.refresh();
+              setDeleteDialogOpen(false);
             } else {
               toast.error(res.error || "Error al eliminar.");
             }
+          } finally {
+            setIsDeleting(false);
           }
         };
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                aria-label="Open menu"
-                variant="ghost"
-                className="flex text-primary font-bold size-8 p-0 data-[state=open]:bg-muted"
-              >
-                <Ellipsis className="size-4" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 text-xs">
-              <DropdownMenuItem
-                onClick={() => onSelectBill(bill)}
-                className="gap-2"
-              >
-                <Edit className="h-3.5 w-3.5" /> Ver Detalle / Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleRegenerate}
-                className="gap-2 text-primary"
-              >
-                <BrainCircuit className="h-3.5 w-3.5" /> Regenerar con IA
-              </DropdownMenuItem>
-              {bill.document_url && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Open menu"
+                  variant="ghost"
+                  className="flex text-primary font-bold size-8 p-0 data-[state=open]:bg-muted"
+                >
+                  <Ellipsis className="size-4" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 text-xs">
                 <DropdownMenuItem
-                  onClick={() => {
-                    if (bill.document_url)
-                      window.open(bill.document_url, "_blank");
-                  }}
+                  onClick={() => onSelectBill(bill)}
                   className="gap-2"
                 >
-                  <FileSearch className="h-3.5 w-3.5" /> Ver PDF El Peruano
+                  <Edit className="h-3.5 w-3.5" /> Ver Detalle / Editar
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleDelete}
-                className="gap-2 text-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Eliminar Proyecto
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuItem
+                  onClick={handleRegenerate}
+                  className="gap-2 text-primary"
+                >
+                  <BrainCircuit className="h-3.5 w-3.5" /> Regenerar con IA
+                </DropdownMenuItem>
+                {bill.document_url && (
+                  <DropdownMenuItem asChild className="gap-2">
+                    <a
+                      href={bill.document_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileSearch className="h-3.5 w-3.5" /> Ver PDF El Peruano
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Eliminar Proyecto
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <AlertDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    ¿Eliminar proyecto de ley?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción eliminará el proyecto de ley{" "}
+                    <strong>{bill.number}</strong> y recalculará automáticamente
+                    las métricas del congresista autor. Esta acción no se puede
+                    deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleConfirmDelete();
+                    }}
+                    disabled={isDeleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeleting ? "Eliminando..." : "Eliminar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
         );
       },
       size: 40,

@@ -29,6 +29,7 @@ import {
   BillApprovalStatusType,
 } from "../_lib/validation";
 import { updateBillAction, regenerateBillTitleAction } from "../_lib/actions";
+import { useRouter } from "next/navigation";
 
 interface BillDetailDialogProps {
   bill: AdminBillRow | null;
@@ -43,6 +44,7 @@ function BillDetailContent({
   bill: AdminBillRow;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [titleAi, setTitleAi] = React.useState(bill.title_ai || "");
   const [summary, setSummary] = React.useState(bill.summary || "");
   const [status, setStatus] = React.useState<BillApprovalStatusType>(
@@ -64,6 +66,7 @@ function BillDetailContent({
 
       if (res.success) {
         toast.success("Proyecto de ley actualizado correctamente.");
+        router.refresh();
         onClose();
       } else {
         toast.error(res.error || "Error al actualizar.");
@@ -80,13 +83,14 @@ function BillDetailContent({
   const handleRegenerateAi = async () => {
     try {
       setIsRegenerating(true);
-      toast.info("Generando título ciudadano con Gemini 2.5 Flash...");
+      toast.info("Generando título ciudadano con Gemini...");
       const res = await regenerateBillTitleAction(bill.id);
 
       if (res.success && res.data) {
         setTitleAi(res.data.title_ai || "");
         setSummary(res.data.summary || "");
         toast.success("¡Título ciudadano generado con IA exitosamente!");
+        router.refresh();
       } else {
         toast.error(res.error || "No se pudo generar el título con IA.");
       }
@@ -251,13 +255,19 @@ function BillDetailContent({
               />
               {documentUrl && (
                 <Button
-                  type="button"
+                  asChild
                   variant="outline"
                   size="icon"
                   className="shrink-0"
-                  onClick={() => window.open(documentUrl, "_blank")}
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <a
+                    href={documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Abrir enlace al documento"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
                 </Button>
               )}
             </div>

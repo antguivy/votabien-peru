@@ -18,7 +18,7 @@ export default async function AdminBillsPage(props: BillsPageProps) {
 
   // Consultar estadísticas generales y opciones de filtro
   const [stats, filterOptions] = await Promise.all([
-    getBillStats(search.period?.[0]),
+    getBillStats(search.period),
     getBillFilterOptions(),
   ]);
 
@@ -43,9 +43,28 @@ export default async function AdminBillsPage(props: BillsPageProps) {
               <div className="text-2xl font-bold text-foreground">
                 {stats.total.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Registrados en base de datos
-              </p>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                {stats.diputados > 0 && (
+                  <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    {stats.diputados.toLocaleString()} Diputados
+                  </span>
+                )}
+                {stats.senado > 0 && (
+                  <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    {stats.senado.toLocaleString()} Senado
+                  </span>
+                )}
+                {stats.congreso > 0 && (
+                  <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground border">
+                    {stats.congreso.toLocaleString()} Legacy
+                  </span>
+                )}
+                {stats.total === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Registrados en base de datos
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -95,9 +114,11 @@ export default async function AdminBillsPage(props: BillsPageProps) {
                 {stats.conTituloIa.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.sinTituloIa > 0
-                  ? `${stats.sinTituloIa} pendientes de procesar`
-                  : "100% sintetizados"}
+                {stats.total === 0
+                  ? "Sin proyectos registrados"
+                  : stats.sinTituloIa > 0
+                    ? `${stats.sinTituloIa} pendientes de procesar`
+                    : "100% sintetizados"}
               </p>
             </CardContent>
           </Card>

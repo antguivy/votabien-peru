@@ -30,6 +30,7 @@ interface FindingEditDialogProps {
   finding: {
     id: string;
     action: string;
+    status?: string;
     proposed_data: Record<string, unknown>;
   } | null;
   onSaveAndApprove: (data: Record<string, unknown>) => Promise<void>;
@@ -41,6 +42,7 @@ interface FindingEditFormProps {
   finding: {
     id: string;
     action: string;
+    status?: string;
     proposed_data: Record<string, unknown>;
   };
   onSaveAndApprove: (data: Record<string, unknown>) => Promise<void>;
@@ -311,7 +313,9 @@ export function FindingEditDialog({
             ) : (
               <Check className="h-4 w-4 mr-1" />
             )}
-            Guardar y Aprobar
+            {finding?.status === "APPROVED"
+              ? "Guardar Cambios"
+              : "Guardar y Aprobar"}
           </Button>
         </CredenzaFooter>
       </CredenzaContent>

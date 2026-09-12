@@ -251,6 +251,19 @@ export function SyncBillsDialog({
               </div>
             </div>
 
+            {period === "2026-2031" && (
+              <div className="rounded-md bg-muted/60 p-2.5 border text-xs text-muted-foreground flex items-center gap-2">
+                <span className="font-semibold text-foreground">
+                  🏛️ Congreso Bicameral:
+                </span>
+                <span>
+                  Compatible con reportes de <strong>Diputados (-CD)</strong> y
+                  del <strong>Senado (-S)</strong>. El motor auto-detecta la
+                  cámara y el portal SPLey correspondiente.
+                </span>
+              </div>
+            )}
+
             {/* Modo de Ingestión */}
             <div className="space-y-2 pt-2 border-t">
               <Label className="text-xs font-semibold">
