@@ -61,8 +61,8 @@ const COMPRESSOR_MODELS = [
     group: "Google AI Studio",
   },
   {
-    value: "deepseek-v4-flash",
-    label: "DeepSeek V4 Flash (1M Context - Ultra Económico)",
+    value: "deepseek-flash",
+    label: "DeepSeek V4.1 Flash (1M Context - Ultra Económico / Rápido)",
     group: "DeepSeek API",
   },
 ];
@@ -89,8 +89,8 @@ const VALIDATOR_MODELS = [
     group: "Google AI Studio",
   },
   {
-    value: "deepseek-v4-flash",
-    label: "DeepSeek V4 Flash (1M Context - Thinking Mode)",
+    value: "deepseek-flash",
+    label: "DeepSeek V4.1 Flash (1M Context - Thinking Mode)",
     group: "DeepSeek API",
   },
 ];

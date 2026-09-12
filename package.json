@@ -14,7 +14,8 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
-    "test": "pnpm run lint && pnpm run type-check",
+    "test:unit": "vitest run",
+    "test": "pnpm run lint && pnpm run type-check && vitest run",
     "prepare": "[ \"$VERCEL\" = \"1\" ] || lefthook install",
     "commit": "git-cz",
     "admin:create": "tsx scripts/create-admin.ts"
