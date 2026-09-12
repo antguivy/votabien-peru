@@ -53,6 +53,9 @@ jobs:
       - name: Type Check
         run: pnpm run type-check || echo "No type-check script found"
 
+      - name: Run Unit & Action Tests
+        run: pnpm run test:unit
+
       - name: Build Verification
         run: pnpm run build
         env:

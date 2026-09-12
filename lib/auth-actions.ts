@@ -123,6 +123,14 @@ export async function serverHasAnyRole(allowedRoles: UserRole[]) {
   return !!user && allowedRoles.includes(user.role);
 }
 
+const ASSIGNABLE_ROLES: UserRole[] = [
+  "user",
+  "volunteer",
+  "lead",
+  "editor",
+  "admin",
+];
+
 // ============================================
 // ACTUALIZAR ROL (Solo para admins)
 // ============================================
@@ -147,11 +155,16 @@ export async function serverUpdateUserRole(
     return { error: "No puedes cambiar tu propio rol de administrador" };
   }
 
+  if (!ASSIGNABLE_ROLES.includes(newRole) && newRole !== "super_admin") {
+    return { error: "Rol inválido" };
+  }
+
   try {
     await prisma.user.update({
       where: { id: userId },
       data: { role: newRole },
     });
+    revalidatePath("/admin/usuarios");
     return { success: true };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Algo salió mal" };
@@ -163,7 +176,6 @@ export async function serverUpdateUserRole(
 // Sin verificación de email: el admin asigna credenciales
 // temporalmente hasta implementar el flujo de invitación.
 // ============================================
-const ASSIGNABLE_ROLES: UserRole[] = ["user", "volunteer", "editor", "admin"];
 
 export async function serverCreateUser(input: {
   name: string;

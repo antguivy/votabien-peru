@@ -113,17 +113,25 @@ export async function POST(request: Request) {
           continue;
         }
 
-        // Si no tiene legislator_id, no se puede insertar por la FK obligatoria
-        if (!data.legislator_id) {
-          results.skipped_sin_autor++;
-          continue;
-        }
-
         const existingBill = await prisma.bill.findUnique({
           where: { number: data.number },
         });
 
         if (existingBill) {
+          const finalLegislatorId =
+            data.legislator_id || existingBill.legislator_id;
+
+          if (
+            existingBill.legislator_id &&
+            finalLegislatorId &&
+            existingBill.legislator_id !== finalLegislatorId
+          ) {
+            affectedLegislatorIds.add(existingBill.legislator_id);
+          }
+          if (finalLegislatorId) {
+            affectedLegislatorIds.add(finalLegislatorId);
+          }
+
           await prisma.bill.update({
             where: { number: data.number },
             data: {
@@ -134,6 +142,8 @@ export async function POST(request: Request) {
               approval_date: data.approval_date
                 ? parseDateSafe(data.approval_date)
                 : existingBill.approval_date,
+              sponsor: data.sponsor || existingBill.sponsor,
+              legislator_id: finalLegislatorId,
               committees: data.committees || existingBill.committees,
               document_url: data.document_url || existingBill.document_url,
               title_ai: data.title_ai || existingBill.title_ai,
@@ -141,11 +151,18 @@ export async function POST(request: Request) {
                 data.parliamentary_group_id ||
                 existingBill.parliamentary_group_id,
               coauthors: data.coauthors || existingBill.coauthors,
+              cosponsors: data.cosponsors || existingBill.cosponsors,
               updated_at: new Date(),
             },
           });
           results.updated++;
         } else {
+          // Si no tiene legislator_id, no se puede insertar por la FK obligatoria
+          if (!data.legislator_id) {
+            results.skipped_sin_autor++;
+            continue;
+          }
+
           await prisma.bill.create({
             data: {
               id: createId(),
@@ -170,9 +187,6 @@ export async function POST(request: Request) {
             },
           });
           results.inserted++;
-        }
-
-        if (data.legislator_id) {
           affectedLegislatorIds.add(data.legislator_id);
         }
       } catch (err: unknown) {
