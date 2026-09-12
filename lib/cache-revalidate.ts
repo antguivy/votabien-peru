@@ -13,22 +13,30 @@ export function revalidatePersonEcosystem() {
   revalidatePath("/admin/candidatos/revisiones");
   revalidatePath("/admin/legisladores/revisiones");
 
-  // 2. Vistas públicas (los layouts revalidan automáticamente las páginas dinámicas hijas /[id])
+  // 2. Vistas públicas (revalidar layouts y páginas dinámicas)
   revalidatePath("/legisladores", "layout");
   revalidatePath("/candidatos", "layout");
   revalidatePath("/comparador", "layout");
-  revalidatePath("/");
+  revalidatePath("/candidatos/[candidatosId]", "page");
+  revalidatePath("/legisladores/[legisladoresId]", "page");
+  revalidatePath("/", "layout");
 
   // 3. Invalidación inmediata de tags de datos (Next.js 16)
-  // En Server Actions usamos updateTag (purga inmediata de caché en disco/memoria).
-  // En Route Handlers/Webhooks usamos fallback a revalidateTag con expire: 0.
+  // Siempre ejecutamos revalidateTag para invalidar el Data Cache en todas las instancias y clientes.
+  try {
+    revalidateTag(TAGS.persons, { expire: 0 });
+    revalidateTag(TAGS.candidates, { expire: 0 });
+    revalidateTag(TAGS.legislators, { expire: 0 });
+  } catch (err) {
+    console.warn("revalidateTag warning:", err);
+  }
+
+  // En Server Actions usamos updateTag para purga inmediata en el cliente activo.
   try {
     updateTag(TAGS.persons);
     updateTag(TAGS.candidates);
     updateTag(TAGS.legislators);
   } catch {
-    revalidateTag(TAGS.persons, { expire: 0 });
-    revalidateTag(TAGS.candidates, { expire: 0 });
-    revalidateTag(TAGS.legislators, { expire: 0 });
+    // Silencioso si se ejecuta fuera de Server Action
   }
 }

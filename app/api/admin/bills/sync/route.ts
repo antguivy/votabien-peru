@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { serverRequireEditor } from "@/lib/auth-actions";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 300;
+
 const PYTHON_SERVICE_URL =
-  process.env.PYTHON_SERVICE_URL || "http://localhost:8000";
+  process.env.API_INTERNAL_URL ||
+  process.env.PYTHON_SERVICE_URL ||
+  "http://localhost:8000";
 
 export async function POST(request: NextRequest) {
   const { user } = await serverRequireEditor();
@@ -12,15 +17,29 @@ export async function POST(request: NextRequest) {
     const secretKey = process.env.API_SECRET_KEY || "";
 
     // Reenviar el FormData a FastAPI
-    const pyResponse = await fetch(`${PYTHON_SERVICE_URL}/api/v1/bills/sync`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "X-User-Id": user.id,
-        "X-User-Role": user.role,
-      },
-      body: formData,
-    });
+    let pyResponse: Response;
+    try {
+      pyResponse = await fetch(`${PYTHON_SERVICE_URL}/api/v1/bills/sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          "X-User-Id": user.id,
+          "X-User-Role": user.role,
+        },
+        body: formData,
+      });
+    } catch (connErr: unknown) {
+      console.error("No se pudo conectar con el servicio Python:", connErr);
+      return NextResponse.json(
+        {
+          error:
+            "No se pudo conectar con el servicio local de sincronización (" +
+            PYTHON_SERVICE_URL +
+            "). Asegúrate de tener levantado el servicio en Docker en tu entorno local.",
+        },
+        { status: 503 },
+      );
+    }
 
     if (!pyResponse.ok) {
       const err = await pyResponse.text();

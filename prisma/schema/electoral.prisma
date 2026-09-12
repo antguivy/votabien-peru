@@ -43,6 +43,8 @@ model bill {
   @@index([approval_status], map: "ix_bill_approval_status")
   @@index([legislator_id], map: "ix_bill_legislator_id")
   @@index([parliamentary_group_id], map: "ix_bill_parliamentary_group_id")
+  @@index([submission_date], map: "ix_bill_submission_date")
+  @@index([period], map: "ix_bill_period")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.

@@ -862,6 +862,11 @@ export function FindingsTable({
   ) => {
     if (!editingFinding) return;
     const findingId = editingFinding.id;
+    const wasPending = editingFinding.status === "PENDING";
+    const isLegal = ["PENAL", "ETICA", "CIVIL", "ADMINISTRATIVO"].includes(
+      normalizeFindingData(editingFinding.proposed_data).type,
+    );
+
     setProcessingIds((prev) => new Set(prev).add(findingId));
     setEditingFinding(null);
 
@@ -875,10 +880,24 @@ export function FindingsTable({
       },
     }));
 
+    if (wasPending) {
+      setCountDelta((prev) => ({
+        ...prev,
+        pending: prev.pending - 1,
+        approved: prev.approved + 1,
+        legal: isLegal ? prev.legal - 1 : prev.legal,
+        news: !isLegal ? prev.news - 1 : prev.news,
+      }));
+    }
+
     try {
       const res = await applyResearchFinding(findingId, customData);
       if (res.success) {
-        toast.success("Hallazgo editado y aprobado correctamente");
+        toast.success(
+          wasPending
+            ? "Hallazgo editado y aprobado correctamente"
+            : "Cambios guardados correctamente",
+        );
         startTransition(() => {
           router.refresh();
         });
@@ -888,6 +907,15 @@ export function FindingsTable({
           delete next[findingId];
           return next;
         });
+        if (wasPending) {
+          setCountDelta((prev) => ({
+            ...prev,
+            pending: prev.pending + 1,
+            approved: prev.approved - 1,
+            legal: isLegal ? prev.legal + 1 : prev.legal,
+            news: !isLegal ? prev.news + 1 : prev.news,
+          }));
+        }
         toast.error(`Error al guardar: ${res.error}`);
       }
     } catch (err: unknown) {
@@ -896,6 +924,15 @@ export function FindingsTable({
         delete next[findingId];
         return next;
       });
+      if (wasPending) {
+        setCountDelta((prev) => ({
+          ...prev,
+          pending: prev.pending + 1,
+          approved: prev.approved - 1,
+          legal: isLegal ? prev.legal + 1 : prev.legal,
+          news: !isLegal ? prev.news + 1 : prev.news,
+        }));
+      }
       toast.error(err instanceof Error ? err.message : "Error inesperado");
     } finally {
       setProcessingIds((prev) => {
@@ -1496,27 +1533,30 @@ export function FindingsTable({
                     </div>
 
                     {/* Botones de acción secundaria (Diff / Editar) */}
-                    {finding.status === "PENDING" && (
+                    {(finding.status === "PENDING" ||
+                      finding.status === "APPROVED") && (
                       <div className="flex items-center gap-1 shrink-0">
-                        {isUpdate && finding.target_id && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDiffFinding(finding)}
-                                disabled={isCardBusy}
-                                className="h-7 w-7 text-primary hover:bg-primary/10"
-                                aria-label="Ver diferencias con base de datos"
-                              >
-                                <GitCompare className="h-3.5 w-3.5" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Ver diferencias con BD
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+                        {finding.status === "PENDING" &&
+                          isUpdate &&
+                          finding.target_id && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDiffFinding(finding)}
+                                  disabled={isCardBusy}
+                                  className="h-7 w-7 text-primary hover:bg-primary/10"
+                                  aria-label="Ver diferencias con base de datos"
+                                >
+                                  <GitCompare className="h-3.5 w-3.5" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Ver diferencias con BD
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -1531,7 +1571,9 @@ export function FindingsTable({
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            Editar antes de aprobar
+                            {finding.status === "APPROVED"
+                              ? "Editar contenido guardado"
+                              : "Editar antes de aprobar"}
                           </TooltipContent>
                         </Tooltip>
                       </div>

@@ -80,6 +80,7 @@ export const searchParamsCache = createSearchParamsCache({
     ),
   ).withDefault([]),
   parliamentary_group: parseAsArrayOf(parseAsString).withDefault([]),
+  chamber: parseAsArrayOf(parseAsString).withDefault([]),
 });
 
 export type GetBillsSchema = Awaited<

@@ -3,11 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface BillStatusBadgeProps {
-  status: string;
+  status?: string | null;
   className?: string;
 }
 
 export function BillStatusBadge({ status, className }: BillStatusBadgeProps) {
+  const safeStatus = status || "DESCONOCIDO";
+
   const formatStatus = (st: string) => {
     return st
       .replace(/_/g, " ")
@@ -50,11 +52,11 @@ export function BillStatusBadge({ status, className }: BillStatusBadgeProps) {
       variant="outline"
       className={cn(
         "px-2 py-0.5 text-xs font-medium whitespace-nowrap shadow-none",
-        getVariantStyles(status),
+        getVariantStyles(safeStatus),
         className,
       )}
     >
-      {formatStatus(status)}
+      {formatStatus(safeStatus)}
     </Badge>
   );
 }
