@@ -65,15 +65,42 @@ export async function queueBatchResearch(
             source_url: true,
           },
         },
+        candidate: {
+          where: { active: true },
+          select: {
+            type: true,
+            electoraldistrict: {
+              select: {
+                name: true,
+                parent: { select: { name: true } },
+              },
+            },
+            politicalparty: {
+              select: { name: true },
+            },
+          },
+          orderBy: { created_at: "desc" as const },
+          take: 1,
+        },
       },
     });
 
-    const candidates = persons.map((p) => ({
-      person_id: p.id,
-      fullname: p.fullname,
-      existing_backgrounds: p.background,
-      existing_posturas: p.posturas || [],
-    }));
+    const candidates = persons.map((p) => {
+      const activeCand = p.candidate?.[0];
+      const districtName = activeCand?.electoraldistrict?.name ?? "";
+      const parentName = activeCand?.electoraldistrict?.parent?.name ?? "";
+      return {
+        person_id: p.id,
+        fullname: p.fullname,
+        existing_backgrounds: p.background,
+        existing_posturas: p.posturas || [],
+        cargo: activeCand?.type ?? "",
+        jurisdiccion: parentName
+          ? `${districtName}, ${parentName}`
+          : districtName,
+        partido: activeCand?.politicalparty?.name ?? "",
+      };
+    });
 
     const response = await fetch(`${API_BASE_URL}/api/v1/research/batch`, {
       method: "POST",
