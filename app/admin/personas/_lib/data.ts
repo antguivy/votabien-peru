@@ -3,6 +3,8 @@
 import { unstable_noStore as noStore } from "next/cache";
 import type { GetPersonSchema, PersonFormValues } from "./validation";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/prisma/generated/client";
+import { buildPersonSearchWhere } from "@/lib/search-filters";
 import { PaginatedPersonResponse, PersonResponse } from "./types";
 import { AdminPerson, BiographyDetail } from "@/interfaces/person";
 
@@ -17,9 +19,12 @@ export async function getPersonList(
     const skip = (page - 1) * pageSize;
     const take = pageSize;
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.personWhereInput = {};
     if (input.fullname) {
-      where.fullname = { contains: input.fullname, mode: "insensitive" };
+      const personSearch = buildPersonSearchWhere(input.fullname);
+      if (personSearch) {
+        Object.assign(where, personSearch);
+      }
     }
 
     const orderBy: Record<string, unknown> = {};

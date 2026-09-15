@@ -57,3 +57,36 @@ export interface BulkUpdateLegislatorsResponse {
   count: number;
   message: string;
 }
+
+export interface SyncLegislatorsOptions {
+  updatePhoto?: boolean;
+  updateEmail?: boolean;
+  overwrite?: boolean;
+  preferHdImage?: boolean;
+}
+
+export interface SyncLegislatorDetail {
+  legislatorId: string;
+  personId: string;
+  fullname: string;
+  chamber: ChamberType;
+  status: "updated" | "skipped" | "not_found" | "error";
+  matchedName?: string;
+  matchedScore?: number;
+  emailUpdated?: boolean;
+  photoUpdated?: boolean;
+  email?: string | null;
+  photo?: string | null;
+  reason?: string;
+}
+
+export interface SyncLegislatorsResponse {
+  success: boolean;
+  total: number;
+  updated: number;
+  skipped: number;
+  notFound: number;
+  failed: number;
+  details: SyncLegislatorDetail[];
+  error?: string;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useTransition, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -10,15 +10,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Credenza,
+  CredenzaBody,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaFooter,
+  CredenzaHeader,
+  CredenzaTitle,
+} from "@/components/ui/credenza";
 import {
   Tooltip,
   TooltipContent,
@@ -32,6 +31,13 @@ import {
   ResponsiveSelectTrigger,
   ResponsiveSelectValue,
 } from "@/components/ui/responsive-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
   Edit,
@@ -41,13 +47,17 @@ import {
   Hash,
   CheckCircle2,
   Search,
-  Filter,
   Copy,
   Download,
   Eye,
   EyeOff,
   X,
   CheckCheck,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TriviaFormDialog } from "./trivia-form-dialog";
@@ -59,7 +69,7 @@ import {
   bulkUnpublishTrivias,
 } from "../_lib/actions";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   TriviaBasic,
   TriviaOption,
@@ -74,6 +84,7 @@ interface TriviaListProps {
   nextOrderIndex: number;
   topics: TriviaTopic[];
   audiences: TriviaAudience[];
+  regions?: { id: string; name: string; code: string }[];
   canPublishDirectly?: boolean;
 }
 
@@ -82,17 +93,84 @@ export function TriviaList({
   nextOrderIndex,
   topics,
   audiences,
+  regions = [],
   canPublishDirectly = false,
 }: TriviaListProps) {
   const [editingTrivia, setEditingTrivia] = useState<TriviaBasic | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TriviaBasic | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<TriviaBasic | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
   const [selectedAudience, setSelectedAudience] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = useTransition();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const rawPage = Number(searchParams.get("page")) || 1;
+  const rawPageSize = Number(searchParams.get("pageSize")) || 12;
+  const pageSize = [12, 24, 36, 48].includes(rawPageSize) ? rawPageSize : 12;
+
+  const updatePagination = useCallback(
+    (updates: { page?: number; pageSize?: number }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (updates.pageSize !== undefined) {
+        if (updates.pageSize === 12) {
+          params.delete("pageSize");
+        } else {
+          params.set("pageSize", String(updates.pageSize));
+        }
+      }
+      if (updates.page !== undefined) {
+        if (updates.page <= 1) {
+          params.delete("page");
+        } else {
+          params.set("page", String(updates.page));
+        }
+      }
+      startTransition(() => {
+        const qs = params.toString();
+        router.push(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+      });
+    },
+    [searchParams, pathname, router],
+  );
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      updatePagination({ page: newPage });
+      containerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    },
+    [updatePagination],
+  );
+
+  const currentTopicObj = useMemo(
+    () => topics.find((t) => t.id === selectedTopic),
+    [topics, selectedTopic],
+  );
+  const isRegionalTopic = currentTopicObj?.is_regional ?? false;
+
+  // Filtrar para ERM 2026: excluir PERUANOS RESIDENTES EN EL EXTRANJERO / NACIONAL
+  const availableRegions = useMemo(
+    () =>
+      regions.filter(
+        (r) =>
+          r.code !== "PRE" &&
+          !r.name.toUpperCase().includes("EXTRANJERO") &&
+          !r.name.toUpperCase().includes("NACIONAL"),
+      ),
+    [regions],
+  );
 
   // Solo audiencias activas para filtrar preguntas
   const activeAudiences = useMemo(
@@ -101,13 +179,14 @@ export function TriviaList({
   );
 
   const confirmDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteTarget) return;
+    const targetId = deleteTarget.id;
+    setDeleteTarget(null);
 
-    toast.promise(deleteTrivia(deleteId), {
+    toast.promise(deleteTrivia(targetId), {
       loading: "Eliminando pregunta...",
       success: () => {
-        setDeleteId(null);
-        setSelectedIds((prev) => prev.filter((id) => id !== deleteId));
+        setSelectedIds((prev) => prev.filter((id) => id !== targetId));
         router.refresh();
         return "Pregunta eliminada correctamente";
       },
@@ -115,8 +194,12 @@ export function TriviaList({
     });
   };
 
-  const handleDuplicate = async (id: number) => {
-    toast.promise(duplicateTrivia(id), {
+  const confirmDuplicate = async () => {
+    if (!duplicateTarget) return;
+    const targetId = duplicateTarget.id;
+    setDuplicateTarget(null);
+
+    toast.promise(duplicateTrivia(targetId), {
       loading: "Duplicando pregunta...",
       success: (data) => {
         if (!data.success) throw new Error(data.error);
@@ -206,6 +289,15 @@ export function TriviaList({
         return false;
       }
 
+      // Filtro por región
+      if (selectedRegion !== "all") {
+        if (selectedRegion === "nacional") {
+          if (t.electoral_district_id) return false;
+        } else {
+          if (t.electoral_district_id !== selectedRegion) return false;
+        }
+      }
+
       return true;
     });
   }, [
@@ -215,24 +307,87 @@ export function TriviaList({
     selectedTopic,
     selectedDifficulty,
     selectedAudience,
+    selectedRegion,
   ]);
+
+  // Paginación sobre el conjunto filtrado
+  const totalItems = filteredTrivias.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const currentPage = Math.min(Math.max(1, rawPage), totalPages);
+
+  const paginatedTrivias = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredTrivias.slice(start, start + pageSize);
+  }, [filteredTrivias, currentPage, pageSize]);
+
+  // Selección de tarjetas
+  const isPageSelected =
+    paginatedTrivias.length > 0 &&
+    paginatedTrivias.every((t) => selectedIds.includes(t.id));
 
   const isAllSelected =
     filteredTrivias.length > 0 &&
     filteredTrivias.every((t) => selectedIds.includes(t.id));
 
-  const handleToggleSelectAll = () => {
-    if (isAllSelected) {
-      setSelectedIds([]);
+  const handleToggleSelectPage = () => {
+    if (isPageSelected) {
+      const pageIds = new Set(paginatedTrivias.map((t) => t.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
     } else {
-      setSelectedIds(filteredTrivias.map((t) => t.id));
+      const pageIds = paginatedTrivias.map((t) => t.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
     }
+  };
+
+  const handleSelectAllFiltered = () => {
+    setSelectedIds(filteredTrivias.map((t) => t.id));
   };
 
   const handleToggleSelectOne = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
+  };
+
+  // Handlers para filtros con reseteo de página a 1
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleStatusChange = (val: string) => {
+    setSelectedStatus(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleTopicChange = (val: string) => {
+    setSelectedTopic(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleAudienceChange = (val: string) => {
+    setSelectedAudience(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleDifficultyChange = (val: string) => {
+    setSelectedDifficulty(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleRegionChange = (val: string) => {
+    setSelectedRegion(val);
+    if (rawPage > 1) updatePagination({ page: 1 });
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedStatus("all");
+    setSelectedTopic("all");
+    setSelectedAudience("all");
+    setSelectedDifficulty("all");
+    setSelectedRegion("all");
+    if (rawPage > 1) updatePagination({ page: 1 });
   };
 
   const handleExportJson = () => {
@@ -248,7 +403,7 @@ export function TriviaList({
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="space-y-4">
       {/* Barra de Filtros y Acciones */}
       <div className="p-3 sm:p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
         <div className="flex flex-col md:flex-row gap-2.5">
@@ -258,13 +413,13 @@ export function TriviaList({
             <Input
               placeholder="Buscar por enunciado o explicación..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 pr-8 bg-background h-9 text-xs"
             />
             {searchTerm && (
               <button
                 type="button"
-                onClick={() => setSearchTerm("")}
+                onClick={() => handleSearchChange("")}
                 className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -272,12 +427,12 @@ export function TriviaList({
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {/* Filtro Estado de Publicación */}
             <ResponsiveSelect
               title="Filtrar por Estado"
               value={selectedStatus}
-              onValueChange={setSelectedStatus}
+              onValueChange={handleStatusChange}
             >
               <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
                 <ResponsiveSelectValue placeholder="Estado" />
@@ -287,23 +442,22 @@ export function TriviaList({
                   Todos los estados
                 </ResponsiveSelectItem>
                 <ResponsiveSelectItem value="published">
-                  🟢 Publicadas (Activas)
+                  Publicadas
                 </ResponsiveSelectItem>
                 <ResponsiveSelectItem value="draft">
-                  🟡 Borradores (Pendientes)
+                  Borradores
                 </ResponsiveSelectItem>
               </ResponsiveSelectContent>
             </ResponsiveSelect>
 
-            {/* Filtro Tema */}
+            {/* Filtro Eje Temático */}
             <ResponsiveSelect
-              title="Filtrar por Tema"
+              title="Filtrar por Eje Temático"
               value={selectedTopic}
-              onValueChange={setSelectedTopic}
+              onValueChange={handleTopicChange}
             >
               <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
-                <Filter className="w-3.5 h-3.5 mr-1 text-muted-foreground shrink-0" />
-                <ResponsiveSelectValue placeholder="Todos los temas" />
+                <ResponsiveSelectValue placeholder="Eje Temático" />
               </ResponsiveSelectTrigger>
               <ResponsiveSelectContent>
                 <ResponsiveSelectItem value="all">
@@ -311,7 +465,7 @@ export function TriviaList({
                 </ResponsiveSelectItem>
                 {topics.map((top) => (
                   <ResponsiveSelectItem key={top.id} value={top.id}>
-                    {top.title}
+                    {top.is_regional ? `📍 ${top.title}` : top.title}
                   </ResponsiveSelectItem>
                 ))}
               </ResponsiveSelectContent>
@@ -321,7 +475,7 @@ export function TriviaList({
             <ResponsiveSelect
               title="Filtrar por Audiencia"
               value={selectedAudience}
-              onValueChange={setSelectedAudience}
+              onValueChange={handleAudienceChange}
             >
               <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
                 <ResponsiveSelectValue placeholder="Audiencias activas" />
@@ -345,7 +499,7 @@ export function TriviaList({
             <ResponsiveSelect
               title="Filtrar por Dificultad"
               value={selectedDifficulty}
-              onValueChange={setSelectedDifficulty}
+              onValueChange={handleDifficultyChange}
             >
               <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
                 <ResponsiveSelectValue placeholder="Dificultad" />
@@ -361,22 +515,82 @@ export function TriviaList({
                 </ResponsiveSelectItem>
               </ResponsiveSelectContent>
             </ResponsiveSelect>
+
+            {/* Filtro Región Electoral */}
+            <ResponsiveSelect
+              title="Filtrar por Región"
+              value={selectedRegion}
+              onValueChange={handleRegionChange}
+            >
+              <ResponsiveSelectTrigger
+                className={`w-full h-9 text-xs bg-background col-span-2 sm:col-span-1 ${
+                  isRegionalTopic || selectedRegion !== "all"
+                    ? "border-amber-500/50 bg-amber-500/5 font-semibold text-foreground"
+                    : ""
+                }`}
+              >
+                <div className="flex items-center gap-1.5 truncate">
+                  <MapPin
+                    size={12}
+                    className="text-amber-600 dark:text-amber-400 shrink-0"
+                  />
+                  <ResponsiveSelectValue placeholder="Región" />
+                </div>
+              </ResponsiveSelectTrigger>
+              <ResponsiveSelectContent>
+                <ResponsiveSelectItem value="all">
+                  Todas las regiones
+                </ResponsiveSelectItem>
+                <ResponsiveSelectItem value="nacional">
+                  🇵🇪 Nacional (Sin región)
+                </ResponsiveSelectItem>
+                {availableRegions.map((reg) => (
+                  <ResponsiveSelectItem key={reg.id} value={reg.id}>
+                    {reg.name}
+                  </ResponsiveSelectItem>
+                ))}
+              </ResponsiveSelectContent>
+            </ResponsiveSelect>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-3 flex-wrap">
             {canPublishDirectly && filteredTrivias.length > 0 && (
-              <label className="flex items-center gap-1.5 cursor-pointer select-none text-foreground font-medium">
-                <Checkbox
-                  checked={isAllSelected}
-                  onCheckedChange={handleToggleSelectAll}
-                  className="h-4 w-4 rounded"
-                />
-                <span className="text-xs">
-                  Seleccionar todo ({filteredTrivias.length})
-                </span>
-              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="flex items-center gap-1.5 cursor-pointer select-none text-foreground font-medium">
+                  <Checkbox
+                    checked={isPageSelected}
+                    onCheckedChange={handleToggleSelectPage}
+                    className="h-4 w-4 rounded"
+                  />
+                  <span className="text-xs">
+                    {filteredTrivias.length <= pageSize
+                      ? `Seleccionar todo (${filteredTrivias.length})`
+                      : `Seleccionar página (${paginatedTrivias.length})`}
+                  </span>
+                </label>
+
+                {filteredTrivias.length > pageSize && !isAllSelected && (
+                  <button
+                    type="button"
+                    onClick={handleSelectAllFiltered}
+                    className="text-xs text-primary hover:underline font-semibold"
+                  >
+                    Seleccionar todas las {filteredTrivias.length}
+                  </button>
+                )}
+
+                {isAllSelected && filteredTrivias.length > pageSize && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds([])}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Deseleccionar todas
+                  </button>
+                )}
+              </div>
             )}
 
             <span>
@@ -396,17 +610,12 @@ export function TriviaList({
               selectedStatus !== "all" ||
               selectedTopic !== "all" ||
               selectedAudience !== "all" ||
-              selectedDifficulty !== "all") && (
+              selectedDifficulty !== "all" ||
+              selectedRegion !== "all") && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedStatus("all");
-                  setSelectedTopic("all");
-                  setSelectedAudience("all");
-                  setSelectedDifficulty("all");
-                }}
+                onClick={handleClearFilters}
                 className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
               >
                 Limpiar filtros
@@ -479,7 +688,7 @@ export function TriviaList({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4.5">
-          {filteredTrivias.map((trivia) => (
+          {paginatedTrivias.map((trivia) => (
             <TriviaItem
               key={trivia.id}
               trivia={trivia}
@@ -491,13 +700,114 @@ export function TriviaList({
                   : undefined
               }
               onEdit={() => setEditingTrivia(trivia)}
-              onDelete={() => setDeleteId(trivia.id)}
-              onDuplicate={() => handleDuplicate(trivia.id)}
+              onDelete={() => setDeleteTarget(trivia)}
+              onDuplicate={() => setDuplicateTarget(trivia)}
               onTogglePublish={() =>
                 handleTogglePublish(trivia.id, trivia.is_published)
               }
             />
           ))}
+        </div>
+      )}
+
+      {/* Barra de Paginación Profesional */}
+      {totalItems > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4 px-2 border-t mt-2">
+          <div className="text-xs text-muted-foreground text-center sm:text-left">
+            Mostrando{" "}
+            <span className="font-medium text-foreground">
+              {Math.min((currentPage - 1) * pageSize + 1, totalItems)}
+            </span>{" "}
+            a{" "}
+            <span className="font-medium text-foreground">
+              {Math.min(currentPage * pageSize, totalItems)}
+            </span>{" "}
+            de <span className="font-medium text-foreground">{totalItems}</span>{" "}
+            preguntas
+            {isNavigating && (
+              <span className="ml-2 text-xs text-muted-foreground animate-pulse">
+                (cargando...)
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-6">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                Por pág.
+              </span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(val) => {
+                  updatePagination({ pageSize: Number(val), page: 1 });
+                }}
+              >
+                <SelectTrigger className="h-8 w-[72px] text-xs bg-background">
+                  <SelectValue placeholder={String(pageSize)} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[12, 24, 36, 48].map((size) => (
+                    <SelectItem
+                      key={size}
+                      value={String(size)}
+                      className="text-xs"
+                    >
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+              {currentPage} / {totalPages}
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden sm:inline-flex h-8 w-8"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage <= 1 || isNavigating}
+                title="Primera página"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1 || isNavigating}
+                title="Página anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() =>
+                  handlePageChange(Math.min(totalPages, currentPage + 1))
+                }
+                disabled={currentPage >= totalPages || isNavigating}
+                title="Página siguiente"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden sm:inline-flex h-8 w-8"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage >= totalPages || isNavigating}
+                title="Última página"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -510,35 +820,115 @@ export function TriviaList({
         nextOrderIndex={nextOrderIndex}
         topics={topics}
         audiences={audiences}
+        regions={availableRegions}
         canPublishDirectly={canPublishDirectly}
       />
 
-      {/* DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN */}
-      <AlertDialog
-        open={!!deleteId}
-        onOpenChange={(open) => !open && setDeleteId(null)}
+      {/* MODAL DE CONFIRMACIÓN DE DUPLICACIÓN (Dialog en desktop, Drawer en mobile) */}
+      <Credenza
+        open={!!duplicateTarget}
+        onOpenChange={(open) => !open && setDuplicateTarget(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              ¿Eliminar esta pregunta de trivia?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará la pregunta del
-              banco y de los juegos activos.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
+        <CredenzaContent className="sm:max-w-md">
+          <CredenzaHeader>
+            <div className="flex items-start gap-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                <Copy className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <CredenzaTitle>¿Duplicar pregunta como borrador?</CredenzaTitle>
+                <CredenzaDescription>
+                  Se creará una copia de esta pregunta en estado borrador para
+                  que puedas editarla sin alterar la original.
+                </CredenzaDescription>
+              </div>
+            </div>
+          </CredenzaHeader>
+          {duplicateTarget && (
+            <CredenzaBody className="py-2">
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1.5">
+                <p className="font-medium text-foreground line-clamp-3">
+                  “{duplicateTarget.quote}”
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <span className="font-medium text-foreground/80">
+                    {TRIVIA_CATEGORY_LABELS[duplicateTarget.category] ||
+                      duplicateTarget.category}
+                  </span>
+                  <span>•</span>
+                  <span className="capitalize">
+                    {duplicateTarget.difficulty}
+                  </span>
+                  <span>•</span>
+                  <span>#{duplicateTarget.global_index}</span>
+                </div>
+              </div>
+            </CredenzaBody>
+          )}
+          <CredenzaFooter>
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmDuplicate}>
+              <Copy className="w-4 h-4 mr-1.5" />
+              Duplicar pregunta
+            </Button>
+          </CredenzaFooter>
+        </CredenzaContent>
+      </Credenza>
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN (Dialog en desktop, Drawer en mobile) */}
+      <Credenza
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <CredenzaContent className="sm:max-w-md">
+          <CredenzaHeader>
+            <div className="flex items-start gap-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive shrink-0 mt-0.5">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <CredenzaTitle>
+                  ¿Eliminar esta pregunta de trivia?
+                </CredenzaTitle>
+                <CredenzaDescription>
+                  Esta acción no se puede deshacer. Se eliminará permanentemente
+                  la pregunta del banco y de los juegos activos.
+                </CredenzaDescription>
+              </div>
+            </div>
+          </CredenzaHeader>
+          {deleteTarget && (
+            <CredenzaBody className="py-2">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm space-y-1.5">
+                <p className="font-medium text-foreground line-clamp-3">
+                  “{deleteTarget.quote}”
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground pt-1">
+                  <span className="font-medium text-foreground/80">
+                    {TRIVIA_CATEGORY_LABELS[deleteTarget.category] ||
+                      deleteTarget.category}
+                  </span>
+                  <span>•</span>
+                  <span className="capitalize">{deleteTarget.difficulty}</span>
+                  <span>•</span>
+                  <span>#{deleteTarget.global_index}</span>
+                </div>
+              </div>
+            </CredenzaBody>
+          )}
+          <CredenzaFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              <Trash2 className="w-4 h-4 mr-1.5" />
               Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </CredenzaFooter>
+        </CredenzaContent>
+      </Credenza>
     </div>
   );
 }
@@ -636,6 +1026,15 @@ function TriviaItem({
               >
                 {renderTopicIcon(trivia.topic.icon, { size: 11 })}
                 <span className="truncate">{trivia.topic.title}</span>
+              </Badge>
+            )}
+            {trivia.electoraldistrict && (
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 shrink-0 font-semibold gap-1 flex items-center"
+              >
+                <MapPin size={10} />
+                <span>{trivia.electoraldistrict.name}</span>
               </Badge>
             )}
           </div>
@@ -831,6 +1230,17 @@ function TriviaItem({
 
         {/* Acciones */}
         <div className="flex items-center gap-0.5 sm:gap-1">
+          {trivia.updated_at && (
+            <span
+              className="text-[10px] text-muted-foreground/60 mr-1 font-mono hidden sm:inline-block select-none"
+              title={`Última actualización: ${new Date(trivia.updated_at).toLocaleString("es-PE")}`}
+            >
+              {new Date(trivia.updated_at).toLocaleDateString("es-PE", {
+                day: "2-digit",
+                month: "short",
+              })}
+            </span>
+          )}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

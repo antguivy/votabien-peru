@@ -132,9 +132,15 @@ export function normalizeFindingData(
     };
   }
 
-  const rawType = String(raw.type || raw.tipo || raw.tema || "NOTICIA")
+  let rawType = String(raw.type || raw.tipo || raw.tema || "NOTICIA")
     .trim()
-    .toUpperCase();
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (rawType === "ETICO") {
+    rawType = "ETICA";
+  }
 
   const fallbackTitle = raw.tema
     ? `${raw.tema} - Declaración`
@@ -156,9 +162,15 @@ export function normalizeFindingData(
       "Sin resumen",
   ).trim();
 
-  const rawStatus = String(raw.status || raw.estado || "EN_INVESTIGACION")
+  let rawStatus = String(raw.status || raw.estado || "EN_INVESTIGACION")
     .trim()
-    .toUpperCase();
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (rawStatus === "DESCONOCIDO") {
+    rawStatus = "EN_INVESTIGACION";
+  }
 
   const publication_date =
     raw.publication_date || raw.fecha || raw.date

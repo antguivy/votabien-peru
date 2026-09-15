@@ -759,4 +759,84 @@ describe("Candidate Reviews Server Actions (Principal Engineer Suite)", () => {
       expect(titles).toContain("Noticia Masiva 3");
     });
   });
+
+  // ==========================================================================
+  // INVARIANTE 8: MAPEO CANÓNICO DE ENUMS CRÍTICOS (ETICO -> ETICA, DESCONOCIDO -> EN_INVESTIGACION)
+  // ==========================================================================
+  describe("Invariant 8: Canonical Enum Mapping & Background Type Normalization", () => {
+    it("debe normalizar tipo 'ETICO'/'ÉTICO' a 'ETICA' e insertarlo en background, NO en posturas", async () => {
+      dbProposals.set("prop_etico", {
+        id: "prop_etico",
+        person_id: candidateId,
+        action: "INSERT",
+        target_id: null,
+        status: "PENDING",
+        reviewed_at: null,
+        reviewed_by: null,
+        proposed_data: {
+          tipo: "ETICO", // Emitido por LLM/Scraper en masculino
+          titulo: "Sanción de la Comisión de Ética",
+          descripcion: "Suspendido 60 días sin goce de haber",
+          estado: "SANCIONADO",
+          fuente: "Canal N",
+          fuente_url: "https://canaln.pe/etica-sancion",
+          fecha: "2025-06-15",
+          sancion: "Suspensión 60 días",
+        },
+      });
+
+      const res = await applyResearchFinding("prop_etico");
+      expect(res.success).toBe(true);
+
+      // NO debe haberse insertado como postura en person.posturas
+      const candidate = dbPersons.get(candidateId)!;
+      expect(candidate.posturas).toHaveLength(0);
+
+      // DEBE haberse insertado en background con type 'ETICA' (enum válido de Prisma)
+      const backgrounds = Array.from(dbBackgrounds.values()).filter(
+        (b) => b.person_id === candidateId,
+      );
+      expect(backgrounds).toHaveLength(1);
+      expect(backgrounds[0].type).toBe("ETICA");
+      expect(backgrounds[0].status).toBe("SANCIONADO");
+      expect(backgrounds[0].sanction).toBe("Suspensión 60 días");
+
+      // Verificar que el recálculo de flags reconozca la sanción ética
+      expect(candidate.has_sanction).toBe(true);
+    });
+
+    it("debe normalizar estado 'DESCONOCIDO' a 'EN_INVESTIGACION' como fallback defensivo", async () => {
+      dbProposals.set("prop_desc", {
+        id: "prop_desc",
+        person_id: candidateId,
+        action: "INSERT",
+        target_id: null,
+        status: "PENDING",
+        reviewed_at: null,
+        reviewed_by: null,
+        proposed_data: {
+          tipo: "PENAL",
+          titulo: "Investigación fiscal por colusión",
+          descripcion: "Fiscalía inicia diligencias preliminares",
+          estado: "DESCONOCIDO", // Estado no soportado por Prisma
+          fuente: "RPP",
+          fuente_url: "https://rpp.pe/caso-colusion",
+          fecha: "2025-08-10",
+        },
+      });
+
+      const res = await applyResearchFinding("prop_desc");
+      expect(res.success).toBe(true);
+
+      const backgrounds = Array.from(dbBackgrounds.values()).filter(
+        (b) => b.person_id === candidateId,
+      );
+      const bg = backgrounds.find((b) => b.title.includes("colusión"));
+      expect(bg).toBeDefined();
+      expect(bg!.status).toBe("EN_INVESTIGACION");
+
+      const candidate = dbPersons.get(candidateId)!;
+      expect(candidate.is_under_investigation).toBe(true);
+    });
+  });
 });

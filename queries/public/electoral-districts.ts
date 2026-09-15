@@ -35,9 +35,12 @@ export const getRegiones = cache(async (): Promise<ElectoralDistrictBase[]> => {
         active: true,
         is_national: false,
         OR: [{ level: "REGIONAL" }, { parent_id: null }],
-        NOT: {
-          name: { contains: "NACIONAL", mode: "insensitive" },
-        },
+        NOT: [
+          { name: { contains: "NACIONAL", mode: "insensitive" } },
+          { name: { contains: "EXTRANJERO", mode: "insensitive" } },
+          { code: "PRE" },
+          { code: "NAC" },
+        ],
       },
       select: {
         id: true,

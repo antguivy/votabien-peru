@@ -2,6 +2,7 @@
 
 import React from "react";
 import { KanbanTask, KanbanColumn, TaskFilters } from "../_lib/types";
+import { formatTaskDueDate, isTaskOverdue } from "../_lib/task-date";
 import {
   Table,
   TableBody,
@@ -68,9 +69,8 @@ export function TasksTableView({
   }
 
   if (filters.dueDate === "OVERDUE") {
-    const now = new Date();
-    allTasks = allTasks.filter(
-      (t) => t.due_date && !t.completed_at && new Date(t.due_date) < now,
+    allTasks = allTasks.filter((t) =>
+      isTaskOverdue(t.due_date, t.completed_at),
     );
   }
 
@@ -85,10 +85,7 @@ export function TasksTableView({
           const totalCheck = task.checklist?.length || 0;
           const completedCheck =
             task.checklist?.filter((c) => c.completed).length || 0;
-          const isOverdue =
-            task.due_date &&
-            !task.completed_at &&
-            new Date(task.due_date) < new Date();
+          const isOverdue = isTaskOverdue(task.due_date, task.completed_at);
 
           return (
             <div
@@ -150,10 +147,7 @@ export function TasksTableView({
                       ) : (
                         <Calendar className="h-3 w-3" />
                       )}
-                      {new Date(task.due_date).toLocaleDateString("es-PE", {
-                        month: "short",
-                        day: "numeric",
-                      })}
+                      {formatTaskDueDate(task.due_date)}
                     </span>
                   )}
                 </div>
@@ -214,10 +208,7 @@ export function TasksTableView({
               const completedCheck =
                 task.checklist?.filter((c) => c.completed).length || 0;
 
-              const isOverdue =
-                task.due_date &&
-                !task.completed_at &&
-                new Date(task.due_date) < new Date();
+              const isOverdue = isTaskOverdue(task.due_date, task.completed_at);
 
               return (
                 <TableRow
@@ -358,12 +349,7 @@ export function TasksTableView({
                         ) : (
                           <Calendar className="h-3.5 w-3.5" />
                         )}
-                        <span>
-                          {new Date(task.due_date).toLocaleDateString("es-PE", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
+                        <span>{formatTaskDueDate(task.due_date)}</span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground text-xs">-</span>

@@ -27,6 +27,9 @@ export async function GET(request: Request) {
         summary: true,
         document_url: true,
         legislator_id: true,
+        parliamentary_group_id: true,
+        legislative_session: true,
+        committees: true,
       },
     });
 
@@ -150,6 +153,8 @@ export async function POST(request: Request) {
               parliamentary_group_id:
                 data.parliamentary_group_id ||
                 existingBill.parliamentary_group_id,
+              legislative_session:
+                data.legislative_session || existingBill.legislative_session,
               coauthors: data.coauthors || existingBill.coauthors,
               cosponsors: data.cosponsors || existingBill.cosponsors,
               updated_at: new Date(),
@@ -157,12 +162,6 @@ export async function POST(request: Request) {
           });
           results.updated++;
         } else {
-          // Si no tiene legislator_id, no se puede insertar por la FK obligatoria
-          if (!data.legislator_id) {
-            results.skipped_sin_autor++;
-            continue;
-          }
-
           await prisma.bill.create({
             data: {
               id: createId(),
@@ -180,14 +179,16 @@ export async function POST(request: Request) {
               committees: data.committees,
               document_url: data.document_url,
               title_ai: data.title_ai,
-              legislator_id: data.legislator_id,
+              legislator_id: data.legislator_id || null,
               parliamentary_group_id: data.parliamentary_group_id,
               coauthors: data.coauthors,
               cosponsors: data.cosponsors,
             },
           });
           results.inserted++;
-          affectedLegislatorIds.add(data.legislator_id);
+          if (data.legislator_id) {
+            affectedLegislatorIds.add(data.legislator_id);
+          }
         }
       } catch (err: unknown) {
         const message =

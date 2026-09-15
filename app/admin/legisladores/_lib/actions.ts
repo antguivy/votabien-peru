@@ -4,7 +4,17 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { TAGS } from "@/lib/cache-tags";
 import { prisma } from "@/lib/prisma";
 import { Prisma, groupchangereason } from "@/prisma/generated/client";
-import { BulkUpdateLegislatorsRequest } from "./types";
+import {
+  BulkUpdateLegislatorsRequest,
+  SyncLegislatorsOptions,
+  SyncLegislatorsResponse,
+  SyncLegislatorDetail,
+} from "./types";
+import {
+  fetchCongresoMembers,
+  findBestCongresoMatch,
+  resolveBestPhotoUrl,
+} from "./congreso-scraper";
 import {
   CreateLegislatorPeriodRequest,
   UpdateLegislatorPeriodRequest,
@@ -457,6 +467,254 @@ export async function deleteParliamentaryMembership(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error al eliminar",
+    };
+  }
+}
+
+// ============= SINCRONIZACIÓN OFICIAL CONGRESO =============
+export async function syncLegislatorsWithCongreso(
+  legislatorIds: string[],
+  options: SyncLegislatorsOptions = {},
+): Promise<SyncLegislatorsResponse> {
+  await serverRequireEditor();
+
+  const {
+    updatePhoto = true,
+    updateEmail = true,
+    overwrite = false,
+    preferHdImage = true,
+  } = options;
+
+  if (!legislatorIds || legislatorIds.length === 0) {
+    return {
+      success: false,
+      total: 0,
+      updated: 0,
+      skipped: 0,
+      notFound: 0,
+      failed: 0,
+      details: [],
+      error: "No se seleccionaron legisladores para sincronizar.",
+    };
+  }
+
+  try {
+    // 1. Obtener legisladores de la BD
+    const legislators = await prisma.legislator.findMany({
+      where: { id: { in: legislatorIds } },
+      include: {
+        person: {
+          select: {
+            id: true,
+            fullname: true,
+            name: true,
+            lastname: true,
+            image_url: true,
+          },
+        },
+      },
+    });
+
+    if (legislators.length === 0) {
+      return {
+        success: false,
+        total: 0,
+        updated: 0,
+        skipped: 0,
+        notFound: 0,
+        failed: 0,
+        details: [],
+        error: "No se encontraron los legisladores en la base de datos.",
+      };
+    }
+
+    // 2. Determinar qué cámaras necesitamos consultar
+    const hasSenado = legislators.some((l) => l.chamber === "SENADO");
+    const hasDiputados = legislators.some(
+      (l) => l.chamber === "DIPUTADOS" || l.chamber === "CONGRESO",
+    );
+
+    const [senadoMembers, diputadosMembers] = await Promise.all([
+      hasSenado ? fetchCongresoMembers("SENADO") : Promise.resolve([]),
+      hasDiputados ? fetchCongresoMembers("DIPUTADOS") : Promise.resolve([]),
+    ]);
+
+    const details: SyncLegislatorDetail[] = [];
+    const personsToRevalidate = new Set<string>();
+
+    for (const leg of legislators) {
+      const legChamber = leg.chamber as ChamberType;
+      const candidates =
+        leg.chamber === "SENADO" ? senadoMembers : diputadosMembers;
+      const personName =
+        leg.person?.fullname ||
+        `${leg.person?.name || ""} ${leg.person?.lastname || ""}`.trim();
+
+      if (!personName) {
+        details.push({
+          legislatorId: leg.id,
+          personId: leg.person_id,
+          fullname: "Sin nombre",
+          chamber: legChamber,
+          status: "error",
+          reason: "El legislador no tiene nombre registrado en person",
+        });
+        continue;
+      }
+
+      // Matcher
+      const matchResult = findBestCongresoMatch(personName, candidates);
+
+      if (!matchResult) {
+        details.push({
+          legislatorId: leg.id,
+          personId: leg.person_id,
+          fullname: personName,
+          chamber: legChamber,
+          status: "not_found",
+          reason: `No se encontró en el portal del ${leg.chamber === "SENADO" ? "Senado" : "Diputados"}`,
+        });
+        continue;
+      }
+
+      const { member, score } = matchResult;
+
+      // Evaluar qué actualizar
+      let shouldUpdateEmail = false;
+      let targetEmail: string | null = null;
+      if (updateEmail && member.email) {
+        const hasExistingEmail = Boolean(
+          leg.institutional_email && leg.institutional_email.trim(),
+        );
+        if (overwrite || !hasExistingEmail) {
+          if (leg.institutional_email !== member.email) {
+            shouldUpdateEmail = true;
+            targetEmail = member.email;
+          }
+        }
+      }
+
+      let shouldUpdatePhoto = false;
+      let targetPhoto: string | null = null;
+      if (updatePhoto && member.photo) {
+        const hasExistingPhoto = Boolean(
+          leg.person?.image_url && leg.person.image_url.trim(),
+        );
+        if (overwrite || !hasExistingPhoto) {
+          const resolvedPhoto = await resolveBestPhotoUrl(
+            member.photo,
+            preferHdImage,
+          );
+          if (leg.person?.image_url !== resolvedPhoto) {
+            shouldUpdatePhoto = true;
+            targetPhoto = resolvedPhoto;
+          }
+        }
+      }
+
+      if (!shouldUpdateEmail && !shouldUpdatePhoto) {
+        details.push({
+          legislatorId: leg.id,
+          personId: leg.person_id,
+          fullname: personName,
+          chamber: legChamber,
+          status: "skipped",
+          matchedName: member.name,
+          matchedScore: score,
+          email: leg.institutional_email,
+          photo: leg.person?.image_url,
+          reason: "Los datos ya están actualizados o se omitió sobrescribir.",
+        });
+        continue;
+      }
+
+      // Ejecutar actualizaciones
+      try {
+        if (shouldUpdatePhoto && targetPhoto) {
+          await prisma.person.update({
+            where: { id: leg.person_id },
+            data: { image_url: targetPhoto },
+          });
+          personsToRevalidate.add(leg.person_id);
+        }
+
+        if (shouldUpdateEmail && targetEmail) {
+          await prisma.legislator.update({
+            where: { id: leg.id },
+            data: { institutional_email: targetEmail },
+          });
+        }
+
+        details.push({
+          legislatorId: leg.id,
+          personId: leg.person_id,
+          fullname: personName,
+          chamber: legChamber,
+          status: "updated",
+          matchedName: member.name,
+          matchedScore: score,
+          emailUpdated: shouldUpdateEmail,
+          photoUpdated: shouldUpdatePhoto,
+          email: targetEmail ?? leg.institutional_email,
+          photo: targetPhoto ?? leg.person?.image_url,
+        });
+      } catch (dbErr) {
+        console.error("Error al actualizar legislador:", leg.id, dbErr);
+        details.push({
+          legislatorId: leg.id,
+          personId: leg.person_id,
+          fullname: personName,
+          chamber: legChamber,
+          status: "error",
+          reason:
+            dbErr instanceof Error
+              ? dbErr.message
+              : "Error al guardar en base de datos",
+        });
+      }
+    }
+
+    // 3. Revalidar ecosistema de caché si hubo actualizaciones
+    if (personsToRevalidate.size > 0) {
+      try {
+        revalidatePersonEcosystem();
+      } catch (cacheErr) {
+        console.error("Error revalidating person ecosystem cache:", cacheErr);
+      }
+    }
+
+    revalidateTag(TAGS.legislators, "max");
+    revalidatePath("/admin/legisladores");
+    revalidatePath("/legisladores");
+
+    const updated = details.filter((d) => d.status === "updated").length;
+    const skipped = details.filter((d) => d.status === "skipped").length;
+    const notFound = details.filter((d) => d.status === "not_found").length;
+    const failed = details.filter((d) => d.status === "error").length;
+
+    return {
+      success: true,
+      total: legislators.length,
+      updated,
+      skipped,
+      notFound,
+      failed,
+      details,
+    };
+  } catch (error) {
+    console.error("Error en syncLegislatorsWithCongreso:", error);
+    return {
+      success: false,
+      total: legislatorIds.length,
+      updated: 0,
+      skipped: 0,
+      notFound: 0,
+      failed: legislatorIds.length,
+      details: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error inesperado al sincronizar con el portal del Congreso.",
     };
   }
 }

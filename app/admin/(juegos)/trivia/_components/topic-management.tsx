@@ -127,10 +127,18 @@ export function TopicManagement({
                 >
                   {renderTopicIcon(topic.icon, { size: 18 })}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Badge variant="outline" className="text-[10px] font-mono">
                     #{topic.order_index}
                   </Badge>
+                  {topic.is_regional && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 font-semibold"
+                    >
+                      📍 Regional
+                    </Badge>
+                  )}
                   <Badge
                     variant={topic.is_active ? "default" : "secondary"}
                     className="text-[10px]"
@@ -267,6 +275,7 @@ function TopicFormDialog({
       badge_color: initialData?.badge_color || "#d97706",
       order_index: initialData?.order_index ?? nextOrderIndex,
       is_active: initialData?.is_active ?? true,
+      is_regional: initialData?.is_regional ?? false,
       audience_ids:
         initialData?.audiences?.map((a) => a.id) || audiences.map((a) => a.id),
     },
@@ -535,6 +544,32 @@ function TopicFormDialog({
                       <p className="text-[11px] text-muted-foreground">
                         Si está activo, aparecerá en el menú de temas de la
                         trivia
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Toggle Eje Regional */}
+              <FormField
+                control={form.control}
+                name="is_regional"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-xl border p-3 bg-amber-500/5 border-amber-500/20">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-xs font-bold flex items-center gap-1.5 text-foreground">
+                        <span>📍 Eje Regional (Segmentado por Región)</span>
+                      </FormLabel>
+                      <p className="text-[11px] text-muted-foreground">
+                        Activa esta opción si las preguntas de este tema
+                        corresponden a debates o propuestas de regiones
+                        electorales específicas.
                       </p>
                     </div>
                     <FormControl>

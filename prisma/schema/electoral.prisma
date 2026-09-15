@@ -33,10 +33,10 @@ model bill {
   committees             String?
   document_url           String?             @db.VarChar
   title_ai               String?
-  legislator_id          String              @db.VarChar
+  legislator_id          String?             @db.VarChar
   coauthors              String?
   cosponsors             String?
-  legislator             legislator          @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  legislator             legislator?         @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parliamentarygroup     parliamentarygroup? @relation(fields: [parliamentary_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([approval_date], map: "ix_bill_approval_date")

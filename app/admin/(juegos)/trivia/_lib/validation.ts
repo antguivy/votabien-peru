@@ -50,9 +50,10 @@ export const triviaSchema = z.object({
   audience_ids: z.array(z.string()).optional(),
   is_published: z.boolean().default(false),
 
-  // Para retrocompatibilidad
+  // Para retrocompatibilidad y filtro regional
   person_id: z.string().optional().nullable(),
   political_party_id: z.string().optional().nullable(),
+  electoral_district_id: z.string().optional().nullable(),
 });
 
 export type TriviaFormValues = z.infer<typeof triviaSchema>;
@@ -75,6 +76,7 @@ export const topicSchema = z.object({
     .nullable(),
   order_index: z.coerce.number().default(0),
   is_active: z.boolean().default(true),
+  is_regional: z.boolean().default(false),
   audience_ids: z.array(z.string()).optional(),
 });
 

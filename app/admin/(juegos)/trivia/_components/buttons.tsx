@@ -12,11 +12,13 @@ export function CreateTriviaButton({
   nextOrderIndex,
   topics = [],
   audiences = [],
+  regions = [],
   canPublishDirectly = false,
 }: {
   nextOrderIndex: number;
   topics?: TriviaTopic[];
   audiences?: TriviaAudience[];
+  regions?: { id: string; name: string; code: string }[];
   canPublishDirectly?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,6 +42,7 @@ export function CreateTriviaButton({
         nextOrderIndex={nextOrderIndex}
         topics={topics}
         audiences={activeAudiences}
+        regions={regions}
         canPublishDirectly={canPublishDirectly}
       />
     </>

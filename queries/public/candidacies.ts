@@ -11,6 +11,7 @@ import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
 import { Prisma } from "@/prisma/generated/client";
 import { cache } from "react";
+import { buildPersonSearchWhere } from "@/lib/search-filters";
 
 interface GetCandidatesParams {
   ids?: string[];
@@ -27,21 +28,6 @@ interface GetCandidatesParams {
   min_work?: number;
   education?: string;
   active?: boolean;
-}
-
-function normalizeSearchTerm(term: string): string {
-  return term
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u0302\u0304-\u036f]/g, "")
-    .normalize("NFC")
-    .trim();
-}
-
-function parseSearchWords(search: string): string[] {
-  return normalizeSearchTerm(search)
-    .split(/\s+/)
-    .filter((w) => w.length >= 2);
 }
 
 function parseRnasSanctions(val: unknown): RnasSanction[] | null {
@@ -227,8 +213,8 @@ export const getCandidatesCards = cache(
       active,
     }: GetCandidatesParams): Promise<CandidateCard[]> => {
       try {
-        const searchWords = search?.trim() ? parseSearchWords(search) : [];
-        const hasSearch = searchWords.length > 0;
+        const personSearchWhere = buildPersonSearchWhere(search);
+        const hasSearch = !!personSearchWhere;
 
         const isExecutive =
           !hasSearch &&
@@ -324,40 +310,36 @@ export const getCandidatesCards = cache(
         if (parties && parties.length > 0)
           whereClause.political_party_id = { in: parties };
 
-        if (hasSearch) {
-          whereClause.person = {
-            OR: searchWords.map((word) => ({
-              OR: [
-                { name: { contains: word, mode: "insensitive" } },
-                { lastname: { contains: word, mode: "insensitive" } },
-              ],
-            })),
-          };
+        const personWhere: Prisma.personWhereInput = {};
+
+        if (personSearchWhere) {
+          Object.assign(personWhere, personSearchWhere);
         }
 
         // Filtro ético (Sin sentencias penales ni civiles)
         if (no_sentencias || (alerts && alerts.includes("NO_SENTENCIAS"))) {
-          if (!whereClause.person) whereClause.person = {};
-          whereClause.person.has_penal_sentence = false;
-          whereClause.person.has_sanction = false;
+          personWhere.has_penal_sentence = false;
+          personWhere.has_sanction = false;
         }
 
         // Filtro de experiencia laboral mínima
         if (min_work && min_work > 0) {
-          if (!whereClause.person) whereClause.person = {};
-          whereClause.person.work_experience_count = { gte: min_work };
+          personWhere.work_experience_count = { gte: min_work };
         }
 
         // Filtro de nivel de estudios
         if (education && education !== "all") {
-          if (!whereClause.person) whereClause.person = {};
           if (education === "universitaria") {
-            whereClause.person.education_level = { gte: 2 };
+            personWhere.education_level = { gte: 2 };
           } else if (education === "tecnica") {
-            whereClause.person.education_level = { gte: 1 };
+            personWhere.education_level = { gte: 1 };
           } else if (education === "secundaria") {
-            whereClause.person.secondary_school = true;
+            personWhere.secondary_school = true;
           }
+        }
+
+        if (Object.keys(personWhere).length > 0) {
+          whereClause.person = personWhere;
         }
 
         const data = await prisma.candidate.findMany({

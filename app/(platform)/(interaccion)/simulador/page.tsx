@@ -3,6 +3,8 @@ import SimuladorView from "./_components/simulador-view";
 import UnderConstruction from "@/components/under-construction";
 import { serverGetUser } from "@/lib/auth-actions";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Simulador de Votación | VotaBien Perú",
   description:

@@ -33,6 +33,7 @@ model triviatopic {
   badge_color String?  @db.VarChar(30)          // ej: "#d97706", "#2563eb"
   banner_url  String?
   is_active   Boolean  @default(true)
+  is_regional Boolean  @default(false)
   order_index Int      @default(0)
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
@@ -58,42 +59,45 @@ model triviatopic_audience {
 // 3. PREGUNTAS DE TRIVIA (Polimórficas)
 // ==========================================
 model triviagame {
-  id                 BigInt          @id @default(autoincrement())
-  topic_id           String?         @db.VarChar
-  quote              String          // Pregunta, frase o enunciado
-  title              String?         // Título descriptivo opcional
-  category           String?         // "CONSTITUCION", "PODERES", "PROPUESTA", "POLEMICO", "HISTORIA", etc.
-  difficulty         String          @default("FACIL") // "FACIL", "MEDIO", "DIFICIL"
+  id                    BigInt             @id @default(autoincrement())
+  topic_id              String?            @db.VarChar
+  quote                 String             // Pregunta, frase o enunciado
+  title                 String?            // Título descriptivo opcional
+  category              String?            // "CONSTITUCION", "PODERES", "PROPUESTA", "POLEMICO", "HISTORIA", etc.
+  difficulty            String             @default("FACIL") // "FACIL", "MEDIO", "DIFICIL"
   
   // Tipo de presentación visual de las opciones:
   // "TEXT_ONLY" | "PERSON" | "PARTY" | "INSTITUTION" | "TRUE_FALSE" | "IMAGE_CARD"
-  display_type       String          @default("TEXT_ONLY") @db.VarChar(30)
+  display_type          String             @default("TEXT_ONLY") @db.VarChar(30)
   
-  correct_answer_id  String          @db.VarChar // ID agnóstico de la respuesta correcta
-  options            Json            @db.Json    // Array de opciones [{ option_id, name, subtitle?, image_url? }]
+  correct_answer_id     String             @db.VarChar // ID agnóstico de la respuesta correcta
+  options               Json               @db.Json    // Array de opciones [{ option_id, name, subtitle?, image_url? }]
   
-  // Relaciones políticas opcionales (para retrocompatibilidad y búsqueda rápida)
-  person_id          String?         @db.VarChar
-  political_party_id String?         @db.VarChar
+  // Relaciones políticas y geográficas opcionales
+  person_id             String?            @db.VarChar
+  political_party_id    String?            @db.VarChar
+  electoral_district_id String?            @db.VarChar
 
-  global_index       BigInt          @default(0) // Orden dentro del nivel o tema
-  explanation        String?         // Explicación pedagógica contextual
-  source_url         String?         // Enlace a fuente verificada o ley
-  image_url          String?         // Imagen ilustrativa de la pregunta (opcional)
-  is_published       Boolean         @default(true)
+  global_index          BigInt             @default(0) // Orden dentro del nivel o tema
+  explanation           String?            // Explicación pedagógica contextual
+  source_url            String?            // Enlace a fuente verificada o ley
+  image_url             String?            // Imagen ilustrativa de la pregunta (opcional)
+  is_published          Boolean            @default(true)
 
-  created_at         DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  created_at            DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
 
-  topic              triviatopic?    @relation(fields: [topic_id], references: [id], onDelete: SetNull)
-  person             person?         @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  politicalparty     politicalparty? @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  audiences          triviagame_audience[]
+  topic                 triviatopic?       @relation(fields: [topic_id], references: [id], onDelete: SetNull)
+  person                person?            @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  politicalparty        politicalparty?    @relation(fields: [political_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  electoraldistrict     electoraldistrict? @relation(fields: [electoral_district_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  audiences             triviagame_audience[]
 
   @@index([topic_id])
   @@index([difficulty])
   @@index([global_index])
   @@index([is_published])
+  @@index([electoral_district_id])
 }
 
 // Tabla intermedia N:M entre Preguntas y Audiencias específicas

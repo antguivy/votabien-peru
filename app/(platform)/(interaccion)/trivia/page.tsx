@@ -5,8 +5,11 @@ import {
   getPlayableAudiences,
   getPlayableQuestions,
 } from "./_lib/data";
+import { getRegiones } from "@/queries/public/electoral-districts";
 import UnderConstruction from "@/components/under-construction";
 import { serverGetUser } from "@/lib/auth-actions";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Trivia Cívica & Electoral | VotaBien Perú",
@@ -25,10 +28,11 @@ export default async function TriviaPage() {
     );
   }
 
-  const [topics, audiences, questions] = await Promise.all([
+  const [topics, audiences, questions, regions] = await Promise.all([
     getPlayableTopics(),
     getPlayableAudiences(),
     getPlayableQuestions(),
+    getRegiones(),
   ]);
 
   return (
@@ -37,6 +41,7 @@ export default async function TriviaPage() {
         initialTopics={topics}
         initialAudiences={audiences}
         initialQuestions={questions}
+        initialRegions={regions}
       />
     </ContentPlatformLayout>
   );

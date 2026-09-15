@@ -1,6 +1,7 @@
 "use server";
 import { unstable_noStore as noStore } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { buildPersonSearchWhere } from "@/lib/search-filters";
 import { CandidateFormValues, GetCandidateSchema } from "./validation";
 import {
   PaginatedCandidatesResponse,
@@ -29,9 +30,10 @@ export async function getCandidates(
     const where: Record<string, unknown> = {};
 
     if (input.fullname) {
-      where.person = {
-        fullname: { contains: input.fullname, mode: "insensitive" },
-      };
+      const personSearch = buildPersonSearchWhere(input.fullname);
+      if (personSearch) {
+        where.person = personSearch;
+      }
     }
     if (input.type && input.type.length > 0) {
       where.type = { in: input.type };
