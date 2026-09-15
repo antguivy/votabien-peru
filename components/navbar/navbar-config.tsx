@@ -31,7 +31,7 @@ import { NavGroup, NavItem } from "@/interfaces/navbar";
 
 export const NAV_MOBILE_ITEMS = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/candidatos", label: "Candidatos ERM", icon: UserCheck },
+  { href: "/candidatos", label: "Candidatos", icon: UserCheck },
   { href: "/trivia", label: "Trivia", icon: HelpCircle },
   { href: "/legisladores", label: "Congresistas", icon: Landmark },
   // { href: "/partidos", label: "Partidos", icon: Flag },

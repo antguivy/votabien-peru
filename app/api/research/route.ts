@@ -127,6 +127,42 @@ export async function POST(request: Request) {
       }
     }
 
+    // FETCH ELECTORAL CONTEXT FOR ANTI-HOMONYM DISAMBIGUATION
+    if (personId) {
+      const activeCandidate = await prisma.candidate.findFirst({
+        where: {
+          person_id: personId,
+          active: true,
+        },
+        select: {
+          type: true,
+          electoraldistrict: {
+            select: {
+              name: true,
+              parent: {
+                select: { name: true },
+              },
+            },
+          },
+          politicalparty: {
+            select: { name: true },
+          },
+        },
+        orderBy: { created_at: "desc" },
+      });
+
+      if (activeCandidate) {
+        formData.append("cargo", activeCandidate.type);
+        const districtName = activeCandidate.electoraldistrict.name;
+        const parentName = activeCandidate.electoraldistrict.parent?.name;
+        const jurisdiccion = parentName
+          ? `${districtName}, ${parentName}`
+          : districtName;
+        formData.append("jurisdiccion", jurisdiccion);
+        formData.append("partido", activeCandidate.politicalparty.name);
+      }
+    }
+
     formData.append(
       "existing_backgrounds",
       JSON.stringify(existingBackgrounds),
