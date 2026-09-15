@@ -107,21 +107,34 @@ export async function getDistrictIdsForRegion(
 }
 
 export async function getRevisionCounts(): Promise<RevisionesCounts> {
+  // Solo contar propuestas de personas con candidatura activa en proceso electoral activo
+  const candidatePersonFilter: Prisma.research_proposalsWhereInput = {
+    action: { not: "NONE" },
+    person: {
+      candidate: {
+        some: {
+          active: true,
+          electoralprocess: { active: true },
+        },
+      },
+    },
+  };
+
   const [pendingCount, approvedCount, rejectedCount, penalCount, eticaCount] =
     await Promise.all([
       prisma.research_proposals.count({
-        where: { status: "PENDING", action: { not: "NONE" } },
+        where: { ...candidatePersonFilter, status: "PENDING" },
       }),
       prisma.research_proposals.count({
-        where: { status: "APPROVED", action: { not: "NONE" } },
+        where: { ...candidatePersonFilter, status: "APPROVED" },
       }),
       prisma.research_proposals.count({
-        where: { status: "REJECTED", action: { not: "NONE" } },
+        where: { ...candidatePersonFilter, status: "REJECTED" },
       }),
       prisma.research_proposals.count({
         where: {
+          ...candidatePersonFilter,
           status: "PENDING",
-          action: { not: "NONE" },
           OR: [
             { proposed_data: { path: ["type"], string_contains: "PENAL" } },
             { proposed_data: { path: ["tipo"], string_contains: "PENAL" } },
@@ -130,8 +143,8 @@ export async function getRevisionCounts(): Promise<RevisionesCounts> {
       }),
       prisma.research_proposals.count({
         where: {
+          ...candidatePersonFilter,
           status: "PENDING",
-          action: { not: "NONE" },
           OR: [
             { proposed_data: { path: ["type"], string_contains: "ETICA" } },
             { proposed_data: { path: ["tipo"], string_contains: "ETICA" } },
@@ -218,15 +231,10 @@ export async function getPaginatedRevisiones(params: GetRevisionesParams) {
     where.status = "PENDING";
     where.NOT = [
       { proposed_data: { path: ["type"], string_contains: "PENAL" } },
-      { proposed_data: { path: ["tipo"], string_contains: "PENAL" } },
       { proposed_data: { path: ["type"], string_contains: "ETICA" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ETICA" } },
       { proposed_data: { path: ["type"], string_contains: "ETICO" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ETICO" } },
       { proposed_data: { path: ["type"], string_contains: "ADMINISTRATIVO" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ADMINISTRATIVO" } },
       { proposed_data: { path: ["type"], string_contains: "CIVIL" } },
-      { proposed_data: { path: ["tipo"], string_contains: "CIVIL" } },
     ];
   } else {
     // PENDING_ALL por defecto
@@ -266,15 +274,14 @@ export async function getPaginatedRevisiones(params: GetRevisionesParams) {
 
   const andClauses: Prisma.research_proposalsWhereInput[] = [];
 
-  if (cargo !== "ALL" || region !== "ALL") {
-    andClauses.push({
-      person: {
-        candidate: {
-          some: candidateWhere,
-        },
+  // En la bandeja de candidatos, SIEMPRE se garantiza que la persona tenga candidatura activa
+  andClauses.push({
+    person: {
+      candidate: {
+        some: candidateWhere,
       },
-    });
-  }
+    },
+  });
 
   // 4. Búsqueda por texto (nombre, DNI o título de propuesta)
   if (q) {

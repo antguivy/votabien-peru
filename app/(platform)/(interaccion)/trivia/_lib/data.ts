@@ -6,7 +6,11 @@ import {
   OptionDisplayType,
   TriviaOption,
 } from "@/interfaces/game-types";
-import { TriviaTopic, TriviaAudience } from "@/interfaces/trivia";
+import {
+  TriviaTopic,
+  TriviaAudience,
+  SecondarySource,
+} from "@/interfaces/trivia";
 import { unstable_noStore as noStore } from "next/cache";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
@@ -165,6 +169,24 @@ export async function getPlayableQuestions(options?: {
         letter: LETTERS[idx] ?? ("A" as const),
       }));
 
+      let parsedSecondarySources: SecondarySource[] = [];
+      try {
+        if (item.secondary_sources) {
+          parsedSecondarySources =
+            typeof item.secondary_sources === "string"
+              ? JSON.parse(item.secondary_sources)
+              : Array.isArray(item.secondary_sources)
+                ? (item.secondary_sources as unknown as SecondarySource[])
+                : [];
+        }
+      } catch (e) {
+        console.error(
+          "Error parsing secondary_sources for question",
+          item.id,
+          e,
+        );
+      }
+
       return {
         id: Number(item.id),
         topic_id: item.topic_id,
@@ -177,6 +199,7 @@ export async function getPlayableQuestions(options?: {
         global_index: Number(item.global_index),
         explanation: item.explanation,
         source_url: item.source_url,
+        secondary_sources: parsedSecondarySources,
         image_url: item.image_url,
         options: optionsWithLetters,
         person_id: item.person_id,
@@ -194,6 +217,7 @@ export async function getPlayableQuestions(options?: {
               banner_url: item.topic.banner_url,
               is_active: item.topic.is_active,
               is_regional: item.topic.is_regional,
+              has_factcheck: item.topic.has_factcheck,
               order_index: item.topic.order_index,
             }
           : null,

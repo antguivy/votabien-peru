@@ -1,5 +1,10 @@
-import type { OptionDisplayType, TriviaAudience, TriviaTopic } from "./trivia";
-export type { OptionDisplayType, TriviaAudience, TriviaTopic };
+import type {
+  OptionDisplayType,
+  TriviaAudience,
+  TriviaTopic,
+  SecondarySource,
+} from "./trivia";
+export type { OptionDisplayType, TriviaAudience, TriviaTopic, SecondarySource };
 
 export type GameRegion = "costa" | "sierra" | "selva" | "hanan_pacha";
 
@@ -52,6 +57,7 @@ export interface TriviaQuestion {
   correct_answer_id: string;
   explanation?: string | null;
   source_url?: string | null;
+  secondary_sources?: SecondarySource[] | null;
   image_url?: string | null;
   options: TriviaOption[];
   audiences?: TriviaAudience[];

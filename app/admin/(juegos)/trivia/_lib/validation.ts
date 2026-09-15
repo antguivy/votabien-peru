@@ -7,6 +7,11 @@ export const optionItemSchema = z.object({
   image_url: z.string().optional().nullable(),
 });
 
+export const secondarySourceSchema = z.object({
+  url: z.string().url("URL inválida").min(1, "La URL es requerida"),
+  label: z.string().optional().nullable(),
+});
+
 export const triviaSchema = z.object({
   id: z.string().optional(),
   topic_id: z.string().optional().nullable(),
@@ -20,6 +25,7 @@ export const triviaSchema = z.object({
     .optional()
     .or(z.literal(""))
     .nullable(),
+  secondary_sources: z.array(secondarySourceSchema).optional().nullable(),
   image_url: z
     .string()
     .url("URL de imagen inválida")
@@ -77,6 +83,7 @@ export const topicSchema = z.object({
   order_index: z.coerce.number().default(0),
   is_active: z.boolean().default(true),
   is_regional: z.boolean().default(false),
+  has_factcheck: z.boolean().default(false),
   audience_ids: z.array(z.string()).optional(),
 });
 

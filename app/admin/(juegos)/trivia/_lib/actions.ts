@@ -54,6 +54,10 @@ export async function createTrivia(data: TriviaFormValues) {
         global_index: BigInt(fields.global_index),
         explanation: fields.explanation || null,
         source_url: fields.source_url || null,
+        secondary_sources:
+          fields.secondary_sources && fields.secondary_sources.length > 0
+            ? (fields.secondary_sources as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         image_url: fields.image_url || null,
         is_published: canPublishDirectly ? fields.is_published : false,
         options: fields.options as Prisma.InputJsonValue,
@@ -122,6 +126,10 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
         global_index: BigInt(fields.global_index),
         explanation: fields.explanation || null,
         source_url: fields.source_url || null,
+        secondary_sources:
+          fields.secondary_sources && fields.secondary_sources.length > 0
+            ? (fields.secondary_sources as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         image_url: fields.image_url || null,
         is_published: canPublishDirectly ? fields.is_published : false,
         options: fields.options as Prisma.InputJsonValue,
@@ -498,6 +506,7 @@ export async function createTopic(data: TopicFormValues) {
         order_index: fields.order_index,
         is_active: fields.is_active,
         is_regional: fields.is_regional ?? false,
+        has_factcheck: fields.has_factcheck ?? false,
       },
     });
 
@@ -541,6 +550,7 @@ export async function updateTopic(id: string, data: TopicFormValues) {
         order_index: fields.order_index,
         is_active: fields.is_active,
         is_regional: fields.is_regional ?? false,
+        has_factcheck: fields.has_factcheck ?? false,
       },
     });
 

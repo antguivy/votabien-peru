@@ -18,6 +18,11 @@ export interface TriviaAudience {
   order_index: number;
 }
 
+export interface SecondarySource {
+  url: string;
+  label?: string | null;
+}
+
 export interface TriviaTopic {
   id: string;
   slug: string;
@@ -28,6 +33,7 @@ export interface TriviaTopic {
   banner_url?: string | null;
   is_active: boolean;
   is_regional?: boolean;
+  has_factcheck?: boolean;
   order_index: number;
   audiences?: TriviaAudience[];
   questions_count?: number;
@@ -55,6 +61,7 @@ export interface TriviaBasic {
   global_index: number;
   explanation: string | null;
   source_url: string | null;
+  secondary_sources?: SecondarySource[] | null;
   image_url?: string | null;
   is_published: boolean;
 
@@ -68,6 +75,7 @@ export interface TriviaBasic {
     icon?: string | null;
     badge_color?: string | null;
     is_regional?: boolean;
+    has_factcheck?: boolean;
   } | null;
 
   audiences?: TriviaAudience[];
