@@ -45,7 +45,7 @@ export async function getTrivias(filters?: {
 
     const data = await prisma.triviagame.findMany({
       where: whereClause,
-      orderBy: { global_index: "asc" },
+      orderBy: [{ updated_at: "desc" }, { id: "desc" }],
       include: {
         topic: {
           select: {
@@ -54,6 +54,7 @@ export async function getTrivias(filters?: {
             title: true,
             icon: true,
             badge_color: true,
+            is_regional: true,
           },
         },
         audiences: {
@@ -63,6 +64,7 @@ export async function getTrivias(filters?: {
         },
         person: { select: { id: true, fullname: true } },
         politicalparty: { select: { id: true, name: true } },
+        electoraldistrict: { select: { id: true, name: true, code: true } },
       },
     });
 
@@ -94,6 +96,7 @@ export async function getTrivias(filters?: {
         image_url: item.image_url,
         is_published: item.is_published,
         created_at: item.created_at.toISOString(),
+        updated_at: item.updated_at.toISOString(),
         options: parsedOptions,
         topic: item.topic,
         audiences: item.audiences.map((a) => ({
@@ -109,8 +112,10 @@ export async function getTrivias(filters?: {
         })),
         person_id: item.person_id,
         political_party_id: item.political_party_id,
+        electoral_district_id: item.electoral_district_id,
         person: item.person,
         politicalparty: item.politicalparty,
+        electoraldistrict: item.electoraldistrict,
       };
     });
 
@@ -149,6 +154,7 @@ export async function getTopics(): Promise<TriviaTopic[]> {
       badge_color: t.badge_color,
       banner_url: t.banner_url,
       is_active: t.is_active,
+      is_regional: t.is_regional,
       order_index: t.order_index,
       questions_count: t._count.questions,
       audiences: t.audiences.map((a) => ({

@@ -22,6 +22,7 @@ import { LegislatorFormDialog } from "./legislator-form-dialog";
 import { ParliamentaryMembershipDialog } from "./legislator-bancadas-dialog";
 import ResearchPageDialog from "@/components/research/research-page";
 import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
+import { BatchSyncCongresoDialog } from "./batch-sync-congreso-dialog";
 
 interface LegislatorsTableProps {
   promises: Promise<
@@ -52,15 +53,29 @@ export function LegislatorsTable({
   const [batchPersons, setBatchPersons] = React.useState<
     { id: string }[] | null
   >(null);
+  const [batchSyncLegislators, setBatchSyncLegislators] = React.useState<
+    AdminLegislator[] | null
+  >(null);
 
   React.useEffect(() => {
     const handleBatchOpen = (e: Event) => {
       const customEvent = e as CustomEvent;
       setBatchPersons(customEvent.detail.rows);
     };
+    const handleBatchSyncOpen = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setBatchSyncLegislators(customEvent.detail.rows);
+    };
+
     window.addEventListener("open-batch-research", handleBatchOpen);
-    return () =>
+    window.addEventListener("open-batch-sync-congreso", handleBatchSyncOpen);
+    return () => {
       window.removeEventListener("open-batch-research", handleBatchOpen);
+      window.removeEventListener(
+        "open-batch-sync-congreso",
+        handleBatchSyncOpen,
+      );
+    };
   }, []);
 
   const columns = React.useMemo(
@@ -71,7 +86,7 @@ export function LegislatorsTable({
     {
       id: "fullname",
       label: "Legislador",
-      placeholder: "Filtrar por legislador...",
+      placeholder: "Filtrar por legislador o DNI...",
     },
     {
       id: "chamber",
@@ -183,6 +198,24 @@ export function LegislatorsTable({
             const newSelection: Record<string, boolean> = {};
             table.getRowModel().rows.forEach((row) => {
               if (failedPersonIds.includes(row.original.person_id)) {
+                newSelection[row.id] = true;
+              }
+            });
+            table.setRowSelection(newSelection);
+          }
+        }}
+      />
+
+      <BatchSyncCongresoDialog
+        legislators={batchSyncLegislators}
+        onClose={(failedIds = []) => {
+          setBatchSyncLegislators(null);
+          if (!failedIds || failedIds.length === 0) {
+            table.toggleAllRowsSelected(false);
+          } else {
+            const newSelection: Record<string, boolean> = {};
+            table.getRowModel().rows.forEach((row) => {
+              if (failedIds.includes(row.original.id)) {
                 newSelection[row.id] = true;
               }
             });

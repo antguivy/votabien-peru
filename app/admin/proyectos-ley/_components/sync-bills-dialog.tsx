@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaTrigger,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaDescription,
+  CredenzaBody,
+  CredenzaFooter,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -21,10 +22,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { RefreshCw, Terminal, CheckCircle2, Bot } from "lucide-react";
+import {
+  RefreshCw,
+  Terminal,
+  CheckCircle2,
+  Cpu,
+  FileSpreadsheet,
+  UploadCloud,
+  X,
+  Globe,
+  Upload,
+  Building2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface SyncBillsDialogProps {
   availablePeriods?: string[];
@@ -35,6 +47,7 @@ interface DiffStats {
   nuevos: number;
   cambio_estado: number;
   pendientes_ia: number;
+  metadatos_faltantes?: number;
   sin_cambios: number;
   total_a_procesar: number;
 }
@@ -44,8 +57,9 @@ export function SyncBillsDialog({
 }: SyncBillsDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [period, setPeriod] = React.useState("2026-2031");
-  const [mode, setMode] = React.useState<"auto" | "upload">("auto");
+  const [mode, setMode] = React.useState<"auto" | "upload">("upload");
   const [file, setFile] = React.useState<File | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
   const [limit, setLimit] = React.useState<string>("");
   const [isRunning, setIsRunning] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
@@ -53,6 +67,8 @@ export function SyncBillsDialog({
   const [diffStats, setDiffStats] = React.useState<DiffStats | null>(null);
   const [logs, setLogs] = React.useState<string[]>([]);
   const [isCompleted, setIsCompleted] = React.useState(false);
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const logContainerRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -80,15 +96,50 @@ export function SyncBillsDialog({
     setIsCompleted(false);
   };
 
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      validateAndSetFile(droppedFile);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const validateAndSetFile = (f: File) => {
+    const validExtensions = [".xlsx", ".xls", ".csv"];
+    const ext = f.name.substring(f.name.lastIndexOf(".")).toLowerCase();
+    if (!validExtensions.includes(ext)) {
+      toast.error(
+        "Formato no compatible. Por favor sube un archivo Excel (.xlsx, .xls) o CSV.",
+      );
+      return;
+    }
+    setFile(f);
+  };
+
   const startSync = async () => {
     if (mode === "upload" && !file) {
-      toast.error("Por favor selecciona un archivo Excel (.xlsx o .csv).");
+      toast.error(
+        "Por favor selecciona o arrastra un archivo Excel (.xlsx o .csv).",
+      );
       return;
     }
 
     resetState();
     setIsRunning(true);
-    setCurrentAction("Iniciando conexión con el servicio de scraping...");
+    setCurrentAction(
+      "Iniciando conexión con el servicio de scraping y análisis...",
+    );
 
     try {
       const formData = new FormData();
@@ -177,7 +228,7 @@ export function SyncBillsDialog({
   };
 
   return (
-    <Dialog
+    <Credenza
       open={open}
       onOpenChange={(v) => {
         if (isRunning) {
@@ -190,244 +241,422 @@ export function SyncBillsDialog({
         if (!v) resetState();
       }}
     >
-      <DialogTrigger asChild>
+      <CredenzaTrigger asChild>
         <Button className="gap-2 font-medium shadow-sm">
           <RefreshCw className="h-4 w-4" />
           Sincronizar
         </Button>
-      </DialogTrigger>
+      </CredenzaTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-2 text-primary">
-            <Bot className="h-5 w-5" />
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Scraping + Gemini 2.5 Flash
+      <CredenzaContent className="sm:max-w-2xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden border border-border/80 shadow-2xl">
+        {/* Header Fijo Estático */}
+        <CredenzaHeader className="p-5 sm:p-6 pb-4 border-b border-border/70 bg-card/60 backdrop-blur-sm shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 tracking-wide uppercase">
+              <Cpu className="h-3.5 w-3.5" />
+              DeepSeek Flash + SPLey Scraper
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+              <Building2 className="h-3 w-3" />
+              Congreso del Perú
             </span>
           </div>
-          <DialogTitle className="text-lg font-bold">
-            Sincronización de Proyectos de Ley del Congreso
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Descarga o sube el reporte oficial de SPLey, detecta proyectos
-            nuevos o cambios de estado, extrae sumillas con Playwright y genera
+          <CredenzaTitle className="text-xl font-bold tracking-tight text-foreground">
+            Sincronización de Proyectos de Ley
+          </CredenzaTitle>
+          <CredenzaDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1">
+            Detecta proyectos nuevos, actualiza cambios de estado, completa
+            metadatos faltantes (bancada, legislatura, comisiones) y genera
             títulos ciudadanos con IA.
-          </DialogDescription>
-        </DialogHeader>
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        {!isRunning && !isCompleted && (
-          <div className="space-y-4 py-2">
-            {/* Selección de Periodo */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Periodo Parlamentario
-                </Label>
-                <Select value={period} onValueChange={handlePeriodChange}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Periodo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePeriods.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {p} {p === "2026-2031" && "(Nuevo Congreso)"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* Body Scrollable */}
+        <CredenzaBody className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {!isRunning && !isCompleted && (
+            <div className="space-y-5">
+              {/* Selección de Periodo y Límite */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/90">
+                    Periodo Parlamentario
+                  </Label>
+                  <Select value={period} onValueChange={handlePeriodChange}>
+                    <SelectTrigger className="text-sm h-9 bg-background">
+                      <SelectValue placeholder="Periodo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availablePeriods.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}{" "}
+                          {p === "2026-2031"
+                            ? "(Bicameral 2026-2031)"
+                            : "(Unicameral)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Límite de prueba (Opcional)
-                </Label>
-                <Input
-                  type="number"
-                  placeholder="Ej: 10 (dejar vacío para todos)"
-                  value={limit}
-                  onChange={(e) => setLimit(e.target.value)}
-                  className="text-sm"
-                />
-              </div>
-            </div>
-
-            {period === "2026-2031" && (
-              <div className="rounded-md bg-muted/60 p-2.5 border text-xs text-muted-foreground flex items-center gap-2">
-                <span className="font-semibold text-foreground">
-                  🏛️ Congreso Bicameral:
-                </span>
-                <span>
-                  Compatible con reportes de <strong>Diputados (-CD)</strong> y
-                  del <strong>Senado (-S)</strong>. El motor auto-detecta la
-                  cámara y el portal SPLey correspondiente.
-                </span>
-              </div>
-            )}
-
-            {/* Modo de Ingestión */}
-            <div className="space-y-2 pt-2 border-t">
-              <Label className="text-xs font-semibold">
-                Método de Obtención del Reporte
-              </Label>
-              <RadioGroup
-                value={mode}
-                onValueChange={(val: "auto" | "upload") => setMode(val)}
-                className="grid grid-cols-1 gap-2.5"
-              >
-                <div className="flex items-start space-x-3 p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem
-                    value="auto"
-                    id="mode-auto"
-                    className="mt-1"
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-foreground/90">
+                    Límite de prueba (Opcional)
+                  </Label>
+                  <Input
+                    type="number"
+                    placeholder="Ej: 10 (vacío para todos)"
+                    value={limit}
+                    onChange={(e) => setLimit(e.target.value)}
+                    className="text-sm h-9 bg-background"
                   />
-                  <div className="space-y-0.5">
-                    <Label
-                      htmlFor="mode-auto"
-                      className="text-sm font-semibold cursor-pointer"
-                    >
-                      🌐 Descarga Directa desde SPLey (Automático)
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Playwright ingresa al buscador oficial de SPLey y exporta
-                      el reporte Excel más reciente.
+                </div>
+              </div>
+
+              {period === "2026-2031" && (
+                <div className="rounded-xl bg-primary/[0.04] border border-primary/15 p-3.5 flex items-start gap-3 text-xs text-muted-foreground">
+                  <span className="text-base leading-none mt-0.5">🏛️</span>
+                  <div className="space-y-0.5 leading-relaxed">
+                    <p className="font-semibold text-foreground">
+                      Modo Bicameral Activo (Cámara de Diputados y Senado)
+                    </p>
+                    <p>
+                      Mapea automáticamente proposiciones de{" "}
+                      <strong>Diputados (-CD)</strong> y del{" "}
+                      <strong>Senado (-S)</strong>. Extrae bancadas, legislatura
+                      y comisiones oficiales desde SPLey.
                     </p>
                   </div>
                 </div>
+              )}
 
-                <div className="flex items-start space-x-3 p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer transition-colors">
-                  <RadioGroupItem
-                    value="upload"
-                    id="mode-upload"
-                    className="mt-1"
-                  />
-                  <div className="space-y-0.5 flex-1">
-                    <Label
-                      htmlFor="mode-upload"
-                      className="text-sm font-semibold cursor-pointer"
-                    >
-                      📁 Cargar Archivo Excel / CSV Manualmente
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Sube el archivo exportado desde tu navegador si el portal
-                      del Congreso presenta bloqueos.
-                    </p>
-                    {mode === "upload" && (
-                      <div className="pt-2">
-                        <Input
-                          type="file"
-                          accept=".xlsx,.xls,.csv"
-                          onChange={(e) => setFile(e.target.files?.[0] || null)}
-                          className="text-xs"
-                        />
-                        {file && (
-                          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" /> {file.name} (
-                            {(file.size / 1024).toFixed(1)} KB)
-                          </p>
-                        )}
-                      </div>
+              {/* Selector de Modo de Ingestión */}
+              <div className="space-y-2.5 pt-1">
+                <Label className="text-xs font-semibold text-foreground/90">
+                  Método de Ingestión del Reporte
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Opción Manual (Recomendada) */}
+                  <div
+                    onClick={() => setMode("upload")}
+                    className={cn(
+                      "flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all text-left",
+                      mode === "upload"
+                        ? "border-primary bg-primary/[0.03] shadow-sm ring-1 ring-primary/20"
+                        : "border-border bg-card/60 hover:bg-muted/40 hover:border-border/80",
                     )}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                        <Upload className="h-4 w-4 text-primary" />
+                        Subir Reporte Excel
+                      </span>
+                      {mode === "upload" && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Sube el archivo <code>.xlsx</code> descargado de SPLey.
+                      Proceso rápido, sin depender de la navegación inicial.
+                    </p>
+                  </div>
+
+                  {/* Opción Automática */}
+                  <div
+                    onClick={() => setMode("auto")}
+                    className={cn(
+                      "flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all text-left",
+                      mode === "auto"
+                        ? "border-primary bg-primary/[0.03] shadow-sm ring-1 ring-primary/20"
+                        : "border-border bg-card/60 hover:bg-muted/40 hover:border-border/80",
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+                        <Globe className="h-4 w-4 text-primary" />
+                        Descarga Automática
+                      </span>
+                      {mode === "auto" && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Playwright navega a la web de SPLey y descarga el reporte
+                      en tiempo real.
+                    </p>
                   </div>
                 </div>
-              </RadioGroup>
+              </div>
+
+              {/* Zona Drag & Drop para Excel */}
+              {mode === "upload" && (
+                <div className="space-y-2 pt-1">
+                  <Label className="text-xs font-semibold text-foreground/90">
+                    Archivo de Proyectos de Ley (.xlsx, .xls, .csv)
+                  </Label>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) validateAndSetFile(f);
+                    }}
+                  />
+
+                  {!file ? (
+                    <div
+                      onDrop={handleFileDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "group border-2 border-dashed rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200",
+                        isDragging
+                          ? "border-primary bg-primary/5 scale-[0.99]"
+                          : "border-border/80 hover:border-primary/50 hover:bg-primary/[0.02]",
+                      )}
+                    >
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3 group-hover:scale-105 group-hover:bg-primary/10 transition-transform">
+                        <UploadCloud className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground mb-1">
+                        Arrastra el reporte Excel aquí o{" "}
+                        <span className="text-primary underline underline-offset-4">
+                          explora tus archivos
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Archivos compatibles:{" "}
+                        <code>reporte-proyecto-ley-*.xlsx</code> o{" "}
+                        <code>.csv</code>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <FileSpreadsheet className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {file.name}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                            <span>{(file.size / 1024).toFixed(1)} KB</span>
+                            <span>•</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> Listo para
+                              procesar
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                        >
+                          Cambiar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFile(null);
+                          }}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
-
-        {/* Durante la ejecución o al finalizar */}
-        {(isRunning || isCompleted || logs.length > 0) && (
-          <div className="space-y-3 py-2">
-            {/* Barra de progreso */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="truncate max-w-[80%]">
-                  {currentAction || "Procesando..."}
-                </span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-
-            {/* Resumen de Diffing */}
-            {diffStats && (
-              <div className="grid grid-cols-4 gap-2 text-center text-xs p-2.5 rounded-lg bg-muted/60 border">
-                <div>
-                  <p className="text-muted-foreground font-medium">
-                    Total Reporte
-                  </p>
-                  <p className="text-base font-bold text-foreground">
-                    {diffStats.total_en_reporte}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground font-medium">Nuevos</p>
-                  <p className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-                    +{diffStats.nuevos}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground font-medium">
-                    Cambio Estado
-                  </p>
-                  <p className="text-base font-bold text-blue-600 dark:text-blue-400">
-                    {diffStats.cambio_estado}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground font-medium">
-                    Sin Cambios
-                  </p>
-                  <p className="text-base font-bold text-muted-foreground">
-                    {diffStats.sin_cambios}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Terminal Logs */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Terminal className="h-3.5 w-3.5" />
-                <span>Registro de operaciones en vivo</span>
-              </div>
-              <div
-                ref={logContainerRef}
-                className="bg-zinc-950 text-zinc-200 font-mono text-xs p-3 rounded-lg h-44 overflow-y-auto space-y-1 border border-zinc-800"
-              >
-                {logs.map((msg, i) => (
-                  <div key={i} className="leading-relaxed whitespace-pre-wrap">
-                    {msg}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter className="gap-2">
-          {!isRunning && !isCompleted ? (
-            <>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={startSync} className="gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Iniciar Sincronización
-              </Button>
-            </>
-          ) : isCompleted ? (
-            <Button onClick={handleFinish} className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Finalizar y Actualizar Vista
-            </Button>
-          ) : (
-            <Button disabled variant="outline" className="gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              Sincronizando en tiempo real...
-            </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          {/* Estado de Ejecución o Finalizado */}
+          {(isRunning || isCompleted || logs.length > 0) && (
+            <div className="space-y-4">
+              {/* Barra de progreso y estado activo */}
+              <div className="rounded-xl border border-border/80 bg-card p-4 space-y-3 shadow-sm">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center gap-2 max-w-[80%]">
+                    {isRunning ? (
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                    ) : isCompleted ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : null}
+                    <span className="truncate text-foreground">
+                      {currentAction || "Sincronizando..."}
+                    </span>
+                  </div>
+                  <span className="font-mono text-sm font-bold text-primary">
+                    {progress}%
+                  </span>
+                </div>
+                <Progress value={progress} className="h-2 rounded-full" />
+              </div>
+
+              {/* Bento Cards con el Diffing */}
+              {diffStats && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      Total Reporte
+                    </p>
+                    <p className="text-lg font-bold text-foreground mt-0.5">
+                      {diffStats.total_en_reporte}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/20">
+                    <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                      Nuevos
+                    </p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      +{diffStats.nuevos}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-blue-500/[0.04] border border-blue-500/20">
+                    <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                      Actualizados
+                    </p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                      {(diffStats.cambio_estado || 0) +
+                        (diffStats.metadatos_faltantes || 0)}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border/70">
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      Sin Cambios
+                    </p>
+                    <p className="text-lg font-bold text-muted-foreground mt-0.5">
+                      {diffStats.sin_cambios}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Consola Terminal Dark en Tiempo Real */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                  <div className="flex items-center gap-1.5">
+                    <Terminal className="h-3.5 w-3.5" />
+                    <span className="font-semibold text-foreground/80">
+                      Registro de Eventos y LLM en Tiempo Real
+                    </span>
+                  </div>
+                  <span className="font-mono text-[11px]">
+                    {logs.length} líneas
+                  </span>
+                </div>
+                <div
+                  ref={logContainerRef}
+                  className="bg-zinc-950 text-zinc-300 font-mono text-[11px] p-3.5 rounded-xl h-48 overflow-y-auto space-y-1 border border-zinc-800/90 shadow-inner"
+                >
+                  {logs.length === 0 ? (
+                    <div className="text-zinc-500 italic">
+                      Esperando inicio del stream...
+                    </div>
+                  ) : (
+                    logs.map((msg, i) => (
+                      <div
+                        key={i}
+                        className="leading-relaxed whitespace-pre-wrap flex items-start gap-2"
+                      >
+                        <span className="text-zinc-600 select-none">
+                          {String(i + 1).padStart(3, "0")}
+                        </span>
+                        <span
+                          className={cn(
+                            msg.includes("❌")
+                              ? "text-rose-400"
+                              : msg.includes("🎉") || msg.includes("✅")
+                                ? "text-emerald-400 font-medium"
+                                : msg.includes("💾")
+                                  ? "text-cyan-400"
+                                  : msg.includes("Procesando")
+                                    ? "text-amber-300"
+                                    : "text-zinc-300",
+                          )}
+                        >
+                          {msg}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </CredenzaBody>
+
+        {/* Footer Fijo Estático */}
+        <CredenzaFooter className="p-4 sm:p-5 border-t border-border/70 bg-card/60 backdrop-blur-sm shrink-0 flex items-center justify-between">
+          {!isRunning && !isCompleted ? (
+            <div className="flex items-center justify-between w-full gap-2">
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                Los proyectos existentes completarán metadatos sin regenerar IA.
+              </p>
+              <div className="flex items-center gap-2 ml-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={startSync}
+                  size="sm"
+                  disabled={mode === "upload" && !file}
+                  className="gap-2 font-medium shadow"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Iniciar Sincronización
+                </Button>
+              </div>
+            </div>
+          ) : isCompleted ? (
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4" />
+                Sincronización finalizada con éxito
+              </span>
+              <Button onClick={handleFinish} size="sm" className="gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Finalizar y Actualizar
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs text-muted-foreground flex items-center gap-2">
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
+                Procesando reporte en vivo...
+              </span>
+              <Button
+                disabled
+                variant="outline"
+                size="sm"
+                className="gap-2 font-mono text-xs"
+              >
+                {progress}% completado
+              </Button>
+            </div>
+          )}
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }

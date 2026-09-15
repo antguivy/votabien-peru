@@ -27,6 +27,7 @@ export interface TriviaTopic {
   badge_color?: string | null;
   banner_url?: string | null;
   is_active: boolean;
+  is_regional?: boolean;
   order_index: number;
   audiences?: TriviaAudience[];
   questions_count?: number;
@@ -45,6 +46,7 @@ export interface TriviaBasic {
   id: number;
   topic_id?: string | null;
   created_at: string;
+  updated_at?: string;
   quote: string;
   title?: string | null;
   category: string;
@@ -65,12 +67,15 @@ export interface TriviaBasic {
     title: string;
     icon?: string | null;
     badge_color?: string | null;
+    is_regional?: boolean;
   } | null;
 
   audiences?: TriviaAudience[];
 
   person_id?: string | null;
   political_party_id?: string | null;
+  electoral_district_id?: string | null;
   person?: { id: string; fullname: string } | null;
   politicalparty?: { id: string; name: string } | null;
+  electoraldistrict?: { id: string; name: string; code: string } | null;
 }

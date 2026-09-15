@@ -69,7 +69,7 @@ export function CandidatesTable({
     {
       id: "fullname",
       label: "Candidato",
-      placeholder: "Filtrar por nombre...",
+      placeholder: "Filtrar por candidato o DNI...",
     },
     {
       id: "type",

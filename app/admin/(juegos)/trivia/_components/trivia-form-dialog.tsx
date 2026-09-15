@@ -15,6 +15,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,7 +53,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { triviaSchema, type TriviaFormValues } from "../_lib/validation";
 import { createTrivia, updateTrivia } from "../_lib/actions";
-import { PersonSelector } from "@/components/person-selector";
+import { CandidateSelector } from "@/components/candidate-selector";
 import { PartySelector } from "@/components/party-selector";
 import { Input } from "@/components/ui/input";
 import {
@@ -136,7 +137,9 @@ function SortableOptionItem({
   return (
     <div ref={setNodeRef} style={style} className="mb-2">
       <Card
-        className={`relative flex flex-row items-center p-2.5 transition-all ${
+        className={`relative flex flex-row ${
+          isTextOnly ? "items-start" : "items-center"
+        } p-2.5 transition-all ${
           isSelected
             ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 shadow-sm"
             : "bg-muted/20 border-border/40 hover:bg-muted/40"
@@ -146,13 +149,15 @@ function SortableOptionItem({
         <div
           {...attributes}
           {...listeners}
-          className="touch-none cursor-grab p-1.5 hover:bg-muted rounded mr-1 text-muted-foreground shrink-0"
+          className={`touch-none cursor-grab p-1.5 hover:bg-muted rounded mr-1 text-muted-foreground shrink-0 ${
+            isTextOnly ? "mt-0.5" : ""
+          }`}
         >
           <GripVertical size={16} />
         </div>
 
         {/* Letter Badge */}
-        <div className="mr-2.5 flex-shrink-0">
+        <div className={`mr-2.5 flex-shrink-0 ${isTextOnly ? "mt-0.5" : ""}`}>
           <Badge
             variant="outline"
             className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-black ${
@@ -166,11 +171,17 @@ function SortableOptionItem({
         </div>
 
         {/* Radio selector for correct answer */}
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div
+          className={`flex ${
+            isTextOnly ? "items-start" : "items-center"
+          } gap-2.5 flex-1 min-w-0`}
+        >
           <RadioGroupItem
             value={option.option_id}
             id={`rb-${option.option_id}`}
-            className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 border-muted-foreground/40 shrink-0"
+            className={`data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 border-muted-foreground/40 shrink-0 ${
+              isTextOnly ? "mt-2" : ""
+            }`}
             onClick={() => onSelect(option.option_id)}
           />
 
@@ -190,11 +201,12 @@ function SortableOptionItem({
                 control={control}
                 name={`options.${index}.name`}
                 render={({ field }) => (
-                  <Input
+                  <Textarea
                     {...field}
                     value={field.value ?? ""}
                     placeholder={`Texto de la opción ${OPTION_LABELS[index] || ""}`}
-                    className="h-8 text-xs font-medium"
+                    rows={2}
+                    className="min-h-[56px] text-xs font-medium leading-relaxed resize-y py-1.5 px-2.5"
                   />
                 )}
               />
@@ -212,7 +224,9 @@ function SortableOptionItem({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+            className={`h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0 ${
+              isTextOnly ? "mt-0.5" : ""
+            }`}
             onClick={onRemove}
           >
             <Trash2 className="w-4 h-4" />
@@ -231,6 +245,7 @@ interface TriviaFormDialogProps {
   nextOrderIndex?: number;
   topics?: TriviaTopic[];
   audiences?: TriviaAudience[];
+  regions?: { id: string; name: string; code: string }[];
   canPublishDirectly?: boolean;
 }
 
@@ -241,6 +256,7 @@ const defaultFormValues: TriviaFormValues = {
   difficulty: "FACIL",
   display_type: "TEXT_ONLY",
   topic_id: "",
+  electoral_district_id: "",
   correct_answer_id: "",
   options: [
     { option_id: "opt_1", name: "" },
@@ -264,6 +280,7 @@ export function TriviaFormDialog({
   nextOrderIndex,
   topics = [],
   audiences = [],
+  regions = [],
   canPublishDirectly = false,
 }: TriviaFormDialogProps) {
   const router = useRouter();
@@ -291,6 +308,29 @@ export function TriviaFormDialog({
   const formQuote = form.watch("quote");
   const formCategory = form.watch("category");
   const formExplanation = form.watch("explanation");
+  const selectedTopicId = form.watch("topic_id");
+  const selectedTopic = useMemo(
+    () => topics.find((t) => t.id === selectedTopicId),
+    [topics, selectedTopicId],
+  );
+  const isRegionalTopic = selectedTopic?.is_regional ?? false;
+  // Filtrar para ERM 2026: excluir PERUANOS RESIDENTES EN EL EXTRANJERO / NACIONAL
+  const availableRegions = useMemo(
+    () =>
+      regions.filter(
+        (r) =>
+          r.code !== "PRE" &&
+          !r.name.toUpperCase().includes("EXTRANJERO") &&
+          !r.name.toUpperCase().includes("NACIONAL"),
+      ),
+    [regions],
+  );
+
+  const selectedDistrictId = form.watch("electoral_district_id");
+  const selectedDistrictName = useMemo(
+    () => availableRegions.find((r) => r.id === selectedDistrictId)?.name,
+    [availableRegions, selectedDistrictId],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -322,6 +362,7 @@ export function TriviaFormDialog({
         difficulty: initialData.difficulty,
         display_type: initialData.display_type || "TEXT_ONLY",
         topic_id: initialData.topic_id || "",
+        electoral_district_id: initialData.electoral_district_id || "",
         correct_answer_id: initialData.correct_answer_id || "",
         options: optionsWithFormId,
         global_index: initialData.global_index,
@@ -344,6 +385,7 @@ export function TriviaFormDialog({
       form.reset({
         ...defaultFormValues,
         topic_id: firstTopicId,
+        electoral_district_id: "",
         global_index: nextOrderIndex || 1,
         audience_ids: defaultAudienceIds,
         is_published: false,
@@ -618,6 +660,59 @@ export function TriviaFormDialog({
                       )}
                     />
                   </div>
+
+                  {/* Selector de Región Electoral si el eje es Regional */}
+                  {isRegionalTopic && (
+                    <FormField
+                      control={form.control}
+                      name="electoral_district_id"
+                      render={({ field }) => (
+                        <FormItem className="animate-in fade-in duration-200 border border-amber-500/30 bg-amber-500/5 p-3 rounded-xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="font-bold text-xs flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
+                              <MapPin size={13} />
+                              <span>
+                                Región Electoral del Debate / Pregunta
+                              </span>
+                            </FormLabel>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/15 border-amber-500/30"
+                            >
+                              Requerido para este eje
+                            </Badge>
+                          </div>
+                          <ResponsiveSelect
+                            title="Seleccionar Región Electoral"
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <ResponsiveSelectTrigger className="text-xs bg-background">
+                                <ResponsiveSelectValue placeholder="Seleccionar región (ej. Piura, Arequipa, Lima Provincias)..." />
+                              </ResponsiveSelectTrigger>
+                            </FormControl>
+                            <ResponsiveSelectContent>
+                              {availableRegions.map((reg) => (
+                                <ResponsiveSelectItem
+                                  key={reg.id}
+                                  value={reg.id}
+                                >
+                                  {reg.name}
+                                </ResponsiveSelectItem>
+                              ))}
+                            </ResponsiveSelectContent>
+                          </ResponsiveSelect>
+                          <p className="text-[11px] text-muted-foreground leading-tight">
+                            Asocia esta pregunta a la región para que aparezca a
+                            los ciudadanos de esa localidad y filtre
+                            automáticamente sus candidatos.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   {/* Fila: Dificultad, Tipo de Presentación y Orden */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -964,25 +1059,40 @@ export function TriviaFormDialog({
                     </div>
                   )}
 
-                  {/* Búsqueda de Personas o Partidos si aplica */}
+                  {/* Búsqueda de Candidatos o Partidos si aplica */}
                   {displayType === "PERSON" && (
                     <div className="space-y-3 pt-3 border-t">
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">
-                        Buscar Político / Candidato
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground">
+                          Buscar Candidato Oficial
+                        </Label>
+                        {selectedDistrictName && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30 font-semibold"
+                          >
+                            📍 Filtrando por: {selectedDistrictName}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Buscar por nombre..."
+                          placeholder={
+                            selectedDistrictName
+                              ? `Buscar candidatos activos en ${selectedDistrictName}...`
+                              : "Buscar candidato activo por nombre..."
+                          }
                           className="pl-9 text-xs"
                           value={globalSearch}
                           onChange={(e) => setGlobalSearch(e.target.value)}
                         />
                       </div>
-                      <PersonSelector
+                      <CandidateSelector
                         onSelect={handleAddPersonOption}
                         enableSearch={false}
                         externalSearchTerm={globalSearch}
+                        districtId={form.watch("electoral_district_id")}
                       />
                     </div>
                   )}

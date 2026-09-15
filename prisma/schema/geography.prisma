@@ -15,6 +15,7 @@ model electoraldistrict {
   candidate      candidate[]
   legislator     legislator[]
   politicalparty politicalparty[]
+  triviagame     triviagame[]
 
   @@unique([name, parent_id], map: "ix_electoraldistrict_name_parent")
 }

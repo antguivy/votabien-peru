@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Download,
   Loader,
+  RefreshCw,
   Trash2,
   X,
   XCircle,
@@ -195,6 +196,31 @@ export function LegislatorsTableFloatingBar({
                 </TooltipTrigger>
                 <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
                   <p>Exportar Legisladores</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7 border text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    onClick={() => {
+                      const event = new CustomEvent(
+                        "open-batch-sync-congreso",
+                        {
+                          detail: { rows: rows.map((r) => r.original) },
+                        },
+                      );
+                      window.dispatchEvent(event);
+                    }}
+                    disabled={isPending}
+                  >
+                    <RefreshCw className="size-3.5" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="border bg-accent font-semibold text-foreground dark:bg-zinc-900">
+                  <p>Sincronizar Foto y Correo (Congreso)</p>
                 </TooltipContent>
               </Tooltip>
 

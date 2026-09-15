@@ -46,7 +46,7 @@ export function PersonTable({ promises }: PersonTableProps) {
     {
       id: "fullname",
       label: "Nombre y Apellido",
-      placeholder: "Filtrar por nombre...",
+      placeholder: "Filtrar por nombre o DNI...",
     },
     // {
     //   id: "active",

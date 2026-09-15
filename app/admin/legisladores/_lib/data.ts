@@ -15,6 +15,7 @@ import {
   GroupChangeReason,
   LegislatorCondition,
 } from "@/interfaces/politics";
+import { buildPersonSearchWhere } from "@/lib/search-filters";
 
 export async function getLegislators(
   input: GetLegislatorSchema,
@@ -30,9 +31,10 @@ export async function getLegislators(
     const where: Record<string, unknown> = {};
 
     if (input.fullname) {
-      where.person = {
-        fullname: { contains: input.fullname, mode: "insensitive" },
-      };
+      const personSearch = buildPersonSearchWhere(input.fullname);
+      if (personSearch) {
+        where.person = personSearch;
+      }
     }
     if (input.chamber && input.chamber.length > 0) {
       where.chamber = { in: input.chamber };

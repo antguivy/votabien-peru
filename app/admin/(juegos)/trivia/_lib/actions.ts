@@ -59,6 +59,7 @@ export async function createTrivia(data: TriviaFormValues) {
         options: fields.options as Prisma.InputJsonValue,
         person_id: personId,
         political_party_id: politicalPartyId,
+        electoral_district_id: fields.electoral_district_id || null,
       },
     });
 
@@ -126,6 +127,7 @@ export async function updateTrivia(id: number, data: TriviaFormValues) {
         options: fields.options as Prisma.InputJsonValue,
         person_id: personId,
         political_party_id: politicalPartyId,
+        electoral_district_id: fields.electoral_district_id || null,
       },
     });
 
@@ -289,6 +291,7 @@ export async function duplicateTrivia(id: number) {
         options: original.options as Prisma.InputJsonValue,
         person_id: original.person_id,
         political_party_id: original.political_party_id,
+        electoral_district_id: original.electoral_district_id,
       },
     });
 
@@ -304,7 +307,11 @@ export async function duplicateTrivia(id: number) {
 
     revalidatePath("/admin/trivia");
     revalidatePath("/trivia");
-    return { success: true, message: "Pregunta duplicada como borrador" };
+    return {
+      success: true,
+      message: "Pregunta duplicada como borrador",
+      id: Number(created.id),
+    };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
   }
@@ -329,21 +336,52 @@ export interface BulkImportFailure {
 }
 
 export async function bulkImportTrivias(
-  questionsList: TriviaFormValues[],
+  items: unknown[],
   targetTopicId?: string,
   targetAudienceIds?: string[],
-  isPublished = false, // por defecto se importa como BORRADOR para revisión
+  isPublished: boolean = false,
 ) {
-  await serverRequireReviewer();
+  const { user } = await serverRequireReviewer();
+  const canPublishDirectly = Boolean(
+    user?.role &&
+      ["lead", "editor", "admin", "super_admin"].includes(user.role),
+  );
+  if (isPublished && !canPublishDirectly) {
+    isPublished = false;
+  }
+
   try {
-    const failures: BulkImportFailure[] = [];
-    let createdCount = 0;
-    const maxIndexAgg = await prisma.triviagame.aggregate({
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return {
+        success: false,
+        error: "El archivo no contiene filas o el formato es inválido",
+      };
+    }
+
+    // Obtener global_index base
+    const maxIndexResult = await prisma.triviagame.aggregate({
       _max: { global_index: true },
     });
-    let currentIndex = Number(maxIndexAgg._max.global_index ?? 0);
+    let currentIndex = Number(maxIndexResult._max.global_index ?? BigInt(0));
 
-    for (const [rowIndex, q] of questionsList.entries()) {
+    let createdCount = 0;
+    const failures: { index: number; preview: string; error: string }[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const rowIndex = i + 1;
+      const rawItem = items[i];
+
+      if (!rawItem || typeof rawItem !== "object") {
+        failures.push({
+          index: rowIndex,
+          preview: "(fila vacía)",
+          error: "La fila no tiene estructura de objeto",
+        });
+        continue;
+      }
+
+      const q = rawItem as Record<string, unknown>;
+
       const validation = triviaSchema.safeParse({
         ...q,
         topic_id: targetTopicId || q.topic_id,
@@ -394,6 +432,7 @@ export async function bulkImportTrivias(
           options: data.options as Prisma.InputJsonValue,
           person_id: personId,
           political_party_id: politicalPartyId,
+          electoral_district_id: data.electoral_district_id || null,
         },
       });
 
@@ -458,6 +497,7 @@ export async function createTopic(data: TopicFormValues) {
         banner_url: fields.banner_url || null,
         order_index: fields.order_index,
         is_active: fields.is_active,
+        is_regional: fields.is_regional ?? false,
       },
     });
 
@@ -500,6 +540,7 @@ export async function updateTopic(id: string, data: TopicFormValues) {
         banner_url: fields.banner_url || null,
         order_index: fields.order_index,
         is_active: fields.is_active,
+        is_regional: fields.is_regional ?? false,
       },
     });
 
@@ -595,5 +636,98 @@ export async function deleteAudience(id: string) {
     return { success: true, message: "Audiencia eliminada" };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
+  }
+}
+
+// =========================================================================
+// 4. CANDIDATE SEARCH (Filtrado por candidatos activos y región)
+// =========================================================================
+
+export async function searchActiveCandidates(params: {
+  search?: string;
+  districtId?: string | null;
+  limit?: number;
+}) {
+  try {
+    const whereClause: Prisma.candidateWhereInput = {
+      active: true,
+    };
+
+    if (
+      params.districtId &&
+      params.districtId !== "all" &&
+      params.districtId !== "nacional"
+    ) {
+      whereClause.electoral_district_id = params.districtId;
+    }
+
+    if (params.search && params.search.trim()) {
+      whereClause.person = {
+        fullname: {
+          contains: params.search.trim(),
+          mode: "insensitive",
+        },
+      };
+    }
+
+    const candidates = await prisma.candidate.findMany({
+      where: whereClause,
+      take: params.limit || 12,
+      select: {
+        person: {
+          select: {
+            id: true,
+            fullname: true,
+            image_candidate_url: true,
+            image_url: true,
+            profession: true,
+            dni: true,
+          },
+        },
+        type: true,
+        politicalparty: {
+          select: { name: true, acronym: true },
+        },
+        electoraldistrict: {
+          select: { name: true },
+        },
+      },
+    });
+
+    const seen = new Set<string>();
+    const result = [];
+
+    for (const c of candidates) {
+      if (c.person && !seen.has(c.person.id)) {
+        seen.add(c.person.id);
+        const partyLabel =
+          c.politicalparty?.acronym || c.politicalparty?.name || "";
+        const roleLabel = c.type.replace(/_/g, " ");
+        const districtLabel = c.electoraldistrict?.name
+          ? `(${c.electoraldistrict.name})`
+          : "";
+        const subtitle = [
+          roleLabel,
+          districtLabel,
+          partyLabel ? `• ${partyLabel}` : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        result.push({
+          id: c.person.id,
+          fullname: c.person.fullname,
+          image_url: c.person.image_url,
+          image_candidate_url: c.person.image_candidate_url,
+          profession: subtitle || c.person.profession,
+          dni: c.person.dni,
+        });
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error buscando candidatos activos:", error);
+    return [];
   }
 }

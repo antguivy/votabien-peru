@@ -30,11 +30,21 @@ export async function GET(request: Request) {
             lastname: true,
           },
         },
+        parliamentarymembership: {
+          where: { end_date: null },
+          select: { parliamentary_group_id: true },
+          take: 1,
+        },
       },
     });
 
     const legislatorsMap: Record<string, string> = {};
+    const legislatorGroupsMap: Record<string, string> = {};
     for (const leg of legislators) {
+      if (leg.parliamentarymembership?.[0]?.parliamentary_group_id) {
+        legislatorGroupsMap[leg.id] =
+          leg.parliamentarymembership[0].parliamentary_group_id;
+      }
       if (leg.person?.fullname) {
         legislatorsMap[normalizeAggressive(leg.person.fullname)] = leg.id;
       }
@@ -62,6 +72,7 @@ export async function GET(request: Request) {
       success: true,
       legislators: legislatorsMap,
       parliamentary_groups: pgMap,
+      legislator_groups: legislatorGroupsMap,
     });
   } catch (error) {
     console.error("Error en GET bills caches:", error);

@@ -9,6 +9,7 @@ import {
   PriorityLevel,
   SharedResource,
 } from "../_lib/types";
+import { formatTaskDueDate, isTaskOverdue } from "../_lib/task-date";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -147,15 +148,8 @@ export function KanbanCard({
   );
 
   // Fecha de vencimiento
-  const isOverdue =
-    task.due_date && !task.completed_at && new Date(task.due_date) < new Date();
-
-  const formattedDueDate = task.due_date
-    ? new Date(task.due_date).toLocaleDateString("es-PE", {
-        month: "short",
-        day: "numeric",
-      })
-    : null;
+  const isOverdue = isTaskOverdue(task.due_date, task.completed_at);
+  const formattedDueDate = formatTaskDueDate(task.due_date);
 
   const priorityMeta = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.MEDIA;
   const currentColumn = columns.find((c) => c.id === task.column_id);

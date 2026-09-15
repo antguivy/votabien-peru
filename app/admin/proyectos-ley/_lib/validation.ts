@@ -44,7 +44,7 @@ export interface AdminBillRow {
   document_url: string | null;
   coauthors?: string | null;
   cosponsors?: string | null;
-  legislator_id: string;
+  legislator_id: string | null;
   parliamentary_group_id: string | null;
   legislator?: {
     person?: {

@@ -77,6 +77,7 @@ export async function getPlayableTopics(
       badge_color: t.badge_color,
       banner_url: t.banner_url,
       is_active: t.is_active,
+      is_regional: t.is_regional,
       order_index: t.order_index,
       total_questions: t._count.questions,
       audiences: t.audiences.map((a) => ({
@@ -142,6 +143,7 @@ export async function getPlayableQuestions(options?: {
         },
         person: { select: { id: true, fullname: true } },
         politicalparty: { select: { id: true, name: true } },
+        electoraldistrict: { select: { id: true, name: true, code: true } },
       },
     });
 
@@ -179,6 +181,8 @@ export async function getPlayableQuestions(options?: {
         options: optionsWithLetters,
         person_id: item.person_id,
         political_party_id: item.political_party_id,
+        electoral_district_id: item.electoral_district_id,
+        electoraldistrict: item.electoraldistrict,
         topic: item.topic
           ? {
               id: item.topic.id,
@@ -189,6 +193,7 @@ export async function getPlayableQuestions(options?: {
               badge_color: item.topic.badge_color,
               banner_url: item.topic.banner_url,
               is_active: item.topic.is_active,
+              is_regional: item.topic.is_regional,
               order_index: item.topic.order_index,
             }
           : null,

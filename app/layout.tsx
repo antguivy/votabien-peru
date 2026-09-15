@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Press_Start_2P } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Press_Start_2P,
+  Newsreader,
+} from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-provider";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,6 +25,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+});
+
 const pressStart = Press_Start_2P({
   weight: "400",
   subsets: ["latin"],
@@ -47,7 +59,7 @@ export default async function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${pressStart.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} ${pressStart.variable} antialiased`}
         suppressHydrationWarning
       >
         <PWARegister />

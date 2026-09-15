@@ -7,15 +7,59 @@ type Platform = "youtube" | "youtube_short" | "tiktok" | "unknown";
 
 function detectPlatform(url: string): Platform {
   if (url.includes("youtube.com/shorts/")) return "youtube_short";
-  if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
+  if (
+    url.includes("youtube.com") ||
+    url.includes("youtu.be") ||
+    url.includes("m.youtube.com")
+  ) {
+    return "youtube";
+  }
   if (url.includes("tiktok.com")) return "tiktok";
   return "unknown";
 }
 
-// NUEVO: Función para extraer y convertir el tiempo de YouTube a segundos
+// Extrae el ID de 11 caracteres de cualquier formato de URL de YouTube (incluyendo /live/, /shorts/, parámetros ?si=, etc.)
+export function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const hostname = urlObj.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (hostname === "youtu.be") {
+      const id = urlObj.pathname.slice(1).split("/")[0].split("?")[0];
+      if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+    }
+
+    if (
+      hostname === "youtube.com" ||
+      hostname === "m.youtube.com" ||
+      hostname.endsWith(".youtube.com")
+    ) {
+      const vParam = urlObj.searchParams.get("v");
+      if (vParam && /^[a-zA-Z0-9_-]{11}$/.test(vParam)) return vParam;
+
+      const pathParts = urlObj.pathname.split("/").filter(Boolean);
+      if (
+        pathParts.length >= 2 &&
+        ["shorts", "live", "embed", "v"].includes(pathParts[0])
+      ) {
+        const id = pathParts[1];
+        if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+      }
+    }
+  } catch {
+    // Fallback por si URL lanza error sintáctico
+  }
+
+  const match = url.match(
+    /(?:(?:youtube\.com\/(?:(?:.*[?&]v=)|embed\/|shorts\/|live\/))|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+  );
+  return match ? match[1] : null;
+}
+
+// Función para extraer y convertir el tiempo de YouTube a segundos
 function parseYouTubeTime(t: string | null): string | null {
   if (!t) return null;
-  // Si es solo un número (Ej: "510")
+  // Si es solo un número (Ej: "510" o "2631")
   if (/^\d+$/.test(t)) return t;
   // Si tiene una 's' al final (Ej: "510s")
   if (/^\d+s$/.test(t)) return t.replace("s", "");
@@ -35,19 +79,16 @@ function parseYouTubeTime(t: string | null): string | null {
 
 function buildEmbedUrl(url: string, platform: Platform): string | null {
   if (platform === "youtube" || platform === "youtube_short") {
-    const match = url.match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-    );
-    if (!match) return null;
+    const videoId = extractYouTubeVideoId(url);
+    if (!videoId) return null;
 
     // Buscar si hay un parámetro de tiempo (t=...)
     let startParam = null;
     try {
-      const urlObj = new URL(url);
+      const urlObj = new URL(url.startsWith("http") ? url : `https://${url}`);
       const t = urlObj.searchParams.get("t");
       startParam = parseYouTubeTime(t);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
+    } catch {
       // Fallback por si la URL falla al parsearse
       const tMatch = url.match(/[?&]t=([^&]+)/);
       if (tMatch) startParam = parseYouTubeTime(tMatch[1]);
@@ -65,7 +106,7 @@ function buildEmbedUrl(url: string, platform: Platform): string | null {
       params.append("start", startParam);
     }
 
-    return `https://www.youtube.com/embed/${match[1]}?${params}`;
+    return `https://www.youtube.com/embed/${videoId}?${params}`;
   }
 
   if (platform === "tiktok") {
@@ -88,7 +129,31 @@ export function VideoDialog({ url, trigger }: VideoDialogProps) {
   const platform = detectPlatform(url);
   const embedUrl = buildEmbedUrl(url, platform);
 
-  if (platform === "unknown" || !embedUrl) return null;
+  if (platform === "unknown" || !embedUrl) {
+    if (trigger) {
+      return (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block"
+        >
+          {trigger}
+        </a>
+      );
+    }
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 text-[13px] font-bold text-primary hover:text-primary/80 transition-colors"
+      >
+        <Play size={13} className="fill-primary" />
+        Ver video
+      </a>
+    );
+  }
 
   return (
     <>

@@ -5,6 +5,8 @@ import { getRegiones } from "@/queries/public/electoral-districts";
 import { getPartidosListSimple } from "@/queries/public/parties";
 import { serverGetUser } from "@/lib/auth-actions";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Mi Candidato | VotaBien Perú",
   description: "Descubre afinidad con candidatos y propuestas electorales.",

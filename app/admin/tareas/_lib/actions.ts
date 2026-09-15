@@ -11,6 +11,7 @@ import {
   ChecklistItem,
 } from "./types";
 import { toJsonInsert } from "@/lib/utils/text";
+import { normalizeDueDate } from "./task-date";
 
 // Helper de autenticación y rol mínimo (volunteer en adelante)
 async function requireAuthUser() {
@@ -174,7 +175,7 @@ export async function createTask(data: {
         description: data.description?.trim() || null,
         priority: data.priority || "MEDIA",
         position: nextPosition,
-        due_date: data.dueDate ? new Date(data.dueDate) : null,
+        due_date: normalizeDueDate(data.dueDate),
         tags: data.tags || [],
         created_by_id: user.id,
         resources: toJsonInsert(data.resources),
@@ -261,7 +262,7 @@ export async function updateTask(data: {
         title: data.title.trim(),
         description: data.description?.trim() || null,
         priority: data.priority,
-        due_date: data.dueDate ? new Date(data.dueDate) : null,
+        due_date: normalizeDueDate(data.dueDate),
         tags: data.tags || [],
         resources: toJsonInsert(data.resources),
         checklist: toJsonInsert(data.checklist),

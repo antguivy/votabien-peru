@@ -26,6 +26,8 @@ interface PageProps {
   }>;
 }
 
+export const dynamic = "force-dynamic";
+
 const CandidatosPage = async ({ searchParams }: PageProps) => {
   const { user } = await serverGetUser();
 

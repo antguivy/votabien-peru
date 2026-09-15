@@ -22,6 +22,7 @@ import {
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { moveTask } from "../_lib/actions";
+import { isTaskOverdue } from "../_lib/task-date";
 import { toast } from "sonner";
 
 interface KanbanBoardProps {
@@ -136,10 +137,7 @@ export function KanbanBoard({
 
     // Filtro por fecha de vencimiento
     if (filters.dueDate === "OVERDUE") {
-      const now = new Date();
-      tasks = tasks.filter(
-        (t) => t.due_date && !t.completed_at && new Date(t.due_date) < now,
-      );
+      tasks = tasks.filter((t) => isTaskOverdue(t.due_date, t.completed_at));
     }
 
     return {

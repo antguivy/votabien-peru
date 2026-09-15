@@ -11,6 +11,7 @@ import { ChamberType } from "@/interfaces/politics";
 import { RnasSanction } from "@/interfaces/person";
 import prisma from "@/lib/prisma";
 import { Prisma, legislatormetrics } from "@/prisma/generated/client";
+import { buildPersonSearchWhere } from "@/lib/search-filters";
 
 export interface GetLegislatorsParams {
   active_only?: boolean;
@@ -50,10 +51,9 @@ export const getLegisladoresCards = cache(
         if (chamber) whereClause.chamber = chamber;
         if (ids && ids.length > 0) whereClause.id = { in: ids };
 
-        if (search) {
-          whereClause.person = {
-            fullname: { contains: search, mode: "insensitive" },
-          };
+        const personSearchWhere = buildPersonSearchWhere(search);
+        if (personSearchWhere) {
+          whereClause.person = personSearchWhere;
         }
 
         if (districts && districts.length > 0) {

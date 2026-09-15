@@ -58,6 +58,8 @@ export interface TriviaQuestion {
   topic?: TriviaTopic | null;
   person_id?: string | null;
   political_party_id?: string | null;
+  electoral_district_id?: string | null;
+  electoraldistrict?: { id: string; name: string; code: string } | null;
 }
 
 export interface QuestionsResponse {

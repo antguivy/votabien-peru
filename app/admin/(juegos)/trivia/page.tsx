@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ContentLayout } from "@/components/admin/content-layout";
 import {
   CreateTriviaButton,
@@ -8,17 +9,19 @@ import { TriviaList } from "./_components/trivia-list";
 import { TopicManagement } from "./_components/topic-management";
 import { AudienceManagement } from "./_components/audience-management";
 import { getTrivias, getTopics, getAudiences } from "./_lib/data";
+import { getRegiones } from "@/queries/public/electoral-districts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { HelpCircle, Layers, Users } from "lucide-react";
 import { serverGetUser } from "@/lib/auth-actions";
 
 export default async function TriviaPage() {
-  const [{ user }, trivias, topics, audiences] = await Promise.all([
+  const [{ user }, trivias, topics, audiences, regiones] = await Promise.all([
     serverGetUser(),
     getTrivias(),
     getTopics(),
     getAudiences(),
+    getRegiones(),
   ]);
 
   const maxIndex =
@@ -118,6 +121,7 @@ export default async function TriviaPage() {
                   nextOrderIndex={nextAvailableIndex}
                   topics={topics}
                   audiences={audiences}
+                  regions={regiones}
                   canPublishDirectly={canManageStructure}
                 />
               </div>
@@ -125,13 +129,22 @@ export default async function TriviaPage() {
           </div>
 
           <TabsContent value="questions" className="space-y-4 outline-none">
-            <TriviaList
-              trivias={trivias}
-              nextOrderIndex={nextAvailableIndex}
-              topics={topics}
-              audiences={audiences}
-              canPublishDirectly={canManageStructure}
-            />
+            <Suspense
+              fallback={
+                <div className="h-64 flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+                  Cargando banco de preguntas...
+                </div>
+              }
+            >
+              <TriviaList
+                trivias={trivias}
+                nextOrderIndex={nextAvailableIndex}
+                topics={topics}
+                audiences={audiences}
+                regions={regiones}
+                canPublishDirectly={canManageStructure}
+              />
+            </Suspense>
           </TabsContent>
 
           {canManageStructure && (
