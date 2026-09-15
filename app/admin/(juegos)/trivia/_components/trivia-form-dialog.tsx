@@ -16,7 +16,11 @@ import {
   EyeOff,
   CheckCircle2,
   MapPin,
+  Scale,
+  Video,
+  ExternalLink,
 } from "lucide-react";
+import { parseSourceUrls } from "@/lib/utils/url";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -267,6 +271,7 @@ const defaultFormValues: TriviaFormValues = {
   global_index: 1,
   explanation: "",
   source_url: "",
+  secondary_sources: [],
   image_url: "",
   audience_ids: [],
   is_published: false,
@@ -301,7 +306,15 @@ export function TriviaFormDialog({
     name: "options",
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library
+  const {
+    fields: secondarySourceFields,
+    append: appendSecondarySource,
+    remove: removeSecondarySource,
+  } = useFieldArray({
+    control: form.control,
+    name: "secondary_sources",
+  });
+
   const displayType = form.watch("display_type");
   const correctAnswerId = form.watch("correct_answer_id");
   const selectedAudiences = form.watch("audience_ids") || [];
@@ -314,6 +327,7 @@ export function TriviaFormDialog({
     [topics, selectedTopicId],
   );
   const isRegionalTopic = selectedTopic?.is_regional ?? false;
+  const isFactcheckTopic = selectedTopic?.has_factcheck ?? false;
   // Filtrar para ERM 2026: excluir PERUANOS RESIDENTES EN EL EXTRANJERO / NACIONAL
   const availableRegions = useMemo(
     () =>
@@ -327,6 +341,7 @@ export function TriviaFormDialog({
   );
 
   const selectedDistrictId = form.watch("electoral_district_id");
+  const watchedSecondarySources = form.watch("secondary_sources") || [];
   const selectedDistrictName = useMemo(
     () => availableRegions.find((r) => r.id === selectedDistrictId)?.name,
     [availableRegions, selectedDistrictId],
@@ -368,6 +383,10 @@ export function TriviaFormDialog({
         global_index: initialData.global_index,
         explanation: initialData.explanation || "",
         source_url: initialData.source_url || "",
+        secondary_sources: (initialData.secondary_sources || []).map((s) => ({
+          url: s.url,
+          label: s.label || "",
+        })),
         image_url: initialData.image_url || "",
         audience_ids: initialAudienceIds,
         is_published: canPublishDirectly
@@ -475,8 +494,13 @@ export function TriviaFormDialog({
 
   const onSubmit = async (values: TriviaFormValues) => {
     const isEditing = mode === "edit";
+    const cleanSecondarySources = (values.secondary_sources || []).filter(
+      (s) => s.url && s.url.trim().length > 0,
+    );
     const payload: TriviaFormValues = {
       ...values,
+      secondary_sources:
+        cleanSecondarySources.length > 0 ? cleanSecondarySources : null,
       is_published: canPublishDirectly ? values.is_published : false,
     };
     const promise = isEditing
@@ -946,33 +970,173 @@ export function TriviaFormDialog({
                     )}
                   />
 
-                  {/* Enlace de Fuente (Textarea resistente a links largos) */}
+                  {/* Enlace de Fuente Primaria (Video / Debate / Transmisión) */}
                   <FormField
                     control={form.control}
                     name="source_url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-bold text-xs flex items-center gap-1.5">
-                          <LinkIcon size={14} /> Enlace de verificación o fuente
-                          oficial
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="font-bold text-xs flex items-center gap-1.5">
+                            {isFactcheckTopic ? (
+                              <>
+                                <Video size={14} className="text-rose-500" />
+                                <span>
+                                  Momento del Debate (Video Oficial /
+                                  Transmisión)
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <LinkIcon size={14} />
+                                <span>
+                                  Enlace de verificación o fuente oficial
+                                </span>
+                              </>
+                            )}
+                          </FormLabel>
+                          {field.value && (
+                            <a
+                              href={field.value}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] text-primary hover:underline flex items-center gap-1"
+                            >
+                              <ExternalLink size={10} /> Probar enlace
+                            </a>
+                          )}
+                        </div>
                         <FormControl>
                           <Textarea
-                            placeholder="Pega aquí el enlace de YouTube o TikTok (ej: https://www.tiktok.com/@noticias/video/1234567890 o https://youtube.com/watch?v=xyz?t=45s)"
+                            placeholder={
+                              isFactcheckTopic
+                                ? "Enlace de YouTube o TikTok del debate (ej: https://youtube.com/watch?v=xyz?t=45s)"
+                                : "Pega aquí el enlace de verificación (ej: https://www.tiktok.com/@noticias/video/1234 o https://youtube.com/...)"
+                            }
                             {...field}
                             value={field.value || ""}
                             className="text-xs font-mono resize-none h-16 break-all leading-relaxed"
                           />
                         </FormControl>
                         <p className="text-[11px] text-muted-foreground mt-1">
-                          💡 En TikTok usa el enlace completo con{" "}
-                          <code>/video/ID</code>. En YouTube puedes añadir{" "}
-                          <code>?t=45s</code> para iniciar en el segundo exacto.
+                          💡 En YouTube puedes añadir <code>?t=45s</code> para
+                          que el reproductor inicie exactamente en el segundo
+                          donde el candidato habla.
                         </p>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Fuentes Secundarias de Contrastación / Fact-Checking */}
+                  <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 space-y-3 mt-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                          <Scale size={14} className="text-blue-500" />
+                          <span>Fuentes de Contrastación (Fact-Checking)</span>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-semibold px-1.5 py-0 h-4 bg-blue-500/10 text-blue-600 border-blue-500/30"
+                          >
+                            {secondarySourceFields.length}{" "}
+                            {secondarySourceFields.length === 1
+                              ? "fuente"
+                              : "fuentes"}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Enlaces de respaldo que demuestran la viabilidad o
+                          falsedad de la propuesta (informes de Contraloría,
+                          MEF, SEACE, leyes o notas periodísticas).
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          appendSecondarySource({ url: "", label: "" })
+                        }
+                        className="h-7 text-xs gap-1 border-blue-500/30 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+                      >
+                        <Plus size={12} />
+                        <span>Agregar fuente</span>
+                      </Button>
+                    </div>
+
+                    {secondarySourceFields.length === 0 ? (
+                      <div className="text-center py-4 border border-dashed rounded-lg bg-background/50">
+                        <p className="text-xs text-muted-foreground">
+                          {isFactcheckTopic
+                            ? "No hay fuentes de contrastación registradas aún. Haz clic en 'Agregar fuente' para sustentar la viabilidad."
+                            : "Opcional: Si esta pregunta contrasta una afirmación, agrega enlaces de verificación externa."}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            appendSecondarySource({ url: "", label: "" })
+                          }
+                          className="mt-1.5 h-7 text-xs text-primary gap-1"
+                        >
+                          <Plus size={12} /> Agregar primera fuente
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {secondarySourceFields.map((fieldItem, sIdx) => {
+                          const currentUrl = watchedSecondarySources[sIdx]?.url;
+                          const detected = parseSourceUrls(currentUrl)[0];
+
+                          return (
+                            <div
+                              key={fieldItem.id}
+                              className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-2.5 rounded-lg border bg-background text-xs shadow-2xs"
+                            >
+                              <div className="flex-1 w-full space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <Input
+                                    placeholder="https://... (URL de la fuente oficial o noticia)"
+                                    {...form.register(
+                                      `secondary_sources.${sIdx}.url`,
+                                    )}
+                                    className="h-8 text-xs font-mono"
+                                  />
+                                  {detected && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] whitespace-nowrap bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 font-medium shrink-0"
+                                    >
+                                      {detected.label}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <Input
+                                  placeholder="Etiqueta opcional (ej: Informe de Contraloría N° 142-2025, Plan de Gobierno JNE)"
+                                  {...form.register(
+                                    `secondary_sources.${sIdx}.label`,
+                                  )}
+                                  className="h-7 text-[11px] text-muted-foreground"
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeSecondarySource(sIdx)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 self-end sm:self-center"
+                                title="Eliminar fuente"
+                              >
+                                <Trash2 size={13} />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

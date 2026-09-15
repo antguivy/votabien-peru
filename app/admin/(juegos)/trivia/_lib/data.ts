@@ -6,6 +6,7 @@ import {
   TriviaAudience,
   OptionDisplayType,
   TriviaOption,
+  SecondarySource,
 } from "@/interfaces/trivia";
 import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
@@ -55,6 +56,7 @@ export async function getTrivias(filters?: {
             icon: true,
             badge_color: true,
             is_regional: true,
+            has_factcheck: true,
           },
         },
         audiences: {
@@ -81,6 +83,24 @@ export async function getTrivias(filters?: {
         console.error("Error parsing options for trivia:", item.id, e);
       }
 
+      let parsedSecondarySources: SecondarySource[] = [];
+      try {
+        if (item.secondary_sources) {
+          parsedSecondarySources =
+            typeof item.secondary_sources === "string"
+              ? JSON.parse(item.secondary_sources)
+              : Array.isArray(item.secondary_sources)
+                ? (item.secondary_sources as unknown as SecondarySource[])
+                : [];
+        }
+      } catch (e) {
+        console.error(
+          "Error parsing secondary_sources for trivia:",
+          item.id,
+          e,
+        );
+      }
+
       return {
         id: Number(item.id),
         topic_id: item.topic_id,
@@ -93,6 +113,7 @@ export async function getTrivias(filters?: {
         global_index: Number(item.global_index),
         explanation: item.explanation,
         source_url: item.source_url,
+        secondary_sources: parsedSecondarySources,
         image_url: item.image_url,
         is_published: item.is_published,
         created_at: item.created_at.toISOString(),
@@ -155,6 +176,7 @@ export async function getTopics(): Promise<TriviaTopic[]> {
       banner_url: t.banner_url,
       is_active: t.is_active,
       is_regional: t.is_regional,
+      has_factcheck: t.has_factcheck,
       order_index: t.order_index,
       questions_count: t._count.questions,
       audiences: t.audiences.map((a) => ({

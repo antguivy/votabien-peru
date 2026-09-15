@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -417,11 +418,24 @@ export function FindingsTable({
   }
 
   const findings = React.useMemo(() => {
-    return initialFindings.map((item) => {
+    const currentTab = filters.tab || "PENDING_ALL";
+    const mapped = initialFindings.map((item) => {
       const override = optimisticOverrides[item.id];
       return override ? { ...item, ...override } : item;
     });
-  }, [initialFindings, optimisticOverrides]);
+
+    // Filtro optimista inmediato: en bandejas de pendientes, las tarjetas aprobadas o rechazadas salen de inmediato
+    if (currentTab.startsWith("PENDING")) {
+      return mapped.filter((item) => item.status === "PENDING");
+    }
+    if (currentTab === "APPROVED") {
+      return mapped.filter((item) => item.status === "APPROVED");
+    }
+    if (currentTab === "REJECTED") {
+      return mapped.filter((item) => item.status === "REJECTED");
+    }
+    return mapped;
+  }, [initialFindings, optimisticOverrides, filters.tab]);
 
   const [prevQ, setPrevQ] = React.useState(filters.q || "");
   const [searchQuery, setSearchQuery] = React.useState(filters.q || "");
@@ -1282,409 +1296,453 @@ export function FindingsTable({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {findings.map((finding) => {
-            const data = normalizeFindingData(finding.proposed_data);
-            const rawType = data.type;
-            const isPenal = rawType === "PENAL";
-            const isEtica = ["ETICA", "ETICO", "ADMINISTRATIVO"].includes(
-              rawType,
-            );
-            const isCivil = rawType === "CIVIL";
-            const isSelected = selectedIds.has(finding.id);
+          <AnimatePresence mode="popLayout" initial={false}>
+            {findings.map((finding) => {
+              const data = normalizeFindingData(finding.proposed_data);
+              const rawType = data.type;
+              const isPenal = rawType === "PENAL";
+              const isEtica = ["ETICA", "ETICO", "ADMINISTRATIVO"].includes(
+                rawType,
+              );
+              const isCivil = rawType === "CIVIL";
+              const isSelected = selectedIds.has(finding.id);
 
-            const borderAccent = isPenal
-              ? "border-l-4 border-l-destructive"
-              : isEtica
-                ? "border-l-4 border-l-amber-500"
-                : isCivil
+              const borderAccent = isPenal
+                ? "border-l-4 border-l-destructive"
+                : isEtica
                   ? "border-l-4 border-l-amber-500"
-                  : "border-l-4 border-l-blue-500";
+                  : isCivil
+                    ? "border-l-4 border-l-amber-500"
+                    : "border-l-4 border-l-blue-500";
 
-            const title = data.title;
-            const summary = data.summary;
-            const sourceUrl = data.source_url;
-            const source = data.source;
-            const sanction = data.sanction;
-            const date = data.publication_date;
-            const isUpdate = finding.action === "UPDATE";
+              const title = data.title;
+              const summary = data.summary;
+              const sourceUrl = data.source_url;
+              const source = data.source;
+              const parsedSources = parseSourceUrls(sourceUrl);
+              const sanction = data.sanction;
+              const date = data.publication_date;
+              const isUpdate = finding.action === "UPDATE";
 
-            const primaryCandidacy = getPrimaryCandidacy(
-              finding.person.candidate,
-            );
-            const primaryLegislator = getPrimaryLegislator(
-              finding.person.legislator,
-            );
+              const primaryCandidacy = getPrimaryCandidacy(
+                finding.person.candidate,
+              );
+              const primaryLegislator = getPrimaryLegislator(
+                finding.person.legislator,
+              );
 
-            // Context-aware badge data
-            const cargoInfo =
-              context === "legisladores" && primaryLegislator
-                ? getChamberInfo(primaryLegislator.chamber)
-                : getCandidacyTypeInfo(primaryCandidacy?.type);
-            const partyName =
-              context === "legisladores" && primaryLegislator
-                ? (getLegislatorBancada(primaryLegislator) ??
-                  primaryLegislator.politicalparty?.name)
-                : primaryCandidacy?.politicalparty?.name;
-            const locationStr =
-              context === "legisladores" && primaryLegislator
-                ? formatLocationName({
-                    type: primaryLegislator.chamber,
-                    politicalparty: primaryLegislator.politicalparty,
-                    electoraldistrict: primaryLegislator.electoraldistrict,
-                  })
-                : formatLocationName(primaryCandidacy);
-            const regionCanonical =
-              context === "legisladores" && primaryLegislator
-                ? resolveCanonicalRegion({
-                    type: primaryLegislator.chamber,
-                    politicalparty: primaryLegislator.politicalparty,
-                    electoraldistrict: primaryLegislator.electoraldistrict,
-                  })
-                : resolveCanonicalRegion(primaryCandidacy);
+              // Context-aware badge data
+              const cargoInfo =
+                context === "legisladores" && primaryLegislator
+                  ? getChamberInfo(primaryLegislator.chamber)
+                  : getCandidacyTypeInfo(primaryCandidacy?.type);
+              const partyName =
+                context === "legisladores" && primaryLegislator
+                  ? (getLegislatorBancada(primaryLegislator) ??
+                    primaryLegislator.politicalparty?.name)
+                  : primaryCandidacy?.politicalparty?.name;
+              const locationStr =
+                context === "legisladores" && primaryLegislator
+                  ? formatLocationName({
+                      type: primaryLegislator.chamber,
+                      politicalparty: primaryLegislator.politicalparty,
+                      electoraldistrict: primaryLegislator.electoraldistrict,
+                    })
+                  : formatLocationName(primaryCandidacy);
+              const regionCanonical =
+                context === "legisladores" && primaryLegislator
+                  ? resolveCanonicalRegion({
+                      type: primaryLegislator.chamber,
+                      politicalparty: primaryLegislator.politicalparty,
+                      electoraldistrict: primaryLegislator.electoraldistrict,
+                    })
+                  : resolveCanonicalRegion(primaryCandidacy);
 
-            const isCardBusy =
-              processingIds.has(finding.id) || isBulkProcessing;
+              const isCardBusy =
+                processingIds.has(finding.id) || isBulkProcessing;
 
-            return (
-              <Card
-                key={finding.id}
-                className={`flex flex-col justify-between relative overflow-hidden transition-all duration-200 min-w-0 ${borderAccent} ${
-                  isSelected
-                    ? "ring-2 ring-primary border-primary bg-primary/[0.02]"
-                    : "hover:border-primary/40 hover:shadow-sm"
-                } ${isCardBusy ? "opacity-85 pointer-events-auto" : ""}`}
-              >
-                <div className="p-4 pb-3 space-y-3">
-                  {/* Encabezado: Candidato + Tipo */}
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      {finding.status === "PENDING" && (
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleToggleSelect(finding.id)}
-                          disabled={isCardBusy}
-                          className="shrink-0 mt-0.5"
-                          aria-label={`Seleccionar ${finding.person.fullname}`}
-                        />
-                      )}
-                      <Avatar className="h-9 w-9 border shrink-0">
-                        <AvatarImage
-                          src={
-                            finding.person.image_candidate_url ||
-                            finding.person.image_url ||
-                            ""
-                          }
-                          alt={finding.person.fullname}
-                        />
-                        <AvatarFallback className="text-xs font-bold bg-muted text-muted-foreground">
-                          {finding.person.fullname
-                            .substring(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className="text-xs sm:text-sm font-bold leading-tight text-foreground"
-                          title={finding.person.fullname}
-                        >
-                          {finding.person.fullname}
-                        </p>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                          {partyName && (
-                            <span
-                              className="text-[11px] font-medium text-foreground/80 truncate max-w-[140px]"
-                              title={partyName}
-                            >
-                              {partyName}
-                            </span>
+              return (
+                <motion.div
+                  key={finding.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.9,
+                    transition: { duration: 0.2 },
+                  }}
+                  transition={{
+                    layout: { type: "spring", stiffness: 350, damping: 32 },
+                    opacity: { duration: 0.2 },
+                  }}
+                  className="h-full"
+                >
+                  <Card
+                    className={`h-full flex flex-col justify-between relative overflow-hidden transition-all duration-200 min-w-0 ${borderAccent} ${
+                      isSelected
+                        ? "ring-2 ring-primary border-primary bg-primary/[0.02]"
+                        : "hover:border-primary/40 hover:shadow-sm"
+                    } ${isCardBusy ? "opacity-85 pointer-events-auto" : ""}`}
+                  >
+                    <div className="p-4 pb-3 space-y-3 flex-1 flex flex-col">
+                      {/* Encabezado: Candidato + Tipo */}
+                      <div className="flex items-start justify-between gap-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          {(filters.tab || "PENDING_ALL").startsWith(
+                            "PENDING",
+                          ) && (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() =>
+                                handleToggleSelect(finding.id)
+                              }
+                              aria-label={`Seleccionar hallazgo de ${finding.person.fullname}`}
+                              className="mt-0.5 shrink-0"
+                            />
                           )}
-                          {locationStr && (
-                            <span
-                              className="text-[11px] text-muted-foreground"
-                              title={`Región: ${regionCanonical}`}
+                          <Avatar className="h-9 w-9 shrink-0 border border-border">
+                            <AvatarImage
+                              src={
+                                finding.person.image_candidate_url ||
+                                finding.person.image_url ||
+                                undefined
+                              }
+                              alt={finding.person.fullname}
+                              className="object-cover"
+                            />
+                            <AvatarFallback className="text-xs bg-muted font-bold text-muted-foreground">
+                              {finding.person.fullname
+                                .slice(0, 2)
+                                .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <h3
+                              className="text-xs font-bold text-foreground truncate leading-snug"
+                              title={finding.person.fullname}
                             >
-                              • {locationStr}
-                            </span>
-                          )}
-                          {!partyName && !locationStr && (
-                            <span className="text-[11px] text-muted-foreground">
-                              {finding.person.dni
-                                ? `DNI: ${finding.person.dni}`
-                                : context === "legisladores"
-                                  ? "Legislador"
-                                  : "Candidato"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Badges de Cargo y Tipo de Hallazgo */}
-                  <div className="flex flex-row items-center justify-start gap-1.5 flex-wrap shrink-0">
-                    {/* Badge de Cargo Político */}
-                    {cargoInfo.label && (
-                      <span
-                        className={cn(
-                          "text-[10px] font-semibold px-2 py-0.5 rounded-md border",
-                          cargoInfo.badgeClass,
-                        )}
-                        title={primaryCandidacy?.type}
-                      >
-                        {cargoInfo.label}
-                      </span>
-                    )}
-
-                    {finding.person.has_penal_sentence && (
-                      <span
-                        className="text-[9px] font-semibold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded shrink-0"
-                        title="Registra sentencia condenatoria previa en BD"
-                      >
-                        Sentencia previa
-                      </span>
-                    )}
-                    <Badge
-                      variant={
-                        isPenal
-                          ? "destructive"
-                          : isEtica
-                            ? "warning"
-                            : isCivil
-                              ? "secondary"
-                              : "default"
-                      }
-                      className="text-[10px] uppercase font-bold tracking-wide px-2 py-0.5"
-                    >
-                      {rawType || "NOTICIA"}
-                    </Badge>
-                    {isUpdate && (
-                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5">
-                        <GitCompare className="h-3 w-3" /> Actualización
-                      </span>
-                    )}
-                  </div>
-                  {/* Cuerpo: Título + Resumen + Sanción */}
-                  <div className="space-y-1.5 pt-0.5">
-                    <h4
-                      className="text-sm font-semibold text-foreground line-clamp-2 leading-snug"
-                      title={title}
-                    >
-                      {title}
-                    </h4>
-
-                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
-                      {summary}
-                    </p>
-
-                    {sanction && (
-                      <div className="text-xs px-2.5 py-1.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 font-medium flex items-center gap-1.5">
-                        <span className="shrink-0 font-bold">⚖️ Sanción:</span>
-                        <span className="truncate" title={sanction}>
-                          {sanction}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Metadatos y Herramientas secundarias */}
-                  <div className="pt-2 border-t flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                      <span className="font-medium text-foreground truncate max-w-[130px]">
-                        {source}
-                      </span>
-                      {sourceUrl && (
-                        <div className="inline-flex items-center gap-1 shrink-0">
-                          {parseSourceUrls(sourceUrl).map((src, idx) => (
-                            <a
-                              key={idx}
-                              href={src.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline inline-flex items-center gap-0.5 text-[11px]"
-                              title={`Abrir fuente original (${src.domain})`}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-
-                      {date && (
-                        <>
-                          <span className="text-muted-foreground/40">•</span>
-                          <span className="text-[11px] whitespace-nowrap">
-                            {date}
-                          </span>
-                        </>
-                      )}
-
-                      {typeof finding.person._count?.background === "number" &&
-                        finding.person._count.background > 0 && (
-                          <>
-                            <span className="text-muted-foreground/40">•</span>
-                            <span
-                              className="text-[11px] text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap"
-                              title={`${context === "legisladores" ? "El legislador" : "El candidato"} registra ${finding.person._count.background} antecedente(s) previo(s) en BD`}
-                            >
-                              {finding.person._count.background} ant. BD
-                            </span>
-                          </>
-                        )}
-                    </div>
-
-                    {/* Botones de acción secundaria (Diff / Editar) */}
-                    {(finding.status === "PENDING" ||
-                      finding.status === "APPROVED") && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        {finding.status === "PENDING" &&
-                          isUpdate &&
-                          finding.target_id && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setDiffFinding(finding)}
-                                  disabled={isCardBusy}
-                                  className="h-7 w-7 text-primary hover:bg-primary/10"
-                                  aria-label="Ver diferencias con base de datos"
+                              {finding.person.fullname}
+                            </h3>
+                            <div className="flex items-center gap-1.5 flex-wrap text-muted-foreground mt-0.5">
+                              {partyName && (
+                                <span
+                                  className="text-[11px] font-medium text-foreground/80 truncate max-w-[170px]"
+                                  title={partyName}
                                 >
-                                  <GitCompare className="h-3.5 w-3.5" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Ver diferencias con BD
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingFinding(finding)}
-                              disabled={isCardBusy}
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
-                              aria-label="Editar hallazgo"
-                            >
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            {finding.status === "APPROVED"
-                              ? "Editar contenido guardado"
-                              : "Editar antes de aprobar"}
-                          </TooltipContent>
-                        </Tooltip>
+                                  {partyName}
+                                </span>
+                              )}
+                              {locationStr && (
+                                <span
+                                  className="text-[11px] text-muted-foreground"
+                                  title={`Región: ${regionCanonical}`}
+                                >
+                                  • {locationStr}
+                                </span>
+                              )}
+                              {!partyName && !locationStr && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  {finding.person.dni
+                                    ? `DNI: ${finding.person.dni}`
+                                    : context === "legisladores"
+                                      ? "Legislador"
+                                      : "Candidato"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Footer de Triage */}
-                <div className="p-3 pt-0 mt-auto">
-                  {finding.status === "PENDING" ? (
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRejectSingle(finding.id)}
-                        disabled={isCardBusy}
-                        className="h-10 sm:h-8.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-colors font-medium active:scale-95"
-                      >
-                        {processingIds.has(finding.id) ? (
-                          <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+                      {/* Badges de Cargo y Tipo de Hallazgo */}
+                      <div className="flex flex-row items-center justify-start gap-1.5 flex-wrap shrink-0">
+                        {/* Badge de Cargo Político */}
+                        {cargoInfo.label && (
+                          <span
+                            className={cn(
+                              "text-[10px] font-semibold px-2 py-0.5 rounded-md border",
+                              cargoInfo.badgeClass,
+                            )}
+                            title={primaryCandidacy?.type}
+                          >
+                            {cargoInfo.label}
+                          </span>
                         )}
-                        Ignorar
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleApproveSingle(finding.id)}
-                        disabled={isCardBusy}
-                        className="h-10 sm:h-8.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-none active:scale-95"
-                      >
-                        {processingIds.has(finding.id) ? (
-                          <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+
+                        {finding.person.has_penal_sentence && (
+                          <span
+                            className="text-[9px] font-semibold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded shrink-0"
+                            title="Registra sentencia condenatoria previa en BD"
+                          >
+                            Sentencia previa
+                          </span>
                         )}
-                        Aprobar
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between w-full text-xs text-muted-foreground pt-2 border-t">
-                      <div className="flex items-center gap-1.5 min-w-0">
                         <Badge
                           variant={
-                            finding.status === "APPROVED"
-                              ? "success"
-                              : "destructive"
+                            isPenal
+                              ? "destructive"
+                              : isEtica
+                                ? "warning"
+                                : isCivil
+                                  ? "secondary"
+                                  : "default"
                           }
-                          className="text-[10px] font-semibold"
+                          className="text-[10px] uppercase font-bold tracking-wide px-2 py-0.5"
                         >
-                          {finding.status === "APPROVED"
-                            ? "APROBADO"
-                            : "RECHAZADO"}
+                          {rawType || "NOTICIA"}
                         </Badge>
-                        <span
-                          className="truncate text-[11px] max-w-[130px]"
-                          title={
-                            finding.reviewed_by
-                              ? `Por ${finding.reviewed_by}`
-                              : undefined
-                          }
-                        >
-                          {finding.reviewed_by
-                            ? `Por ${finding.reviewed_by}`
-                            : "Procesado"}
-                        </span>
-                        {finding.reviewed_at && (
-                          <span
-                            className="text-[10px] text-muted-foreground whitespace-nowrap"
-                            title={new Date(finding.reviewed_at).toLocaleString(
-                              "es-PE",
-                            )}
-                          >
-                            •{" "}
-                            {new Date(finding.reviewed_at).toLocaleDateString(
-                              "es-PE",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                        {isUpdate && (
+                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium flex items-center gap-0.5">
+                            <GitCompare className="h-3 w-3" /> Actualización
                           </span>
                         )}
                       </div>
 
-                      {finding.status === "APPROVED" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRevertSingle(finding.id)}
-                          disabled={isCardBusy}
-                          className="h-7 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                          title="Deshacer aprobación y regresar a pendiente"
+                      {/* Cuerpo: Título + Resumen + Sanción */}
+                      <div className="space-y-1.5 pt-0.5 flex-1">
+                        <h4
+                          className="text-sm font-semibold text-foreground line-clamp-2 leading-snug"
+                          title={title}
                         >
-                          {processingIds.has(finding.id) ? (
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          ) : (
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                          )}
-                          Revertir
-                        </Button>
+                          {title}
+                        </h4>
+
+                        <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                          {summary}
+                        </p>
+
+                        {sanction && (
+                          <div className="text-xs px-2.5 py-1.5 rounded-md bg-destructive/10 text-destructive border border-destructive/20 font-medium flex items-center gap-1.5">
+                            <span className="shrink-0 font-bold">
+                              ⚖️ Sanción:
+                            </span>
+                            <span className="truncate" title={sanction}>
+                              {sanction}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Fuentes / URLs con diseño limpio y no apretado */}
+                      {(parsedSources.length > 0 || source) && (
+                        <div className="pt-2.5 border-t space-y-1.5 mt-auto">
+                          {parsedSources.length > 0 ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {parsedSources.map((src, idx) => (
+                                <a
+                                  key={idx}
+                                  href={src.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-muted/70 hover:bg-muted text-foreground/80 hover:text-foreground transition-colors border border-border/50 max-w-[175px] group/src"
+                                  title={`Abrir fuente original (${src.label} - ${src.domain})`}
+                                >
+                                  <span className="truncate">{src.label}</span>
+                                  <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50 group-hover/src:opacity-100 transition-opacity" />
+                                </a>
+                              ))}
+                            </div>
+                          ) : source ? (
+                            <div
+                              className="flex items-center gap-1 text-[11px] text-muted-foreground truncate"
+                              title={source}
+                            >
+                              <span className="font-semibold text-foreground/70">
+                                Fuente:
+                              </span>
+                              <span className="truncate font-medium text-foreground/80">
+                                {source}
+                              </span>
+                            </div>
+                          ) : null}
+
+                          {/* Fila de Metadatos (Fecha, Ant. BD) y Herramientas (Diff / Editar) */}
+                          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                              {date && (
+                                <span className="text-[11px] whitespace-nowrap font-normal">
+                                  {date}
+                                </span>
+                              )}
+
+                              {typeof finding.person._count?.background ===
+                                "number" &&
+                                finding.person._count.background > 0 && (
+                                  <>
+                                    {date && (
+                                      <span className="text-muted-foreground/40">
+                                        •
+                                      </span>
+                                    )}
+                                    <span
+                                      className="text-[11px] text-amber-600 dark:text-amber-400 font-medium whitespace-nowrap"
+                                      title={`${context === "legisladores" ? "El legislador" : "El candidato"} registra ${finding.person._count.background} antecedente(s) previo(s) en BD`}
+                                    >
+                                      {finding.person._count.background} ant. BD
+                                    </span>
+                                  </>
+                                )}
+                            </div>
+
+                            {/* Botones de acción secundaria (Diff / Editar) */}
+                            {(finding.status === "PENDING" ||
+                              finding.status === "APPROVED") && (
+                              <div className="flex items-center gap-1 shrink-0">
+                                {finding.status === "PENDING" &&
+                                  isUpdate &&
+                                  finding.target_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() =>
+                                            setDiffFinding(finding)
+                                          }
+                                          disabled={isCardBusy}
+                                          className="h-7 w-7 text-primary hover:bg-primary/10"
+                                          aria-label="Ver diferencias con base de datos"
+                                        >
+                                          <GitCompare className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Ver diferencias con BD
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setEditingFinding(finding)}
+                                      disabled={isCardBusy}
+                                      className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                                      aria-label="Editar hallazgo"
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {finding.status === "APPROVED"
+                                      ? "Editar contenido guardado"
+                                      : "Editar antes de aprobar"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+
+                    {/* Footer de Triage */}
+                    <div className="p-3 pt-0 mt-auto">
+                      {finding.status === "PENDING" ? (
+                        <div className="grid grid-cols-2 gap-2 w-full">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRejectSingle(finding.id)}
+                            disabled={isCardBusy}
+                            className="h-10 sm:h-8.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30 transition-colors font-medium active:scale-95"
+                          >
+                            {processingIds.has(finding.id) ? (
+                              <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+                            )}
+                            Ignorar
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleApproveSingle(finding.id)}
+                            disabled={isCardBusy}
+                            className="h-10 sm:h-8.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors shadow-none active:scale-95"
+                          >
+                            {processingIds.has(finding.id) ? (
+                              <Loader2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
+                            )}
+                            Aprobar
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between w-full text-xs text-muted-foreground pt-2 border-t">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Badge
+                              variant={
+                                finding.status === "APPROVED"
+                                  ? "success"
+                                  : "destructive"
+                              }
+                              className="text-[10px] font-semibold"
+                            >
+                              {finding.status === "APPROVED"
+                                ? "APROBADO"
+                                : "RECHAZADO"}
+                            </Badge>
+                            <span
+                              className="truncate text-[11px] max-w-[130px]"
+                              title={
+                                finding.reviewed_by
+                                  ? `Por ${finding.reviewed_by}`
+                                  : undefined
+                              }
+                            >
+                              {finding.reviewed_by
+                                ? `Por ${finding.reviewed_by}`
+                                : "Procesado"}
+                            </span>
+                            {finding.reviewed_at && (
+                              <span
+                                className="text-[10px] text-muted-foreground whitespace-nowrap"
+                                title={new Date(
+                                  finding.reviewed_at,
+                                ).toLocaleString("es-PE")}
+                              >
+                                •{" "}
+                                {new Date(
+                                  finding.reviewed_at,
+                                ).toLocaleDateString("es-PE", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            )}
+                          </div>
+
+                          {finding.status === "APPROVED" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRevertSingle(finding.id)}
+                              disabled={isCardBusy}
+                              className="h-7 px-2 text-[11px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                              title="Deshacer aprobación y regresar a pendiente"
+                            >
+                              {processingIds.has(finding.id) ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <RotateCcw className="h-3 w-3 mr-1" />
+                              )}
+                              Revertir
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
 

@@ -6,6 +6,7 @@ import {
   TriviaOption,
   TriviaQuestion,
   OptionDisplayType,
+  SecondarySource,
 } from "@/interfaces/game-types";
 import {
   BookOpen,
@@ -19,7 +20,9 @@ import {
   Zap,
   CheckCircle2,
   XCircle,
+  Scale,
 } from "lucide-react";
+import { parseSourceUrls } from "@/lib/utils/url";
 import { IncaArcadeCard } from "@/components/game/inca-arcade-card";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -366,7 +369,13 @@ function ResultsScreen({
 }
 
 // ------
-function VideoSourceLink({ url }: { url: string }) {
+function VideoSourceLink({
+  url,
+  isDebate = false,
+}: {
+  url: string;
+  isDebate?: boolean;
+}) {
   const isVideo =
     url.includes("youtube.com") ||
     url.includes("youtu.be") ||
@@ -380,10 +389,10 @@ function VideoSourceLink({ url }: { url: string }) {
           <Button
             type="button"
             size="sm"
-            className="relative group overflow-visible text-xs"
+            className="relative group overflow-visible text-xs font-bold gap-1 bg-rose-600 hover:bg-rose-700 text-white shadow-xs"
           >
-            <Play size={12} className="fill-primary animate-bounce mr-1" />
-            Ver video
+            <Play size={12} className="fill-white animate-bounce mr-0.5" />
+            {isDebate ? "Ver momento del debate" : "Ver video"}
           </Button>
         }
       />
@@ -400,6 +409,47 @@ function VideoSourceLink({ url }: { url: string }) {
       Ver fuente oficial
       <ExternalLink size={11} />
     </Link>
+  );
+}
+
+function FactcheckSources({ sources }: { sources: SecondarySource[] }) {
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-blue-500/25 bg-blue-500/10 dark:bg-blue-950/30 p-3 space-y-2 text-left">
+      <div className="flex items-center gap-1.5">
+        <Scale
+          size={13}
+          className="text-blue-600 dark:text-blue-400 shrink-0"
+        />
+        <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300">
+          Fuentes de contrastación y verificación
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {sources.map((sec, idx) => {
+          const parsed = parseSourceUrls(sec.url)[0];
+          const displayLabel = sec.label || parsed?.label || "Fuente oficial";
+
+          return (
+            <a
+              key={idx}
+              href={sec.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 hover:bg-white text-blue-700 dark:bg-slate-900/90 dark:hover:bg-slate-800 dark:text-blue-300 border border-blue-500/30 transition-all hover:scale-[1.02] shadow-2xs group"
+              title={sec.url}
+            >
+              <span>{displayLabel}</span>
+              <ExternalLink
+                size={10}
+                className="opacity-60 group-hover:opacity-100 transition-opacity shrink-0"
+              />
+            </a>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -679,7 +729,14 @@ export function TriviaGameView({
                     </div>
 
                     {question?.source_url && (
-                      <VideoSourceLink url={question.source_url} />
+                      <VideoSourceLink
+                        url={question.source_url}
+                        isDebate={Boolean(
+                          question.topic?.has_factcheck ||
+                            (question.secondary_sources &&
+                              question.secondary_sources.length > 0),
+                        )}
+                      />
                     )}
                   </div>
 
@@ -694,6 +751,11 @@ export function TriviaGameView({
                       <Explanation text={question.explanation} />
                     </div>
                   )}
+
+                  {question?.secondary_sources &&
+                    question.secondary_sources.length > 0 && (
+                      <FactcheckSources sources={question.secondary_sources} />
+                    )}
                 </div>
               </div>
             )}

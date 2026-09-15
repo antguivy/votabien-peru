@@ -201,15 +201,10 @@ export async function getPaginatedLegisladorRevisiones(
     where.status = "PENDING";
     where.NOT = [
       { proposed_data: { path: ["type"], string_contains: "PENAL" } },
-      { proposed_data: { path: ["tipo"], string_contains: "PENAL" } },
       { proposed_data: { path: ["type"], string_contains: "ETICA" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ETICA" } },
       { proposed_data: { path: ["type"], string_contains: "ETICO" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ETICO" } },
       { proposed_data: { path: ["type"], string_contains: "ADMINISTRATIVO" } },
-      { proposed_data: { path: ["tipo"], string_contains: "ADMINISTRATIVO" } },
       { proposed_data: { path: ["type"], string_contains: "CIVIL" } },
-      { proposed_data: { path: ["tipo"], string_contains: "CIVIL" } },
     ];
   } else {
     // PENDING_ALL por defecto

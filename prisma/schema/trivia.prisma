@@ -34,6 +34,7 @@ model triviatopic {
   banner_url  String?
   is_active   Boolean  @default(true)
   is_regional Boolean  @default(false)
+  has_factcheck Boolean @default(false)
   order_index Int      @default(0)
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
@@ -81,6 +82,7 @@ model triviagame {
   global_index          BigInt             @default(0) // Orden dentro del nivel o tema
   explanation           String?            // Explicación pedagógica contextual
   source_url            String?            // Enlace a fuente verificada o ley
+  secondary_sources     Json?              @db.Json    // Array de fuentes secundarias de contrastación [{ url, label }]
   image_url             String?            // Imagen ilustrativa de la pregunta (opcional)
   is_published          Boolean            @default(true)
 

@@ -139,6 +139,14 @@ export function TopicManagement({
                       📍 Regional
                     </Badge>
                   )}
+                  {topic.has_factcheck && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30 font-semibold"
+                    >
+                      ⚖️ Fact-Checking
+                    </Badge>
+                  )}
                   <Badge
                     variant={topic.is_active ? "default" : "secondary"}
                     className="text-[10px]"
@@ -276,6 +284,7 @@ function TopicFormDialog({
       order_index: initialData?.order_index ?? nextOrderIndex,
       is_active: initialData?.is_active ?? true,
       is_regional: initialData?.is_regional ?? false,
+      has_factcheck: initialData?.has_factcheck ?? false,
       audience_ids:
         initialData?.audiences?.map((a) => a.id) || audiences.map((a) => a.id),
     },
@@ -570,6 +579,34 @@ function TopicFormDialog({
                         Activa esta opción si las preguntas de este tema
                         corresponden a debates o propuestas de regiones
                         electorales específicas.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Toggle Fact-Checking / Fuentes Secundarias */}
+              <FormField
+                control={form.control}
+                name="has_factcheck"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-xl border p-3 bg-blue-500/5 border-blue-500/20">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-xs font-bold flex items-center gap-1.5 text-foreground">
+                        <span>
+                          ⚖️ Soporte de Fact-Checking y Fuentes de Contrastación
+                        </span>
+                      </FormLabel>
+                      <p className="text-[11px] text-muted-foreground">
+                        Habilita la captura de fuentes secundarias de
+                        verificación para contrastar debates y propuestas frente
+                        a datos oficiales (MEF, Contraloría, SEACE, etc.).
                       </p>
                     </div>
                     <FormControl>

@@ -20,6 +20,7 @@ import {
   Play,
   ExternalLink,
   Award,
+  Scale,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,9 +98,11 @@ function getSources(rawSourceUrl?: string | null) {
 function QuestionSourceLinks({
   sourceUrl,
   compact = false,
+  isDebate = false,
 }: {
   sourceUrl: string;
   compact?: boolean;
+  isDebate?: boolean;
 }) {
   const sources = getSources(sourceUrl);
   if (sources.length === 0) return null;
@@ -121,7 +124,7 @@ function QuestionSourceLinks({
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full bg-brand text-white hover:bg-brand/90 active:scale-[0.98] font-bold shadow-xs transition-all cursor-pointer group",
+                    "inline-flex items-center gap-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white active:scale-[0.98] font-bold shadow-xs transition-all cursor-pointer group",
                     compact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs",
                   )}
                 >
@@ -129,7 +132,7 @@ function QuestionSourceLinks({
                     size={compact ? 10 : 12}
                     className="fill-current text-white shrink-0 group-hover:scale-110 transition-transform"
                   />
-                  <span>Ver video</span>
+                  <span>{isDebate ? "Ver debate" : "Ver video"}</span>
                 </button>
               }
             />
@@ -720,7 +723,14 @@ export function TriviaQuickQuizView({
 
             {/* Ver video / Fuente oficial */}
             {question?.source_url && (
-              <QuestionSourceLinks sourceUrl={question.source_url} />
+              <QuestionSourceLinks
+                sourceUrl={question.source_url}
+                isDebate={Boolean(
+                  topic?.has_factcheck ||
+                    (question.secondary_sources &&
+                      question.secondary_sources.length > 0),
+                )}
+              />
             )}
           </div>
 
@@ -735,6 +745,46 @@ export function TriviaQuickQuizView({
               </p>
             </div>
           )}
+
+          {/* Fuentes Secundarias de Fact-Checking */}
+          {question?.secondary_sources &&
+            question.secondary_sources.length > 0 && (
+              <div className="p-3 rounded-xl border border-blue-500/25 bg-blue-500/10 dark:bg-blue-950/30 text-xs space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <Scale
+                    size={13}
+                    className="text-blue-600 dark:text-blue-400 shrink-0"
+                  />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300">
+                    Fuentes de contrastación y verificación
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {question.secondary_sources.map((sec, idx) => {
+                    const parsed = parseSourceUrls(sec.url)[0];
+                    const displayLabel =
+                      sec.label || parsed?.label || "Fuente oficial";
+
+                    return (
+                      <a
+                        key={idx}
+                        href={sec.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 hover:bg-white text-blue-700 dark:bg-slate-900/90 dark:hover:bg-slate-800 dark:text-blue-300 border border-blue-500/30 transition-all hover:scale-[1.02] shadow-2xs group"
+                        title={sec.url}
+                      >
+                        <span>{displayLabel}</span>
+                        <ExternalLink
+                          size={10}
+                          className="opacity-60 group-hover:opacity-100 transition-opacity shrink-0"
+                        />
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* Botón Siguiente Pregunta */}
           <div className="pt-1">

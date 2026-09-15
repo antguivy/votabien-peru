@@ -54,11 +54,14 @@ import {
   X,
   CheckCheck,
   MapPin,
+  Scale,
+  Video,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import { parseSourceUrls } from "@/lib/utils/url";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TriviaFormDialog } from "./trivia-form-dialog";
 import {
@@ -1158,21 +1161,81 @@ function TriviaItem({
             </TooltipProvider>
           )}
 
-          {trivia.source_url && (
+          {trivia.source_url &&
+            (() => {
+              const isVideo =
+                trivia.source_url.includes("youtube.com") ||
+                trivia.source_url.includes("youtu.be") ||
+                trivia.source_url.includes("tiktok.com");
+
+              return (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <a
+                        href={trivia.source_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${
+                          isVideo
+                            ? "text-rose-500 hover:text-rose-600 dark:text-rose-400"
+                            : "text-muted-foreground hover:text-blue-500"
+                        }`}
+                      >
+                        {isVideo ? (
+                          <Video className="w-4 h-4" />
+                        ) : (
+                          <ExternalLink className="w-4 h-4" />
+                        )}
+                      </a>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {isVideo
+                          ? "Ver momento del debate / video oficial"
+                          : "Ver fuente principal de verificación"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })()}
+
+          {/* Fuentes Secundarias de Fact-Checking */}
+          {trivia.secondary_sources && trivia.secondary_sources.length > 0 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <a
-                    href={trivia.source_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-blue-500 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+                  <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px] font-semibold cursor-help">
+                    <Scale className="w-3 h-3" />
+                    <span>{trivia.secondary_sources.length}</span>
+                  </div>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Ver fuente de verificación</p>
+                <TooltipContent className="max-w-xs p-2.5 space-y-1.5 hidden sm:block">
+                  <p className="font-bold text-xs text-foreground flex items-center gap-1">
+                    <Scale className="w-3.5 h-3.5 text-blue-500" />
+                    Fuentes de contrastación ({trivia.secondary_sources.length}
+                    ):
+                  </p>
+                  <div className="space-y-1">
+                    {trivia.secondary_sources.map((sec, sIdx) => {
+                      const parsed = parseSourceUrls(sec.url)[0];
+                      return (
+                        <a
+                          key={sIdx}
+                          href={sec.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-between gap-2 text-[11px] text-primary hover:underline hover:text-primary/80"
+                        >
+                          <span className="truncate max-w-[200px]">
+                            {sec.label || parsed?.label || sec.url}
+                          </span>
+                          <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                        </a>
+                      );
+                    })}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
