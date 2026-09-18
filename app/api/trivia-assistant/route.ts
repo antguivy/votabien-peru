@@ -21,11 +21,19 @@ export async function POST(request: Request) {
       select: { role: true },
     });
 
-    if (!dbUser || !["admin", "super_admin"].includes(dbUser.role)) {
-      return new Response(JSON.stringify({ detail: "Admin role required" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (
+      !dbUser ||
+      !["volunteer", "editor", "lead", "admin", "super_admin"].includes(
+        dbUser.role,
+      )
+    ) {
+      return new Response(
+        JSON.stringify({ detail: "Reviewer or Admin role required" }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const body = await request.json();
