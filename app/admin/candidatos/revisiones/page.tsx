@@ -26,7 +26,8 @@ interface PageProps {
 }
 
 export default async function RevisionesPage(props: PageProps) {
-  await serverRequireReviewer();
+  const { user } = await serverRequireReviewer();
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
 
   const search = await props.searchParams;
   const tab = search.tab || "PENDING_ALL";
@@ -72,6 +73,7 @@ export default async function RevisionesPage(props: PageProps) {
             action,
           }}
           availableRegions={CANONICAL_REGIONS}
+          isAdmin={isAdmin}
         />
       </div>
     </ContentLayout>

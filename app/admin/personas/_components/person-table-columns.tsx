@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type DataTableRowAction } from "@/lib/types";
 import { type ColumnDef } from "@tanstack/react-table";
-import { BookUser, Brain, Ellipsis, History, SquarePen } from "lucide-react";
+import { BookUser, Ellipsis, History, SquarePen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -186,12 +186,6 @@ export function getColumns({
               >
                 <BookUser className="size-4" />
                 Antecedentes
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => setRowAction({ type: "research", row })}
-              >
-                <Brain className="size-4" />
-                Research
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

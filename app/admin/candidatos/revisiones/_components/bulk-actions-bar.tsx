@@ -7,6 +7,7 @@ interface BulkActionsBarProps {
   selectedCount: number;
   onBulkApprove: () => void;
   onBulkReject: () => void;
+  onBulkAuditHomonimia?: () => void;
   onClearSelection: () => void;
   isProcessing?: boolean;
 }
@@ -15,6 +16,7 @@ export function BulkActionsBar({
   selectedCount,
   onBulkApprove,
   onBulkReject,
+  onBulkAuditHomonimia,
   onClearSelection,
   isProcessing,
 }: BulkActionsBarProps) {
@@ -45,6 +47,18 @@ export function BulkActionsBar({
         )}
         Aprobar ({selectedCount})
       </Button>
+
+      {onBulkAuditHomonimia && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onBulkAuditHomonimia}
+          disabled={isProcessing}
+          className="rounded-full px-3 sm:px-4 h-8 sm:h-8.5 text-[11px] sm:text-xs font-medium shrink-0 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 active:scale-95 transition-transform"
+        >
+          Auditar Homonimia
+        </Button>
+      )}
 
       <Button
         variant="destructive"

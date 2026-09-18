@@ -7,6 +7,7 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { getColumns } from "./bills-table-columns";
 import { BillDetailDialog } from "./bill-detail-dialog";
 import { SyncBillsDialog } from "./sync-bills-dialog";
+import { DataTableSearchInput } from "@/components/data-table/data-table-search-input";
 import type { DataTableFilterField } from "@/lib/types";
 import { billApprovalStatuses, AdminBillRow } from "../_lib/validation";
 
@@ -46,11 +47,6 @@ export function BillsTable({ promises }: BillsTableProps) {
 
   const filterFields: DataTableFilterField<AdminBillRow>[] = React.useMemo(
     () => [
-      {
-        id: "search" as keyof AdminBillRow,
-        label: "Buscar",
-        placeholder: "Buscar por número, título o congresista...",
-      },
       {
         id: "chamber" as keyof AdminBillRow,
         label: "Cámara",
@@ -106,7 +102,13 @@ export function BillsTable({ promises }: BillsTableProps) {
   return (
     <div className="space-y-4">
       <DataTable table={table}>
-        <DataTableToolbar table={table} filterFields={filterFields}>
+        <DataTableToolbar
+          table={table}
+          filterFields={filterFields}
+          customFilters={
+            <DataTableSearchInput placeholder="Buscar por número, título o congresista..." />
+          }
+        >
           <SyncBillsDialog availablePeriods={periods} />
         </DataTableToolbar>
       </DataTable>

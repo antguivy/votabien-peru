@@ -127,40 +127,41 @@ export async function POST(request: Request) {
       }
     }
 
-    // FETCH ELECTORAL CONTEXT FOR ANTI-HOMONYM DISAMBIGUATION
-    if (personId) {
-      const activeCandidate = await prisma.candidate.findFirst({
-        where: {
-          person_id: personId,
-          active: true,
-        },
-        select: {
-          type: true,
-          electoraldistrict: {
-            select: {
-              name: true,
-              parent: {
-                select: { name: true },
-              },
-            },
-          },
-          politicalparty: {
-            select: { name: true },
-          },
-        },
-        orderBy: { created_at: "desc" },
-      });
+    // FETCH ELECTORAL CONTEXT FOR ANTI-HOMONYM DISAMBIGUATION (POLYMorphic: CANDIDATES & LEGISLATORS)
+    const targetPersonId =
+      personId ||
+      (await (async () => {
+        const candidateName = formData.get("nombre_investigado")?.toString();
+        if (!candidateName) return null;
+        const found = await prisma.person.findFirst({
+          where: { fullname: { equals: candidateName, mode: "insensitive" } },
+          select: { id: true },
+        });
+        return found?.id || null;
+      })());
 
-      if (activeCandidate) {
-        formData.append("cargo", activeCandidate.type);
-        const districtName = activeCandidate.electoraldistrict.name;
-        const parentName = activeCandidate.electoraldistrict.parent?.name;
-        const jurisdiccion = parentName
-          ? `${districtName}, ${parentName}`
-          : districtName;
-        formData.append("jurisdiccion", jurisdiccion);
-        formData.append("partido", activeCandidate.politicalparty.name);
+    if (targetPersonId) {
+      const { resolveResearchContext } = await import("@/lib/research-context");
+      const researchContext = await resolveResearchContext(targetPersonId);
+      if (researchContext.cargo) {
+        formData.append("cargo", researchContext.cargo);
       }
+      if (researchContext.jurisdiccion) {
+        formData.append("jurisdiccion", researchContext.jurisdiccion);
+      }
+      if (researchContext.partido) {
+        formData.append("partido", researchContext.partido);
+      }
+      formData.append(
+        "press_sources",
+        JSON.stringify(researchContext.press_sources),
+      );
+    } else {
+      const nationalSources = await prisma.press_source.findMany({
+        where: { active: true, scope: "NACIONAL" },
+        select: { name: true, domain: true, scope: true },
+      });
+      formData.append("press_sources", JSON.stringify(nationalSources));
     }
 
     formData.append(

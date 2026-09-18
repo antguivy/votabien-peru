@@ -25,6 +25,9 @@ import {
   FileText,
   BookOpen,
   FolderKanban,
+  Newspaper,
+  Gavel,
+  FileQuestion,
 } from "lucide-react";
 
 import { NavGroup, NavItem } from "@/interfaces/navbar";
@@ -102,6 +105,16 @@ export const adminNavGroups: NavGroup[] = [
         label: "Proyectos de Ley",
         icon: FileText,
       },
+      {
+        href: "/admin/mociones",
+        label: "Mociones",
+        icon: Gavel,
+      },
+      {
+        href: "/admin/pedidos-informacion",
+        label: "Pedidos de Información",
+        icon: FileQuestion,
+      },
       { href: "/admin/personas", label: "Personas", icon: IdCard },
       { href: "/admin/seats", label: "Asientos", icon: UsersRound },
       { href: "/admin/ejecutivo", label: "Ejecutivo", icon: Landmark },
@@ -121,6 +134,11 @@ export const adminNavGroups: NavGroup[] = [
         href: "/admin/legisladores/revisiones",
         label: "Revisiones Legisladores",
         icon: Inbox,
+      },
+      {
+        href: "/admin/medios",
+        label: "Medios de Prensa",
+        icon: Newspaper,
       },
       {
         href: "/admin/guias",

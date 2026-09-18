@@ -509,3 +509,662 @@ export async function bulkApplyFindings(findingIds: string[]) {
     return { success: false, error: message };
   }
 }
+
+// ============================================
+// AUDITORÍA Y DESCARTE DE HOMONIMIA
+// ============================================
+
+export interface HomonimiaItemResult {
+  proposal_id: string;
+  candidato: string;
+  title: string;
+  decision: "REJECT" | "KEEP";
+  capa: string;
+  motivo: string;
+  confidence: number;
+  url: string;
+}
+
+export interface HomonimiaAuditResponse {
+  success: boolean;
+  dry_run?: boolean;
+  total_analyzed?: number;
+  rejected_count?: number;
+  kept_count?: number;
+  applied_count?: number;
+  layers_breakdown?: {
+    capa_1_slug: number;
+    capa_2_metadatos: number;
+    capa_3_contenido: number;
+  };
+  excel_filename?: string;
+  excel_base64?: string;
+  results?: HomonimiaItemResult[];
+  error?: string;
+}
+
+export interface HomonimiaJobProgress {
+  current: number;
+  total: number;
+  percent: number;
+  fase: string;
+  detalles: string;
+}
+
+export interface HomonimiaJobStatusResponse {
+  success: boolean;
+  job_id: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  dry_run?: boolean;
+  skip_capa3?: boolean;
+  progress?: HomonimiaJobProgress;
+  result?: HomonimiaAuditResponse;
+  error?: string;
+}
+
+export async function auditHomonimiaProposals(params: {
+  findingIds?: string[];
+  candidateId?: string;
+  candidateName?: string;
+  dryRun?: boolean;
+  skipCapa3?: boolean;
+  limit?: number;
+}): Promise<HomonimiaAuditResponse> {
+  const { user } = await serverRequireReviewer();
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+
+  if (params.dryRun === false && !isAdmin) {
+    return {
+      success: false,
+      error:
+        "Permiso denegado: Solo los administradores pueden aplicar descartes definitivos en la base de datos.",
+    };
+  }
+
+  try {
+    // 1. Consultar propuestas pendientes y sus candidatos mediante Prisma
+    const proposals = await prisma.research_proposals.findMany({
+      where: {
+        status: "PENDING",
+        ...(params.findingIds && params.findingIds.length > 0
+          ? { id: { in: params.findingIds } }
+          : {}),
+        person: {
+          candidate: {
+            some: {
+              active: true,
+              electoralprocess: { active: true },
+              ...(params.candidateId ? { id: params.candidateId } : {}),
+            },
+          },
+          ...(params.candidateName
+            ? {
+                OR: [
+                  {
+                    fullname: {
+                      contains: params.candidateName,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    lastname: {
+                      contains: params.candidateName,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+      },
+      include: {
+        person: {
+          select: {
+            id: true,
+            fullname: true,
+            name: true,
+            lastname: true,
+            dni: true,
+            profession: true,
+          },
+        },
+      },
+      orderBy: { created_at: "asc" },
+      ...(params.limit && params.limit > 0 ? { take: params.limit } : {}),
+    });
+
+    if (!proposals || proposals.length === 0) {
+      return {
+        success: true,
+        dry_run: params.dryRun !== false,
+        total_analyzed: 0,
+        rejected_count: 0,
+        kept_count: 0,
+        applied_count: 0,
+        layers_breakdown: {
+          capa_1_slug: 0,
+          capa_2_metadatos: 0,
+          capa_3_contenido: 0,
+        },
+        results: [],
+      };
+    }
+
+    // 2. Agrupar propuestas por candidato para el microservicio
+    const candidatesMap = new Map<
+      string,
+      {
+        person_id: string;
+        fullname: string;
+        name: string;
+        lastname: string;
+        dni: string;
+        profession: string;
+        proposals: {
+          id: string;
+          title: string;
+          source_url: string;
+          summary: string;
+          publication_date: string;
+        }[];
+      }
+    >();
+
+    for (const p of proposals) {
+      const person = p.person;
+      if (!person) continue;
+
+      if (!candidatesMap.has(person.id)) {
+        candidatesMap.set(person.id, {
+          person_id: person.id,
+          fullname: person.fullname || "",
+          name: person.name || "",
+          lastname: person.lastname || "",
+          dni: person.dni || "",
+          profession: person.profession || "",
+          proposals: [],
+        });
+      }
+
+      let parsedData: Record<string, unknown> = {};
+      if (typeof p.proposed_data === "string") {
+        try {
+          parsedData = JSON.parse(p.proposed_data) as Record<string, unknown>;
+        } catch {}
+      } else if (p.proposed_data && typeof p.proposed_data === "object") {
+        parsedData = p.proposed_data as Record<string, unknown>;
+      }
+
+      candidatesMap.get(person.id)!.proposals.push({
+        id: p.id,
+        title: (parsedData.title || parsedData.titulo || "").toString(),
+        source_url: (
+          parsedData.source_url ||
+          parsedData.fuente_url ||
+          ""
+        ).toString(),
+        summary: (
+          parsedData.summary ||
+          parsedData.redaccion_final ||
+          parsedData.description ||
+          ""
+        ).toString(),
+        publication_date: (
+          parsedData.publication_date ||
+          parsedData.fecha ||
+          ""
+        ).toString(),
+      });
+    }
+
+    const candidateList = Array.from(candidatesMap.values());
+
+    // 3. Invocar al microservicio Python como función pura en memoria
+    const baseUrl =
+      process.env.API_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8000";
+    const secretKey = process.env.API_SECRET_KEY || "";
+
+    const res = await fetch(`${baseUrl}/api/v1/homonimia/audit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secretKey}`,
+      },
+      body: JSON.stringify({
+        candidates: candidateList,
+        skip_capa3: params.skipCapa3 ?? false,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: `Error del servicio: ${errText}` };
+    }
+
+    const data = await res.json();
+
+    // 4. Si no es dry_run, aplicar los descartes en PostgreSQL mediante Prisma
+    let appliedCount = 0;
+    if (params.dryRun === false && data.results && data.results.length > 0) {
+      const toReject = data.results.filter(
+        (r: { decision?: string }) => r.decision === "REJECT",
+      );
+      if (toReject.length > 0) {
+        const now = new Date();
+        const reviewerName = user.email || user.name || user.id;
+
+        await prisma.$transaction(
+          toReject.map(
+            (item: { proposal_id: string; capa?: string; motivo?: string }) =>
+              prisma.research_proposals.updateMany({
+                where: {
+                  id: item.proposal_id,
+                  status: "PENDING",
+                },
+                data: {
+                  status: "REJECTED",
+                  reviewed_at: now,
+                  reviewed_by: reviewerName,
+                  reason: `DESCARTADO_HOMONIMIA [${item.capa}]: ${item.motivo}`,
+                },
+              }),
+          ),
+        );
+
+        appliedCount = toReject.length;
+        revalidatePersonEcosystem();
+      }
+    }
+
+    return {
+      success: true,
+      dry_run: params.dryRun !== false,
+      total_analyzed: data.total_analyzed,
+      rejected_count: data.rejected_count,
+      kept_count: data.kept_count,
+      applied_count: appliedCount,
+      layers_breakdown: data.layers_breakdown,
+      excel_filename: data.excel_filename,
+      excel_base64: data.excel_base64,
+      results: data.results,
+    };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Error al procesar auditoría de homonimia";
+    return { success: false, error: message };
+  }
+}
+
+export async function startHomonimiaAuditJob(params: {
+  findingIds?: string[];
+  candidateId?: string;
+  candidateName?: string;
+  dryRun?: boolean;
+  skipCapa3?: boolean;
+  limit?: number;
+}): Promise<{
+  success: boolean;
+  jobId?: string;
+  totalProposals?: number;
+  error?: string;
+}> {
+  const { user } = await serverRequireReviewer();
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+
+  if (params.dryRun === false && !isAdmin) {
+    return {
+      success: false,
+      error:
+        "Permiso denegado: Solo los administradores pueden aplicar descartes definitivos en la base de datos.",
+    };
+  }
+
+  try {
+    const proposals = await prisma.research_proposals.findMany({
+      where: {
+        status: "PENDING",
+        ...(params.findingIds && params.findingIds.length > 0
+          ? { id: { in: params.findingIds } }
+          : {}),
+        person: {
+          candidate: {
+            some: {
+              active: true,
+              electoralprocess: { active: true },
+              ...(params.candidateId ? { id: params.candidateId } : {}),
+            },
+          },
+          ...(params.candidateName
+            ? {
+                OR: [
+                  {
+                    fullname: {
+                      contains: params.candidateName,
+                      mode: "insensitive",
+                    },
+                  },
+                  {
+                    lastname: {
+                      contains: params.candidateName,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+      },
+      include: {
+        person: {
+          select: {
+            id: true,
+            fullname: true,
+            name: true,
+            lastname: true,
+            dni: true,
+            profession: true,
+          },
+        },
+      },
+      orderBy: { created_at: "asc" },
+      ...(params.limit && params.limit > 0 ? { take: params.limit } : {}),
+    });
+
+    if (!proposals || proposals.length === 0) {
+      return {
+        success: false,
+        error:
+          "No hay propuestas pendientes para auditar con los filtros seleccionados.",
+      };
+    }
+
+    const candidatesMap = new Map<
+      string,
+      {
+        person_id: string;
+        fullname: string;
+        name: string;
+        lastname: string;
+        dni: string;
+        profession: string;
+        proposals: {
+          id: string;
+          title: string;
+          source_url: string;
+          summary: string;
+          publication_date: string;
+        }[];
+      }
+    >();
+
+    for (const p of proposals) {
+      const person = p.person;
+      if (!person) continue;
+
+      if (!candidatesMap.has(person.id)) {
+        candidatesMap.set(person.id, {
+          person_id: person.id,
+          fullname: person.fullname || "",
+          name: person.name || "",
+          lastname: person.lastname || "",
+          dni: person.dni || "",
+          profession: person.profession || "",
+          proposals: [],
+        });
+      }
+
+      let parsedData: Record<string, unknown> = {};
+      if (typeof p.proposed_data === "string") {
+        try {
+          parsedData = JSON.parse(p.proposed_data) as Record<string, unknown>;
+        } catch {}
+      } else if (p.proposed_data && typeof p.proposed_data === "object") {
+        parsedData = p.proposed_data as Record<string, unknown>;
+      }
+
+      candidatesMap.get(person.id)!.proposals.push({
+        id: p.id,
+        title: (parsedData.title || parsedData.titulo || "").toString(),
+        source_url: (
+          parsedData.source_url ||
+          parsedData.fuente_url ||
+          ""
+        ).toString(),
+        summary: (
+          parsedData.summary ||
+          parsedData.redaccion_final ||
+          parsedData.description ||
+          ""
+        ).toString(),
+        publication_date: (
+          parsedData.publication_date ||
+          parsedData.fecha ||
+          ""
+        ).toString(),
+      });
+    }
+
+    const candidateList = Array.from(candidatesMap.values());
+
+    const baseUrl =
+      process.env.API_INTERNAL_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:8000";
+    const secretKey = process.env.API_SECRET_KEY || "";
+
+    const res = await fetch(`${baseUrl}/api/v1/homonimia/audit/jobs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secretKey}`,
+      },
+      body: JSON.stringify({
+        candidates: candidateList,
+        skip_capa3: params.skipCapa3 ?? false,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return {
+        success: false,
+        error: `Error al iniciar trabajo en el servicio: ${errText}`,
+      };
+    }
+
+    const data = await res.json();
+    return {
+      success: true,
+      jobId: data.job_id,
+      totalProposals: data.total_proposals,
+    };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Error al despachar trabajo de auditoría";
+    return { success: false, error: message };
+  }
+}
+
+export async function getHomonimiaAuditJobStatus(
+  jobId: string,
+): Promise<HomonimiaJobStatusResponse> {
+  await serverRequireReviewer();
+  const baseUrl =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8000";
+  const secretKey = process.env.API_SECRET_KEY || "";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/homonimia/audit/jobs/${jobId}`, {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return { success: false, job_id: jobId, status: "FAILED", error: err };
+    }
+
+    const data = await res.json();
+    return {
+      success: true,
+      job_id: data.job_id,
+      status: data.status,
+      dry_run: data.dry_run,
+      skip_capa3: data.skip_capa3,
+      progress: data.progress,
+      result: data.result,
+      error: data.error,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      job_id: jobId,
+      status: "FAILED",
+      error:
+        err instanceof Error
+          ? err.message
+          : "Error de conexión al consultar estado del job",
+    };
+  }
+}
+
+export async function applyHomonimiaSelectedRejections(
+  items: { proposalId: string; motivo: string; capa: string }[],
+) {
+  const { user } = await serverRequireReviewer();
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+
+  if (!isAdmin) {
+    return {
+      success: false,
+      error:
+        "Permiso denegado: Solo los administradores pueden aplicar descartes definitivos.",
+    };
+  }
+
+  if (!items || items.length === 0) {
+    return {
+      success: false,
+      error: "No hay propuestas seleccionadas para descartar.",
+    };
+  }
+
+  try {
+    const now = new Date();
+    const reviewerName = user.email || user.name || user.id;
+
+    await prisma.$transaction(
+      items.map((item) =>
+        prisma.research_proposals.updateMany({
+          where: {
+            id: item.proposalId,
+            status: "PENDING",
+          },
+          data: {
+            status: "REJECTED",
+            reviewed_at: now,
+            reviewed_by: reviewerName,
+            reason: `DESCARTADO_HOMONIMIA [${item.capa}]: ${item.motivo}`,
+          },
+        }),
+      ),
+    );
+
+    revalidatePersonEcosystem();
+    return { success: true, count: items.length };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Error al aplicar descartes seleccionados";
+    return { success: false, error: message };
+  }
+}
+
+export async function revertHomonimiaExcel(formData: FormData) {
+  const { user } = await serverRequireReviewer();
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+
+  if (!isAdmin) {
+    return {
+      success: false,
+      error:
+        "Permiso denegado: Solo los administradores pueden revertir auditorías.",
+    };
+  }
+
+  const file = formData.get("file") as File;
+  if (!file) {
+    return { success: false, error: "No se seleccionó ningún archivo Excel." };
+  }
+
+  const baseUrl =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8000";
+  const secretKey = process.env.API_SECRET_KEY || "";
+
+  try {
+    const backendFormData = new FormData();
+    backendFormData.append("file", file);
+
+    const res = await fetch(`${baseUrl}/api/v1/homonimia/parse-revert-excel`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      body: backendFormData,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: `Error al procesar Excel: ${errText}` };
+    }
+
+    const data = await res.json();
+    const proposalIds: string[] = data.proposal_ids || [];
+
+    if (proposalIds.length === 0) {
+      return {
+        success: true,
+        reverted_count: 0,
+        message: "No se encontraron propuestas para revertir en el archivo.",
+      };
+    }
+
+    // Ejecutar rollback directamente en PostgreSQL mediante Prisma
+    const updated = await prisma.research_proposals.updateMany({
+      where: {
+        id: { in: proposalIds },
+        status: "REJECTED",
+      },
+      data: {
+        status: "PENDING",
+        reviewed_at: null,
+        reviewed_by: null,
+      },
+    });
+
+    revalidatePersonEcosystem();
+    return {
+      success: true,
+      reverted_count: updated.count,
+      proposal_ids: proposalIds,
+      message: `Rollback completado: se restauraron ${updated.count} propuestas a estado PENDING.`,
+    };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Error al revertir desde Excel";
+    return { success: false, error: message };
+  }
+}

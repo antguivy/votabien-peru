@@ -94,6 +94,8 @@ model legislator {
   legislative_period_id   String?                   @db.VarChar
   attendance              attendance[]
   bill                    bill[]
+  motions                 motion[]
+  information_requests    information_request[]
   politicalparty          politicalparty            @relation(fields: [elected_by_party_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   electoraldistrict       electoraldistrict         @relation(fields: [electoral_district_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   person                  person                    @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -108,31 +110,37 @@ model legislator {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model legislatormetrics {
-  legislator_id            String     @id @db.VarChar
-  total_bills              Int
-  bills_presentado         Int
-  bills_en_comision        Int
-  bills_aprobado           Int
-  bills_rechazado          Int
-  bills_retirado_por_autor Int
-  approval_rate            Float?
-  total_sessions           Int
-  sessions_present         Int
-  sessions_absent          Int
-  sessions_justified       Int
-  sessions_license         Int
-  attendance_rate          Float?
-  total_party_changes      Int
-  days_in_current_group    Int?
-  is_defector              Boolean
-  total_legal_records      Int
-  penal_records            Int
-  ethical_records          Int
-  civil_records            Int
-  administrative_records   Int
-  last_updated             DateTime   @db.Timestamptz(6)
-  bills_en_proceso         Int
-  legislator               legislator @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  legislator_id              String     @id @db.VarChar
+  total_bills                Int
+  bills_presentado           Int
+  bills_en_comision          Int
+  bills_aprobado             Int
+  bills_rechazado            Int
+  bills_retirado_por_autor   Int
+  approval_rate              Float?
+  total_sessions             Int
+  sessions_present           Int
+  sessions_absent            Int
+  sessions_justified         Int
+  sessions_license           Int
+  attendance_rate            Float?
+  total_party_changes        Int
+  days_in_current_group      Int?
+  is_defector                Boolean
+  total_legal_records        Int
+  penal_records              Int
+  ethical_records            Int
+  civil_records              Int
+  administrative_records     Int
+  last_updated               DateTime   @db.Timestamptz(6)
+  bills_en_proceso           Int
+  total_motions              Int        @default(0)
+  motions_greeting           Int        @default(0)
+  motions_interpellation     Int        @default(0)
+  motions_censure            Int        @default(0)
+  total_information_requests Int        @default(0)
+  top_committees             Json?      @default("[]")
+  legislator                 legislator @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -151,6 +159,7 @@ model parliamentarygroup {
   updated_at              DateTime                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
   rules_url               String?                   @db.VarChar
   bill                    bill[]
+  motions                 motion[]
   parliamentarymembership parliamentarymembership[]
   seatparliamentary       seatparliamentary[]
 

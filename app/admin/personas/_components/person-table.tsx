@@ -14,8 +14,6 @@ import { PersonTableToolbarActions } from "./person-table-toolbar-actions";
 import { AdminPerson } from "@/interfaces/person";
 import { BiographyFormDialog } from "./biography-form-dialog";
 import { BackgroundsFormDialog } from "./background-form-dialog";
-import ResearchPageDialog from "@/components/research/research-page";
-import { BatchResearchDialog } from "@/components/research/batch-research-dialog";
 
 interface PersonTableProps {
   promises: Promise<[PaginatedPersonResponse]>;
@@ -25,19 +23,6 @@ export function PersonTable({ promises }: PersonTableProps) {
   const [{ data, total, page_size }] = React.use(promises);
   const [rowAction, setRowAction] =
     React.useState<DataTableRowAction<AdminPerson> | null>(null);
-  const [batchCandidates, setBatchCandidates] = React.useState<
-    AdminPerson[] | null
-  >(null);
-
-  React.useEffect(() => {
-    const handleBatchOpen = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setBatchCandidates(customEvent.detail.rows);
-    };
-    window.addEventListener("open-batch-research", handleBatchOpen);
-    return () =>
-      window.removeEventListener("open-batch-research", handleBatchOpen);
-  }, []);
   const columns = React.useMemo(
     () => getColumns({ setRowAction }),
     [setRowAction],
@@ -109,33 +94,6 @@ export function PersonTable({ promises }: PersonTableProps) {
           personName={rowAction.row.original.fullname}
         />
       )}
-
-      {rowAction?.type === "research" && (
-        <ResearchPageDialog
-          open={true}
-          onOpenChange={() => setRowAction(null)}
-          personId={rowAction.row.original.id}
-          personName={rowAction.row.original.fullname}
-        />
-      )}
-
-      <BatchResearchDialog
-        persons={batchCandidates}
-        onClose={(failedPersonIds = []) => {
-          setBatchCandidates(null);
-          if (!failedPersonIds || failedPersonIds.length === 0) {
-            table.toggleAllRowsSelected(false);
-          } else {
-            const newSelection: Record<string, boolean> = {};
-            table.getRowModel().rows.forEach((row) => {
-              if (failedPersonIds.includes(row.original.id)) {
-                newSelection[row.id] = true;
-              }
-            });
-            table.setRowSelection(newSelection);
-          }
-        }}
-      />
     </>
   );
 }

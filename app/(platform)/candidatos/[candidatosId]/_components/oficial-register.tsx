@@ -211,8 +211,8 @@ function RnasRow({ sanctions }: { sanctions: RnasSanction[] }) {
             key={i}
             className="flex items-start justify-between gap-3 text-xs"
           >
-            <div className="min-w-0 space-y-0.5">
-              <span className="font-medium text-foreground/80 block truncate">
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <span className="font-medium text-foreground/80 block break-words leading-snug">
                 {s.colegio}
               </span>
               <span className="text-muted-foreground font-mono block">
@@ -250,8 +250,8 @@ function RnasRow({ sanctions }: { sanctions: RnasSanction[] }) {
                 key={i}
                 className="flex items-start justify-between gap-3 text-xs"
               >
-                <div className="min-w-0 space-y-0.5">
-                  <span className="font-medium text-foreground/80 block truncate">
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <span className="font-medium text-foreground/80 block break-words leading-snug">
                     {s.colegio}
                   </span>
                   <span className="text-muted-foreground font-mono block">
