@@ -15,6 +15,13 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/aprende": ["volunteer", "editor", "admin", "super_admin"],
   "/api/candidates": ["volunteer", "editor", "admin", "super_admin"],
   "/api/trivia": ["volunteer", "editor", "admin", "super_admin"],
+  "/api/trivia-assistant": [
+    "volunteer",
+    "lead",
+    "editor",
+    "admin",
+    "super_admin",
+  ],
   "/api/match": ["volunteer", "editor", "admin", "super_admin"],
 
   // ── Módulos de Colaboración y Trabajo (Voluntarios, Líderes, Editores, Admins) ──
