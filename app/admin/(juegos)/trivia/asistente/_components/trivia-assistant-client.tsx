@@ -346,7 +346,7 @@ export function TriviaAssistantClient({
               optD: (rawCard.optD as string) || "",
               explanation: (rawCard.explanation as string) || "",
               sources: Array.isArray(rawCard.sources)
-                ? (rawCard.sources as string[])
+                ? (rawCard.sources as TriviaCardSource[])
                 : [],
             };
             setActiveCard(normalizedCard);
