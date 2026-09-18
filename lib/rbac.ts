@@ -30,9 +30,12 @@ export const ROUTE_PERMISSIONS: Record<string, UserRole[]> = {
   "/admin/bancadas": ["admin", "super_admin"],
   "/admin/legisladores": ["admin", "super_admin"],
   "/admin/proyectos-ley": ["admin", "super_admin"],
+  "/admin/mociones": ["admin", "super_admin"],
+  "/admin/pedidos-informacion": ["admin", "super_admin"],
   "/admin/personas": ["admin", "super_admin"],
   "/admin/seats": ["admin", "super_admin"],
   "/admin/ejecutivo": ["admin", "super_admin"],
+  "/admin/medios": ["editor", "admin", "super_admin"],
 
   // ── Módulos de Sistema (Exclusivos de Admins) ──
   "/admin/workflows": ["admin", "super_admin"],

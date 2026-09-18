@@ -224,6 +224,13 @@ export const getLegisladorById = cache(
               orderBy: { start_date: "desc" },
               include: { parliamentarygroup: true },
             },
+            legislatormetrics: true,
+            motions: {
+              orderBy: { submission_date: "desc" },
+            },
+            information_requests: {
+              orderBy: { document_date: "desc" },
+            },
             person: {
               include: { background: true },
             },
@@ -243,6 +250,9 @@ export const getLegisladorById = cache(
             ...m,
             parliamentary_group: m.parliamentarygroup,
           })),
+          legislatormetrics: data.legislatormetrics,
+          motions: data.motions || [],
+          information_requests: data.information_requests || [],
           person: {
             ...data.person,
             backgrounds: data.person.background,

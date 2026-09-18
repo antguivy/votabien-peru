@@ -10,6 +10,7 @@ import { BackgroundBase } from "@/interfaces/background";
 import { BiographyDetail } from "@/interfaces/person";
 import { Prisma } from "@/prisma/generated/client";
 import { revalidatePersonEcosystem } from "@/lib/cache-revalidate";
+import { resolveBatchResearchContexts } from "@/lib/research-context";
 
 /**
  * Encola la investigación batch de un conjunto de personas en el servicio Python.
@@ -46,59 +47,42 @@ export async function queueBatchResearch(
       }
     }
 
-    const persons = await prisma.person.findMany({
-      where: { id: { in: personIds } },
-      select: {
-        id: true,
-        fullname: true,
-        posturas: true,
-        background: {
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            title: true,
-            summary: true,
-            sanction: true,
-            publication_date: true,
-            source: true,
-            source_url: true,
-          },
-        },
-        candidate: {
-          where: { active: true },
-          select: {
-            type: true,
-            electoraldistrict: {
-              select: {
-                name: true,
-                parent: { select: { name: true } },
-              },
-            },
-            politicalparty: {
-              select: { name: true },
+    const [persons, contextsMap] = await Promise.all([
+      prisma.person.findMany({
+        where: { id: { in: personIds } },
+        select: {
+          id: true,
+          fullname: true,
+          posturas: true,
+          background: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+              title: true,
+              summary: true,
+              sanction: true,
+              publication_date: true,
+              source: true,
+              source_url: true,
             },
           },
-          orderBy: { created_at: "desc" as const },
-          take: 1,
         },
-      },
-    });
+      }),
+      resolveBatchResearchContexts(personIds),
+    ]);
 
     const candidates = persons.map((p) => {
-      const activeCand = p.candidate?.[0];
-      const districtName = activeCand?.electoraldistrict?.name ?? "";
-      const parentName = activeCand?.electoraldistrict?.parent?.name ?? "";
+      const ctx = contextsMap[p.id];
       return {
         person_id: p.id,
         fullname: p.fullname,
         existing_backgrounds: p.background,
         existing_posturas: p.posturas || [],
-        cargo: activeCand?.type ?? "",
-        jurisdiccion: parentName
-          ? `${districtName}, ${parentName}`
-          : districtName,
-        partido: activeCand?.politicalparty?.name ?? "",
+        cargo: ctx?.cargo ?? "",
+        jurisdiccion: ctx?.jurisdiccion ?? "",
+        partido: ctx?.partido ?? "",
+        press_sources: ctx?.press_sources ?? [],
       };
     });
 

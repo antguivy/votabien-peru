@@ -40,7 +40,74 @@ export interface LegislatorDetail extends LegislatorBase {
   parliamentary_memberships: ParliamentaryMembershipWithGroup[];
 }
 
+export interface LegislatorMetricsBasic {
+  legislator_id: string;
+  total_bills: number;
+  bills_presentado: number;
+  bills_en_comision: number;
+  bills_aprobado: number;
+  bills_rechazado: number;
+  bills_retirado_por_autor: number;
+  bills_en_proceso: number;
+  approval_rate: number | null;
+  total_sessions: number;
+  sessions_present: number;
+  sessions_absent: number;
+  sessions_justified: number;
+  sessions_license: number;
+  attendance_rate: number | null;
+  total_party_changes: number;
+  days_in_current_group: number | null;
+  is_defector: boolean;
+  total_legal_records: number;
+  penal_records: number;
+  ethical_records: number;
+  civil_records: number;
+  administrative_records: number;
+  total_motions: number;
+  motions_greeting: number;
+  motions_interpellation: number;
+  motions_censure: number;
+  total_information_requests: number;
+  last_updated: string | Date;
+}
+
+export interface MotionBasic {
+  id: string;
+  number: string;
+  chamber: ChamberType;
+  period?: string | null;
+  legislative_session?: string | null;
+  submission_date: string | Date;
+  motion_type: string;
+  is_greeting: boolean;
+  purpose?: string | null;
+  procedural_status?: string | null;
+  summary: string;
+  observations?: string | null;
+  document_url?: string | null;
+}
+
+export interface InformationRequestBasic {
+  id: string;
+  number: string;
+  chamber: ChamberType;
+  period?: string | null;
+  document_code?: string | null;
+  document_date?: string | Date | null;
+  summary: string;
+  target_entity: string;
+  target_position?: string | null;
+  target_person?: string | null;
+  reception_date?: string | Date | null;
+  due_date?: string | Date | null;
+  document_url?: string | null;
+}
+
 export interface LegislatorDetailWithPerson extends LegislatorDetail {
+  legislatormetrics?: LegislatorMetricsBasic | null;
+  motions?: MotionBasic[];
+  information_requests?: InformationRequestBasic[];
   person: PersonBase & {
     backgrounds: BackgroundBase[];
     facebook_url: string | null;

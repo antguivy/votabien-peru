@@ -723,3 +723,16 @@ body {
     opacity: 1;
   }
 }
+
+@keyframes flashHighlight {
+  0% {
+    background-color: oklch(0.88 0.12 85 / 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-highlight {
+  animation: flashHighlight 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}

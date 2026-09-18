@@ -12,6 +12,7 @@ import {
   getLegislatorConditionCounts,
 } from "./_lib/data";
 import { CreateLegislator } from "./_components/buttons";
+import { SyncLegislatorsDialog } from "./_components/sync-legislators-dialog";
 import { AdminLegislatorProvider } from "@/components/context/admin-legislator";
 import { getPartidosList } from "@/queries/public/parties";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
@@ -62,14 +63,11 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
         >
           {/* <FeatureFlagsProvider> */}
           <Suspense fallback={<Skeleton className="h-7 w-52" />}>
-            <div className="flex flex-row justify-between px-1">
-              {/* <DateRangePicker
-          triggerSize="sm"
-          triggerClassName="ml-auto w-56 sm:w-60"
-          align="end"
-          shallow={false}
-        /> */}
-              <CreateLegislator />
+            <div className="flex flex-row justify-between px-1 items-center">
+              <div className="flex items-center gap-2">
+                <CreateLegislator />
+                <SyncLegislatorsDialog />
+              </div>
             </div>
           </Suspense>
           <Suspense

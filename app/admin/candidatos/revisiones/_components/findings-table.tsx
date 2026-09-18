@@ -38,6 +38,7 @@ import {
   Gavel,
   Newspaper,
   Loader2,
+  ShieldAlert,
 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
@@ -54,6 +55,7 @@ import { normalizeFindingData } from "@/interfaces/research";
 import { FindingEditDialog } from "./finding-edit-dialog";
 import { FindingDiffDialog } from "./finding-diff-dialog";
 import { BulkActionsBar } from "./bulk-actions-bar";
+import { HomonimiaDialog } from "./homonimia-dialog";
 import { parseSourceUrls } from "@/lib/utils/url";
 
 export interface FindingDistrictHierarchy {
@@ -391,6 +393,7 @@ interface FindingsTableProps {
   };
   availableRegions: readonly string[];
   context?: FindingsContext;
+  isAdmin?: boolean;
 }
 
 export function FindingsTable({
@@ -400,11 +403,14 @@ export function FindingsTable({
   filters,
   availableRegions,
   context = "candidatos",
+  isAdmin = false,
 }: FindingsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isNavigating, startTransition] = React.useTransition();
+  const [isHomonimiaDialogOpen, setIsHomonimiaDialogOpen] =
+    React.useState(false);
 
   const [prevInitialFindings, setPrevInitialFindings] =
     React.useState(initialFindings);
@@ -1255,6 +1261,20 @@ export function FindingsTable({
                 </span>
               </div>
             )}
+
+          {/* Botón Auditar Homonimia */}
+          {(filters.tab || "PENDING_ALL").startsWith("PENDING") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsHomonimiaDialogOpen(true)}
+              className="h-9 sm:h-10 text-xs font-medium gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 active:scale-95 transition-transform shrink-0"
+            >
+              <ShieldAlert className="h-4 w-4" />
+              <span className="hidden sm:inline">Auditar Homonimia</span>
+              <span className="sm:hidden">Homonimia</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1920,8 +1940,21 @@ export function FindingsTable({
         selectedCount={selectedIds.size}
         onBulkApprove={handleBulkApprove}
         onBulkReject={handleBulkReject}
+        onBulkAuditHomonimia={() => setIsHomonimiaDialogOpen(true)}
         onClearSelection={() => setSelectedIds(new Set())}
         isProcessing={isBulkProcessing}
+      />
+
+      {/* Diálogo de Auditoría y Descarte de Homonimia */}
+      <HomonimiaDialog
+        open={isHomonimiaDialogOpen}
+        onOpenChange={setIsHomonimiaDialogOpen}
+        selectedFindingIds={Array.from(selectedIds)}
+        isAdmin={isAdmin}
+        onSuccess={() => {
+          setSelectedIds(new Set());
+          router.refresh();
+        }}
       />
     </div>
   );

@@ -47,6 +47,69 @@ model bill {
   @@index([period], map: "ix_bill_period")
 }
 
+model motion {
+  id                     String              @id @default(cuid()) @db.VarChar
+  number                 String              @unique @db.VarChar(50)
+  chamber                chambertype
+  period                 String?             @db.VarChar(50)
+  legislative_session    String?             @db.VarChar(150)
+  submission_date        DateTime            @db.Timestamptz(6)
+  motion_type            String              @db.VarChar(150)
+  is_greeting            Boolean             @default(false)
+  purpose                String?             @db.VarChar(255)
+  procedural_status      String?             @db.VarChar(200)
+  summary                String              @db.Text
+  observations           String?             @db.Text
+  coauthors_raw          String?             @db.Text
+  adherents_raw          String?             @db.Text
+  document_url           String?             @db.VarChar
+  legislator_id          String?             @db.VarChar
+  parliamentary_group_id String?             @db.VarChar
+  created_at             DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
+
+  legislator             legislator?         @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parliamentarygroup     parliamentarygroup? @relation(fields: [parliamentary_group_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([chamber, is_greeting])
+  @@index([legislator_id])
+  @@index([parliamentary_group_id])
+  @@index([period])
+  @@index([motion_type])
+  @@index([submission_date])
+}
+
+model information_request {
+  id                  String       @id @default(cuid()) @db.VarChar
+  number              String       @unique @db.VarChar(50)
+  chamber             chambertype
+  period              String?      @db.VarChar(50)
+  legislative_year    String?      @db.VarChar(20)
+  legislative_session String?      @db.VarChar(150)
+  document_code       String?      @db.VarChar(100)
+  document_date       DateTime?    @db.Date
+  origin              String?      @db.VarChar(100)
+  summary             String       @db.Text
+  target_entity       String       @db.VarChar(255)
+  target_position     String?      @db.VarChar(150)
+  target_person       String?      @db.VarChar(200)
+  reception_date      DateTime?    @db.Date
+  due_date            DateTime?    @db.Date
+  coauthors_raw       String?      @db.Text
+  document_url        String?      @db.VarChar
+  legislator_id       String?      @db.VarChar
+  created_at          DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+
+  legislator          legislator?  @relation(fields: [legislator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([legislator_id])
+  @@index([chamber])
+  @@index([period])
+  @@index([target_entity])
+  @@index([document_date])
+}
+
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model electoralprocess {
   id                  String                @id @db.VarChar
