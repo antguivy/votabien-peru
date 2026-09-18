@@ -13,6 +13,7 @@ import {
 } from "./_lib/data";
 import { CreateLegislator } from "./_components/buttons";
 import { SyncLegislatorsDialog } from "./_components/sync-legislators-dialog";
+import { RecalculateMetricsButton } from "./_components/recalculate-metrics-button";
 import { AdminLegislatorProvider } from "@/components/context/admin-legislator";
 import { getPartidosList } from "@/queries/public/parties";
 import { getParliamentaryGroups } from "@/queries/public/parliamentary-groups";
@@ -67,6 +68,7 @@ export default async function AdminLegislatorsPage(props: IndexPageProps) {
               <div className="flex items-center gap-2">
                 <CreateLegislator />
                 <SyncLegislatorsDialog />
+                <RecalculateMetricsButton />
               </div>
             </div>
           </Suspense>

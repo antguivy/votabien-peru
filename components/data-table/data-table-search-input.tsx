@@ -9,7 +9,11 @@ import { cn } from "@/lib/utils";
 interface DataTableSearchInputProps {
   placeholder?: string;
   className?: string;
+  inputClassName?: string;
   paramKey?: string;
+  value?: string;
+  onSearch?: (value: string) => void;
+  onClear?: () => void;
 }
 
 /**
@@ -19,7 +23,11 @@ interface DataTableSearchInputProps {
 export function DataTableSearchInput({
   placeholder = "Buscar...",
   className = "w-48 lg:w-72",
+  inputClassName,
   paramKey = "search",
+  value: controlledValue,
+  onSearch,
+  onClear,
 }: DataTableSearchInputProps) {
   const [query, setQuery] = useQueryState(
     paramKey,
@@ -30,25 +38,38 @@ export function DataTableSearchInput({
     parseAsInteger.withDefault(1).withOptions({ shallow: false }),
   );
 
-  const [prevQuery, setPrevQuery] = React.useState(query);
-  const [localValue, setLocalValue] = React.useState(query);
+  const activeValue =
+    onSearch && controlledValue !== undefined ? controlledValue : query;
 
-  // Sincronizar estado local si la URL cambia externamente (ej: reseteo de filtros)
-  if (query !== prevQuery) {
-    setPrevQuery(query);
-    setLocalValue(query);
+  const [prevActiveValue, setPrevActiveValue] = React.useState(activeValue);
+  const [localValue, setLocalValue] = React.useState(activeValue);
+
+  // Sincronizar estado local si la URL o el valor externo cambia (ej: reseteo de filtros)
+  if (activeValue !== prevActiveValue) {
+    setPrevActiveValue(activeValue);
+    setLocalValue(activeValue);
   }
 
   const handleTriggerSearch = () => {
     const trimmed = localValue.trim();
-    setQuery(trimmed || null);
-    setPage(1);
+    if (onSearch) {
+      onSearch(trimmed);
+    } else {
+      setQuery(trimmed || null);
+      setPage(1);
+    }
   };
 
   const handleClear = () => {
     setLocalValue("");
-    setQuery(null);
-    setPage(1);
+    if (onClear) {
+      onClear();
+    } else if (onSearch) {
+      onSearch("");
+    } else {
+      setQuery(null);
+      setPage(1);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -59,7 +80,7 @@ export function DataTableSearchInput({
   };
 
   const hasPendingChange =
-    localValue.trim() !== query.trim() && localValue.trim().length > 0;
+    localValue.trim() !== activeValue.trim() && localValue.trim().length > 0;
 
   return (
     <div className={cn("relative flex items-center", className)}>
@@ -70,7 +91,10 @@ export function DataTableSearchInput({
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        className="h-8 pl-8 pr-14 text-xs bg-background rounded-lg border border-input focus-visible:ring-1 focus-visible:ring-primary shadow-none"
+        className={cn(
+          "h-8 pl-8 pr-14 text-xs bg-background rounded-lg border border-input focus-visible:ring-1 focus-visible:ring-primary shadow-none",
+          inputClassName,
+        )}
       />
       <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
         {localValue && (

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { executeBatchRecalculateLegislatorMetrics } from "@/lib/services/legislator-metrics";
 
 /**
  * GET /api/webhooks/motions?period=2026-2031&chamber=DIPUTADOS
@@ -202,66 +203,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Recalcular métricas de mociones para legisladores afectados
-    for (const legislatorId of affectedLegislatorIds) {
+    // Recalcular métricas consolidadas de los legisladores afectados mediante la fuente única de verdad
+    if (affectedLegislatorIds.size > 0) {
       try {
-        const motions = await prisma.motion.findMany({
-          where: { legislator_id: legislatorId },
-          select: { motion_type: true, is_greeting: true },
-        });
-
-        const total_motions = motions.length;
-        const motions_greeting = motions.filter((m) => m.is_greeting).length;
-        const motions_interpellation = motions.filter((m) =>
-          m.motion_type.toLowerCase().includes("interpelaci"),
-        ).length;
-        const motions_censure = motions.filter((m) =>
-          m.motion_type.toLowerCase().includes("censura"),
-        ).length;
-
-        // Upsert en legislatormetrics para asegurar consistencia
-        await prisma.legislatormetrics.upsert({
-          where: { legislator_id: legislatorId },
-          create: {
-            legislator_id: legislatorId,
-            total_bills: 0,
-            bills_presentado: 0,
-            bills_en_comision: 0,
-            bills_aprobado: 0,
-            bills_rechazado: 0,
-            bills_retirado_por_autor: 0,
-            bills_en_proceso: 0,
-            total_sessions: 0,
-            sessions_present: 0,
-            sessions_absent: 0,
-            sessions_justified: 0,
-            sessions_license: 0,
-            attendance_rate: 0,
-            total_party_changes: 0,
-            is_defector: false,
-            total_legal_records: 0,
-            penal_records: 0,
-            ethical_records: 0,
-            civil_records: 0,
-            administrative_records: 0,
-            total_motions,
-            motions_greeting,
-            motions_interpellation,
-            motions_censure,
-            total_information_requests: 0,
-            last_updated: new Date(),
-          },
-          update: {
-            total_motions,
-            motions_greeting,
-            motions_interpellation,
-            motions_censure,
-            last_updated: new Date(),
-          },
+        await executeBatchRecalculateLegislatorMetrics({
+          legislatorIds: Array.from(affectedLegislatorIds),
         });
       } catch (metricsErr) {
         console.error(
-          `Error actualizando métricas de mociones para legislador ${legislatorId}:`,
+          "Error actualizando métricas consolidadas en webhook de motions:",
           metricsErr,
         );
       }

@@ -105,7 +105,7 @@ export default async function AdminInformationRequestsPage(
           <Card className="shadow-none border bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Métrica PUCP
+                Métrica
               </CardTitle>
               <FileCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             </CardHeader>

@@ -42,6 +42,16 @@ export async function createTrivia(data: TriviaFormValues) {
         ? fields.correct_answer_id
         : fields.political_party_id || null;
 
+    let targetGlobalIndex = BigInt(fields.global_index);
+    if (!fields.global_index || fields.global_index >= 900) {
+      const lastTrivia = await prisma.triviagame.findFirst({
+        where: { global_index: { lt: BigInt(900) } },
+        orderBy: { global_index: "desc" },
+        select: { global_index: true },
+      });
+      targetGlobalIndex = (lastTrivia?.global_index ?? BigInt(0)) + BigInt(1);
+    }
+
     const created = await prisma.triviagame.create({
       data: {
         topic_id: fields.topic_id || null,
@@ -51,7 +61,7 @@ export async function createTrivia(data: TriviaFormValues) {
         difficulty: fields.difficulty,
         display_type: fields.display_type,
         correct_answer_id: fields.correct_answer_id,
-        global_index: BigInt(fields.global_index),
+        global_index: targetGlobalIndex,
         explanation: fields.explanation || null,
         source_url: fields.source_url || null,
         secondary_sources:

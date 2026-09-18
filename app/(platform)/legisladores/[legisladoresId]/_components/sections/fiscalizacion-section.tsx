@@ -23,6 +23,7 @@ export function FiscalizacionSection({
 }: FiscalizacionSectionProps) {
   const [filter, setFilter] = useState<MotionFilter>("all");
   const [showAllMotions, setShowAllMotions] = useState(false);
+  const [showAllRequests, setShowAllRequests] = useState(false);
 
   const filteredMotions = useMemo(() => {
     if (filter === "oversight") {
@@ -37,6 +38,8 @@ export function FiscalizacionSection({
   const displayedMotions = showAllMotions
     ? filteredMotions
     : filteredMotions.slice(0, 5);
+
+  const displayedRequests = showAllRequests ? requests : requests.slice(0, 5);
 
   return (
     <section id="sec-fiscalizacion" className="py-10 scroll-mt-28">
@@ -53,8 +56,7 @@ export function FiscalizacionSection({
       </header>
 
       <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-3xl">
-        Clasificación metodológica del <strong>Observatorio PUCP</strong>:
-        distingue entre mociones que ejercen control gubernamental directo
+        Se distingue entre mociones que ejercen control gubernamental directo
         frente a declaraciones protocolares de saludo, midiendo el ejercicio
         real de fiscalización parlamentaria.
       </p>
@@ -173,7 +175,7 @@ export function FiscalizacionSection({
 
                   {motion.purpose && motion.summary !== motion.purpose && (
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Propósito PUCP: {motion.purpose}
+                      Propósito: {motion.purpose}
                     </p>
                   )}
 
@@ -234,42 +236,58 @@ export function FiscalizacionSection({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {requests.map((req) => (
-              <div
-                key={req.id || req.number}
-                className="p-3.5 rounded-xl border border-border/80 bg-card space-y-1.5 shadow-2xs"
-              >
-                <div className="flex items-baseline justify-between gap-2 text-xs font-mono">
-                  <span className="font-bold text-foreground break-words flex-1 min-w-0">
-                    {req.target_entity}
-                  </span>
-                  <span className="text-muted-foreground text-[11px] shrink-0">
-                    {req.document_date
-                      ? formatFechaJsonable(req.document_date as string)
-                      : "—"}
-                  </span>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {displayedRequests.map((req) => (
+                <div
+                  key={req.id || req.number}
+                  className="p-3.5 rounded-xl border border-border/80 bg-card space-y-1.5 shadow-2xs"
+                >
+                  <div className="flex items-baseline justify-between gap-2 text-xs font-mono">
+                    <span className="font-bold text-foreground break-words flex-1 min-w-0">
+                      {req.target_entity}
+                    </span>
+                    <span className="text-muted-foreground text-[11px] shrink-0">
+                      {req.document_date
+                        ? formatFechaJsonable(req.document_date as string)
+                        : "—"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground/90 line-clamp-2">
+                    {req.summary}
+                  </p>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/40">
+                    <span>Oficio {req.number || req.document_code}</span>
+                    {req.document_url && (
+                      <a
+                        href={req.document_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        <span>Ver Oficio</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-foreground/90 line-clamp-2">
-                  {req.summary}
-                </p>
-                <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground pt-1 border-t border-border/40">
-                  <span>Oficio {req.number || req.document_code}</span>
-                  {req.document_url && (
-                    <a
-                      href={req.document_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Ver Oficio</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  )}
-                </div>
+              ))}
+            </div>
+
+            {requests.length > 5 && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllRequests(!showAllRequests)}
+                  className="px-4 py-2 rounded-xl bg-card hover:bg-muted border border-border text-xs font-mono font-bold transition-colors shadow-2xs"
+                >
+                  {showAllRequests
+                    ? "Mostrar menos pedidos"
+                    : `Ver los ${requests.length} pedidos registrados`}
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </section>

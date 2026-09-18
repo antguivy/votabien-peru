@@ -40,18 +40,21 @@ export function LegislatorScorecard({
       : 0);
 
   // 3. Asistencia
+  const totalSessions = metrics?.total_sessions ?? attendances.length;
   const attendanceRate =
-    metrics?.attendance_rate ??
-    (attendances.length > 0
-      ? Number(
-          (
-            (attendances.filter((a) => a.attendance_status === "ASISTENCIA")
-              .length /
-              attendances.length) *
-            100
-          ).toFixed(1),
-        )
-      : null);
+    totalSessions > 0
+      ? (metrics?.attendance_rate ??
+        (attendances.length > 0
+          ? Number(
+              (
+                (attendances.filter((a) => a.attendance_status === "ASISTENCIA")
+                  .length /
+                  attendances.length) *
+                100
+              ).toFixed(1),
+            )
+          : null))
+      : null;
   const ethicalRecords = metrics?.ethical_records ?? 0;
 
   // 4. Transfuguismo
@@ -68,7 +71,7 @@ export function LegislatorScorecard({
     verdictSummary = `Mantiene lealtad a su bancada de origen con ${
       attendanceRate !== null
         ? `${attendanceRate}% de asistencia a Pleno`
-        : "asistencia regular"
+        : "asistencia en curso (sin sesiones registradas)"
     } y ${oversightPct}% de mociones con vocación fiscalizadora.`;
   }
 
@@ -179,32 +182,47 @@ export function LegislatorScorecard({
               <span
                 className={cn(
                   "w-1.5 h-1.5 rounded-full shrink-0",
-                  (attendanceRate ?? 100) >= 80
-                    ? "bg-emerald-600"
-                    : "bg-amber-500",
+                  attendanceRate === null
+                    ? "bg-muted-foreground/40"
+                    : attendanceRate >= 80
+                      ? "bg-emerald-600"
+                      : "bg-amber-500",
                 )}
               />
               <span>03 · Asistencia</span>
             </div>
-            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <div
+              className={cn(
+                "mt-1 text-2xl sm:text-3xl font-black tracking-tight tabular-nums",
+                attendanceRate === null
+                  ? "text-muted-foreground"
+                  : attendanceRate >= 80
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-amber-600 dark:text-amber-400",
+              )}
+            >
               {attendanceRate !== null ? `${attendanceRate}%` : "—"}
             </div>
           </div>
           <div className="pt-2">
             <p className="text-[11px] text-muted-foreground leading-tight">
-              {ethicalRecords === 0
-                ? "Sin sanciones éticas"
-                : `${ethicalRecords} sanciones`}
+              {attendanceRate === null
+                ? "Sin sesiones registradas"
+                : ethicalRecords === 0
+                  ? "Sin sanciones éticas"
+                  : `${ethicalRecords} sanciones`}
             </p>
             <div className="flex gap-1 pt-1.5">
               <span
                 className={cn(
                   "h-1 rounded-full transition-all",
-                  (attendanceRate ?? 100) >= 80
-                    ? "bg-emerald-600"
-                    : "bg-amber-500",
+                  attendanceRate === null
+                    ? "bg-muted-foreground/20"
+                    : attendanceRate >= 80
+                      ? "bg-emerald-600"
+                      : "bg-amber-500",
                 )}
-                style={{ width: `${attendanceRate ?? 100}%` }}
+                style={{ width: `${attendanceRate ?? 0}%` }}
               />
               <span className="h-1 flex-1 bg-muted-foreground/20 rounded-full" />
             </div>
