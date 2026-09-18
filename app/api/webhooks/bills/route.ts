@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { createId } from "@paralleldrive/cuid2";
+import { executeBatchRecalculateLegislatorMetrics } from "@/lib/services/legislator-metrics";
 
 /**
  * GET /api/webhooks/bills?period=2026-2031
@@ -199,81 +200,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Recalcular métricas para los legisladores afectados
-    for (const legislatorId of affectedLegislatorIds) {
+    // Recalcular métricas consolidadas de los legisladores afectados mediante la fuente única de verdad
+    if (affectedLegislatorIds.size > 0) {
       try {
-        const bills = await prisma.bill.findMany({
-          where: { legislator_id: legislatorId },
-          select: { approval_status: true },
-        });
-
-        const total_bills = bills.length;
-        const bills_presentado = bills.filter(
-          (b) => b.approval_status === "PRESENTADO",
-        ).length;
-        const bills_en_comision = bills.filter(
-          (b) => b.approval_status === "EN_COMISION",
-        ).length;
-        const bills_aprobado = bills.filter((b) =>
-          [
-            "APROBADO",
-            "PUBLICADO",
-            "AUTOGRAFA",
-            "APROBADO_PRIMERA_VOTACION",
-          ].includes(b.approval_status),
-        ).length;
-        const bills_rechazado = bills.filter((b) =>
-          ["AL_ARCHIVO", "DECRETO_ARCHIVO"].includes(b.approval_status),
-        ).length;
-        const bills_retirado_por_autor = bills.filter(
-          (b) => b.approval_status === "RETIRADO_POR_AUTOR",
-        ).length;
-        const bills_en_proceso =
-          total_bills -
-          bills_aprobado -
-          bills_rechazado -
-          bills_retirado_por_autor;
-
-        await prisma.legislatormetrics.upsert({
-          where: { legislator_id: legislatorId },
-          create: {
-            legislator_id: legislatorId,
-            total_bills,
-            bills_presentado,
-            bills_en_comision,
-            bills_aprobado,
-            bills_rechazado,
-            bills_retirado_por_autor,
-            bills_en_proceso: bills_en_proceso > 0 ? bills_en_proceso : 0,
-            total_sessions: 0,
-            sessions_present: 0,
-            sessions_absent: 0,
-            sessions_justified: 0,
-            sessions_license: 0,
-            attendance_rate: 0,
-            total_party_changes: 0,
-            is_defector: false,
-            total_legal_records: 0,
-            penal_records: 0,
-            ethical_records: 0,
-            civil_records: 0,
-            administrative_records: 0,
-            last_updated: new Date(),
-          },
-          update: {
-            total_bills,
-            bills_presentado,
-            bills_en_comision,
-            bills_aprobado,
-            bills_rechazado,
-            bills_retirado_por_autor,
-            bills_en_proceso: bills_en_proceso > 0 ? bills_en_proceso : 0,
-            last_updated: new Date(),
-          },
+        await executeBatchRecalculateLegislatorMetrics({
+          legislatorIds: Array.from(affectedLegislatorIds),
         });
       } catch (metricsErr) {
         console.error(
-          `Error actualizando métricas para legislador ${legislatorId}:`,
+          "Error actualizando métricas consolidadas en webhook de bills:",
           metricsErr,
         );
       }

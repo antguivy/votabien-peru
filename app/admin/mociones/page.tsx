@@ -78,7 +78,7 @@ export default async function AdminMotionsPage(props: MotionsPageProps) {
                 {stats.greetings.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Aisladas de la productividad sustantiva (PUCP)
+                Aisladas de la productividad sustantiva
               </p>
             </CardContent>
           </Card>

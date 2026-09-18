@@ -2,15 +2,16 @@ model ai_workflow {
   id             String   @id @default(cuid())
   name           String   @db.VarChar(100)
   description    String?  @db.VarChar(255)
+  type           String   @default("CANDIDATE_RESEARCH") @db.VarChar(50) // "CANDIDATE_RESEARCH" | "TRIVIA_EJE5"
   
   // Phase 1: Discovery
   sources        String[] // Ej: ["web_news", "youtube"]
   
-  // Phase 2: Compression
+  // Phase 2: Compression / Triage & Search Grounding
   compressor_prompt String @db.Text
   compressor_model  String @default("gemini-2.5-flash")
   
-  // Phase 3: Validation
+  // Phase 3: Validation / Redactor Notarial
   validator_prompt  String @db.Text
   validator_model   String @default("gemini-2.5-flash")
 
@@ -19,4 +20,5 @@ model ai_workflow {
   updated_at     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
   @@index([status])
+  @@index([type])
 }

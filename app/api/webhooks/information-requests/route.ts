@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { executeBatchRecalculateLegislatorMetrics } from "@/lib/services/legislator-metrics";
 
 /**
  * GET /api/webhooks/information-requests?period=2026-2031&chamber=DIPUTADOS
@@ -202,52 +203,15 @@ export async function POST(request: Request) {
       }
     }
 
-    // Recalcular total_information_requests para legisladores afectados
-    for (const legislatorId of affectedLegislatorIds) {
+    // Recalcular métricas consolidadas de los legisladores afectados mediante la fuente única de verdad
+    if (affectedLegislatorIds.size > 0) {
       try {
-        const total_requests = await prisma.information_request.count({
-          where: { legislator_id: legislatorId },
-        });
-
-        await prisma.legislatormetrics.upsert({
-          where: { legislator_id: legislatorId },
-          create: {
-            legislator_id: legislatorId,
-            total_bills: 0,
-            bills_presentado: 0,
-            bills_en_comision: 0,
-            bills_aprobado: 0,
-            bills_rechazado: 0,
-            bills_retirado_por_autor: 0,
-            bills_en_proceso: 0,
-            total_sessions: 0,
-            sessions_present: 0,
-            sessions_absent: 0,
-            sessions_justified: 0,
-            sessions_license: 0,
-            attendance_rate: 0,
-            total_party_changes: 0,
-            is_defector: false,
-            total_legal_records: 0,
-            penal_records: 0,
-            ethical_records: 0,
-            civil_records: 0,
-            administrative_records: 0,
-            total_motions: 0,
-            motions_greeting: 0,
-            motions_interpellation: 0,
-            motions_censure: 0,
-            total_information_requests: total_requests,
-            last_updated: new Date(),
-          },
-          update: {
-            total_information_requests: total_requests,
-            last_updated: new Date(),
-          },
+        await executeBatchRecalculateLegislatorMetrics({
+          legislatorIds: Array.from(affectedLegislatorIds),
         });
       } catch (metricErr) {
         console.error(
-          `Error actualizando métricas de pedidos para legislador ${legislatorId}:`,
+          "Error actualizando métricas consolidadas en webhook de information-requests:",
           metricErr,
         );
       }

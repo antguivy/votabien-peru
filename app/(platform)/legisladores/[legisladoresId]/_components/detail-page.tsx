@@ -110,7 +110,7 @@ export default function DetailLegislador({
       {/* ── 1. Hero Asimétrico Editorial ── */}
       <LegislatorHero legislador={legislador} />
 
-      {/* ── 2. Veredicto Cívico PUCP (Above the Fold) ── */}
+      {/* ── 2. Veredicto Cívico (Above the Fold) ── */}
       <LegislatorScorecard legislador={legislador} onJump={scrollToSection} />
 
       {/* ── 3. Índice Fijo con Scrollspy (Sticky top-0 lg:top-[72px]) ── */}

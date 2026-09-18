@@ -31,6 +31,7 @@ import type { AIWorkflow } from "@/interfaces/workflow";
 const workflowSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
   description: z.string(),
+  type: z.string(),
   sources: z.array(z.string()),
   compressor_prompt: z.string(),
   compressor_model: z.string().min(1),
@@ -43,13 +44,22 @@ type WorkflowFormValues = z.infer<typeof workflowSchema>;
 
 const AVAILABLE_TOOLS = [
   { id: "search_web", label: "Búsqueda Web (Noticias/DDG)" },
-  { id: "search_youtube", label: "Búsqueda en YouTube (Posturas)" },
+  { id: "search_grounding", label: "Google Search Grounding (Noticias/Leyes)" },
+  { id: "search_youtube", label: "Búsqueda en YouTube (Posturas/Debates)" },
+  { id: "contraloria", label: "Informes de Contraloría General" },
+  { id: "seace", label: "Licitaciones SEACE (OSCE)" },
+  { id: "mef", label: "Consulta Amigable MEF (Presupuesto)" },
   { id: "search_jne", label: "Consulta JNE (Voto Informado)" },
   { id: "analyze_pdf", label: "Análisis de Sentencias (PDF)" },
   { id: "db_query", label: "Consulta a Base de Datos (Prisma)" },
 ];
 
 const COMPRESSOR_MODELS = [
+  {
+    value: "gemini-2.5-flash",
+    label: "Gemini 2.5 Flash (Search Grounding nativo)",
+    group: "Google AI Studio",
+  },
   {
     value: "gemini-3.5-flash-lite",
     label: "Gemini 3.5 Flash Lite (500 RPD - Recomendado)",
@@ -68,6 +78,16 @@ const COMPRESSOR_MODELS = [
 ];
 
 const VALIDATOR_MODELS = [
+  {
+    value: "deepseek-reasoner",
+    label: "DeepSeek Reasoner (R1 - Thinking Activo / Alta Deducción)",
+    group: "DeepSeek API",
+  },
+  {
+    value: "deepseek-chat",
+    label: "DeepSeek Chat (V3 - Ultrarrápido / Redacción de Trivia)",
+    group: "DeepSeek API",
+  },
   {
     value: "gemini-3.6-flash",
     label: "Gemini 3.6 Flash (20 RPD - Recomendado)",
@@ -119,6 +139,7 @@ export function WorkflowFormDialog({
     defaultValues: {
       name: "",
       description: "",
+      type: "CANDIDATE_RESEARCH",
       sources: ["search_web"],
       compressor_prompt: "",
       compressor_model: "gemini-3.5-flash-lite",
@@ -134,6 +155,7 @@ export function WorkflowFormDialog({
         reset({
           name: workflow.name,
           description: workflow.description || "",
+          type: workflow.type || "CANDIDATE_RESEARCH",
           sources: workflow.sources || ["search_web"],
           compressor_prompt: workflow.compressor_prompt || "",
           compressor_model:
@@ -146,6 +168,7 @@ export function WorkflowFormDialog({
         reset({
           name: "",
           description: "",
+          type: "CANDIDATE_RESEARCH",
           sources: ["search_web"],
           compressor_prompt: "",
           compressor_model: "gemini-3.5-flash-lite",
@@ -186,7 +209,7 @@ export function WorkflowFormDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Nombre del Workflow</Label>
               <Input
@@ -196,6 +219,31 @@ export function WorkflowFormDialog({
               {errors.name && (
                 <p className="text-red-500 text-xs">{errors.name.message}</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label>Módulo / Tipo</Label>
+              <Controller
+                name="type"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || "CANDIDATE_RESEARCH"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CANDIDATE_RESEARCH">
+                        Candidatos (Research)
+                      </SelectItem>
+                      <SelectItem value="TRIVIA_EJE5">
+                        Trivia Eje 5 (Debates)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>

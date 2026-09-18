@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import type { DataTableFilterField } from "@/lib/types";
-import type { Table } from "@tanstack/react-table";
+import type { Table, Column } from "@tanstack/react-table";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { DataTableViewOptions } from "./data-table-view-options";
+import { DataTableSearchInput } from "./data-table-search-input";
 
 interface DataTableToolbarProps<TData>
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -38,6 +38,25 @@ interface DataTableToolbarProps<TData>
    */
   filterFields?: DataTableFilterField<TData>[];
   customFilters?: React.ReactNode;
+}
+
+function DataTableToolbarSearchInput<TData>({
+  column,
+  placeholder,
+}: {
+  column: Column<TData, unknown>;
+  placeholder?: string;
+}) {
+  const filterValue = (column.getFilterValue() as string) ?? "";
+  return (
+    <DataTableSearchInput
+      placeholder={placeholder}
+      className="w-40 lg:w-64"
+      value={filterValue}
+      onSearch={(val) => column.setFilterValue(val || undefined)}
+      onClear={() => column.setFilterValue(undefined)}
+    />
+  );
 }
 
 export function DataTableToolbar<TData>({
@@ -71,20 +90,10 @@ export function DataTableToolbar<TData>({
           searchableColumns.map(
             (column) =>
               table.getColumn(column.id ? String(column.id) : "") && (
-                <Input
+                <DataTableToolbarSearchInput
                   key={String(column.id)}
+                  column={table.getColumn(String(column.id))!}
                   placeholder={column.placeholder}
-                  value={
-                    (table
-                      .getColumn(String(column.id))
-                      ?.getFilterValue() as string) ?? ""
-                  }
-                  onChange={(event) =>
-                    table
-                      .getColumn(String(column.id))
-                      ?.setFilterValue(event.target.value)
-                  }
-                  className="h-8 w-40 lg:w-64"
                 />
               ),
           )}

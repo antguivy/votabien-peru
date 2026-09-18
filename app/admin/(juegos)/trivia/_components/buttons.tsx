@@ -98,3 +98,17 @@ export function GuideLinkButton() {
     </Button>
   );
 }
+
+export function AssistantTriviaButton() {
+  return (
+    <Button
+      size="sm"
+      asChild
+      className="w-full sm:w-auto font-bold text-xs h-9 px-3.5 bg-brand hover:bg-brand/90 text-white shadow-xs transition-all active:scale-[0.98]"
+    >
+      <Link href="/admin/trivia/asistente">
+        <span className="truncate">Copiloto IA</span>
+      </Link>
+    </Button>
+  );
+}

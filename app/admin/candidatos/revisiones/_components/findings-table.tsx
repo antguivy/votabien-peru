@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,7 +27,6 @@ import {
   ExternalLink,
   Edit,
   GitCompare,
-  Search,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -41,7 +39,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { DataTableSearchInput } from "@/components/data-table/data-table-search-input";
 import { RevisionesCounts, ROOT_DISTRICT_TO_REGION } from "../_lib/constants";
 import { toast } from "sonner";
 import {
@@ -443,14 +441,6 @@ export function FindingsTable({
     return mapped;
   }, [initialFindings, optimisticOverrides, filters.tab]);
 
-  const [prevQ, setPrevQ] = React.useState(filters.q || "");
-  const [searchQuery, setSearchQuery] = React.useState(filters.q || "");
-
-  if ((filters.q || "") !== prevQ) {
-    setPrevQ(filters.q || "");
-    setSearchQuery(filters.q || "");
-  }
-
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
   // Actualización fluida de parámetros en la URL con startTransition
@@ -479,16 +469,6 @@ export function FindingsTable({
     },
     [searchParams, pathname, router],
   );
-
-  const debouncedSearch = useDebouncedCallback((val: string) => {
-    updateFilters({ q: val || null, page: 1 });
-  }, 350);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setSearchQuery(val);
-    debouncedSearch(val);
-  };
 
   const handleTabChange = (val: string) => {
     setSelectedIds(new Set());
@@ -1152,96 +1132,141 @@ export function FindingsTable({
       </Tabs>
 
       {/* Barra de Filtros y Búsqueda Elástica */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 sm:p-4 rounded-xl border border-border min-w-0">
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder={
-              context === "legisladores"
-                ? "Buscar legislador, DNI o título..."
-                : "Buscar candidato, DNI o título..."
-            }
-            className="pl-9 text-xs sm:text-sm w-full h-9 sm:h-10"
-          />
+      <div className="bg-card p-3 sm:p-4 rounded-xl border border-border space-y-3 min-w-0 shadow-xs">
+        {/* Fila 1: Búsqueda elástica + Acción de Auditoría */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="flex-1 min-w-0">
+            <DataTableSearchInput
+              paramKey="q"
+              value={filters.q || ""}
+              onSearch={(val) => updateFilters({ q: val || null, page: 1 })}
+              onClear={() => updateFilters({ q: null, page: 1 })}
+              placeholder={
+                context === "legisladores"
+                  ? "Buscar legislador, DNI o título..."
+                  : "Buscar candidato, DNI o título..."
+              }
+              className="w-full"
+              inputClassName="h-9 sm:h-10 text-xs sm:text-sm pl-9"
+            />
+          </div>
+
+          {(filters.tab || "PENDING_ALL").startsWith("PENDING") && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsHomonimiaDialogOpen(true)}
+              className="h-9 sm:h-10 text-xs font-medium gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 active:scale-95 transition-transform shrink-0"
+            >
+              <ShieldAlert className="h-4 w-4" />
+              <span>Auditar Homonimia</span>
+            </Button>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 sm:flex items-center gap-2 sm:gap-2.5 flex-wrap">
-          {/* Filtro Cargo / Cámara */}
-          <Select
-            value={filters.cargo || "ALL"}
-            onValueChange={handleCargoChange}
-          >
-            <SelectTrigger className="w-full sm:w-[170px] text-xs h-9 sm:h-10">
-              <SelectValue
-                placeholder={context === "legisladores" ? "Cámara" : "Cargo"}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">
-                {context === "legisladores"
-                  ? "Todas las cámaras"
-                  : "Todos los cargos"}
-              </SelectItem>
-              {context === "legisladores" ? (
-                <>
-                  <SelectItem value="SENADO">Senadores</SelectItem>
-                  <SelectItem value="DIPUTADOS">Diputados</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="GOBERNADOR">
-                    Gobernadores Regionales
-                  </SelectItem>
-                  <SelectItem value="ALCALDE_PROV">
-                    Alcaldes Provinciales
-                  </SelectItem>
-                  <SelectItem value="ALCALDE_DIST">
-                    Alcaldes Distritales
-                  </SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
-
-          {/* Filtro Región */}
-          <Select
-            value={filters.region || "ALL"}
-            onValueChange={handleRegionChange}
-          >
-            <SelectTrigger className="w-full sm:w-[165px] text-xs h-9 sm:h-10">
-              <SelectValue placeholder="Regiones" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              <SelectItem value="ALL">Todas las regiones</SelectItem>
-              {availableRegions.map((r) => (
-                <SelectItem key={r} value={r}>
-                  {r}
+        {/* Fila 2: Filtros desplegables + Selección de visibles */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-3 border-t border-border/60">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap flex-1 min-w-0">
+            {/* Filtro Cargo / Cámara */}
+            <Select
+              value={filters.cargo || "ALL"}
+              onValueChange={handleCargoChange}
+            >
+              <SelectTrigger className="w-full sm:w-[170px] text-xs h-9">
+                <SelectValue
+                  placeholder={context === "legisladores" ? "Cámara" : "Cargo"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">
+                  {context === "legisladores"
+                    ? "Todas las cámaras"
+                    : "Todos los cargos"}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {context === "legisladores" ? (
+                  <>
+                    <SelectItem value="SENADO">Senadores</SelectItem>
+                    <SelectItem value="DIPUTADOS">Diputados</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="GOBERNADOR">
+                      Gobernadores Regionales
+                    </SelectItem>
+                    <SelectItem value="ALCALDE_PROV">
+                      Alcaldes Provinciales
+                    </SelectItem>
+                    <SelectItem value="ALCALDE_DIST">
+                      Alcaldes Distritales
+                    </SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
 
-          {/* Filtro Acción */}
-          <Select
-            value={filters.action || "ALL"}
-            onValueChange={handleActionChange}
-          >
-            <SelectTrigger className="w-full sm:w-[140px] text-xs h-9 sm:h-10">
-              <SelectValue placeholder="Acciones" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Todas las acciones</SelectItem>
-              <SelectItem value="INSERT">Nuevos (INSERT)</SelectItem>
-              <SelectItem value="UPDATE">Actualizaciones (UPDATE)</SelectItem>
-            </SelectContent>
-          </Select>
+            {/* Filtro Región */}
+            <Select
+              value={filters.region || "ALL"}
+              onValueChange={handleRegionChange}
+            >
+              <SelectTrigger className="w-full sm:w-[170px] text-xs h-9">
+                <SelectValue placeholder="Regiones" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="ALL">Todas las regiones</SelectItem>
+                {availableRegions.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Filtro Acción */}
+            <Select
+              value={filters.action || "ALL"}
+              onValueChange={handleActionChange}
+            >
+              <SelectTrigger className="w-full sm:w-[160px] text-xs h-9">
+                <SelectValue placeholder="Acciones" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas las acciones</SelectItem>
+                <SelectItem value="INSERT">Nuevos (INSERT)</SelectItem>
+                <SelectItem value="UPDATE">Actualizaciones (UPDATE)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Botón rápido para limpiar filtros si alguno está activo */}
+            {(filters.region !== "ALL" ||
+              filters.cargo !== "ALL" ||
+              filters.action !== "ALL" ||
+              Boolean(filters.q)) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  updateFilters({
+                    region: "ALL",
+                    cargo: "ALL",
+                    action: "ALL",
+                    q: "",
+                    page: 1,
+                  })
+                }
+                className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive gap-1 shrink-0"
+                title="Restablecer filtros"
+              >
+                <X className="h-3 w-3" />
+                <span>Limpiar</span>
+              </Button>
+            )}
+          </div>
 
           {/* Seleccionar Visibles de la Página Actual */}
           {(filters.tab || "PENDING_ALL").startsWith("PENDING") &&
             visiblePendingOnPage.length > 0 && (
-              <div className="col-span-2 sm:col-span-1 flex items-center justify-between sm:justify-start gap-2 py-1 sm:py-0 px-2 sm:pl-2 sm:border-l border-border shrink-0 bg-muted/40 sm:bg-transparent rounded-lg sm:rounded-none">
+              <div className="flex items-center justify-between sm:justify-end gap-2 py-1.5 md:py-0 px-2.5 md:px-0 bg-muted/40 md:bg-transparent rounded-lg shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="select-all"
@@ -1261,20 +1286,6 @@ export function FindingsTable({
                 </span>
               </div>
             )}
-
-          {/* Botón Auditar Homonimia */}
-          {(filters.tab || "PENDING_ALL").startsWith("PENDING") && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsHomonimiaDialogOpen(true)}
-              className="h-9 sm:h-10 text-xs font-medium gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 active:scale-95 transition-transform shrink-0"
-            >
-              <ShieldAlert className="h-4 w-4" />
-              <span className="hidden sm:inline">Auditar Homonimia</span>
-              <span className="sm:hidden">Homonimia</span>
-            </Button>
-          )}
         </div>
       </div>
 
@@ -1298,7 +1309,6 @@ export function FindingsTable({
               variant="outline"
               size="sm"
               onClick={() => {
-                setSearchQuery("");
                 updateFilters({
                   region: "ALL",
                   cargo: "ALL",

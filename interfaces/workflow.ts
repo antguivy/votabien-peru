@@ -2,6 +2,7 @@ export interface AIWorkflow {
   id: string;
   name: string;
   description: string | null;
+  type?: string;
   sources: string[];
   compressor_prompt: string;
   compressor_model: string;

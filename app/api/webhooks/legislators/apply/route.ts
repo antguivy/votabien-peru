@@ -4,6 +4,7 @@ import { createId } from "@paralleldrive/cuid2";
 import prisma from "@/lib/prisma";
 import { TAGS } from "@/lib/cache-tags";
 import { legislatorcondition } from "@/prisma/generated/client";
+import { executeBatchRecalculateLegislatorMetrics } from "@/lib/services/legislator-metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -105,45 +106,6 @@ export async function POST(request: Request) {
           },
         });
 
-        // Actualizar métricas del legislador (transfuguismo)
-        await tx.legislatormetrics.upsert({
-          where: { legislator_id },
-          create: {
-            legislator_id,
-            total_bills: 0,
-            bills_presentado: 0,
-            bills_en_comision: 0,
-            bills_aprobado: 0,
-            bills_rechazado: 0,
-            bills_retirado_por_autor: 0,
-            bills_en_proceso: 0,
-            total_sessions: 0,
-            sessions_present: 0,
-            sessions_absent: 0,
-            sessions_justified: 0,
-            sessions_license: 0,
-            attendance_rate: 0,
-            total_party_changes: 1,
-            is_defector: true,
-            total_legal_records: 0,
-            penal_records: 0,
-            ethical_records: 0,
-            civil_records: 0,
-            administrative_records: 0,
-            total_motions: 0,
-            motions_greeting: 0,
-            motions_interpellation: 0,
-            motions_censure: 0,
-            total_information_requests: 0,
-            last_updated: new Date(),
-          },
-          update: {
-            total_party_changes: { increment: 1 },
-            is_defector: true,
-            last_updated: new Date(),
-          },
-        });
-
         results.applied_group_changes++;
       }
 
@@ -196,6 +158,28 @@ export async function POST(request: Request) {
         results.applied_metadata_updates++;
       }
     });
+
+    // Recalcular métricas consolidadas (incluyendo transfuguismo real) para los legisladores que cambiaron de bancada
+    const changedLegislatorIds: string[] = Array.from(
+      new Set(
+        (group_changes || [])
+          .map((c: { legislator_id: string }) => c.legislator_id)
+          .filter(Boolean),
+      ),
+    );
+
+    if (changedLegislatorIds.length > 0) {
+      try {
+        await executeBatchRecalculateLegislatorMetrics({
+          legislatorIds: changedLegislatorIds,
+        });
+      } catch (metricsErr) {
+        console.error(
+          "Error recalculando métricas consolidadas en webhook de apply:",
+          metricsErr,
+        );
+      }
+    }
 
     // Invalida cache público
     try {

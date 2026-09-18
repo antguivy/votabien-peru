@@ -4,6 +4,7 @@ import {
   CreateTriviaButton,
   BulkImportButton,
   GuideLinkButton,
+  AssistantTriviaButton,
 } from "./_components/buttons";
 import { TriviaList } from "./_components/trivia-list";
 import { TopicManagement } from "./_components/topic-management";
@@ -113,6 +114,7 @@ export default async function TriviaPage() {
 
             <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
               <GuideLinkButton />
+              <AssistantTriviaButton />
               <div className="flex-1 sm:flex-initial">
                 <BulkImportButton topics={topics} audiences={audiences} />
               </div>

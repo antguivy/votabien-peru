@@ -718,3 +718,38 @@ export async function syncLegislatorsWithCongreso(
     };
   }
 }
+
+import {
+  executeBatchRecalculateLegislatorMetrics,
+  RecalculateMetricsOptions,
+} from "@/lib/services/legislator-metrics";
+
+/**
+ * Server Action para recalcular métricas de legisladores desde el panel administrativo.
+ * Requiere rol de editor y revalida la caché del ecosistema de legisladores.
+ */
+export async function recalculateAllLegislatorMetrics(
+  options?: RecalculateMetricsOptions,
+) {
+  await serverRequireEditor();
+
+  try {
+    const result = await executeBatchRecalculateLegislatorMetrics(options);
+
+    revalidateTag(TAGS.legislators, "max");
+    revalidatePath("/admin/legisladores");
+    revalidatePath("/legisladores");
+
+    return result;
+  } catch (error) {
+    console.error("Error en recalculateAllLegislatorMetrics:", error);
+    return {
+      success: false as const,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al recalcular métricas.",
+      count: 0,
+    };
+  }
+}

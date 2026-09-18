@@ -22,6 +22,25 @@ export function getColumns({
       cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
     },
     {
+      accessorKey: "type",
+      header: "Módulo",
+      cell: ({ row }) => {
+        const isTrivia = row.original.type === "TRIVIA_EJE5";
+        return (
+          <Badge
+            variant="outline"
+            className={
+              isTrivia
+                ? "bg-rose-500/10 text-rose-500 border-rose-500/30 text-[10px] font-semibold"
+                : "bg-blue-500/10 text-blue-500 border-blue-500/30 text-[10px] font-semibold"
+            }
+          >
+            {isTrivia ? "Trivia Eje 5" : "Candidatos"}
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "models",
       header: "Modelos (C/V)",
       cell: ({ row }) => (

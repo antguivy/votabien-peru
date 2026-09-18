@@ -10,6 +10,7 @@ import type { AIWorkflow } from "@/interfaces/workflow";
 export interface WorkflowFormValues {
   name: string;
   description: string;
+  type?: string;
   sources: string[];
   compressor_prompt: string;
   compressor_model: string;
@@ -30,6 +31,7 @@ export async function createWorkflow(
         id: createId(),
         name: data.name,
         description: data.description,
+        type: data.type || "CANDIDATE_RESEARCH",
         sources: data.sources,
         compressor_prompt: data.compressor_prompt,
         compressor_model: data.compressor_model,
@@ -79,20 +81,32 @@ export async function deleteWorkflow(
   }
 }
 
-export async function getActiveWorkflows(): Promise<
+export async function getActiveWorkflows(
+  type = "CANDIDATE_RESEARCH",
+): Promise<
   | { success: true; workflows: { id: string; name: string }[] }
   | { success: false; error: string }
 > {
   await serverRequireReviewer();
   try {
     const workflows = await prisma.ai_workflow.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", type },
       select: { id: true, name: true },
     });
     return { success: true, workflows };
   } catch (error: unknown) {
     return { success: false, error: extractErrorMessage(error) };
   }
+}
+
+export async function getWorkflowByType(
+  type: string,
+): Promise<AIWorkflow | null> {
+  await serverRequireReviewer();
+  return prisma.ai_workflow.findFirst({
+    where: { type, status: "ACTIVE" },
+    orderBy: { updated_at: "desc" },
+  });
 }
 
 export async function getWorkflows(): Promise<AIWorkflow[]> {

@@ -38,7 +38,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Edit,
   Trash2,
@@ -46,7 +45,6 @@ import {
   ExternalLink,
   Hash,
   CheckCircle2,
-  Search,
   Copy,
   Download,
   Eye,
@@ -60,7 +58,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  RotateCcw,
 } from "lucide-react";
+import { DataTableSearchInput } from "@/components/data-table/data-table-search-input";
 import { parseSourceUrls } from "@/lib/utils/url";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TriviaFormDialog } from "./trivia-form-dialog";
@@ -405,156 +405,164 @@ export function TriviaList({
     toast.success(`Se exportaron ${filteredTrivias.length} preguntas en JSON`);
   };
 
+  const hasActiveFilters = Boolean(
+    searchTerm ||
+      selectedStatus !== "all" ||
+      selectedTopic !== "all" ||
+      selectedAudience !== "all" ||
+      selectedDifficulty !== "all" ||
+      selectedRegion !== "all",
+  );
+
   return (
     <div ref={containerRef} className="space-y-4">
       {/* Barra de Filtros y Acciones */}
-      <div className="p-3 sm:p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row gap-2.5">
-          {/* Buscador */}
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por enunciado o explicación..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 pr-8 bg-background h-9 text-xs"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => handleSearchChange("")}
-                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {/* Filtro Estado de Publicación */}
-            <ResponsiveSelect
-              title="Filtrar por Estado"
-              value={selectedStatus}
-              onValueChange={handleStatusChange}
+      <div className="p-3.5 sm:p-4 rounded-xl border bg-card/60 shadow-sm space-y-3">
+        {/* Fila 1: Buscador amplio con botón disparador y Limpiar filtros */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          <DataTableSearchInput
+            placeholder="Buscar por enunciado o explicación..."
+            className="flex-1 w-full"
+            inputClassName="h-9 text-xs"
+            value={searchTerm}
+            onSearch={(val) => handleSearchChange(val)}
+            onClear={() => handleSearchChange("")}
+          />
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 px-3 text-xs text-muted-foreground hover:text-foreground shrink-0 self-end sm:self-auto"
             >
-              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
-                <ResponsiveSelectValue placeholder="Estado" />
-              </ResponsiveSelectTrigger>
-              <ResponsiveSelectContent>
-                <ResponsiveSelectItem value="all">
-                  Todos los estados
-                </ResponsiveSelectItem>
-                <ResponsiveSelectItem value="published">
-                  Publicadas
-                </ResponsiveSelectItem>
-                <ResponsiveSelectItem value="draft">
-                  Borradores
-                </ResponsiveSelectItem>
-              </ResponsiveSelectContent>
-            </ResponsiveSelect>
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
 
-            {/* Filtro Eje Temático */}
-            <ResponsiveSelect
-              title="Filtrar por Eje Temático"
-              value={selectedTopic}
-              onValueChange={handleTopicChange}
-            >
-              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
-                <ResponsiveSelectValue placeholder="Eje Temático" />
-              </ResponsiveSelectTrigger>
-              <ResponsiveSelectContent>
-                <ResponsiveSelectItem value="all">
-                  Todos los temas
-                </ResponsiveSelectItem>
-                {topics.map((top) => (
-                  <ResponsiveSelectItem key={top.id} value={top.id}>
-                    {top.is_regional ? `📍 ${top.title}` : top.title}
-                  </ResponsiveSelectItem>
-                ))}
-              </ResponsiveSelectContent>
-            </ResponsiveSelect>
+        {/* Fila 2: Selects de filtrado ordenados con espacio holgado */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-1 border-t border-border/40">
+          {/* Filtro Estado de Publicación */}
+          <ResponsiveSelect
+            title="Filtrar por Estado"
+            value={selectedStatus}
+            onValueChange={handleStatusChange}
+          >
+            <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+              <ResponsiveSelectValue placeholder="Estado" />
+            </ResponsiveSelectTrigger>
+            <ResponsiveSelectContent>
+              <ResponsiveSelectItem value="all">
+                Todos los estados
+              </ResponsiveSelectItem>
+              <ResponsiveSelectItem value="published">
+                Publicadas
+              </ResponsiveSelectItem>
+              <ResponsiveSelectItem value="draft">
+                Borradores
+              </ResponsiveSelectItem>
+            </ResponsiveSelectContent>
+          </ResponsiveSelect>
 
-            {/* Filtro Audiencia (Solo activas) */}
-            <ResponsiveSelect
-              title="Filtrar por Audiencia"
-              value={selectedAudience}
-              onValueChange={handleAudienceChange}
-            >
-              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
-                <ResponsiveSelectValue placeholder="Audiencias activas" />
-              </ResponsiveSelectTrigger>
-              <ResponsiveSelectContent>
-                <ResponsiveSelectItem value="all">
-                  Todas las audiencias
+          {/* Filtro Eje Temático */}
+          <ResponsiveSelect
+            title="Filtrar por Eje Temático"
+            value={selectedTopic}
+            onValueChange={handleTopicChange}
+          >
+            <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+              <ResponsiveSelectValue placeholder="Eje Temático" />
+            </ResponsiveSelectTrigger>
+            <ResponsiveSelectContent>
+              <ResponsiveSelectItem value="all">
+                Todos los temas
+              </ResponsiveSelectItem>
+              {topics.map((top) => (
+                <ResponsiveSelectItem key={top.id} value={top.id}>
+                  {top.is_regional ? `📍 ${top.title}` : top.title}
                 </ResponsiveSelectItem>
-                {activeAudiences.map((aud) => (
-                  <ResponsiveSelectItem key={aud.id} value={aud.id}>
-                    <div className="flex items-center gap-1.5">
-                      {renderAudienceIcon(aud.icon || aud.slug, { size: 12 })}
-                      <span>{aud.name}</span>
-                    </div>
-                  </ResponsiveSelectItem>
-                ))}
-              </ResponsiveSelectContent>
-            </ResponsiveSelect>
+              ))}
+            </ResponsiveSelectContent>
+          </ResponsiveSelect>
 
-            {/* Filtro Dificultad */}
-            <ResponsiveSelect
-              title="Filtrar por Dificultad"
-              value={selectedDifficulty}
-              onValueChange={handleDifficultyChange}
-            >
-              <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
-                <ResponsiveSelectValue placeholder="Dificultad" />
-              </ResponsiveSelectTrigger>
-              <ResponsiveSelectContent>
-                <ResponsiveSelectItem value="all">
-                  Todas dif.
+          {/* Filtro Audiencia (Solo activas) */}
+          <ResponsiveSelect
+            title="Filtrar por Audiencia"
+            value={selectedAudience}
+            onValueChange={handleAudienceChange}
+          >
+            <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+              <ResponsiveSelectValue placeholder="Audiencias activas" />
+            </ResponsiveSelectTrigger>
+            <ResponsiveSelectContent>
+              <ResponsiveSelectItem value="all">
+                Todas las audiencias
+              </ResponsiveSelectItem>
+              {activeAudiences.map((aud) => (
+                <ResponsiveSelectItem key={aud.id} value={aud.id}>
+                  <div className="flex items-center gap-1.5">
+                    {renderAudienceIcon(aud.icon || aud.slug, { size: 12 })}
+                    <span>{aud.name}</span>
+                  </div>
                 </ResponsiveSelectItem>
-                <ResponsiveSelectItem value="FACIL">Fácil</ResponsiveSelectItem>
-                <ResponsiveSelectItem value="MEDIO">Medio</ResponsiveSelectItem>
-                <ResponsiveSelectItem value="DIFICIL">
-                  Difícil
-                </ResponsiveSelectItem>
-              </ResponsiveSelectContent>
-            </ResponsiveSelect>
+              ))}
+            </ResponsiveSelectContent>
+          </ResponsiveSelect>
 
-            {/* Filtro Región Electoral */}
-            <ResponsiveSelect
-              title="Filtrar por Región"
-              value={selectedRegion}
-              onValueChange={handleRegionChange}
+          {/* Filtro Dificultad */}
+          <ResponsiveSelect
+            title="Filtrar por Dificultad"
+            value={selectedDifficulty}
+            onValueChange={handleDifficultyChange}
+          >
+            <ResponsiveSelectTrigger className="w-full h-9 text-xs bg-background">
+              <ResponsiveSelectValue placeholder="Dificultad" />
+            </ResponsiveSelectTrigger>
+            <ResponsiveSelectContent>
+              <ResponsiveSelectItem value="all">
+                Todas las dificultades
+              </ResponsiveSelectItem>
+              <ResponsiveSelectItem value="FACIL">Fácil</ResponsiveSelectItem>
+              <ResponsiveSelectItem value="MEDIO">Medio</ResponsiveSelectItem>
+              <ResponsiveSelectItem value="DIFICIL">
+                Difícil
+              </ResponsiveSelectItem>
+            </ResponsiveSelectContent>
+          </ResponsiveSelect>
+
+          {/* Filtro Región Electoral */}
+          <ResponsiveSelect
+            title="Filtrar por Región"
+            value={selectedRegion}
+            onValueChange={handleRegionChange}
+          >
+            <ResponsiveSelectTrigger
+              className={`w-full h-9 text-xs bg-background col-span-2 sm:col-span-1 lg:col-span-1 ${
+                isRegionalTopic || selectedRegion !== "all"
+                  ? "border-amber-500/50 bg-amber-500/5 font-semibold text-foreground"
+                  : ""
+              }`}
             >
-              <ResponsiveSelectTrigger
-                className={`w-full h-9 text-xs bg-background col-span-2 sm:col-span-1 ${
-                  isRegionalTopic || selectedRegion !== "all"
-                    ? "border-amber-500/50 bg-amber-500/5 font-semibold text-foreground"
-                    : ""
-                }`}
-              >
-                <div className="flex items-center gap-1.5 truncate">
-                  <MapPin
-                    size={12}
-                    className="text-amber-600 dark:text-amber-400 shrink-0"
-                  />
-                  <ResponsiveSelectValue placeholder="Región" />
-                </div>
-              </ResponsiveSelectTrigger>
-              <ResponsiveSelectContent>
-                <ResponsiveSelectItem value="all">
-                  Todas las regiones
+              <div className="flex items-center gap-1.5 truncate">
+                <MapPin
+                  size={12}
+                  className="text-amber-600 dark:text-amber-400 shrink-0"
+                />
+                <ResponsiveSelectValue placeholder="Región" />
+              </div>
+            </ResponsiveSelectTrigger>
+            <ResponsiveSelectContent>
+              <ResponsiveSelectItem value="all">
+                Todas las regiones
+              </ResponsiveSelectItem>
+              {availableRegions.map((reg) => (
+                <ResponsiveSelectItem key={reg.id} value={reg.id}>
+                  {reg.name}
                 </ResponsiveSelectItem>
-                <ResponsiveSelectItem value="nacional">
-                  🇵🇪 Nacional (Sin región)
-                </ResponsiveSelectItem>
-                {availableRegions.map((reg) => (
-                  <ResponsiveSelectItem key={reg.id} value={reg.id}>
-                    {reg.name}
-                  </ResponsiveSelectItem>
-                ))}
-              </ResponsiveSelectContent>
-            </ResponsiveSelect>
-          </div>
+              ))}
+            </ResponsiveSelectContent>
+          </ResponsiveSelect>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
@@ -609,12 +617,7 @@ export function TriviaList({
               )}
             </span>
 
-            {(searchTerm ||
-              selectedStatus !== "all" ||
-              selectedTopic !== "all" ||
-              selectedAudience !== "all" ||
-              selectedDifficulty !== "all" ||
-              selectedRegion !== "all") && (
+            {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
