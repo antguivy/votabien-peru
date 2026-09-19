@@ -1,10 +1,7 @@
 "use client";
 
 import { getRegionByLevel } from "@/constants/regions-data";
-import {
-  hydrateLevelsWithQuestions,
-  QUESTIONS_PER_LEVEL,
-} from "@/lib/level-hydrator";
+import { hydrateLevelsWithQuestions } from "@/lib/level-hydrator";
 import {
   GameLevel,
   GameRegion,
@@ -34,12 +31,14 @@ interface GameState {
   // Progreso particionado por slug de tema (o "general" como default)
   progressByTopic: Record<string, TopicProgress>;
 
-  // Getters
+  // State properties
+  highestUnlockedLevel: number;
+  levelsProgress: Record<number, LevelProgress>;
+
+  // Functions & Queries
   getLevels: (topicSlug?: string) => GameLevel[];
   getCurrentRegion: (topicSlug?: string) => GameRegion;
   getTopicProgress: (topicSlug?: string) => TopicProgress;
-  highestUnlockedLevel: number;
-  levelsProgress: Record<number, LevelProgress>;
 
   // Setters
   setCurrentTopic: (topic: TriviaTopic | null) => void;
@@ -80,44 +79,85 @@ export const useGameStore = create<GameState>()(
       rawQuestions: [],
       userXp: 0,
       progressByTopic: {},
-
-      get highestUnlockedLevel() {
-        const topicSlug = get().currentTopic?.slug || "general";
-        return get().progressByTopic[topicSlug]?.highestUnlockedLevel ?? 1;
-      },
-
-      get levelsProgress() {
-        const topicSlug = get().currentTopic?.slug || "general";
-        return get().progressByTopic[topicSlug]?.levelsProgress ?? {};
-      },
+      highestUnlockedLevel: 1,
+      levelsProgress: {},
 
       getTopicProgress: (topicSlug) => {
         const slug = topicSlug || get().currentTopic?.slug || "general";
-        return get().progressByTopic[slug] ?? { ...DEFAULT_TOPIC_PROGRESS };
+        return (
+          get().progressByTopic[slug] ??
+          get().progressByTopic["map_campaign"] ?? {
+            ...DEFAULT_TOPIC_PROGRESS,
+          }
+        );
       },
 
       getLevels: (topicSlug) => {
-        const { rawQuestions, progressByTopic, currentTopic } = get();
+        const {
+          rawQuestions,
+          progressByTopic,
+          currentTopic,
+          highestUnlockedLevel,
+          levelsProgress,
+        } = get();
         const slug = topicSlug || currentTopic?.slug || "general";
-        const topicProg = progressByTopic[slug] ?? {
-          ...DEFAULT_TOPIC_PROGRESS,
+        const topicProg = progressByTopic[slug] ??
+          progressByTopic["map_campaign"] ?? {
+            ...DEFAULT_TOPIC_PROGRESS,
+          };
+
+        const effectiveHighest = Math.max(
+          highestUnlockedLevel || 1,
+          topicProg.highestUnlockedLevel || 1,
+          progressByTopic["map_campaign"]?.highestUnlockedLevel || 1,
+        );
+
+        const effectiveLevelsProgress: Record<number, LevelProgress> = {
+          ...(progressByTopic["map_campaign"]?.levelsProgress || {}),
+          ...(topicProg.levelsProgress || {}),
+          ...(levelsProgress || {}),
         };
 
         return hydrateLevelsWithQuestions(
           rawQuestions,
-          topicProg.highestUnlockedLevel,
-          topicProg.levelsProgress,
+          effectiveHighest,
+          effectiveLevelsProgress,
         );
       },
 
       getCurrentRegion: (topicSlug) => {
         const slug = topicSlug || get().currentTopic?.slug || "general";
-        const highest = get().progressByTopic[slug]?.highestUnlockedLevel ?? 1;
+        const highest =
+          get().highestUnlockedLevel ||
+          get().progressByTopic[slug]?.highestUnlockedLevel ||
+          get().progressByTopic["map_campaign"]?.highestUnlockedLevel ||
+          1;
         return getRegionByLevel(highest).id;
       },
 
       setCurrentTopic: (topic) => {
-        set({ currentTopic: topic });
+        set((state) => {
+          const slug = topic?.slug || "general";
+          const prog =
+            state.progressByTopic[slug] ||
+            state.progressByTopic["map_campaign"] ||
+            DEFAULT_TOPIC_PROGRESS;
+          const mergedProgress = {
+            ...(state.progressByTopic["map_campaign"]?.levelsProgress || {}),
+            ...(prog.levelsProgress || {}),
+            ...(state.levelsProgress || {}),
+          };
+          const highest = Math.max(
+            prog.highestUnlockedLevel || 1,
+            state.progressByTopic["map_campaign"]?.highestUnlockedLevel || 1,
+            state.highestUnlockedLevel || 1,
+          );
+          return {
+            currentTopic: topic,
+            highestUnlockedLevel: highest,
+            levelsProgress: mergedProgress,
+          };
+        });
       },
 
       setCurrentAudience: (audience) => {
@@ -138,31 +178,48 @@ export const useGameStore = create<GameState>()(
           const currentProg = state.progressByTopic[slug] ?? {
             ...DEFAULT_TOPIC_PROGRESS,
           };
-
-          const currentLevelProg = currentProg.levelsProgress[levelId] ?? {
-            stars: 0,
-            status: "unlocked",
+          const mapCampaignProg = state.progressByTopic["map_campaign"] ?? {
+            ...DEFAULT_TOPIC_PROGRESS,
           };
+
+          const currentLevelProg = currentProg.levelsProgress[levelId] ??
+            mapCampaignProg.levelsProgress[levelId] ??
+            state.levelsProgress[levelId] ?? {
+              stars: 0,
+              status: "unlocked",
+            };
 
           const newStars = Math.max(currentLevelProg.stars, stars) as
             | 0
             | 1
             | 2
             | 3;
+
+          // Regla clave: Mínimo 2 de 3 aciertos (stars >= 2) para aprobar y desbloquear
+          const isPassed = stars >= 2;
+
           const newLevelsProgress = {
+            ...mapCampaignProg.levelsProgress,
             ...currentProg.levelsProgress,
-            [levelId]: { stars: newStars, status: "completed" as const },
+            ...state.levelsProgress,
+            [levelId]: {
+              stars: newStars,
+              status: isPassed
+                ? ("completed" as const)
+                : currentLevelProg.status,
+            },
           };
 
-          const totalLevels = Math.max(
-            1,
-            Math.floor(state.rawQuestions.length / QUESTIONS_PER_LEVEL),
+          const baseHighest = Math.max(
+            currentProg.highestUnlockedLevel,
+            mapCampaignProg.highestUnlockedLevel,
+            state.highestUnlockedLevel || 1,
           );
 
-          const newHighest =
-            levelId === currentProg.highestUnlockedLevel
-              ? Math.min(currentProg.highestUnlockedLevel + 1, totalLevels)
-              : currentProg.highestUnlockedLevel;
+          // Si aprobó con mínimo 2 estrellas, se desbloquea el siguiente nivel. Si no, se mantiene.
+          const newHighest = isPassed
+            ? Math.max(baseHighest, levelId + 1)
+            : baseHighest;
 
           const updatedTopicProg: TopicProgress = {
             ...currentProg,
@@ -171,11 +228,21 @@ export const useGameStore = create<GameState>()(
             topicXp: currentProg.topicXp + xpGained,
           };
 
+          const updatedMapProg: TopicProgress = {
+            ...mapCampaignProg,
+            highestUnlockedLevel: newHighest,
+            levelsProgress: newLevelsProgress,
+            topicXp: mapCampaignProg.topicXp + xpGained,
+          };
+
           return {
             progressByTopic: {
               ...state.progressByTopic,
               [slug]: updatedTopicProg,
+              map_campaign: updatedMapProg,
             },
+            highestUnlockedLevel: newHighest,
+            levelsProgress: newLevelsProgress,
             userXp: state.userXp + xpGained,
           };
         });
@@ -216,6 +283,8 @@ export const useGameStore = create<GameState>()(
           return {
             progressByTopic: {},
             userXp: 0,
+            highestUnlockedLevel: 1,
+            levelsProgress: {},
             rawQuestions: [],
           };
         });
@@ -230,9 +299,45 @@ export const useGameStore = create<GameState>()(
             progressByTopic: {},
             userXp: 0,
             currentMode: "MAP",
+            highestUnlockedLevel: 1,
+            levelsProgress: {},
           };
         }
         return persistedState;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          const allProgs = Object.values(state.progressByTopic || {});
+          let maxHighest = state.highestUnlockedLevel || 1;
+          const mergedProgress: Record<number, LevelProgress> = {
+            ...(state.levelsProgress || {}),
+          };
+
+          for (const p of allProgs) {
+            if (p.highestUnlockedLevel && p.highestUnlockedLevel > maxHighest) {
+              maxHighest = p.highestUnlockedLevel;
+            }
+            if (p.levelsProgress) {
+              Object.assign(mergedProgress, p.levelsProgress);
+            }
+          }
+
+          // Auto-recuperación: Si el nivel N está completado con mínimo 2 estrellas,
+          // el nivel desbloqueado debe ser al menos N + 1
+          for (const [lvlStr, prog] of Object.entries(mergedProgress)) {
+            const lvlNum = Number(lvlStr);
+            if (
+              prog?.status === "completed" &&
+              (prog.stars ?? 0) >= 2 &&
+              lvlNum >= maxHighest
+            ) {
+              maxHighest = lvlNum + 1;
+            }
+          }
+
+          state.highestUnlockedLevel = maxHighest;
+          state.levelsProgress = mergedProgress;
+        }
       },
       storage: createJSONStorage(() => {
         if (typeof window === "undefined") {
@@ -247,6 +352,8 @@ export const useGameStore = create<GameState>()(
       partialize: (state) => ({
         progressByTopic: state.progressByTopic,
         userXp: state.userXp,
+        highestUnlockedLevel: state.highestUnlockedLevel,
+        levelsProgress: state.levelsProgress,
       }),
     },
   ),

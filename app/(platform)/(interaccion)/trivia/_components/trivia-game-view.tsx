@@ -7,6 +7,8 @@ import {
   TriviaQuestion,
   OptionDisplayType,
   SecondarySource,
+  GameRegion,
+  TriviaTopic,
 } from "@/interfaces/game-types";
 import {
   BookOpen,
@@ -37,10 +39,16 @@ const EXPLANATION_COLLAPSE_THRESHOLD = 120;
 // ── Helpers ───────────────────────────────────────────────────────────────
 function calcStars(correct: number, total: number): 0 | 1 | 2 | 3 {
   if (total === 0) return 0;
+  if (total === 3) {
+    if (correct === 3) return 3;
+    if (correct === 2) return 2;
+    if (correct === 1) return 1;
+    return 0;
+  }
   const r = correct / total;
   if (r === 1) return 3;
-  if (r >= 0.75) return 2;
-  if (r >= 0.5) return 1;
+  if (r >= 0.66) return 2;
+  if (r >= 0.33) return 1;
   return 0;
 }
 
@@ -48,9 +56,13 @@ function calcXp(stars: number): number {
   return 50 + stars * 25;
 }
 
-function scoreForAnswer(timeLeft: number, correct: boolean): number {
+function scoreForAnswer(
+  timeLeft: number,
+  correct: boolean,
+  totalSeconds: number = SECONDS_PER_QUESTION,
+): number {
   if (!correct) return 0;
-  return 100 + Math.round((timeLeft / SECONDS_PER_QUESTION) * 100);
+  return 100 + Math.round((timeLeft / totalSeconds) * 100);
 }
 
 function TimerBar({ timeLeft, total }: { timeLeft: number; total: number }) {
@@ -236,8 +248,10 @@ function ResultsScreen({
   xpGained: _xpGained,
   score,
   levelId,
+  mode = "MAP",
   questions,
   regionColor,
+  overrideRegion,
   onExit,
 }: {
   correctCount: number;
@@ -245,9 +259,11 @@ function ResultsScreen({
   stars: 0 | 1 | 2 | 3;
   xpGained: number;
   score: number;
-  levelId: number;
+  levelId: number | null;
+  mode?: "MAP" | "QUICK_QUIZ";
   questions: TriviaQuestion[];
   regionColor: string;
+  overrideRegion?: GameRegion | null;
   onExit: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -329,7 +345,7 @@ function ResultsScreen({
               score={score}
               stars={stars}
               currentLevel={levelId}
-              regionTheme={getRegionByLevel(levelId)}
+              regionTheme={getRegionByLevel(levelId || 1, overrideRegion)}
               featuredQuestion={featuredQuestion}
             />
           </div>
@@ -357,10 +373,14 @@ function ResultsScreen({
       <button
         type="button"
         onClick={onExit}
-        className="w-full py-4 rounded-2xl font-extrabold text-white text-base uppercase tracking-widest shadow-lg transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
+        className="w-full py-4 rounded-2xl font-extrabold text-white text-base uppercase tracking-widest shadow-lg transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0 cursor-pointer"
         style={{ backgroundColor: regionColor }}
       >
-        {stars >= 2 ? "¡Continuar!" : "Volver al mapa"}
+        {mode === "QUICK_QUIZ"
+          ? "Finalizar y volver al Hub"
+          : stars >= 2
+            ? "¡Continuar al siguiente nivel!"
+            : "Reintentar nivel"}
       </button>
 
       <div className="h-2 flex-shrink-0" />
@@ -454,42 +474,63 @@ function FactcheckSources({ sources }: { sources: SecondarySource[] }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────
-interface TriviaGameViewProps {
-  levelId: number;
+export interface TriviaGameViewProps {
+  mode?: "MAP" | "QUICK_QUIZ";
+  questions?: TriviaQuestion[];
+  levelId?: number;
+  topic?: TriviaTopic | null;
   onExit: () => void;
   onComplete?: () => void;
+  overrideRegion?: GameRegion | null;
 }
 
 export function TriviaGameView({
+  mode = "MAP",
+  questions: questionsProp,
   levelId,
+  topic,
   onExit,
   onComplete,
+  overrideRegion,
 }: TriviaGameViewProps) {
-  const { getLevels, completeLevel, rawQuestions, currentTopic } =
-    useGameStore();
+  const {
+    getLevels,
+    completeLevel,
+    recordQuizResult,
+    rawQuestions,
+    currentTopic,
+  } = useGameStore();
+
+  const secondsPerQuestion = mode === "QUICK_QUIZ" ? 20 : 30;
 
   const level = useMemo(
-    () => getLevels().find((l) => l.id === levelId) ?? null,
+    () =>
+      levelId ? (getLevels().find((l) => l.id === levelId) ?? null) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rawQuestions, levelId],
   );
 
-  const theme = getRegionByLevel(levelId);
+  const questions = useMemo(() => {
+    if (questionsProp && questionsProp.length > 0) return questionsProp;
+    return level?.questions ?? [];
+  }, [questionsProp, level]);
+
+  const effectiveLevelId = levelId ?? 1;
+  const theme = getRegionByLevel(effectiveLevelId, overrideRegion);
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
+  const [timeLeft, setTimeLeft] = useState(secondsPerQuestion);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [phase, setPhase] = useState<"question" | "results">("question");
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeLeftRef = useRef(SECONDS_PER_QUESTION);
+  const timeLeftRef = useRef(secondsPerQuestion);
   const revealedRef = useRef(false);
 
-  const questions = level?.questions ?? [];
   const question: TriviaQuestion | undefined = questions[currentIdx];
   const isLastQ = currentIdx === questions.length - 1;
 
@@ -506,7 +547,11 @@ export function TriviaGameView({
     stopTimer();
     const isCorrect =
       chosenId !== null && chosenId === question?.correct_answer_id;
-    const gained = scoreForAnswer(timeLeftRef.current, isCorrect);
+    const gained = scoreForAnswer(
+      timeLeftRef.current,
+      isCorrect,
+      secondsPerQuestion,
+    );
     setSelectedId(chosenId);
     setRevealed(true);
     setScore((s) => s + gained);
@@ -517,8 +562,8 @@ export function TriviaGameView({
   const startTimer = () => {
     stopTimer();
     revealedRef.current = false;
-    timeLeftRef.current = SECONDS_PER_QUESTION;
-    setTimeLeft(SECONDS_PER_QUESTION);
+    timeLeftRef.current = secondsPerQuestion;
+    setTimeLeft(secondsPerQuestion);
     timerRef.current = setInterval(() => {
       timeLeftRef.current -= 1;
       setTimeLeft(timeLeftRef.current);
@@ -548,10 +593,15 @@ export function TriviaGameView({
   const handleNext = () => {
     if (isLastQ) {
       const correct = answers.filter(Boolean).length;
-      const stars = calcStars(correct, questions.length);
-      const xp = calcXp(stars);
-      completeLevel(levelId, stars, xp, currentTopic?.slug);
-      onComplete?.();
+      const activeTopic = topic || currentTopic;
+      if (mode === "QUICK_QUIZ") {
+        recordQuizResult(score, correct, questions.length, activeTopic?.slug);
+      } else if (levelId) {
+        const stars = calcStars(correct, questions.length);
+        const xp = calcXp(stars);
+        completeLevel(levelId, stars, xp, activeTopic?.slug);
+        onComplete?.();
+      }
       setPhase("results");
     } else {
       setCurrentIdx((i) => i + 1);
@@ -560,10 +610,28 @@ export function TriviaGameView({
     }
   };
 
-  if (!level) {
+  if (mode === "MAP" && !level) {
     return (
       <div className="fixed inset-0 z-[60] bg-background flex items-center justify-center">
         <p className="text-muted-foreground text-sm">Cargando nivel...</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="fixed inset-0 z-[60] bg-background flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <p className="text-muted-foreground text-sm font-semibold">
+          No hay preguntas disponibles para este desafío.
+        </p>
+        <Button
+          onClick={onExit}
+          variant="outline"
+          size="sm"
+          className="rounded-xl"
+        >
+          Volver
+        </Button>
       </div>
     );
   }
@@ -591,7 +659,7 @@ export function TriviaGameView({
     <div
       className={cn(
         "fixed inset-0 z-[40] flex flex-col",
-        "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden",
+        "lg:inset-auto lg:top-14 lg:bottom-0 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:rounded-t-2xl lg:overflow-hidden shadow-2xl",
       )}
       style={{
         background: `linear-gradient(160deg, ${theme.colors.backgroundTop} 0%, ${theme.colors.backgroundBottom} 100%)`,
@@ -604,9 +672,11 @@ export function TriviaGameView({
           stars={calcStars(correctCount, questions.length)}
           xpGained={calcXp(calcStars(correctCount, questions.length))}
           score={score}
-          levelId={levelId}
+          levelId={levelId ?? null}
+          mode={mode}
           questions={questions}
           regionColor={theme.colors.primary}
+          overrideRegion={overrideRegion}
           onExit={onExit}
         />
       ) : (
@@ -655,7 +725,7 @@ export function TriviaGameView({
                 </p>
               </div>
             </div>
-            <TimerBar timeLeft={timeLeft} total={SECONDS_PER_QUESTION} />
+            <TimerBar timeLeft={timeLeft} total={secondsPerQuestion} />
           </div>
 
           {/* Scrollable body */}

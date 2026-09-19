@@ -21,8 +21,122 @@ import {
 } from "@/components/ui/responsive-select";
 import { getSavedUserLocation, saveUserLocation } from "@/lib/ubigeo-helpers";
 import TriviaMapClient from "./trivia-map-client";
-import { TriviaQuickQuizView } from "./trivia-quick-quiz-view";
-import { getRegionByLevel } from "@/constants/regions-data";
+import { TriviaGameView } from "./trivia-game-view";
+import {
+  getRegionByLevel,
+  getNaturalRegionByDepartment,
+} from "@/constants/regions-data";
+import { buildStratifiedMapQuestions } from "@/lib/level-hydrator";
+
+export function formatRegionLabel(region: {
+  name: string;
+  code?: string | null;
+}): string {
+  const upper = region.name.toUpperCase().trim();
+  if (
+    region.code === "LIM" ||
+    upper === "LIMA METROPOLITANA" ||
+    upper === "LIMA"
+  ) {
+    return "Lima Metropolitana (Elección Municipal)";
+  }
+  if (
+    region.code === "LMP" ||
+    upper === "LIMA PROVINCIAS" ||
+    upper === "LIMA REGION"
+  ) {
+    return "Lima Provincias (Elección Regional)";
+  }
+  return region.name;
+}
+
+function shuffleArray<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Arma un set balanceado y barajado de 10 preguntas para el Desafío Cívico Express (ERM 2026).
+ * Si hay región seleccionada:
+ *   - Toma hasta 5 preguntas regionales de esa región (debates, candidatos, funciones).
+ *   - Completa hasta 10 preguntas con preguntas de cultura y conocimiento cívico general.
+ *   - Las mezcla aleatoriamente con Fisher-Yates para una experiencia dinámica.
+ * Si no hay región seleccionada (Nacional):
+ *   - Toma 10 preguntas generales barajadas.
+ */
+function buildExpressQuizQuestions(
+  questions: TriviaQuestion[],
+  topics: TriviaTopic[],
+  selectedRegionId?: string | null,
+): TriviaQuestion[] {
+  const regionalTopicIds = new Set(
+    topics.filter((t) => t.is_regional).map((t) => t.id),
+  );
+
+  // Preguntas de cultura cívica general (no regionales)
+  const generalPool = questions.filter(
+    (q) => !regionalTopicIds.has(q.topic_id || "") && !q.electoral_district_id,
+  );
+
+  // Preguntas territoriales de la región activa
+  const regionalPool = selectedRegionId
+    ? questions.filter((q) => q.electoral_district_id === selectedRegionId)
+    : [];
+
+  const shuffledGeneral = shuffleArray(generalPool);
+  const shuffledRegional = shuffleArray(regionalPool);
+
+  if (selectedRegionId && shuffledRegional.length > 0) {
+    const regionalCount = Math.min(5, shuffledRegional.length);
+    const selectedRegional = shuffledRegional.slice(0, regionalCount);
+
+    const generalNeeded = Math.max(0, 10 - regionalCount);
+    const selectedGeneral = shuffledGeneral.slice(0, generalNeeded);
+
+    const combined = [...selectedRegional, ...selectedGeneral];
+    if (combined.length < 10 && shuffledRegional.length > regionalCount) {
+      const extraNeeded = 10 - combined.length;
+      combined.push(
+        ...shuffledRegional.slice(regionalCount, regionalCount + extraNeeded),
+      );
+    }
+
+    return shuffleArray(combined);
+  }
+
+  // Modo Nacional sin región: 10 preguntas generales barajadas
+  if (shuffledGeneral.length >= 10) {
+    return shuffledGeneral.slice(0, 10);
+  }
+
+  return shuffleArray(questions).slice(0, 10);
+}
+
+/**
+ * Arma un set de 10 preguntas barajadas para un eje temático específico
+ */
+function buildTopicQuizQuestions(
+  topic: TriviaTopic,
+  allQuestions: TriviaQuestion[],
+  selectedRegionId?: string | null,
+): TriviaQuestion[] {
+  const baseList = allQuestions.filter((q) => q.topic_id === topic.id);
+  let qList = baseList;
+  if (topic.is_regional && selectedRegionId) {
+    const regionalList = baseList.filter(
+      (q) => q.electoral_district_id === selectedRegionId,
+    );
+    if (regionalList.length > 0) {
+      qList = regionalList;
+    }
+  }
+  const pool = qList.length > 0 ? qList : allQuestions;
+  return shuffleArray(pool).slice(0, 10);
+}
 
 export function TriviaHubClient({
   initialTopics,
@@ -38,7 +152,6 @@ export function TriviaHubClient({
   const searchParams = useSearchParams();
   const {
     currentTopic,
-    currentAudience,
     currentMode,
     setCurrentTopic,
     setCurrentAudience,
@@ -51,6 +164,12 @@ export function TriviaHubClient({
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [activeQuizQuestions, setActiveQuizQuestions] = useState<
+    TriviaQuestion[]
+  >([]);
+  const [activeQuizTopic, setActiveQuizTopic] = useState<TriviaTopic | null>(
+    null,
+  );
 
   // Filtrar para ERM 2026: excluir PERUANOS RESIDENTES EN EL EXTRANJERO / NACIONAL
   const availableRegions = useMemo(
@@ -90,10 +209,34 @@ export function TriviaHubClient({
     }
   }, [availableRegions]);
 
+  // Ocultar MobileBottomNav en móviles mientras el usuario está en partida o mapa
+  useEffect(() => {
+    if (isPlaying) {
+      document.documentElement.classList.add("hide-mobile-bottom-nav");
+      return () => {
+        document.documentElement.classList.remove("hide-mobile-bottom-nav");
+      };
+    }
+  }, [isPlaying]);
+
   const selectedRegionObj = useMemo(
     () => availableRegions.find((r) => r.id === selectedRegionId),
     [availableRegions, selectedRegionId],
   );
+
+  const overrideRegion = useMemo(
+    () => getNaturalRegionByDepartment(selectedRegionObj?.name),
+    [selectedRegionObj?.name],
+  );
+
+  // Preguntas estratificadas para el Mapa Aventura (Slot 1: Eje 1, Slot 2: Eje 3, Slot 3: Debate Territorial)
+  const mapQuestions = useMemo(() => {
+    return buildStratifiedMapQuestions(
+      initialQuestions,
+      initialTopics,
+      selectedRegionId,
+    );
+  }, [initialQuestions, initialTopics, selectedRegionId]);
 
   const handleRegionChange = (newRegionId: string) => {
     setSelectedRegionId(newRegionId);
@@ -127,26 +270,22 @@ export function TriviaHubClient({
       );
       if (foundTopic) {
         setCurrentTopic(foundTopic);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveQuizTopic(foundTopic);
         if (modeParam === "quick" || modeParam === "map") {
           const mode = modeParam === "quick" ? "QUICK_QUIZ" : "MAP";
           setMode(mode);
-          const baseList = initialQuestions.filter(
-            (q) => q.topic_id === foundTopic.id,
-          );
-          const regionalList =
-            foundTopic.is_regional && selectedRegionId
-              ? baseList.filter(
-                  (q) => q.electoral_district_id === selectedRegionId,
-                )
-              : [];
-          const qList =
-            regionalList.length > 0
-              ? regionalList
-              : baseList.length > 0
-                ? baseList
-                : initialQuestions;
-          setQuestions(qList);
-          // eslint-disable-next-line react-hooks/set-state-in-effect
+          if (mode === "QUICK_QUIZ") {
+            const topicQs = buildTopicQuizQuestions(
+              foundTopic,
+              initialQuestions,
+              selectedRegionId,
+            );
+            setActiveQuizQuestions(topicQs);
+            setQuestions(topicQs);
+          } else {
+            setQuestions(mapQuestions);
+          }
           setIsPlaying(true);
         }
       }
@@ -157,6 +296,7 @@ export function TriviaHubClient({
     initialAudiences,
     initialQuestions,
     selectedRegionId,
+    mapQuestions,
     setCurrentTopic,
     setCurrentAudience,
     setMode,
@@ -188,21 +328,57 @@ export function TriviaHubClient({
     return baseList;
   }, [initialQuestions, currentTopic, playableTopic, selectedRegionId]);
 
-  const handleStartGame = (topic: TriviaTopic, mode: GamePlayMode) => {
-    setCurrentTopic(topic);
-    setMode(mode);
-    const baseList = initialQuestions.filter((q) => q.topic_id === topic.id);
-    let qList = baseList;
-    if (topic.is_regional && selectedRegionId) {
-      const regionalList = baseList.filter(
-        (q) => q.electoral_district_id === selectedRegionId,
-      );
-      if (regionalList.length > 0) {
-        qList = regionalList;
-      }
-    }
-    setQuestions(qList.length > 0 ? qList : initialQuestions);
+  const handleStartExpressGame = () => {
+    const expressQuestions = buildExpressQuizQuestions(
+      initialQuestions,
+      initialTopics,
+      selectedRegionId,
+    );
+    const expressTopic: TriviaTopic = {
+      id: "express-erm-2026",
+      slug: "desafio-express-2026",
+      title: selectedRegionObj
+        ? `Desafío Cívico · ${selectedRegionObj.name}`
+        : "Desafío Cívico Nacional",
+      description:
+        "Preguntas dinámicas sobre competencias de autoridades y propuestas para tu territorio.",
+      is_active: true,
+      order_index: 0,
+      is_regional: Boolean(selectedRegionId),
+    };
+
+    setCurrentTopic(expressTopic);
+    setActiveQuizTopic(expressTopic);
+    setActiveQuizQuestions(expressQuestions);
+    setMode("QUICK_QUIZ");
+    setQuestions(expressQuestions);
     setIsPlaying(true);
+  };
+
+  const handleStartTopicGame = (topic: TriviaTopic, mode: GamePlayMode) => {
+    setCurrentTopic(topic);
+    setActiveQuizTopic(topic);
+    setMode(mode);
+
+    if (mode === "QUICK_QUIZ") {
+      const topicQuestions = buildTopicQuizQuestions(
+        topic,
+        initialQuestions,
+        selectedRegionId,
+      );
+      setActiveQuizQuestions(topicQuestions);
+      setQuestions(topicQuestions);
+    } else {
+      setQuestions(mapQuestions);
+    }
+
+    setIsPlaying(true);
+  };
+
+  const handleExitGame = () => {
+    setIsPlaying(false);
+    setActiveQuizQuestions([]);
+    setActiveQuizTopic(null);
   };
 
   // Tema para el Desafío Regional Express (prioriza el eje regional o el tema jugable activo)
@@ -220,23 +396,26 @@ export function TriviaHubClient({
   );
 
   // --- VISTA DE JUEGO ACTIVA ---
-  if (isPlaying && (currentTopic || playableTopic)) {
-    const active = currentTopic || playableTopic;
+  if (isPlaying && (currentTopic || playableTopic || activeQuizTopic)) {
+    const active = activeQuizTopic || currentTopic || playableTopic;
 
     if (currentMode === "QUICK_QUIZ") {
       const quizQuestions =
-        sessionQuestions.length > 0
-          ? sessionQuestions.slice(0, 10)
-          : initialQuestions.slice(0, 10);
+        activeQuizQuestions.length > 0
+          ? activeQuizQuestions
+          : sessionQuestions.slice(0, 10);
 
       return (
-        <div className="min-h-screen bg-background pt-2 pb-12">
-          <TriviaQuickQuizView
-            questions={quizQuestions}
-            topic={active}
-            audience={currentAudience}
-            onExit={() => setIsPlaying(false)}
-          />
+        <div className="flex justify-center bg-background h-dvh lg:h-[calc(100dvh-56px)]">
+          <div className="w-full relative" style={{ maxWidth: 480 }}>
+            <TriviaGameView
+              mode="QUICK_QUIZ"
+              questions={quizQuestions}
+              topic={active}
+              overrideRegion={overrideRegion}
+              onExit={handleExitGame}
+            />
+          </div>
         </div>
       );
     }
@@ -246,10 +425,9 @@ export function TriviaHubClient({
       <div className="flex justify-center bg-background h-dvh lg:h-[calc(100dvh-56px)]">
         <div className="w-full relative" style={{ maxWidth: 480 }}>
           <TriviaMapClient
-            initialQuestions={
-              sessionQuestions.length > 0 ? sessionQuestions : initialQuestions
-            }
-            onExit={() => setIsPlaying(false)}
+            initialQuestions={mapQuestions}
+            selectedRegionName={selectedRegionObj?.name}
+            onExit={handleExitGame}
           />
         </div>
       </div>
@@ -258,7 +436,7 @@ export function TriviaHubClient({
 
   // --- VISTA INICIAL (EDITORIAL CÍVICO Y RETADOR) ---
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background text-foreground py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-64px)] bg-background text-foreground pt-6 sm:pt-8 pb-28 sm:pb-20 lg:pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header con tipografía editorial y contraste */}
         <div className="space-y-4">
@@ -306,7 +484,7 @@ export function TriviaHubClient({
                   </span>
                   <span className="font-bold text-foreground truncate text-xs">
                     {selectedRegionObj
-                      ? selectedRegionObj.name
+                      ? formatRegionLabel(selectedRegionObj)
                       : "Todas las regiones"}
                   </span>
                   <span className="text-muted-foreground/40 font-mono hidden sm:inline">
@@ -323,7 +501,7 @@ export function TriviaHubClient({
                   </ResponsiveSelectItem>
                   {availableRegions.map((region) => (
                     <ResponsiveSelectItem key={region.id} value={region.id}>
-                      {region.name}
+                      {formatRegionLabel(region)}
                     </ResponsiveSelectItem>
                   ))}
                 </ResponsiveSelectContent>
@@ -339,12 +517,12 @@ export function TriviaHubClient({
         {/* TARJETA HERO ASIMÉTRICA: DESAFÍO REGIONAL EXPRESS */}
         {heroTopic && (
           <div className="relative overflow-hidden rounded-3xl bg-[#181615] dark:bg-card border border-neutral-800 dark:border-border/80 p-6 sm:p-8 lg:p-10 text-white shadow-xl">
-            {/* Filigrana número 5 en marca de agua de fondo */}
+            {/* Filigrana número 10 en marca de agua de fondo */}
             <div
               aria-hidden="true"
               className="hidden sm:block absolute -right-2 -bottom-10 select-none pointer-events-none text-white/[0.04] dark:text-foreground/[0.04] font-serif font-black text-[170px] sm:text-[220px] leading-none"
             >
-              5
+              10
             </div>
 
             <div className="relative z-10 space-y-4">
@@ -360,51 +538,29 @@ export function TriviaHubClient({
 
               {/* Titular */}
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight max-w-xl">
-                Pon a prueba tu criterio electoral.{" "}
-                <span className="font-serif italic font-normal text-amber-200/90 dark:text-amber-300/90 block sm:inline">
-                  ¿Cuánto sabes de tus candidatos y autoridades?
-                </span>
+                10 preguntas para poner a prueba tu voto.
               </h2>
 
               {/* Subtítulo amigable */}
               <p className="text-xs sm:text-sm text-neutral-300/90 dark:text-neutral-400 max-w-xl leading-relaxed">
-                Preguntas dinámicas con verificación oficial: competencias de
-                alcaldes y gobernadores, propuestas reales y declaraciones en
-                video.
+                Mide qué tanto recuerdas de las propuestas, videos de debates y
+                competencias de tus autoridades.
               </p>
 
-              {/* Fila de metadatos + Botón de acción */}
-              <div className="pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-t border-white/10 dark:border-border/60">
-                <div className="grid grid-cols-3 gap-3 sm:gap-8 divide-x divide-white/10 dark:divide-border/40">
-                  <div>
-                    <p className="text-sm sm:text-base font-black font-mono text-white tabular-nums">
-                      ~2 MIN
-                    </p>
-                    <p className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 dark:text-muted-foreground">
-                      Duración
-                    </p>
-                  </div>
-                  <div className="pl-3 sm:pl-8">
-                    <p className="text-sm sm:text-base font-black font-mono text-white">
-                      V/F Y TEST
-                    </p>
-                    <p className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 dark:text-muted-foreground">
-                      Formato
-                    </p>
-                  </div>
-                  <div className="pl-3 sm:pl-8">
-                    <p className="text-sm sm:text-base font-black font-mono text-white">
-                      OFICIAL
-                    </p>
-                    <p className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 dark:text-muted-foreground">
-                      Fuentes
-                    </p>
-                  </div>
+              {/* Chips informativos + Botón de acción */}
+              <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-neutral-200 font-semibold text-[11px]">
+                    ⚡ 10 preguntas
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 font-semibold text-[11px]">
+                    🏆 +100 XP
+                  </span>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => handleStartGame(heroTopic, "QUICK_QUIZ")}
+                  onClick={handleStartExpressGame}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-neutral-950 hover:bg-neutral-100 dark:bg-foreground dark:text-background active:scale-[0.98] font-black text-xs sm:text-sm transition-all shadow-md group cursor-pointer shrink-0"
                 >
                   <span>Iniciar trivia rápida</span>
@@ -418,7 +574,7 @@ export function TriviaHubClient({
         {/* MODO MAPA AVENTURA (CAMPAÑA 25 NIVELES) */}
         <button
           type="button"
-          onClick={() => handleStartGame(playableTopic, "MAP")}
+          onClick={() => handleStartTopicGame(playableTopic, "MAP")}
           className="w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-border/80 bg-card hover:bg-muted/40 transition-all text-left group cursor-pointer shadow-2xs"
         >
           <div className="flex items-center gap-3.5 min-w-0">
@@ -499,7 +655,7 @@ export function TriviaHubClient({
                   <button
                     key={topic.id}
                     type="button"
-                    onClick={() => handleStartGame(topic, "QUICK_QUIZ")}
+                    onClick={() => handleStartTopicGame(topic, "QUICK_QUIZ")}
                     className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card hover:border-brand/50 hover:shadow-xs transition-all text-left flex flex-col justify-between cursor-pointer group space-y-4"
                   >
                     <div className="space-y-2 min-w-0">

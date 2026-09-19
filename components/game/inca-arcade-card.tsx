@@ -132,10 +132,10 @@ export function IncaArcadeCard({
                     marginBottom: 4,
                   }}
                 >
-                  NIVEL
+                  {currentLevel !== null ? "NIVEL" : "MODO"}
                 </span>
                 <span style={{ ...arcade, fontSize: 10, color: primaryColor }}>
-                  {currentLevel}
+                  {currentLevel !== null ? currentLevel : "EXPRESS"}
                 </span>
               </div>
             </div>

@@ -23,16 +23,28 @@ export const CardWrapper = ({
 }: CardWrapperProps) => {
   if (singleColumn) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardContent className="p-6 md:p-8">
+      <div className="w-full flex justify-center">
+        <Card className="w-full max-w-md shadow-md rounded-2xl border-border/80 p-0 overflow-hidden">
+          <CardContent className="p-6 sm:p-8">
+            {/* Mobile Brand Logo */}
+            <div className="mb-6 flex justify-center">
+              <Image
+                src="/logo_completo.png"
+                alt="VotaBien"
+                width={150}
+                height={42}
+                priority
+                className="h-9 w-auto object-contain"
+              />
+            </div>
+
             {/* Header con título */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-center mb-2">
+            <div className="mb-6 text-center">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {headerLabel}
               </h1>
               {welcomeMessage && (
-                <p className="text-gray-600 text-center text-sm">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   {welcomeMessage}
                 </p>
               )}
@@ -42,7 +54,9 @@ export const CardWrapper = ({
             <div className="mb-6">{children}</div>
 
             {/* Back Button */}
-            <BackButton href={backButtonHref} label={backButtonLabel} />
+            <div className="pt-2 border-t border-border/40">
+              <BackButton href={backButtonHref} label={backButtonLabel} />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -50,18 +64,30 @@ export const CardWrapper = ({
   }
 
   return (
-    <div className="flex items-center justify-center p-4">
-      <Card className="w-full max-w-5xl overflow-hidden shadow-lg p-0">
+    <div className="w-full">
+      <Card className="w-full overflow-hidden border-border/80 shadow-md sm:shadow-lg rounded-2xl p-0 bg-card">
         <CardContent className="grid p-0 md:grid-cols-2">
           {/* Columna izquierda - Formulario */}
-          <div className="flex flex-col p-6 md:p-8">
+          <div className="flex flex-col justify-between p-6 sm:p-8 md:p-10">
+            {/* Mobile Brand Logo */}
+            <div className="mb-6 flex justify-center md:hidden">
+              <Image
+                src="/logo_completo.png"
+                alt="VotaBien"
+                width={150}
+                height={42}
+                priority
+                className="h-9 w-auto object-contain"
+              />
+            </div>
+
             {/* Header con título */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-center mb-2">
+            <div className="mb-6 text-center md:text-left">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {headerLabel}
               </h1>
               {welcomeMessage && (
-                <p className="text-gray-600 text-center text-sm">
+                <p className="mt-1.5 text-sm text-muted-foreground">
                   {welcomeMessage}
                 </p>
               )}
@@ -71,7 +97,7 @@ export const CardWrapper = ({
             <div className="flex-1">{children}</div>
 
             {/* Back Button */}
-            <div className="mt-6">
+            <div className="mt-6 pt-4 border-t border-border/40">
               <BackButton href={backButtonHref} label={backButtonLabel} />
             </div>
           </div>
