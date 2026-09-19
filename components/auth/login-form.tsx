@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { authClient } from "@/lib/auth-client";
+import { Eye, EyeOff } from "lucide-react";
 import { LoginSchema } from "@/schemas/auth";
 import {
   Form,
@@ -39,6 +40,7 @@ export const LoginForm = () => {
       ? "¡Cuenta verificada exitosamente! Por favor inicia sesión."
       : undefined,
   );
+  const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<z.infer<typeof LoginSchema>>({
@@ -84,26 +86,29 @@ export const LoginForm = () => {
   return (
     <CardWrapper
       headerLabel="¡Hola de nuevo!"
-      welcomeMessage="Inicia sesión en tu cuenta"
+      welcomeMessage="Inicia sesión para continuar"
       backButtonLabel="Volver al inicio"
       backButtonHref="/"
       singleColumn={false}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Correo electrónico</FormLabel>
+              <FormItem className="space-y-1.5">
+                <FormLabel className="text-sm font-medium">
+                  Correo electrónico
+                </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     disabled={isPending}
-                    placeholder="ejemplo@gmail.com"
+                    placeholder="ejemplo@correo.com"
                     type="email"
-                    className="p-4 md:p-6 rounded-lg bg-gray-50"
+                    autoComplete="email"
+                    className="h-11 rounded-lg bg-background text-base sm:text-sm shadow-xs transition-colors"
                   />
                 </FormControl>
                 <FormMessage />
@@ -115,26 +120,49 @@ export const LoginForm = () => {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <FormLabel>Contraseña</FormLabel>
+                  <FormLabel className="text-sm font-medium">
+                    Contraseña
+                  </FormLabel>
                   <Button
                     size="sm"
                     variant="link"
                     asChild
-                    className="px-0 font-normal"
+                    className="h-auto p-0 text-xs sm:text-sm font-normal text-muted-foreground hover:text-primary transition-colors"
                   >
                     <Link href="/auth/reset">¿Olvidaste tu contraseña?</Link>
                   </Button>
                 </div>
                 <FormControl>
-                  <Input
-                    {...field}
-                    disabled={isPending}
-                    placeholder="******"
-                    type="password"
-                    className="p-4 md:p-6 rounded-lg bg-gray-50 pr-12"
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      disabled={isPending}
+                      placeholder="••••••••"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      className="h-11 rounded-lg bg-background pr-10 text-base sm:text-sm shadow-xs transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={isPending}
+                      tabIndex={-1}
+                      className="absolute right-0 top-0 flex h-full items-center justify-center px-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                      aria-label={
+                        showPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -144,7 +172,11 @@ export const LoginForm = () => {
           <FormError message={error || urlError} />
           <FormSuccess message={success} />
 
-          <Button type="submit" disabled={isPending} className="w-full">
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-11 rounded-lg text-sm sm:text-base font-medium shadow-xs transition-all active:scale-[0.99]"
+          >
             {isPending ? "Iniciando sesión..." : "Iniciar sesión"}
           </Button>
         </form>

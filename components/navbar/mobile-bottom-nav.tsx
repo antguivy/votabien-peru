@@ -100,8 +100,10 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
     <>
       {/* ── BARRA ── */}
       <div
+        data-mobile-bottom-nav
         className={cn(
           "fixed bottom-0 left-0 right-0 w-full z-40 lg:hidden",
+          "[.hide-mobile-bottom-nav_&]:!hidden",
           // eslint-disable-next-line react-hooks/refs
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",

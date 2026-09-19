@@ -112,18 +112,21 @@ export async function getPlayableQuestions(options?: {
   try {
     const whereClause: {
       is_published: boolean;
-      topic?: { slug: string };
+      topic?: { slug?: string; is_active?: boolean };
       audiences?: {
         some: {
           audience: { slug: string };
         };
       };
+      OR?: Array<{ topic_id: null } | { topic: { is_active: boolean } }>;
     } = {
       is_published: true,
+      OR: [{ topic_id: null }, { topic: { is_active: true } }],
     };
 
     if (options?.topicSlug && options.topicSlug !== "all") {
-      whereClause.topic = { slug: options.topicSlug };
+      whereClause.topic = { slug: options.topicSlug, is_active: true };
+      delete whereClause.OR;
     }
 
     if (options?.audienceSlug && options.audienceSlug !== "all") {

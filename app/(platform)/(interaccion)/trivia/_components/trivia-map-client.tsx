@@ -8,6 +8,7 @@ import { REGION_ASSETS } from "@/constants/game-assets";
 import {
   getRegionByLevel,
   REGION_START_LEVELS,
+  getNaturalRegionByDepartment,
 } from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
 import { GameLevel, GameRegion, TriviaQuestion } from "@/interfaces/game-types";
@@ -22,15 +23,14 @@ const SCROLL_PADDING_TOP = 100;
 const SCROLL_PADDING_BOTTOM = 200;
 const MAP_MARGIN_TOP = 0;
 
-// TEMPORAL
-const MAX_LEVELS = 14;
-
 export default function TriviaMapClient({
   initialQuestions,
   onExit,
+  selectedRegionName,
 }: {
   initialQuestions: TriviaQuestion[];
   onExit?: () => void;
+  selectedRegionName?: string | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +47,11 @@ export default function TriviaMapClient({
     levelsProgress,
   } = useGameStore();
 
+  const overrideRegion = useMemo(
+    () => getNaturalRegionByDepartment(selectedRegionName),
+    [selectedRegionName],
+  );
+
   useEffect(() => {
     setQuestions(initialQuestions);
   }, [initialQuestions, setQuestions]);
@@ -60,17 +65,36 @@ export default function TriviaMapClient({
     return () => ro.disconnect();
   }, []);
 
-  // rawQuestions, highestUnlockedLevel y levelsProgress son las dependencias
-  // reales — getLevels es una función estable de zustand que los consume internamente
-  const levels = useMemo(
-    () => getLevels().slice(0, MAX_LEVELS),
+  // Niveles dinámicos según banco de preguntas real (sin tope artificial de 14)
+  const levels = useMemo(() => {
+    const raw = getLevels();
+    if (!overrideRegion) return raw;
+    return raw.map((lvl) => ({
+      ...lvl,
+      region: overrideRegion,
+      title: `${selectedRegionName || "Región"} · Nivel ${lvl.id}`,
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rawQuestions, highestUnlockedLevel, levelsProgress],
-  );
+  }, [
+    rawQuestions,
+    highestUnlockedLevel,
+    levelsProgress,
+    overrideRegion,
+    selectedRegionName,
+  ]);
 
-  const currentTheme = getRegionByLevel(highestUnlockedLevel);
+  const currentTheme = useMemo(() => {
+    const theme = getRegionByLevel(highestUnlockedLevel, overrideRegion);
+    if (overrideRegion && selectedRegionName) {
+      return {
+        ...theme,
+        name: selectedRegionName,
+      };
+    }
+    return theme;
+  }, [highestUnlockedLevel, overrideRegion, selectedRegionName]);
 
-  // Calcula secciones de fondo por región — cada región ocupa su rango de niveles
+  // Calcula secciones de fondo por región — si es territorial fija (ej. Junín), muestra Sierra
   const regionSections = useMemo(() => {
     if (!levels.length) return [];
 
@@ -78,7 +102,19 @@ export default function TriviaMapClient({
     const mapHeight = levels.length * NODE_SPACING + 200;
     const totalH = SCROLL_PADDING_TOP + mapHeight + SCROLL_PADDING_BOTTOM;
 
-    // Agrupar índices consecutivos por región
+    // Si hay una región específica (ej. Junín), el mapa completo adopta ese fondo y paleta
+    if (overrideRegion) {
+      return [
+        {
+          regionId: overrideRegion,
+          top: 0,
+          height: totalH,
+          theme: currentTheme,
+        },
+      ];
+    }
+
+    // Agrupar índices consecutivos por región para progresión nacional
     type Section = { regionId: GameRegion; startIdx: number; endIdx: number };
     const sections: Section[] = [];
     let currentRegionId = levels[0].region as GameRegion;
@@ -122,7 +158,7 @@ export default function TriviaMapClient({
         theme: getRegionByLevel(levels[startIdx].id),
       };
     });
-  }, [levels]);
+  }, [levels, overrideRegion, currentTheme]);
 
   // Hint de primera visita — solo si nunca han jugado
   const [showHint, setShowHint] = useState(() => {
@@ -143,11 +179,15 @@ export default function TriviaMapClient({
   useEffect(() => {
     const prev = prevHighest.current;
     const curr = highestUnlockedLevel;
-    if (curr !== prev && REGION_START_LEVELS.includes(curr)) {
+    if (
+      curr !== prev &&
+      REGION_START_LEVELS.includes(curr) &&
+      !overrideRegion
+    ) {
       setShowRegionTransition(true);
     }
     prevHighest.current = curr;
-  }, [highestUnlockedLevel]);
+  }, [highestUnlockedLevel, overrideRegion]);
 
   useEffect(() => {
     if (!levels || levels.length === 0) return;
@@ -490,6 +530,7 @@ export default function TriviaMapClient({
       {activeLevelId !== null && (
         <TriviaGameView
           levelId={activeLevelId}
+          overrideRegion={overrideRegion}
           onExit={() => setActiveLevelId(null)}
           onComplete={handleLevelComplete}
         />
