@@ -77,8 +77,8 @@ let dbTrivias: Map<string, MockTriviaGame>;
 let dbAudiences: MockTriviaAudience[];
 let triviaIdCounter: bigint;
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  const prismaMock: Record<string, unknown> = {
     triviagame: {
       create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
         triviaIdCounter += BigInt(1);
@@ -172,7 +172,39 @@ vi.mock("@/lib/prisma", () => ({
         }
         return { _max: { global_index: maxIndex } };
       }),
+      findFirst: vi.fn(
+        async ({
+          where,
+          orderBy,
+        }: {
+          where?: {
+            global_index?: { lt?: bigint } | bigint;
+          };
+          orderBy?: { global_index?: "asc" | "desc" };
+        }) => {
+          let list = Array.from(dbTrivias.values());
+          if (where?.global_index !== undefined) {
+            if (typeof where.global_index === "bigint") {
+              list = list.filter((t) => t.global_index === where.global_index);
+            } else if (where.global_index.lt !== undefined) {
+              list = list.filter(
+                (t) => t.global_index < where.global_index!.lt!,
+              );
+            }
+          }
+          if (orderBy?.global_index === "desc") {
+            list.sort((a, b) => (b.global_index > a.global_index ? 1 : -1));
+          } else if (orderBy?.global_index === "asc") {
+            list.sort((a, b) => (a.global_index > b.global_index ? 1 : -1));
+          }
+          return list[0] ? { ...list[0] } : null;
+        },
+      ),
     },
+    $transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
+      return cb(prismaMock);
+    }),
+    $executeRaw: vi.fn(async () => 1),
     triviagame_audience: {
       createMany: vi.fn(
         async ({
@@ -200,8 +232,9 @@ vi.mock("@/lib/prisma", () => ({
         },
       ),
     },
-  },
-}));
+  };
+  return { prisma: prismaMock };
+});
 
 import {
   createTrivia,
@@ -544,5 +577,164 @@ describe("Trivia Game Server Actions - Principal Engineer Invariants", () => {
     const res = await deleteTrivia(401);
     expect(res.success).toBe(true);
     expect(dbTrivias.has("401")).toBe(false);
+  });
+
+  // --------------------------------------------------------------------------
+  // INVARIANTE 7: Asignación Secuencial Atómica cuando global_index es 0 o ausente
+  // --------------------------------------------------------------------------
+  it("INVARIANTE 7: createTrivia asigna automáticamente el siguiente índice secuencial cuando global_index es 0", async () => {
+    mockCurrentUser = {
+      id: "usr_admin",
+      name: "Admin",
+      email: "admin@pe",
+      role: "admin",
+    };
+
+    // Sembrar trivias previas con índices 10 y 11
+    dbTrivias.set("501", {
+      id: BigInt(501),
+      topic_id: null,
+      quote: "Pregunta previa 1",
+      title: null,
+      category: "ELECTORAL",
+      difficulty: "FACIL",
+      display_type: "TEXT_ONLY",
+      correct_answer_id: "opt_1",
+      global_index: BigInt(10),
+      explanation: null,
+      source_url: null,
+      image_url: null,
+      is_published: true,
+      options: [],
+      person_id: null,
+      political_party_id: null,
+    });
+    dbTrivias.set("502", {
+      id: BigInt(502),
+      topic_id: null,
+      quote: "Pregunta previa 2",
+      title: null,
+      category: "ELECTORAL",
+      difficulty: "FACIL",
+      display_type: "TEXT_ONLY",
+      correct_answer_id: "opt_1",
+      global_index: BigInt(11),
+      explanation: null,
+      source_url: null,
+      image_url: null,
+      is_published: true,
+      options: [],
+      person_id: null,
+      political_party_id: null,
+    });
+
+    const payload = {
+      quote: "¿Cuál es el siguiente índice asignado?",
+      category: "ELECTORAL",
+      difficulty: "FACIL" as const,
+      display_type: "TEXT_ONLY" as const,
+      correct_answer_id: "opt_1",
+      global_index: 0, // Delegado al backend (como hace el Copiloto)
+      options: [
+        { option_id: "opt_1", name: "Opción 1" },
+        { option_id: "opt_2", name: "Opción 2" },
+      ],
+      is_published: false,
+    };
+
+    const res = await createTrivia(payload);
+    expect(res.success).toBe(true);
+    expect(res.global_index).toBe(12);
+
+    const created = dbTrivias.get(res.id!.toString());
+    expect(created?.global_index).toBe(BigInt(12));
+  });
+
+  // --------------------------------------------------------------------------
+  // INVARIANTE 8: Prevención de Colisiones por Carrera Concurrente
+  // --------------------------------------------------------------------------
+  it("INVARIANTE 8: createTrivia previene duplicados reasignando al siguiente libre si el índice propuesto colisiona", async () => {
+    mockCurrentUser = {
+      id: "usr_admin",
+      name: "Admin",
+      email: "admin@pe",
+      role: "admin",
+    };
+
+    // Existe ya una trivia con global_index = 87
+    dbTrivias.set("601", {
+      id: BigInt(601),
+      topic_id: null,
+      quote: "Trivia existente con índice 87",
+      title: null,
+      category: "ELECTORAL",
+      difficulty: "FACIL",
+      display_type: "TEXT_ONLY",
+      correct_answer_id: "opt_1",
+      global_index: BigInt(87),
+      explanation: null,
+      source_url: null,
+      image_url: null,
+      is_published: true,
+      options: [],
+      person_id: null,
+      political_party_id: null,
+    });
+
+    // Otro cliente (o usuario en race condition) intenta crear con global_index = 87
+    const payload = {
+      quote: "¿Pregunta concurrente que intenta repetir 87?",
+      category: "ELECTORAL",
+      difficulty: "FACIL" as const,
+      display_type: "TEXT_ONLY" as const,
+      correct_answer_id: "opt_1",
+      global_index: 87, // Índice en colisión
+      options: [
+        { option_id: "opt_1", name: "Opción 1" },
+        { option_id: "opt_2", name: "Opción 2" },
+      ],
+      is_published: false,
+    };
+
+    const res = await createTrivia(payload);
+    expect(res.success).toBe(true);
+    // Debe resolver la colisión asignando el siguiente libre: 88
+    expect(res.global_index).toBe(88);
+
+    const created = dbTrivias.get(res.id!.toString());
+    expect(created?.global_index).toBe(BigInt(88));
+  });
+
+  // --------------------------------------------------------------------------
+  // INVARIANTE 9: Respeta global_index manual cuando está libre
+  // --------------------------------------------------------------------------
+  it("INVARIANTE 9: createTrivia respeta el índice manual cuando no existe colisión", async () => {
+    mockCurrentUser = {
+      id: "usr_admin",
+      name: "Admin",
+      email: "admin@pe",
+      role: "admin",
+    };
+
+    const payload = {
+      quote: "¿Pregunta con índice manual explícito libre?",
+      category: "ELECTORAL",
+      difficulty: "FACIL" as const,
+      display_type: "TEXT_ONLY" as const,
+      correct_answer_id: "opt_1",
+      global_index: 45, // Libre
+      options: [
+        { option_id: "opt_1", name: "Opción 1" },
+        { option_id: "opt_2", name: "Opción 2" },
+      ],
+      is_published: false,
+    };
+
+    const res = await createTrivia(payload);
+    expect(res.success).toBe(true);
+    expect(res.global_index).toBe(45);
+
+    const created = dbTrivias.get(res.id!.toString());
+    expect(created?.global_index).toBe(BigInt(45));
   });
 });

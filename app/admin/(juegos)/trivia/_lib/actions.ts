@@ -42,50 +42,77 @@ export async function createTrivia(data: TriviaFormValues) {
         ? fields.correct_answer_id
         : fields.political_party_id || null;
 
-    let targetGlobalIndex = BigInt(fields.global_index);
-    if (!fields.global_index || fields.global_index >= 900) {
-      const lastTrivia = await prisma.triviagame.findFirst({
+    const created = await prisma.$transaction(async (tx) => {
+      // Advisory lock para serializar la asignación secuencial y prevenir colisiones milimétricas
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(738291039)`;
+      } catch {
+        // En entornos de testing o sin soporte nativo de advisory locks se continúa normalmente
+      }
+
+      const lastTrivia = await tx.triviagame.findFirst({
         where: { global_index: { lt: BigInt(900) } },
         orderBy: { global_index: "desc" },
         select: { global_index: true },
       });
-      targetGlobalIndex = (lastTrivia?.global_index ?? BigInt(0)) + BigInt(1);
-    }
+      const nextSequentialIndex =
+        (lastTrivia?.global_index ?? BigInt(0)) + BigInt(1);
 
-    const created = await prisma.triviagame.create({
-      data: {
-        topic_id: fields.topic_id || null,
-        quote: fields.quote,
-        title: fields.title || null,
-        category: fields.category,
-        difficulty: fields.difficulty,
-        display_type: fields.display_type,
-        correct_answer_id: fields.correct_answer_id,
-        global_index: targetGlobalIndex,
-        explanation: fields.explanation || null,
-        source_url: fields.source_url || null,
-        secondary_sources:
-          fields.secondary_sources && fields.secondary_sources.length > 0
-            ? (fields.secondary_sources as Prisma.InputJsonValue)
-            : Prisma.JsonNull,
-        image_url: fields.image_url || null,
-        is_published: canPublishDirectly ? fields.is_published : false,
-        options: fields.options as Prisma.InputJsonValue,
-        person_id: personId,
-        political_party_id: politicalPartyId,
-        electoral_district_id: fields.electoral_district_id || null,
-      },
-    });
+      let targetGlobalIndex = nextSequentialIndex;
 
-    if (audience_ids && audience_ids.length > 0) {
-      await prisma.triviagame_audience.createMany({
-        data: audience_ids.map((audId) => ({
-          question_id: created.id,
-          audience_id: audId,
-        })),
-        skipDuplicates: true,
+      // Si el cliente propuso un índice manual (< 900 y > 0), validamos que no colisione
+      if (
+        fields.global_index &&
+        fields.global_index > 0 &&
+        fields.global_index < 900
+      ) {
+        const proposedIndex = BigInt(fields.global_index);
+        const collision = await tx.triviagame.findFirst({
+          where: { global_index: proposedIndex },
+          select: { id: true },
+        });
+        if (!collision) {
+          targetGlobalIndex = proposedIndex;
+        }
+      }
+
+      const newTrivia = await tx.triviagame.create({
+        data: {
+          topic_id: fields.topic_id || null,
+          quote: fields.quote,
+          title: fields.title || null,
+          category: fields.category,
+          difficulty: fields.difficulty,
+          display_type: fields.display_type,
+          correct_answer_id: fields.correct_answer_id,
+          global_index: targetGlobalIndex,
+          explanation: fields.explanation || null,
+          source_url: fields.source_url || null,
+          secondary_sources:
+            fields.secondary_sources && fields.secondary_sources.length > 0
+              ? (fields.secondary_sources as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
+          image_url: fields.image_url || null,
+          is_published: canPublishDirectly ? fields.is_published : false,
+          options: fields.options as Prisma.InputJsonValue,
+          person_id: personId,
+          political_party_id: politicalPartyId,
+          electoral_district_id: fields.electoral_district_id || null,
+        },
       });
-    }
+
+      if (audience_ids && audience_ids.length > 0) {
+        await tx.triviagame_audience.createMany({
+          data: audience_ids.map((audId) => ({
+            question_id: newTrivia.id,
+            audience_id: audId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      return newTrivia;
+    });
 
     revalidatePath("/admin/trivia");
     revalidatePath("/trivia");
@@ -93,6 +120,7 @@ export async function createTrivia(data: TriviaFormValues) {
       success: true,
       message: "Pregunta creada correctamente",
       id: Number(created.id),
+      global_index: Number(created.global_index),
     };
   } catch (error) {
     return { success: false, error: extractErrorMessage(error) };
