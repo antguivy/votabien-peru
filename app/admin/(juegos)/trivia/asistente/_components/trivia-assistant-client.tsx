@@ -161,7 +161,7 @@ export function TriviaAssistantClient({
   regions,
   canPublishDirectly: _canPublishDirectly,
   activeWorkflow,
-  nextOrderIndex = 1,
+  nextOrderIndex: _nextOrderIndex = 1,
 }: TriviaAssistantClientProps) {
   const router = useRouter();
 
@@ -333,7 +333,7 @@ export function TriviaAssistantClient({
           if (stage === "trivia_draft") {
             const rawCard = data as Record<string, unknown>;
             const normalizedCard: TriviaCard = {
-              region: (rawCard.region as string) || selectedRegion || "PERÚ",
+              region: selectedRegion || (rawCard.region as string) || "PERÚ",
               category: (rawCard.category as string) || "OBRAS_Y_PROPUESTAS",
               difficulty: ((rawCard.difficulty as string) || "MEDIO") as
                 | "FACIL"
@@ -382,7 +382,8 @@ export function TriviaAssistantClient({
     if (!activeCard) return;
     setIsSaving(true);
     try {
-      const targetRegionStr = (activeCard.region || selectedRegion || "")
+      // 1. Buscamos la región correspondiente priorizando estrictamente la selección del usuario
+      const targetRegionStr = (selectedRegion || activeCard.region || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .trim()
@@ -411,8 +412,7 @@ export function TriviaAssistantClient({
             targetRegionStr.includes(cleanName)
           );
         }) ||
-        regions.find((r) => r.code.toUpperCase() === "JUN") ||
-        regions[0];
+        null;
 
       const topicId =
         topics.find((t) => t.slug.includes("elecciones") || t.is_regional)
@@ -460,7 +460,7 @@ export function TriviaAssistantClient({
           | "DIFICIL",
         display_type: "TEXT_ONLY",
         correct_answer_id: correctAnswerId,
-        global_index: nextOrderIndex || 1,
+        global_index: 0,
         explanation: activeCard.explanation,
         source_url: primarySourceUrl,
         secondary_sources: activeCard.sources
@@ -472,7 +472,10 @@ export function TriviaAssistantClient({
       });
 
       if (res.success) {
-        toast.success("Borrador guardado en triviagame (is_published: false)");
+        const indexLabel = res.global_index ? `#${res.global_index}` : "";
+        toast.success(
+          `Borrador ${indexLabel} guardado correctamente (${matchingRegion?.name || "Nacional"})`,
+        );
         router.push("/admin/trivia");
       } else {
         toast.error(`Error: ${res.error}`);

@@ -17,7 +17,11 @@ export const triviaSchema = z.object({
   topic_id: z.string().optional().nullable(),
   quote: z.string().min(3, "La pregunta o enunciado es requerido"),
   title: z.string().optional().nullable(),
-  global_index: z.coerce.number().min(1, "El índice debe ser mayor a 0"),
+  global_index: z.coerce
+    .number()
+    .min(0, "El índice debe ser mayor o igual a 0")
+    .optional()
+    .default(0),
   explanation: z.string().optional().nullable(),
   source_url: z
     .string()

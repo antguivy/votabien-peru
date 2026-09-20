@@ -693,7 +693,7 @@ export function TriviaList({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3.5 sm:gap-4.5">
           {paginatedTrivias.map((trivia) => (
             <TriviaItem
               key={trivia.id}
@@ -986,7 +986,7 @@ function TriviaItem({
 
   return (
     <Card
-      className={`relative flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-all rounded-2xl ${
+      className={`relative flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md transition-all rounded-2xl min-w-0 ${
         isSelected
           ? "border-primary ring-2 ring-primary/40 bg-primary/[0.02]"
           : !trivia.is_published
@@ -997,7 +997,7 @@ function TriviaItem({
       <CardHeader className="pt-3.5 pb-2 px-3.5 sm:px-4 space-y-2">
         {/* Meta / Badges */}
         <div className="flex justify-between items-center gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             {onToggleSelect && (
               <Checkbox
                 checked={isSelected}
@@ -1037,10 +1037,13 @@ function TriviaItem({
             {trivia.electoraldistrict && (
               <Badge
                 variant="outline"
-                className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 shrink-0 font-semibold gap-1 flex items-center"
+                className="text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 shrink-0 font-semibold gap-1 flex items-center max-w-[160px]"
+                title={trivia.electoraldistrict.name}
               >
-                <MapPin size={10} />
-                <span>{trivia.electoraldistrict.name}</span>
+                <MapPin size={10} className="shrink-0" />
+                <span className="truncate">
+                  {trivia.electoraldistrict.name}
+                </span>
               </Badge>
             )}
           </div>
