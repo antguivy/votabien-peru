@@ -30,6 +30,8 @@ import {
   Settings,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   GitCompare,
+  ShieldAlert,
+  ChevronRight,
 } from "lucide-react";
 import { NavItem } from "@/interfaces/navbar";
 
@@ -268,6 +270,33 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
               </div>
             </div>
           )}
+
+          {/* ── ACCESO DESTACADO: MIEMBRO DE MESA ── */}
+          <Link
+            href="/miembro-de-mesa"
+            onClick={() => setIsMenuOpen(false)}
+            className="my-3 p-3 rounded-2xl bg-brand/10 border border-brand/25 flex items-center justify-between gap-3 hover:bg-brand/15 transition-all active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-brand text-white shrink-0 shadow-sm">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-foreground tracking-tight">
+                    Copiloto Miembro de Mesa
+                  </span>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand/20 text-brand uppercase">
+                    ONPE 2026
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  Checklist offline, calculadora de cuadre y árbitro de votos
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </Link>
 
           <div className="grid grid-cols-4 md:grid-cols-5 gap-2 py-4 overflow-hidden">
             {gridItems.map((item, index) => {

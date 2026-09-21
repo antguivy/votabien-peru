@@ -1,53 +1,34 @@
 "use client";
 
 import { useCopilotoStore, CopilotoTab } from "../_lib/store";
-import {
-  ClipboardCheck,
-  Calculator,
-  Scale,
-  Mail,
-  BookOpen,
-} from "lucide-react";
+import { ClipboardCheck, Calculator, Scale, Mail } from "lucide-react";
 
 interface NavItem {
   id: CopilotoTab;
   label: string;
-  shortLabel: string;
   icon: React.ComponentType<{ className?: string }>;
-  highlight?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   {
     id: "checklist",
-    label: "Checklist de Fases",
-    shortLabel: "Fases",
+    label: "Fases",
     icon: ClipboardCheck,
   },
   {
     id: "calculadora",
-    label: "Calculadora de Cuadre",
-    shortLabel: "Cuadre",
+    label: "Cuadre",
     icon: Calculator,
-    highlight: true,
   },
   {
     id: "arbitro",
-    label: "Árbitro de Votos",
-    shortLabel: "Votos",
+    label: "Votos",
     icon: Scale,
   },
   {
     id: "sobres",
-    label: "Sobres de Seguridad",
-    shortLabel: "Sobres",
+    label: "Sobres",
     icon: Mail,
-  },
-  {
-    id: "protocolos",
-    label: "Protocolos & Ley",
-    shortLabel: "Guía",
-    icon: BookOpen,
   },
 ];
 
@@ -56,8 +37,8 @@ export function CopilotoNav() {
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
 
   return (
-    <nav className="w-full bg-zinc-950/95 border-b border-zinc-800/80 px-2 py-2 sticky top-[57px] z-30 backdrop-blur-md">
-      <div className="mx-auto max-w-5xl flex items-center justify-between sm:justify-center gap-1 sm:gap-2">
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
+      <nav className="w-full max-w-md bg-background/95 backdrop-blur-xl border-t border-border px-2 pt-1.5 pb-[calc(0.6rem+env(safe-area-inset-bottom))] flex items-center justify-around pointer-events-auto shadow-[0_-4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -66,29 +47,32 @@ export function CopilotoNav() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 ${
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-all duration-150 select-none active:scale-95 ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-sm shadow-blue-500/25 font-semibold"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-transparent"
+                  ? "text-brand font-bold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon
-                className={`h-4 w-4 shrink-0 ${
+              <div
+                className={`p-1.5 rounded-xl transition-all ${
                   isActive
-                    ? "text-white"
-                    : item.highlight
-                      ? "text-blue-400"
-                      : "text-zinc-400"
+                    ? "bg-brand/15 text-brand"
+                    : "bg-transparent text-muted-foreground"
                 }`}
-              />
-              <span className="hidden md:inline">{item.label}</span>
-              <span className="md:hidden text-[11px] sm:text-xs">
-                {item.shortLabel}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+              </div>
+              <span
+                className={`text-[10px] tracking-tight leading-none ${
+                  isActive ? "font-extrabold text-brand" : "font-medium"
+                }`}
+              >
+                {item.label}
               </span>
             </button>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

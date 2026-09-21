@@ -3,19 +3,9 @@ import { CopilotoHeader } from "./_components/copiloto-header";
 import { CopilotoNav } from "./_components/copiloto-nav";
 
 export const metadata: Metadata = {
-  title: "Copiloto Electoral — Miembros de Mesa ONPE 2026 | VotaBien",
+  title: "Copiloto de Mesa Electoral — ONPE 2026 | VotaBien",
   description:
-    "Asistente operativo offline para miembros de mesa: checklist de fases, calculadora de cuadre de actas, árbitro visual de votos y guía de sobres de seguridad.",
-  keywords: [
-    "ONPE",
-    "miembros de mesa",
-    "elecciones 2026",
-    "escrutinio",
-    "cuadre de actas",
-    "sobre plomo",
-    "sobre rojo",
-    "ley 32231",
-  ],
+    "Asistente operativo offline mobile-first para miembros de mesa: checklist de fases, calculadora de cuadre de actas, árbitro visual de votos y guía de sobres.",
 };
 
 export const viewport: Viewport = {
@@ -31,25 +21,20 @@ export default function MiembroDeMesaLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
-      {/* Immersive Top Bar */}
-      <CopilotoHeader />
+    <div className="min-h-screen bg-muted/30 dark:bg-black/60 flex justify-center selection:bg-brand selection:text-white">
+      {/* Mobile-First Centered App Shell */}
+      <div className="w-full max-w-md min-h-screen bg-background border-x border-border/40 shadow-xl flex flex-col relative">
+        {/* Top Header */}
+        <CopilotoHeader />
 
-      {/* Persistent Module Tabs */}
-      <CopilotoNav />
+        {/* Scrollable Main Content */}
+        <main className="flex-1 w-full px-3.5 py-4 pb-24 overflow-x-hidden">
+          {children}
+        </main>
 
-      {/* Main Operational Canvas */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-3 py-4 sm:px-6 sm:py-6">
-        {children}
-      </main>
-
-      {/* Discreet Footer with Legal Reminder */}
-      <footer className="w-full border-t border-zinc-900 bg-zinc-950 py-3 px-4 text-center text-xs text-zinc-300">
-        <p>
-          Herramienta de asistencia ciudadana para miembros de mesa según Ley Nº
-          26859, Ley Nº 32231 y Directivas Oficiales ONPE 2026.
-        </p>
-      </footer>
+        {/* Bottom Thumb Navigation */}
+        <CopilotoNav />
+      </div>
     </div>
   );
 }

@@ -8,8 +8,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  UserCheck,
-  Shield,
   Calculator,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +39,9 @@ export function TabChecklist() {
   const isPhaseComplete = phaseDoneCount === phaseTotalCount;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Phase Stepper Pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+    <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Horizontal Scrollable Phase Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar -mx-1 px-1">
         {PHASES_CONFIG.map((phase, idx) => {
           const isCurrent = phase.id === activePhase;
           const doneInPhase = phase.tasks.filter(
@@ -55,79 +53,53 @@ export function TabChecklist() {
             <button
               key={phase.id}
               onClick={() => setActivePhase(phase.id)}
-              className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all select-none active:scale-95 ${
                 isCurrent
-                  ? "bg-zinc-900 border-blue-500 shadow-md shadow-blue-950/50"
+                  ? "bg-brand text-brand-foreground shadow-sm"
                   : isFinished
-                    ? "bg-emerald-950/20 border-emerald-800/50 hover:bg-emerald-950/30"
-                    : "bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900/80"
+                    ? "bg-success/15 text-success border border-success/30"
+                    : "bg-muted/50 text-muted-foreground hover:text-foreground border border-border/50"
               }`}
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                  Paso {idx + 1}
-                </span>
-                {isFinished ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                ) : (
-                  <span className="text-[10px] font-mono text-zinc-500">
-                    {doneInPhase}/{phase.tasks.length}
-                  </span>
-                )}
-              </div>
-              <p
-                className={`text-xs sm:text-sm font-semibold truncate ${
-                  isCurrent
-                    ? "text-blue-400"
-                    : isFinished
-                      ? "text-emerald-300"
-                      : "text-zinc-200"
-                }`}
-              >
-                {phase.title.replace(/^\d+\.\s*/, "")}
-              </p>
-              {isCurrent && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />
-              )}
+              <span>
+                {idx + 1}. {phase.title.replace(/^\d+\.\s*/, "")}
+              </span>
+              {isFinished && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
             </button>
           );
         })}
       </div>
 
-      {/* Phase Header Card */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 sm:p-6 backdrop-blur">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-zinc-800">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                {currentPhaseConfig.title}
-              </h2>
-              <Badge
-                variant="outline"
-                className="bg-zinc-800 text-zinc-300 border-zinc-700 text-xs font-mono"
-              >
-                <Clock className="h-3 w-3 mr-1 text-blue-400" />
-                {currentPhaseConfig.timeframe}
-              </Badge>
-            </div>
-            <p className="text-sm text-zinc-400">
-              {currentPhaseConfig.subtitle}
-            </p>
+      {/* Phase Active Header Card */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-2 shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+            <Clock className="h-3.5 w-3.5 text-brand" />
+            <span>{currentPhaseConfig.timeframe}</span>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-xs font-mono text-zinc-400">Progreso:</span>
-            <div className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-blue-950/60 border border-blue-800/80 text-blue-300">
-              {phaseDoneCount} de {phaseTotalCount} completadas
-            </div>
-          </div>
+          <Badge
+            variant="outline"
+            className="text-[10px] font-mono border-border bg-muted/30"
+          >
+            {phaseDoneCount} de {phaseTotalCount} completadas
+          </Badge>
         </div>
 
-        {/* Critical Blocker Banner for this Phase */}
+        <div>
+          <h2 className="text-lg font-black tracking-tight text-foreground">
+            {currentPhaseConfig.title}
+          </h2>
+          <p className="text-xs text-muted-foreground leading-snug">
+            {currentPhaseConfig.subtitle}
+          </p>
+        </div>
+
+        {/* Phase Blocker Alert */}
         {currentPhaseConfig.warningAlert && (
-          <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-amber-200">
-            <AlertOctagon className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs sm:text-sm leading-relaxed font-medium">
+          <div className="rounded-xl bg-warning/10 border border-warning/25 p-2.5 flex items-start gap-2 text-warning text-xs">
+            <AlertOctagon className="h-4 w-4 shrink-0 mt-0.5" />
+            <p className="font-medium leading-relaxed">
               {currentPhaseConfig.warningAlert}
             </p>
           </div>
@@ -135,7 +107,7 @@ export function TabChecklist() {
       </div>
 
       {/* Task Checklist Items */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {currentPhaseTasks.map((task, index) => {
           const isDone = !!completedTasks[task.id];
 
@@ -143,87 +115,67 @@ export function TabChecklist() {
             <div
               key={task.id}
               onClick={() => toggleTask(task.id)}
-              className={`rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer select-none ${
+              className={`rounded-2xl border p-3.5 transition-all select-none cursor-pointer active:scale-[0.99] ${
                 isDone
-                  ? "bg-zinc-950/60 border-zinc-800/80 opacity-70 hover:opacity-100"
+                  ? "bg-muted/20 border-border/40 opacity-70"
                   : task.isCritical
-                    ? "bg-zinc-900 border-zinc-750 hover:border-blue-500/50 shadow-sm"
-                    : "bg-zinc-900/70 border-zinc-800 hover:border-zinc-700"
+                    ? "bg-card border-border hover:border-brand/40 shadow-sm"
+                    : "bg-card border-border/80"
               }`}
             >
-              <div className="flex items-start gap-3.5">
-                {/* Custom Tap Checkbox */}
+              <div className="flex items-start gap-3">
+                {/* Large Clean Checkbox Target */}
                 <div className="pt-0.5">
                   <div
-                    className={`h-6 w-6 rounded-lg flex items-center justify-center border transition-all ${
+                    className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
                       isDone
-                        ? "bg-emerald-600 border-emerald-500 text-white shadow-sm shadow-emerald-600/30"
-                        : task.isCritical
-                          ? "border-amber-500/60 bg-amber-500/10 hover:border-amber-400"
-                          : "border-zinc-700 bg-zinc-800 hover:border-zinc-500"
+                        ? "bg-success border-success text-white shadow-sm"
+                        : "border-muted-foreground/40 bg-background"
                     }`}
                   >
-                    {isDone && <CheckCircle2 className="h-4 w-4" />}
+                    {isDone && <CheckCircle2 className="h-3.5 w-3.5" />}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2 justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-zinc-500">
+                {/* Task Details */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3
+                      className={`text-xs font-bold leading-snug ${
+                        isDone
+                          ? "line-through text-muted-foreground"
+                          : "text-foreground"
+                      }`}
+                    >
+                      <span className="text-muted-foreground font-mono mr-1">
                         #{index + 1}
                       </span>
-                      <h3
-                        className={`text-sm sm:text-base font-bold leading-snug ${
-                          isDone
-                            ? "line-through text-zinc-400"
-                            : "text-zinc-100"
-                        }`}
-                      >
-                        {task.title}
-                      </h3>
-                    </div>
+                      {task.title}
+                    </h3>
 
-                    <div className="flex items-center gap-1.5">
-                      {task.roleResponsible && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[11px] font-medium bg-zinc-800 text-zinc-300 border-zinc-700"
-                        >
-                          <UserCheck className="h-3 w-3 mr-1 text-zinc-400" />
-                          {task.roleResponsible}
-                        </Badge>
-                      )}
-                      {task.isCritical && (
-                        <Badge className="text-[10px] uppercase font-bold tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                          Crítico
-                        </Badge>
-                      )}
-                    </div>
+                    {task.roleResponsible && (
+                      <span className="text-[10px] text-muted-foreground font-medium shrink-0">
+                        {task.roleResponsible}
+                      </span>
+                    )}
                   </div>
 
-                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  <p className="text-[11.5px] text-muted-foreground leading-relaxed">
                     {task.description}
                   </p>
 
-                  {/* Irreversible Blocker Warning Box */}
+                  {/* Irreversible Blocker Callout */}
                   {task.irreversibleWarning && !isDone && (
-                    <div className="mt-2.5 rounded-xl border border-rose-500/30 bg-rose-950/30 p-3 flex items-start gap-2.5 text-rose-200 text-xs sm:text-sm">
-                      <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="mt-2 rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 flex items-start gap-2 text-destructive text-xs">
+                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold text-rose-300 uppercase tracking-wide mr-1.5">
+                        <strong className="block uppercase text-[10px] tracking-wider mb-0.5">
                           ¡Punto de no retorno!
+                        </strong>
+                        <span className="leading-snug">
+                          {task.irreversibleWarning}
                         </span>
-                        {task.irreversibleWarning}
                       </div>
-                    </div>
-                  )}
-
-                  {task.legalNote && (
-                    <div className="flex items-center gap-1.5 pt-1 text-[11px] text-zinc-400 font-mono">
-                      <Shield className="h-3 w-3 text-blue-400" />
-                      <span>{task.legalNote}</span>
                     </div>
                   )}
                 </div>
@@ -233,15 +185,15 @@ export function TabChecklist() {
         })}
       </div>
 
-      {/* Action Footer for this Phase */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* Phase Footer Navigation */}
+      <div className="pt-2 space-y-2">
         {activePhase === "escrutinio" && (
           <Button
             onClick={() => setActiveTab("calculadora")}
-            className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold flex items-center gap-2 shadow-lg shadow-purple-900/30"
+            className="w-full bg-brand text-brand-foreground font-bold flex items-center justify-center gap-2 shadow-sm rounded-xl py-5"
           >
             <Calculator className="h-4 w-4" />
-            Abrir Calculadora de Cuadre de Actas
+            <span>Abrir Calculadora de Cuadre</span>
           </Button>
         )}
 
@@ -249,14 +201,14 @@ export function TabChecklist() {
           <Button
             onClick={() => setActivePhase(nextPhase.id)}
             variant={isPhaseComplete ? "default" : "outline"}
-            className={`w-full sm:w-auto ml-auto flex items-center justify-center gap-2 font-semibold ${
+            className={`w-full flex items-center justify-center gap-2 font-semibold text-xs rounded-xl py-5 ${
               isPhaseComplete
-                ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-900/40"
-                : "border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                ? "bg-brand text-brand-foreground shadow-sm"
+                : "border-border text-foreground"
             }`}
           >
-            <span>Pasar a {nextPhase.title}</span>
-            <ArrowRight className="h-4 w-4" />
+            <span>Continuar a {nextPhase.title}</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         )}
       </div>

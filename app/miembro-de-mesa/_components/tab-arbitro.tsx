@@ -26,15 +26,11 @@ export function TabArbitro() {
 
   const renderVisualBallotBox = (type: VoteScenario["visualType"]) => {
     return (
-      <div className="relative w-28 h-28 border-2 border-zinc-600 bg-white rounded-lg flex items-center justify-center p-2 shadow-inner shrink-0 select-none">
-        {/* Mock Party Symbol Box */}
-        <div className="absolute top-1 left-1 text-[8px] font-mono text-zinc-400 uppercase">
-          Símbolo
-        </div>
-        <div className="w-16 h-16 border border-dashed border-zinc-300 rounded flex items-center justify-center relative">
+      <div className="relative w-20 h-20 border-2 border-border/80 bg-background rounded-xl flex items-center justify-center p-1 shadow-inner shrink-0 select-none">
+        <div className="w-12 h-12 border border-dashed border-border/60 rounded-lg flex items-center justify-center relative">
           {type === "cruz_perfecta" && (
             <svg
-              className="w-12 h-12 text-blue-600 stroke-[3.5]"
+              className="w-9 h-9 text-brand stroke-[3.5]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -46,35 +42,33 @@ export function TabArbitro() {
 
           {type === "cruz_desbordada" && (
             <svg
-              className="w-20 h-20 text-blue-600 stroke-[3.5] absolute -top-2 -left-2"
+              className="w-14 h-14 text-brand stroke-[3.5] absolute -top-1 -left-1"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
             >
               <line x1="12" y1="2" x2="12" y2="22" />
               <line x1="2" y1="12" x2="22" y2="12" />
-              {/* Intersección destacada en verde dentro del recuadro */}
-              <circle cx="12" cy="12" r="2.5" fill="#16a34a" />
+              <circle cx="12" cy="12" r="2.5" className="fill-success" />
             </svg>
           )}
 
           {type === "cruz_linea" && (
             <svg
-              className="w-16 h-16 text-rose-600 stroke-[3.5] absolute -bottom-5 -right-5"
+              className="w-12 h-12 text-destructive stroke-[3.5] absolute -bottom-3 -right-3"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
             >
               <line x1="12" y1="2" x2="12" y2="22" />
               <line x1="2" y1="12" x2="22" y2="12" />
-              {/* Intersección en rojo fuera/sobre borde */}
-              <circle cx="12" cy="12" r="3" fill="#dc2626" />
+              <circle cx="12" cy="12" r="2.5" className="fill-destructive" />
             </svg>
           )}
 
           {type === "signo_check" && (
             <svg
-              className="w-12 h-12 text-rose-600 stroke-[3.5]"
+              className="w-9 h-9 text-destructive stroke-[3.5]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -84,32 +78,25 @@ export function TabArbitro() {
           )}
 
           {type === "carita_feliz" && (
-            <span className="text-3xl text-rose-600 select-none">😊</span>
+            <span className="text-2xl text-destructive select-none">😊</span>
           )}
 
           {type === "texto_o_firma" && (
-            <span className="text-[10px] font-serif italic text-rose-600 rotate-[-12deg] select-none font-bold">
-              ¡Gana Perú!
+            <span className="text-[9px] font-serif italic text-destructive rotate-[-12deg] select-none font-bold">
+              Texto
             </span>
           )}
 
           {type === "cedula_rota" && (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-rose-600 font-mono text-xs font-bold rotate-45 border-t-2 border-b-2 border-rose-500 w-full text-center">
-                ROTURA
-              </span>
-            </div>
+            <span className="text-[9px] font-mono text-destructive font-bold border-y border-destructive px-1">
+              ROTA
+            </span>
           )}
 
           {type === "cedula_sin_firma" && (
-            <div className="text-center p-1">
-              <span className="text-[8px] font-mono text-rose-700 font-bold block leading-tight">
-                REVERSO
-              </span>
-              <span className="text-[9px] text-zinc-400 line-through">
-                [Sin Firma]
-              </span>
-            </div>
+            <span className="text-[8px] font-mono text-destructive font-bold text-center leading-tight">
+              SIN FIRMA
+            </span>
           )}
         </div>
       </div>
@@ -117,137 +104,121 @@ export function TabArbitro() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Legal Authority Golden Banner */}
-      <div className="rounded-2xl border border-blue-500/40 bg-blue-950/40 p-4 sm:p-5 text-blue-100 flex items-start gap-3.5 shadow-md shadow-blue-950/50">
-        <div className="p-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 shrink-0">
-          <Shield className="h-6 w-6" />
+    <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Authority Banner */}
+      <div className="rounded-2xl border border-brand/20 bg-brand/10 p-3.5 flex items-start gap-2.5">
+        <div className="p-2 rounded-xl bg-brand text-brand-foreground shrink-0 shadow-sm">
+          <Shield className="h-4 w-4" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
-            Regla de Oro: La Mesa es la Máxima Autoridad
-          </h2>
-          <p className="text-xs sm:text-sm leading-relaxed text-blue-200/90">
-            La validez o nulidad de un voto la definen exclusivamente los{" "}
-            <strong>3 miembros de mesa por mayoría simple (2 contra 1)</strong>.
-            Los personeros tienen derecho a presenciar y observar, pero{" "}
-            <strong>NO TIENEN VOTO</strong> ni pueden ordenar la calificación de
-            una cédula. Si insisten, su único camino legal es la impugnación.
+        <div className="space-y-0.5">
+          <h3 className="text-xs font-black text-foreground">
+            La Mesa es la Máxima Autoridad
+          </h3>
+          <p className="text-[11.5px] text-muted-foreground leading-snug">
+            La calificación de un voto se decide por{" "}
+            <strong>mayoría de los 3 miembros (2 a 1)</strong>. Los personeros
+            no votan ni pueden ordenar calificar.
           </p>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-xl">
+      {/* Segmented Filter Control & Search */}
+      <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-1 p-1 bg-muted/50 rounded-xl border border-border/60">
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
               filter === "all"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Todos ({VOTE_SCENARIOS.length})
           </button>
           <button
             onClick={() => setFilter("valid")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+            className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
               filter === "valid"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-emerald-400/80 hover:text-emerald-300"
+                ? "bg-success text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Votos Válidos
+            <CheckCircle2 className="h-3 w-3" />
+            Válidos
           </button>
           <button
             onClick={() => setFilter("null")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+            className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
               filter === "null"
-                ? "bg-rose-600 text-white shadow-sm"
-                : "text-rose-400/80 hover:text-rose-300"
+                ? "bg-destructive text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <XCircle className="h-3.5 w-3.5" />
-            Votos Nulos
+            <XCircle className="h-3 w-3" />
+            Nulos
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+        <div className="relative">
+          <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Buscar caso (cruz, check, firma...)"
+            placeholder="Buscar criterio (check, cruz, rotura...)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 text-xs bg-zinc-900 border-zinc-800 text-zinc-200"
+            className="pl-8 text-xs h-9 bg-card border-border rounded-xl"
           />
         </div>
       </div>
 
-      {/* Scenarios Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Scenarios Cards List */}
+      <div className="space-y-3">
         {filteredScenarios.map((item) => (
           <div
             key={item.id}
-            className={`rounded-2xl border p-4 sm:p-5 flex flex-col justify-between transition-all ${
+            className={`rounded-2xl border p-3.5 space-y-2 shadow-sm ${
               item.ruling === "valid"
-                ? "bg-emerald-950/20 border-emerald-800/40 hover:border-emerald-700/60"
-                : "bg-zinc-900/80 border-zinc-800 hover:border-zinc-700"
+                ? "bg-card border-border/80"
+                : "bg-card border-border/80"
             }`}
           >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      className={`text-[10px] font-mono uppercase font-bold tracking-wider ${
-                        item.ruling === "valid"
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                      }`}
-                    >
-                      {item.ruling === "valid"
-                        ? "✓ Voto Válido"
-                        : "✗ Voto Nulo"}
-                    </Badge>
-                  </div>
-                  <h3 className="text-base font-bold text-white leading-snug">
-                    {item.title}
-                  </h3>
-                </div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1 min-w-0 flex-1">
+                <Badge
+                  className={`text-[9.5px] uppercase font-bold tracking-wider ${
+                    item.ruling === "valid"
+                      ? "bg-success/15 text-success border border-success/30"
+                      : "bg-destructive/15 text-destructive border border-destructive/30"
+                  }`}
+                >
+                  {item.ruling === "valid" ? "✓ Válido" : "✗ Nulo"}
+                </Badge>
 
-                {/* Graphic Visual Representation */}
-                {renderVisualBallotBox(item.visualType)}
+                <h4 className="text-xs font-bold text-foreground leading-snug">
+                  {item.title}
+                </h4>
+
+                <p className="text-[11.5px] text-muted-foreground leading-relaxed">
+                  {item.rule}
+                </p>
               </div>
 
-              {/* Rule Description */}
-              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                {item.rule}
-              </p>
-
-              {/* Practical Guidance Box */}
-              <div
-                className={`p-3 rounded-xl text-xs leading-relaxed ${
-                  item.ruling === "valid"
-                    ? "bg-emerald-950/40 text-emerald-200 border border-emerald-800/40"
-                    : "bg-zinc-950/80 text-zinc-300 border border-zinc-800"
-                }`}
-              >
-                <span className="font-bold uppercase tracking-wider block mb-1">
-                  Criterio de la Mesa:
-                </span>
-                {item.recommendation}
-              </div>
+              {/* Graphical representation */}
+              {renderVisualBallotBox(item.visualType)}
             </div>
 
-            {/* Legal Cite */}
-            <div className="pt-3 mt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-500">
-              <span>{item.legalArticle}</span>
-              <span className="text-zinc-400">ONPE 2026</span>
+            {/* Practical Recommendation Box */}
+            <div
+              className={`p-2.5 rounded-xl text-[11px] leading-snug font-medium ${
+                item.ruling === "valid"
+                  ? "bg-success/10 text-success border border-success/20"
+                  : "bg-muted/40 text-muted-foreground border border-border/50"
+              }`}
+            >
+              <strong className="block mb-0.5 text-foreground">
+                Criterio aplicable:
+              </strong>
+              {item.recommendation}
             </div>
           </div>
         ))}
