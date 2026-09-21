@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
 import { PHASES_CONFIG } from "../_lib/constants";
+import { ChecklistTask, MemberRole } from "../_lib/types";
 import {
   AlertOctagon,
   AlertTriangle,
@@ -9,16 +11,33 @@ import {
   CheckCircle2,
   Clock,
   Calculator,
+  Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+function isTaskForRole(task: ChecklistTask, role: MemberRole | null): boolean {
+  if (!role || role === "todos") return true;
+  if (task.roleResponsible === "Todos") return true;
+  if (task.roleResponsible === "Coordinación Interna") return true;
+  if (role === "presidente" && task.roleResponsible === "Presidente")
+    return true;
+  if (role === "secretario" && task.roleResponsible === "Secretario")
+    return true;
+  if (role === "tercer_miembro" && task.roleResponsible === "Tercer Miembro")
+    return true;
+  return false;
+}
+
 export function TabChecklist() {
   const activePhase = useCopilotoStore((s) => s.activePhase);
   const setActivePhase = useCopilotoStore((s) => s.setActivePhase);
+  const selectedRole = useCopilotoStore((s) => s.selectedRole);
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
   const toggleTask = useCopilotoStore((s) => s.toggleTask);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
+
+  const [onlyMyTasks, setOnlyMyTasks] = useState(true);
 
   const currentPhaseConfig =
     PHASES_CONFIG.find((p) => p.id === activePhase) || PHASES_CONFIG[0];
@@ -32,6 +51,11 @@ export function TabChecklist() {
       : null;
 
   const currentPhaseTasks = currentPhaseConfig.tasks;
+  const filteredTasks = currentPhaseTasks.filter((task) => {
+    if (!onlyMyTasks) return true;
+    return isTaskForRole(task, selectedRole);
+  });
+
   const phaseDoneCount = currentPhaseTasks.filter(
     (t) => completedTasks[t.id],
   ).length;
@@ -106,10 +130,35 @@ export function TabChecklist() {
         )}
       </div>
 
+      {/* Role Filter Bar (if a specific role is active) */}
+      {selectedRole && selectedRole !== "todos" && (
+        <div className="flex items-center justify-between gap-2 px-1 text-xs">
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Filter className="h-3 w-3 text-brand" />
+            <span>
+              Filtrado por tu rol:{" "}
+              <strong className="text-foreground capitalize">
+                {selectedRole.replace("_", " ")}
+              </strong>
+            </span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setOnlyMyTasks(!onlyMyTasks)}
+            className="text-[10.5px] text-brand hover:underline font-bold"
+          >
+            {onlyMyTasks ? "Ver toda la mesa" : "Ver solo mis tareas"}
+          </button>
+        </div>
+      )}
+
       {/* Task Checklist Items */}
       <div className="space-y-2.5">
-        {currentPhaseTasks.map((task, index) => {
+        {filteredTasks.map((task, index) => {
           const isDone = !!completedTasks[task.id];
+          const isSharedAgreement =
+            task.roleResponsible === "Coordinación Interna";
 
           return (
             <div
@@ -118,9 +167,11 @@ export function TabChecklist() {
               className={`rounded-2xl border p-3.5 transition-all select-none cursor-pointer active:scale-[0.99] ${
                 isDone
                   ? "bg-muted/20 border-border/40 opacity-70"
-                  : task.isCritical
-                    ? "bg-card border-border hover:border-brand/40 shadow-sm"
-                    : "bg-card border-border/80"
+                  : isSharedAgreement
+                    ? "bg-brand/5 border-brand/30 shadow-sm"
+                    : task.isCritical
+                      ? "bg-card border-border hover:border-brand/40 shadow-sm"
+                      : "bg-card border-border/80"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -153,9 +204,20 @@ export function TabChecklist() {
                       {task.title}
                     </h3>
 
+                    {/* Role Tag */}
                     {task.roleResponsible && (
-                      <span className="text-[10px] text-muted-foreground font-medium shrink-0">
-                        {task.roleResponsible}
+                      <span
+                        className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                          isSharedAgreement
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+                            : task.roleResponsible === "Todos"
+                              ? "bg-muted text-muted-foreground"
+                              : "bg-brand/15 text-brand"
+                        }`}
+                      >
+                        {isSharedAgreement
+                          ? "🤝 Acuerdo Interno"
+                          : task.roleResponsible}
                       </span>
                     )}
                   </div>

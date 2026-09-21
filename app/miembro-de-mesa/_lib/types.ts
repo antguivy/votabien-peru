@@ -5,10 +5,17 @@ export type PhaseId =
   | "escrutinio"
   | "entrega";
 
+export type MemberRole =
+  | "presidente"
+  | "secretario"
+  | "tercer_miembro"
+  | "todos";
+
 export type RoleResponsible =
   | "Presidente"
   | "Secretario"
   | "Tercer Miembro"
+  | "Coordinación Interna"
   | "Todos";
 
 export interface ChecklistTask {

@@ -5,6 +5,21 @@ import {
   ProtocolItem,
 } from "./types";
 
+export const OFFICIAL_ERM_2026_PARTIES = [
+  "Alianza para el Progreso",
+  "Somos Perú",
+  "Renovación Popular",
+  "Fuerza Popular",
+  "Juntos por el Perú",
+  "Perú Libre",
+  "Podemos Perú",
+  "Avanza País",
+  "Partido Morado",
+  "Frente de la Esperanza",
+  "Acción Popular",
+  "Partido Patriótico del Perú",
+];
+
 export const PHASES_CONFIG: PhaseDefinition[] = [
   {
     id: "instalacion",
@@ -18,39 +33,39 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
       {
         id: "inst-01",
         phaseId: "instalacion",
-        title: "Presentación puntual y recepción de material",
+        title: "Recepción y apertura de la caja de material",
         description:
-          "Presentarse a las 6:00 a.m. Recibir la caja sellada de la ONPE con los 3 paquetes: Útiles, Instalación y Escrutinio.",
+          "El Presidente recibe la caja sellada de la ONPE. Se abre entre todos los miembros de mesa para revisar los paquetes de útiles, instalación y escrutinio (Manual Pág. 8, paso 1).",
         isCritical: true,
-        roleResponsible: "Presidente",
+        roleResponsible: "Todos",
       },
       {
         id: "inst-02",
         phaseId: "instalacion",
         title: "Revisión física del aula y cámara secreta",
         description:
-          "Verificar que la Relación de Electores esté pegada en la puerta y los Carteles de Candidatos en la cámara secreta sin marcas ni daños.",
+          "Verificar que la 'Relación de electores' esté pegada en la puerta del aula y los carteles de candidatos en la cámara secreta. Los personeros pueden participar (Pág. 9, paso 3).",
         isCritical: false,
-        roleResponsible: "Secretario",
+        roleResponsible: "Todos",
       },
       {
         id: "inst-03",
         phaseId: "instalacion",
         title: "Rotulado de caja de 'Restos Electorales'",
         description:
-          "Pegar la etiqueta oficial 'Restos Electorales' en la caja vacía para almacenar empaques y cédulas sobrantes más tarde.",
+          "Pegar la etiqueta oficial 'Restos Electorales' en la caja vacía y colocarla al costado de la mesa (Pág. 8, paso 2).",
         isCritical: false,
-        roleResponsible: "Tercer Miembro",
+        roleResponsible: "Coordinación Interna",
       },
       {
         id: "inst-04",
         phaseId: "instalacion",
         title: "Conteo físico de Cédulas de Sufragio",
         description:
-          "Contar una a una las cédulas recibidas. La cantidad DEBE coincidir exactamente con el número de electores hábiles del rótulo de la caja.",
+          "Verificar en el rótulo del paquete de cédulas que la cantidad sea igual al número de electores hábiles de la mesa (Pág. 9, paso 4).",
         isCritical: true,
         irreversibleWarning:
-          "Si hay faltante o sobrante de cédulas sin abrir la mesa, repórtalo de inmediato al coordinador de ONPE antes de firmar el acta.",
+          "Si hay faltante o sobrante de cédulas sin abrir la mesa, repórtalo de inmediato al coordinador de ONPE.",
         roleResponsible: "Todos",
       },
       {
@@ -58,19 +73,19 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "instalacion",
         title: "Firma obligatoria en el reverso de las cédulas",
         description:
-          "El Presidente (o los 3 miembros) firma el reverso de todas las cédulas. Los personeros acreditados pueden firmar si lo desean.",
+          "Las firman los tres miembros de mesa en el reverso. Pueden firmar un primer grupo para abrir y luego el resto. Los personeros solo firman si lo desean (Pág. 9, paso 4).",
         isCritical: true,
         irreversibleWarning:
-          "¡ALERTA MÁXIMA! Cédula sin firma del Presidente en el reverso será declarada NULA en el escrutinio.",
-        roleResponsible: "Presidente",
-        legalNote: "Ley Orgánica de Elecciones / Directiva ONPE",
+          "¡ALERTA MÁXIMA! Cédula sin firma de miembros en el reverso será declarada NULA en el escrutinio.",
+        roleResponsible: "Todos",
+        legalNote: "Manual ONPE 2026 Pág. 9, paso 4",
       },
       {
         id: "inst-06",
         phaseId: "instalacion",
-        title: "Hoja de Control de Asistencia",
+        title: "Control de Asistencia (Hoja 3a)",
         description:
-          "Desglosar la hoja de asistencia. Titulares y suplentes presentes firman y colocan huella dactilar. Escribir 'FALTÓ' a los ausentes.",
+          "El Secretario llama en voz alta a cada miembro para firmar y colocar huella. Escribe 'FALTÓ' a ausentes. El Presidente marca si recibió información de Reniec y refrigerios, y firma (Pág. 10, paso 5).",
         isCritical: true,
         roleResponsible: "Secretario",
       },
@@ -79,81 +94,63 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "instalacion",
         title: "Llenado de Actas de Instalación (Sección A)",
         description:
-          "Llenar en números y letras claras las 4 actas regionales y 4 municipales: hora exacta de instalación, estado del material y cantidad de cédulas.",
+          "Llenar en letras y números claros las 4 actas regionales y 4 municipales: hora de inicio, estado del material y cantidad de cédulas. Firman los tres miembros (Pág. 11, paso 6).",
         isCritical: true,
         roleResponsible: "Secretario",
-      },
-      {
-        id: "inst-08",
-        phaseId: "instalacion",
-        title: "Firmas y lámina en campo de observaciones",
-        description:
-          "Los 3 miembros firman y ponen huella. Si se escribió alguna observación, colocar inmediatamente la lámina autoadhesiva de protección.",
-        isCritical: true,
-        roleResponsible: "Todos",
       },
     ],
   },
   {
     id: "sufragio",
     title: "2. Sufragio",
-    subtitle: "Recepción de votantes y orden de mesa",
+    subtitle: "Atención al elector y distribución de puestos",
     timeframe: "07:00 AM – 05:00 PM",
     color: "from-emerald-600 to-teal-700",
     warningAlert:
-      "Votan primero los 3 miembros de mesa, luego personeros acreditados de esa mesa y luego electores de la fila.",
+      "Votan primero el Presidente y los miembros presentes, luego personeros acreditados de esa mesa y finalmente los electores.",
     tasks: [
       {
         id: "suf-01",
         phaseId: "sufragio",
-        title: "Votación de autoridades de mesa",
+        title: "Votación inicial de autoridades de mesa",
         description:
-          "Votan primero los miembros de mesa titulares y suplentes presentes. Luego personeros que voten en la misma mesa.",
+          "Primero vota el Presidente y de inmediato los demás miembros presentes. Luego personeros que voten en esa mesa (Pág. 12).",
         isCritical: false,
         roleResponsible: "Todos",
       },
       {
         id: "suf-02",
         phaseId: "sufragio",
-        title: "Manejo estricto del circuito de votación",
+        title: "Distribución de los 3 puestos de atención",
         description:
-          "1. Presidente recibe DNI y entrega cédula abierta/mostrada. 2. Elector vota en cámara secreta. 3. Deposita en ánfora. 4. Firma y huella en lista. 5. Devolución de DNI.",
+          "Presidente: administra cédulas y DNI. Un miembro: maneja Lista de Electores y tampón. Otro miembro: custodia el ánfora (Pág. 12, paso 1).",
         isCritical: true,
-        roleResponsible: "Todos",
+        roleResponsible: "Coordinación Interna",
       },
       {
         id: "suf-03",
         phaseId: "sufragio",
-        title: "Atención preferente e inclusiva",
+        title: "Circuito de atención en 6 pasos",
         description:
-          "Prioridad absoluta a adultos mayores, gestantes, personas con discapacidad y con bebés en brazos. Permitir acompañante de confianza si lo solicitan.",
-        isCritical: false,
-        roleResponsible: "Tercer Miembro",
+          "1. Presidente solicita DNI. 2. Encargado de lista busca número de orden y valida foto. 3. Presidente entrega cédula. 4. Encargado de ánfora vigila depósito. 5. Elector firma y huella. 6. Presidente devuelve DNI (Págs. 12-13).",
+        isCritical: true,
+        roleResponsible: "Todos",
       },
       {
         id: "suf-04",
         phaseId: "sufragio",
-        title: "Módulo Temporal de Votación (MTV)",
+        title: "Atención preferente y Módulo Temporal (MTV)",
         description:
-          "Si un elector con discapacidad severa no puede subir al aula: trasladarse con cédula, lista, tampón y ánfora temporal coordinando con ONPE.",
+          "Prioridad a adultos mayores, gestantes y personas con discapacidad. Si hay baja movilidad en el MTV, trasladarse con cédula, lista, tampón y ánfora (Pág. 2 PDF).",
         isCritical: false,
-        roleResponsible: "Presidente",
-      },
-      {
-        id: "suf-05",
-        phaseId: "sufragio",
-        title: "Control estricto de personeros",
-        description:
-          "Verificar credenciales oficiales. Los personeros no pueden tocar las cédulas, manipular el ánfora ni interferir con la voluntad del elector.",
-        isCritical: true,
-        roleResponsible: "Presidente",
+        roleResponsible: "Coordinación Interna",
       },
     ],
   },
   {
     id: "cierre",
     title: "3. Cierre de Sufragio",
-    subtitle: "5:00 PM: Cierre de puertas y consolidación del padrón",
+    subtitle: "05:00 PM: Cierre de puertas y consolidación del padrón",
     timeframe: "05:00 PM puntual",
     color: "from-amber-600 to-orange-700",
     warningAlert:
@@ -162,9 +159,9 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
       {
         id: "cie-01",
         phaseId: "cierre",
-        title: "Declaración de cierre de fila a las 5:00 PM",
+        title: "Declaración de cierre de votación",
         description:
-          "Cerrar la votación. No permitir el ingreso de nuevos electores. Votan únicamente los ciudadanos que se encuentren formados.",
+          "Cerrar la votación a las 5:00 p.m. Votan únicamente los ciudadanos que se encuentren formados (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Presidente",
       },
@@ -173,21 +170,21 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "cierre",
         title: "Sello o marcado de 'NO VOTÓ' a ausentes",
         description:
-          "Revisar la Lista de Electores página por página. Escribir o sellar 'NO VOTÓ' en el espacio de firma de cada ciudadano que no acudió.",
+          "Revisar la Lista de Electores página por página. Escribir o sellar 'NO VOTÓ' en el espacio de firma de cada ciudadano que no acudió (Pág. 2 PDF).",
         isCritical: true,
         irreversibleWarning:
-          "No olvides marcar a los ausentes. Dejar espacios en blanco causa sospechas de suplantación y errores de conteo.",
+          "No olvides marcar a los ausentes antes de sumar el total general de firmas.",
         roleResponsible: "Secretario",
       },
       {
         id: "cie-03",
         phaseId: "cierre",
-        title: "Conteo minucioso de firmas y huellas",
+        title: "Conteo de firmas y firma del Presidente al pie",
         description:
-          "Contar cuántos ciudadanos firmaron en cada página y sumar el Total General de Ciudadanos que Votaron. El Presidente firma al pie de la última página.",
+          "Sumar firmas y huellas por página y el total general. El Presidente firma obligatoriamente al pie de la última página de la lista (Pág. 2 PDF).",
         isCritical: true,
         irreversibleWarning:
-          "Anota este número con precisión (ej: 234). Este número es la BASE MATEMÁTICA OBLIGATORIA de todo el escrutinio.",
+          "Este número de votantes (ej: 245) es el valor obligatorio que debe cuadrar en todo el escrutinio.",
         roleResponsible: "Todos",
       },
       {
@@ -195,18 +192,9 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "cierre",
         title: "Llenado de Actas de Sufragio (Sección B)",
         description:
-          "Llenar las 8 actas (4 regionales y 4 municipales) con: Total de ciudadanos que votaron, Total de cédulas no usadas y hora de término.",
+          "Llenar las 8 actas (4 regionales y 4 municipales) con: Total de ciudadanos que votaron, cédulas no usadas, hora y firmas de miembros (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Secretario",
-      },
-      {
-        id: "cie-05",
-        phaseId: "cierre",
-        title: "Destrucción de Cédulas NO utilizadas",
-        description:
-          "Inutilizar las cédulas sobrantes (cortándolas por la mitad o según indicación de ONPE) y guardarlas en la caja de Restos Electorales.",
-        isCritical: true,
-        roleResponsible: "Tercer Miembro",
       },
     ],
   },
@@ -222,80 +210,71 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
       {
         id: "esc-01",
         phaseId: "escrutinio",
-        title: "Despeje total de la mesa",
+        title: "Organización de los 3 puestos de conteo",
         description:
-          "Retirar lapiceros y papeles no necesarios. Solo deben quedar en la mesa: el ánfora, hojas borrador (5A, 5B, 5C, 5D) y lapicero oficial.",
-        isCritical: false,
-        roleResponsible: "Todos",
+          "Presidente al centro: cédulas por escrutar. Un miembro: a cargo de las Hojas Borrador (5a, 5b, 5c, 5d). Otro miembro: a cargo de las cédulas escrutadas (Pág. 24, paso 5).",
+        isCritical: true,
+        roleResponsible: "Coordinación Interna",
       },
       {
         id: "esc-02",
         phaseId: "escrutinio",
-        title: "Apertura de ánfora y verificación de cédulas",
+        title: "Apertura de ánfora y verificación de firmas",
         description:
-          "Abrir el ánfora, contar las cédulas sin abrirlas. Su cantidad debe coincidir con el número de personas que votaron según el Acta de Sufragio.",
+          "Abrir ánfora y contar cédulas sin desdoblar. Deben ser iguales al Acta de Sufragio. Al desdoblar, verificar firma de miembros en el reverso (Pág. 24 y 25).",
         isCritical: true,
         irreversibleWarning:
-          "Si sobran cédulas con respecto a la lista, se retiran al azar y se destruyen sin abrir (procedimiento ONPE). Repórtalo al coordinador.",
+          "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
         roleResponsible: "Presidente",
       },
       {
         id: "esc-03",
         phaseId: "escrutinio",
-        title: "Validación de firma del Presidente en reverso",
+        title: "Calificación y canto de votos a personeros",
         description:
-          "Al desdoblar cada cédula, verificar que tenga la firma en el reverso. Si no tiene firma, se considera automáticamente NULA.",
+          "El Presidente lee cada voto en voz alta y muestra la cédula a los personeros. Toda duda se resuelve en la mesa por mayoría simple (Art. 283 LOE / Pág. 25, paso 6).",
         isCritical: true,
-        roleResponsible: "Todos",
+        roleResponsible: "Presidente",
       },
       {
         id: "esc-04",
         phaseId: "escrutinio",
-        title: "Conteo con Hoja Borrador 5A (Gobernador Regional)",
+        title: "Trazado de palotes de 5 en 5 en Hoja Borrador",
         description:
-          "El Presidente canta cada voto en voz alta y muestra la cédula. Se colocan palotes de 5 en 5. Sumar válidos + blancos + nulos + impugnados.",
+          "El miembro a cargo de la hoja borrador escucha y traza un palote por voto agrupados de cinco en cinco. Repetir en 5A, 5B, 5C y 5D (Pág. 25, paso 7).",
         isCritical: true,
-        roleResponsible: "Todos",
+        roleResponsible: "Secretario",
       },
       {
         id: "esc-05",
         phaseId: "escrutinio",
-        title: "VERIFICACIÓN MATEMÁTICA: Usar Calculadora de Cuadre",
+        title: "VERIFICACIÓN MATEMÁTICA CON CALCULADORA",
         description:
-          "Verificar en la calculadora de la app que la suma de la Hoja Borrador sea idéntica al Total de Votantes. Si no cuadra, recontar antes de pasar al acta.",
+          "Sumar palotes y registrar Total Votos Emitidos. La ONPE autoriza usar la calculadora del celular (Pág. 26). El total DEBE ser igual al Acta de Sufragio (Pág. 27, paso 9).",
         isCritical: true,
         irreversibleWarning:
-          "NUNCA transcribas al acta oficial si la suma no coincide con el total de votantes. Provocarás un acta observada.",
+          "PROHIBIDO transcribir al acta oficial si no cuadra. Si persiste diferencia, se anota en Observaciones.",
         roleResponsible: "Todos",
       },
       {
         id: "esc-06",
         phaseId: "escrutinio",
-        title: "Conteo de 5B (Consejeros), 5C (Provincial) y 5D (Distrital)",
-        description:
-          "Repetir el mismo procedimiento metódico para cada una de las siguientes elecciones, cuadrando cada una de forma independiente.",
-        isCritical: true,
-        roleResponsible: "Todos",
-      },
-      {
-        id: "esc-07",
-        phaseId: "escrutinio",
         title: "Traslado a Actas de Escrutinio (Sección C)",
         description:
-          "Copiar cuidadosamente los resultados de las hojas borrador a las 8 actas electorales (4 regionales y 4 municipales) con letra clara.",
+          "Copiar resultados a las 8 actas oficiales con letra clara. Firman los 3 miembros y personeros (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Secretario",
       },
       {
-        id: "esc-08",
+        id: "esc-07",
         phaseId: "escrutinio",
-        title: "Colocación de LÁMINAS AUTOADHESIVAS DE PROTECCIÓN",
+        title: "Colocación de láminas plásticas autoadhesivas",
         description:
-          "Una vez firmadas por los miembros y personeros, colocar las láminas plásticas transparentes sobre los cuadros de resultados y observaciones.",
+          "Colocar láminas de protección sobre casilleros de resultados y observaciones de las 8 actas. Una vez pegadas NO se pueden retirar (Pág. 27).",
         isCritical: true,
         irreversibleWarning:
-          "¡ADVERTENCIA FINAL! La lámina NO se puede despegar. Una vez pegada, cualquier tachadura invalida el acta para el escaneo de ONPE.",
-        roleResponsible: "Presidente",
+          "¡PUNTO DE NO RETORNO! Una vez pegada la lámina, no se puede enmendar.",
+        roleResponsible: "Todos",
       },
     ],
   },
@@ -313,56 +292,47 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "entrega",
         title: "Publicación de Carteles de Resultados",
         description:
-          "Llenar los 2 carteles de resultados (regional y municipal) con los totales obtenidos y pegarlos en la puerta exterior del aula para conocimiento público.",
+          "Llenar y pegar los carteles de resultados regional y municipal en la parte exterior del aula (Pág. 3 PDF).",
         isCritical: false,
-        roleResponsible: "Tercer Miembro",
+        roleResponsible: "Coordinación Interna",
       },
       {
         id: "ent-02",
         phaseId: "entrega",
-        title: "Entrega de copias de actas a personeros",
+        title: "Enfundado estricto en los 5 Sobres de Seguridad",
         description:
-          "Entregar una copia del acta electoral a los personeros de mesa acreditados que la soliciten, recabando su firma de recepción.",
-        isCritical: false,
-        roleResponsible: "Secretario",
+          "Sobre Plomo (ODPE), Sobre Rojo (JNE), Sobre Verde (JEE), Sobre Celeste (ONPE) y Sobre Anaranjado (Padrón/Asistencia). Revisar antes de sellar (Pág. 6 y 7).",
+        isCritical: true,
+        irreversibleWarning:
+          "Los sobres tienen adhesivo inviolable. No metas actas en el sobre anaranjado.",
+        roleResponsible: "Todos",
       },
       {
         id: "ent-03",
         phaseId: "entrega",
-        title: "Enfundado estricto en los 5 Sobres de Seguridad",
+        title: "Bolsa de repliegue de cédulas no impugnadas",
         description:
-          "Consultar el módulo de sobres: Sobre Plomo (ODPE), Sobre Rojo (JNE), Sobre Verde (JEE), Sobre Celeste (ONPE) y Sobre Anaranjado (Padrón/Asistencia).",
+          "Guardar todas las cédulas usadas no impugnadas en la bolsa oficial y colocar cinta de embalaje (Pág. 7).",
         isCritical: true,
-        irreversibleWarning:
-          "Los sobres tienen adhesivo de seguridad inviolable. Revisa la lista de contenido de cada sobre antes de sellarlo.",
-        roleResponsible: "Todos",
+        roleResponsible: "Coordinación Interna",
       },
       {
         id: "ent-04",
         phaseId: "entrega",
-        title: "Embolsado de cédulas usadas para repliegue",
+        title: "Entrega al personal ONPE y firma del Cargo",
         description:
-          "Guardar todas las cédulas usadas no impugnadas en la bolsa oficial de repliegue de cédulas provista por ONPE y sellarla.",
+          "El Presidente entrega los 5 sobres lacrados, bolsa de repliegue, caja de restos, ánfora y cabinas, y firma el Cargo de Entrega oficial (Pág. 7 y Pág. 3 PDF).",
         isCritical: true,
-        roleResponsible: "Tercer Miembro",
+        irreversibleWarning:
+          "Guarda tu copia firmada del cargo. Es tu comprobante legal.",
+        roleResponsible: "Presidente",
       },
       {
         id: "ent-05",
         phaseId: "entrega",
-        title: "Firma del Cargo de Entrega con personal ONPE",
+        title: "Certificado de Participación y Ley 32231",
         description:
-          "El Presidente entrega los 5 sobres lacrados, la bolsa de repliegue, la caja de restos electorales, ánfora y cabinas al coordinador de ONPE, firmando el cargo.",
-        isCritical: true,
-        irreversibleWarning:
-          "Guarda tu copia firmada del cargo de entrega. Es tu comprobante legal oficial de haber cumplido la función.",
-        roleResponsible: "Presidente",
-      },
-      {
-        id: "ent-06",
-        phaseId: "entrega",
-        title: "Certificado de Participación y Beneficio Ley 32231",
-        description:
-          "Recibir el certificado físico o validar la descarga del certificado digital oficial para gozar del día de descanso laboral no compensable.",
+          "Recibir constancia o certificado oficial para tramitar el día de descanso remunerado ante tu empleador (Ley 32231).",
         isCritical: false,
         roleResponsible: "Todos",
       },

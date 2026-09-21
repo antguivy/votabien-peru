@@ -7,7 +7,17 @@ import {
   calculateElectionTotals,
   reconcileElection,
 } from "../_lib/reconciliation";
-import { CheckCircle2, AlertTriangle, Users, Plus, Info } from "lucide-react";
+import { ScanCartelDialog } from "./scan-cartel-dialog";
+import { DictationModeDialog } from "./dictation-mode-dialog";
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Users,
+  Plus,
+  Info,
+  Camera,
+  Lock,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +44,8 @@ export function TabCalculadora() {
   const [activeSheetType, setActiveSheetType] = useState<ElectionType>("5A");
   const [newPartyName, setNewPartyName] = useState("");
   const [showAddPartyInput, setShowAddPartyInput] = useState(false);
+  const [showScanDialog, setShowScanDialog] = useState(false);
+  const [showDictationDialog, setShowDictationDialog] = useState(false);
 
   const currentSheet = sheets[activeSheetType];
   const { validVotes, totalVotes } = calculateElectionTotals(currentSheet);
@@ -66,10 +78,12 @@ export function TabCalculadora() {
             <Input
               type="number"
               min="0"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={votersTarget || ""}
               onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
               placeholder="0"
-              className="text-base font-black font-mono text-center h-10 rounded-xl bg-background border-border text-foreground focus:border-brand"
+              className="no-spinner text-base font-black font-mono text-center h-10 rounded-xl bg-background border-border text-foreground focus:border-brand"
             />
           </div>
         </div>
@@ -111,6 +125,21 @@ export function TabCalculadora() {
             <p className="text-[11.5px] leading-snug font-medium">
               {reconciliation.message}
             </p>
+
+            {/* Dictation Mode Trigger when Matched */}
+            {reconciliation.status === "match" && (
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  type="button"
+                  onClick={() => setShowDictationDialog(true)}
+                  className="w-full h-8 text-xs font-bold bg-success text-white hover:bg-success/90 rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Activar Modo Dictado al Acta Oficial</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -163,15 +192,30 @@ export function TabCalculadora() {
             </span>
           </div>
 
-          <Badge
-            variant="outline"
-            className="text-[10px] font-mono border-border text-muted-foreground"
-          >
-            Hoja {activeSheetType}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            {/* Quick Button to Load / Scan Real Parties */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowScanDialog(true)}
+              className="h-7 px-2 text-[10.5px] border-border text-brand font-bold flex items-center gap-1 hover:bg-muted rounded-lg"
+              title="Cargar partidos oficiales o foto del cartel"
+            >
+              <Camera className="h-3 w-3" />
+              <span>Cargar Partidos</span>
+            </Button>
+
+            <Badge
+              variant="outline"
+              className="text-[10px] font-mono border-border text-muted-foreground"
+            >
+              Hoja {activeSheetType}
+            </Badge>
+          </div>
         </div>
 
-        {/* Rows with Ergonomic Steppers */}
+        {/* Rows with Ergonomic Steppers (No Spinners!) */}
         <div className="space-y-2">
           {currentSheet.options.map((option, idx) => (
             <div
@@ -207,6 +251,8 @@ export function TabCalculadora() {
                 <input
                   type="number"
                   min="0"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={option.votes || ""}
                   onChange={(e) =>
                     updateOptionVotes(
@@ -216,7 +262,7 @@ export function TabCalculadora() {
                     )
                   }
                   placeholder="0"
-                  className="w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                  className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
                 />
 
                 <button
@@ -240,14 +286,27 @@ export function TabCalculadora() {
 
         {/* Add Party Toggle / Form */}
         {!showAddPartyInput ? (
-          <button
-            type="button"
-            onClick={() => setShowAddPartyInput(true)}
-            className="w-full py-2 text-center text-xs font-semibold text-brand hover:underline flex items-center justify-center gap-1 pt-1"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Añadir lista política</span>
-          </button>
+          <div className="flex items-center justify-between pt-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setShowAddPartyInput(true)}
+              className="text-xs font-semibold text-brand hover:underline flex items-center gap-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Añadir partido manual</span>
+            </button>
+
+            {reconciliation.status === "match" && (
+              <button
+                type="button"
+                onClick={() => setShowDictationDialog(true)}
+                className="text-xs font-bold text-success hover:underline flex items-center gap-1"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                <span>Dictar al acta</span>
+              </button>
+            )}
+          </div>
         ) : (
           <form
             onSubmit={handleAddParty}
@@ -310,6 +369,8 @@ export function TabCalculadora() {
               <input
                 type="number"
                 min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={currentSheet.whiteVotes || ""}
                 onChange={(e) =>
                   updateSpecialVotes(
@@ -319,7 +380,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -359,6 +420,8 @@ export function TabCalculadora() {
               <input
                 type="number"
                 min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={currentSheet.nullVotes || ""}
                 onChange={(e) =>
                   updateSpecialVotes(
@@ -368,7 +431,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -408,6 +471,8 @@ export function TabCalculadora() {
               <input
                 type="number"
                 min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={currentSheet.impugnedVotes || ""}
                 onChange={(e) =>
                   updateSpecialVotes(
@@ -417,7 +482,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -436,6 +501,21 @@ export function TabCalculadora() {
           </div>
         </div>
       </div>
+
+      {/* Cartel / Photo Scanner Dialog */}
+      <ScanCartelDialog
+        open={showScanDialog}
+        onOpenChange={setShowScanDialog}
+        activeSheetType={activeSheetType}
+      />
+
+      {/* Dictation Mode Dialog */}
+      <DictationModeDialog
+        open={showDictationDialog}
+        onOpenChange={setShowDictationDialog}
+        sheet={currentSheet}
+        votersTarget={votersTarget}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useCopilotoStore } from "../_lib/store";
 import { PHASES_CONFIG } from "../_lib/constants";
 import { ExitGuardDialog } from "./exit-guard-dialog";
 import { ProtocolsSheet } from "./protocols-sheet";
+import { RoleSelectorDialog } from "./role-selector-dialog";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,7 @@ import {
   RotateCcw,
   LogOut,
   HelpCircle,
+  UserCheck,
 } from "lucide-react";
 
 function subscribeOnline(callback: () => void) {
@@ -41,6 +43,13 @@ function getServerOnlineSnapshot() {
   return true;
 }
 
+const ROLE_SHORT_LABELS: Record<string, string> = {
+  presidente: "Presidente",
+  secretario: "Secretario",
+  tercer_miembro: "3er Miembro",
+  todos: "Mesa Completa",
+};
+
 export function CopilotoHeader() {
   const isOnline = useSyncExternalStore(
     subscribeOnline,
@@ -51,9 +60,14 @@ export function CopilotoHeader() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showProtocolsSheet, setShowProtocolsSheet] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
+  const selectedRole = useCopilotoStore((s) => s.selectedRole);
+  const setSelectedRole = useCopilotoStore((s) => s.setSelectedRole);
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
   const resetAllData = useCopilotoStore((s) => s.resetAllData);
+
+  const isRoleModalOpen = showRoleModal || selectedRole === null;
 
   const totalTasksCount = PHASES_CONFIG.reduce(
     (acc, phase) => acc + phase.tasks.length,
@@ -79,9 +93,19 @@ export function CopilotoHeader() {
                   2026
                 </span>
               </div>
-              <p className="text-[10px] text-muted-foreground font-medium truncate">
-                Copiloto de Sufragio
-              </p>
+              {/* Clickable Role Switcher Pill */}
+              <button
+                type="button"
+                onClick={() => setShowRoleModal(true)}
+                className="flex items-center gap-1 text-[10px] text-brand hover:underline font-bold leading-none mt-0.5 text-left"
+              >
+                <UserCheck className="h-2.5 w-2.5" />
+                <span>
+                  {selectedRole
+                    ? ROLE_SHORT_LABELS[selectedRole]
+                    : "Elegir tu Rol"}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -139,6 +163,17 @@ export function CopilotoHeader() {
         </div>
       </header>
 
+      {/* Role Selection Modal */}
+      <RoleSelectorDialog
+        open={isRoleModalOpen}
+        onOpenChange={(open) => {
+          setShowRoleModal(open);
+          if (!open && selectedRole === null) {
+            setSelectedRole("todos");
+          }
+        }}
+      />
+
       {/* Protocols & Help Drawer */}
       <ProtocolsSheet
         open={showProtocolsSheet}
@@ -160,8 +195,7 @@ export function CopilotoHeader() {
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Se borrarán los checks y los votos ingresados en la calculadora.
-              Útil si estás practicando antes de la jornada.
+              Se borrarán los checks, los votos y tu selección de rol.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-3">

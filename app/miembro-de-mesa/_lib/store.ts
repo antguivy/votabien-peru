@@ -5,8 +5,10 @@ import {
   ElectionType,
   ElectionSheetState,
   EnvelopeColor,
+  MemberRole,
 } from "./types";
 import { createInitialElectionSheet } from "./reconciliation";
+import { OFFICIAL_ERM_2026_PARTIES } from "./constants";
 
 export type CopilotoTab =
   | "checklist"
@@ -18,6 +20,7 @@ export type CopilotoTab =
 interface CopilotoState {
   activeTab: CopilotoTab;
   activePhase: PhaseId;
+  selectedRole: MemberRole | null;
   completedTasks: Record<string, boolean>;
   votersTarget: number;
   sheets: Record<ElectionType, ElectionSheetState>;
@@ -26,6 +29,7 @@ interface CopilotoState {
   // Actions
   setActiveTab: (tab: CopilotoTab) => void;
   setActivePhase: (phase: PhaseId) => void;
+  setSelectedRole: (role: MemberRole | null) => void;
   toggleTask: (taskId: string) => void;
   setVotersTarget: (target: number) => void;
   updateOptionVotes: (
@@ -35,6 +39,11 @@ interface CopilotoState {
   ) => void;
   addSheetOption: (type: ElectionType, name: string) => void;
   removeSheetOption: (type: ElectionType, optionId: string) => void;
+  loadOfficialPartiesPreset: (type: ElectionType) => void;
+  setSheetOptions: (
+    type: ElectionType,
+    options: { id: string; name: string; votes: number }[],
+  ) => void;
   updateSpecialVotes: (
     type: ElectionType,
     field: "whiteVotes" | "nullVotes" | "impugnedVotes",
@@ -72,6 +81,7 @@ export const useCopilotoStore = create<CopilotoState>()(
     (set, _get) => ({
       activeTab: "checklist",
       activePhase: "instalacion",
+      selectedRole: null,
       completedTasks: {},
       votersTarget: 0,
       sheets: initialSheets,
@@ -85,6 +95,7 @@ export const useCopilotoStore = create<CopilotoState>()(
 
       setActiveTab: (tab) => set({ activeTab: tab }),
       setActivePhase: (phase) => set({ activePhase: phase }),
+      setSelectedRole: (role) => set({ selectedRole: role }),
 
       toggleTask: (taskId) =>
         set((state) => ({
@@ -155,6 +166,46 @@ export const useCopilotoStore = create<CopilotoState>()(
           };
         }),
 
+      loadOfficialPartiesPreset: (type) =>
+        set((state) => {
+          const currentSheet = state.sheets[type];
+          if (!currentSheet) return state;
+
+          const officialOptions = OFFICIAL_ERM_2026_PARTIES.map(
+            (name, idx) => ({
+              id: `erm-${idx + 1}-${name.toLowerCase().replace(/\s+/g, "-")}`,
+              name,
+              votes: 0,
+            }),
+          );
+
+          return {
+            sheets: {
+              ...state.sheets,
+              [type]: {
+                ...currentSheet,
+                options: officialOptions,
+              },
+            },
+          };
+        }),
+
+      setSheetOptions: (type, options) =>
+        set((state) => {
+          const currentSheet = state.sheets[type];
+          if (!currentSheet) return state;
+
+          return {
+            sheets: {
+              ...state.sheets,
+              [type]: {
+                ...currentSheet,
+                options,
+              },
+            },
+          };
+        }),
+
       updateSpecialVotes: (type, field, count) =>
         set((state) => {
           const currentSheet = state.sheets[type];
@@ -192,6 +243,7 @@ export const useCopilotoStore = create<CopilotoState>()(
             anaranjado: false,
           },
           activePhase: "instalacion",
+          selectedRole: null,
         }),
     }),
     {

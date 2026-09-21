@@ -321,6 +321,17 @@ CHARTS:
   .bg-overlay {
     background: oklch(from var(--background) l c h / 0.95);
   }
+
+  /* Ocultar flechas (spinners) de inputs numéricos */
+  .no-spinner::-webkit-inner-spin-button,
+  .no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
