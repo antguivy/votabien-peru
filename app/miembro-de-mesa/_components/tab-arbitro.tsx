@@ -24,85 +24,347 @@ export function TabArbitro() {
   });
 
   const renderVisualBallotBox = (type: VoteScenario["visualType"]) => {
+    // ── Cédula Rota o Rasgada ──
+    if (type === "cedula_rota") {
+      return (
+        <div className="p-1 rounded-2xl bg-muted/30 border border-border/60 shrink-0 shadow-2xs">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-[#fbfaf6] dark:bg-zinc-900 border border-border/80 rounded-xl overflow-hidden p-1.5 flex items-center justify-center select-none">
+            {/* Ripped ballot effect with jagged SVG tear */}
+            <svg
+              className="w-full h-full"
+              viewBox="0 0 100 100"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Top Piece */}
+              <path
+                d="M 10 10 L 90 10 L 90 42 L 76 38 L 82 48 L 68 44 L 72 54 L 56 48 L 60 60 L 42 54 L 46 66 L 28 58 L 22 70 L 10 62 Z"
+                fill="#f4f3ee"
+                stroke="#9ca3af"
+                strokeWidth="1.2"
+              />
+              {/* Faint symbol in top piece */}
+              <rect
+                x="25"
+                y="18"
+                width="20"
+                height="20"
+                rx="3"
+                stroke="#d1d5db"
+                strokeWidth="1"
+                strokeDasharray="2 2"
+                fill="none"
+              />
+              <path
+                d="M 30 35 L 35 24 L 40 35 Z"
+                fill="#d1d5db"
+                opacity="0.8"
+              />
+
+              {/* Bottom Piece Displaced */}
+              <g transform="translate(2, 6)">
+                <path
+                  d="M 10 70 L 22 76 L 28 64 L 46 72 L 42 60 L 60 66 L 56 54 L 72 60 L 68 50 L 82 54 L 76 44 L 90 48 L 90 90 L 10 90 Z"
+                  fill="#e5e5df"
+                  stroke="#9ca3af"
+                  strokeWidth="1.2"
+                />
+              </g>
+
+              {/* Ripped Tear Warning Label */}
+              <rect
+                x="15"
+                y="46"
+                width="70"
+                height="16"
+                rx="4"
+                fill="#dc2626"
+                opacity="0.9"
+              />
+              <text
+                x="50"
+                y="57"
+                fill="white"
+                fontSize="8"
+                fontFamily="monospace"
+                fontWeight="900"
+                textAnchor="middle"
+                letterSpacing="1"
+              >
+                CÉDULA ROTA
+              </text>
+            </svg>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Cédula Sin Firma del Presidente en Reverso ──
+    if (type === "cedula_sin_firma") {
+      return (
+        <div className="p-1 rounded-2xl bg-muted/30 border border-border/60 shrink-0 shadow-2xs">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-[#fdfcf8] dark:bg-zinc-900 border border-border/80 rounded-xl p-1.5 flex flex-col justify-between select-none font-mono text-[8px]">
+            {/* Header */}
+            <div className="border-b border-zinc-300 pb-0.5 text-center">
+              <span className="font-bold text-[7.5px] text-zinc-600 dark:text-zinc-400 block tracking-tight">
+                CÉDULA DE SUFRAGIO
+              </span>
+              <span className="text-[6.5px] text-zinc-500 uppercase tracking-widest block">
+                REVERSO
+              </span>
+            </div>
+
+            {/* Signature Rows */}
+            <div className="space-y-1 my-auto">
+              {/* Presidente: Missing Signature */}
+              <div className="p-1 rounded bg-destructive/10 border border-dashed border-destructive/60 flex items-center justify-between">
+                <span className="text-[7px] text-destructive font-black">
+                  PRESIDENTE
+                </span>
+                <span className="text-[7.5px] font-black text-destructive tracking-tighter">
+                  ✗ SIN FIRMA
+                </span>
+              </div>
+
+              {/* Secretario: Signed */}
+              <div className="flex items-center justify-between px-1 text-zinc-500">
+                <span className="text-[6.5px]">Secretario</span>
+                <svg className="w-10 h-3 text-blue-700" viewBox="0 0 40 12">
+                  <path
+                    d="M 2 8 C 8 2, 12 10, 18 4 C 22 1, 26 9, 38 6"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              {/* 3er Miembro: Signed */}
+              <div className="flex items-center justify-between px-1 text-zinc-500">
+                <span className="text-[6.5px]">3er Miembro</span>
+                <svg className="w-10 h-3 text-blue-700" viewBox="0 0 40 12">
+                  <path
+                    d="M 2 6 C 10 10, 16 1, 24 7 C 28 10, 32 3, 38 7"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* Footer warning */}
+            <div className="text-[6.5px] text-destructive text-center font-bold uppercase tracking-tight">
+              Invalida el voto
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Casos de Marcado en Recuadro (Cruz, Aspa, Mancha, Texto, Check) ──
     return (
       <div className="p-1 rounded-2xl bg-muted/30 border border-border/60 shrink-0 shadow-2xs">
-        <div className="relative w-20 h-20 border border-border/80 bg-card rounded-xl flex items-center justify-center p-1 select-none">
-          <div className="w-12 h-12 border border-dashed border-border/60 rounded-lg flex items-center justify-center relative">
-            {type === "cruz_perfecta" && (
-              <svg
-                className="w-9 h-9 text-foreground stroke-[3.5]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <line x1="12" y1="4" x2="12" y2="20" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-              </svg>
-            )}
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-[#fdfcf8] dark:bg-zinc-900 border border-border/80 rounded-xl overflow-hidden p-1.5 flex flex-col justify-between select-none">
+          {/* Top simulated party strip */}
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-0.5 px-0.5">
+            <span className="text-[7.5px] font-mono font-bold text-zinc-600 dark:text-zinc-400 truncate">
+              ORGANIZACIÓN
+            </span>
+            <span className="text-[7px] font-mono text-zinc-400">01</span>
+          </div>
 
-            {type === "cruz_desbordada" && (
-              <svg
-                className="w-14 h-14 text-foreground stroke-[3.5] absolute -top-1 -left-1"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <line x1="12" y1="2" x2="12" y2="22" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="2.5"
-                  className="fill-emerald-600 dark:fill-emerald-400"
-                />
-              </svg>
-            )}
-
-            {type === "cruz_linea" && (
-              <svg
-                className="w-12 h-12 text-destructive stroke-[3.5] absolute -bottom-3 -right-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <line x1="12" y1="2" x2="12" y2="22" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <circle cx="12" cy="12" r="2.5" className="fill-destructive" />
-              </svg>
-            )}
-
-            {type === "signo_check" && (
-              <svg
-                className="w-9 h-9 text-destructive stroke-[3.5]"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            )}
-
-            {type === "carita_feliz" && (
-              <span className="text-2xl text-destructive select-none">😊</span>
-            )}
-
-            {type === "texto_o_firma" && (
-              <span className="text-[9px] font-serif italic text-destructive rotate-[-12deg] select-none font-bold">
-                Texto
+          {/* Voting Cell Container with Simulated Party Symbol + Vote Box */}
+          <div className="relative flex-1 flex items-center justify-center my-0.5">
+            {/* Simulated Party Symbol in Background */}
+            <div className="absolute left-1.5 w-7 h-7 rounded bg-zinc-200/70 dark:bg-zinc-800 flex items-center justify-center">
+              <span className="text-[9px] font-mono font-bold text-zinc-400">
+                LOGO
               </span>
-            )}
+            </div>
 
-            {type === "cedula_rota" && (
-              <span className="text-[9px] font-mono text-destructive font-bold border-y border-destructive px-1">
-                ROTA
-              </span>
-            )}
+            {/* Voting Box (white paper cell with gray border) */}
+            <div className="relative w-14 h-14 bg-white dark:bg-zinc-950 border border-zinc-400 dark:border-zinc-700 rounded-md shadow-inner flex items-center justify-center ml-8">
+              {/* Realistic Hand-Drawn Stroke Paths */}
 
-            {type === "cedula_sin_firma" && (
-              <span className="text-[8px] font-mono text-destructive font-bold text-center leading-tight">
-                SIN FIRMA
-              </span>
-            )}
+              {/* 1. Cruz o aspa perfecta */}
+              {type === "cruz_perfecta" && (
+                <svg
+                  className="w-12 h-12 text-[#1e40af]"
+                  viewBox="0 0 60 60"
+                  fill="none"
+                >
+                  {/* Natural ballpoint pen strokes with realistic hand curves */}
+                  <path
+                    d="M 14 12 C 22 25, 36 38, 47 49"
+                    stroke="#1d4ed8"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 46 13 C 35 24, 24 37, 13 48"
+                    stroke="#1d4ed8"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+
+              {/* 2. Cruz que sobrepasa ligeramente pero intersección dentro */}
+              {type === "cruz_desbordada" && (
+                <div className="relative w-full h-full flex items-center justify-center overflow-visible">
+                  <svg
+                    className="w-20 h-20 text-[#1e40af] absolute -top-3 -left-3 overflow-visible"
+                    viewBox="0 0 80 80"
+                    fill="none"
+                  >
+                    {/* Strokes extending beyond box borders */}
+                    <path
+                      d="M 6 8 C 28 32, 52 54, 74 74"
+                      stroke="#1d4ed8"
+                      strokeWidth="3.2"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M 73 9 C 51 31, 30 52, 7 73"
+                      stroke="#1d4ed8"
+                      strokeWidth="3.2"
+                      strokeLinecap="round"
+                    />
+                    {/* Green indicator: intersection is legally INSIDE */}
+                    <circle
+                      cx="40"
+                      cy="41"
+                      r="4.5"
+                      fill="#16a34a"
+                      stroke="white"
+                      strokeWidth="1.5"
+                      className="animate-pulse"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              {/* 3. Intersección sobre la línea o fuera */}
+              {type === "cruz_linea" && (
+                <div className="relative w-full h-full flex items-center justify-center overflow-visible">
+                  <svg
+                    className="w-20 h-20 text-[#dc2626] absolute -bottom-4 -right-4 overflow-visible"
+                    viewBox="0 0 80 80"
+                    fill="none"
+                  >
+                    {/* Strokes crossing on the bottom-right border */}
+                    <path
+                      d="M 28 15 C 44 38, 58 58, 76 76"
+                      stroke="#dc2626"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M 76 22 C 60 42, 44 60, 24 78"
+                      stroke="#dc2626"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                    {/* Red indicator: intersection falls on or outside line */}
+                    <circle
+                      cx="53"
+                      cy="51"
+                      r="4.5"
+                      fill="#dc2626"
+                      stroke="white"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              {/* 4. Signo check (✓) */}
+              {type === "signo_check" && (
+                <svg
+                  className="w-12 h-12 text-[#dc2626]"
+                  viewBox="0 0 60 60"
+                  fill="none"
+                >
+                  {/* Handwritten checkmark */}
+                  <path
+                    d="M 12 32 C 16 37, 20 42, 25 47 C 32 35, 41 22, 50 12"
+                    stroke="#dc2626"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+
+              {/* 5. Carita feliz o garabatos */}
+              {type === "carita_feliz" && (
+                <svg
+                  className="w-11 h-11 text-[#dc2626]"
+                  viewBox="0 0 60 60"
+                  fill="none"
+                >
+                  {/* Hand-drawn doodle smiley */}
+                  <circle
+                    cx="30"
+                    cy="30"
+                    r="19"
+                    stroke="#dc2626"
+                    strokeWidth="2.4"
+                  />
+                  <circle cx="23" cy="24" r="2.2" fill="#dc2626" />
+                  <circle cx="37" cy="24" r="2.2" fill="#dc2626" />
+                  <path
+                    d="M 21 35 C 25 43, 35 43, 39 35"
+                    stroke="#dc2626"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+
+              {/* 6. Texto escrito, firma o insulto */}
+              {type === "texto_o_firma" && (
+                <svg
+                  className="w-14 h-14 text-[#dc2626]"
+                  viewBox="0 0 60 60"
+                  fill="none"
+                >
+                  {/* Realistic ballpoint scribble / handwriting */}
+                  <path
+                    d="M 8 32 C 14 22, 18 18, 22 34 C 25 42, 30 20, 36 32 C 40 26, 44 38, 52 30"
+                    stroke="#dc2626"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 12 42 Q 32 38, 50 40"
+                    stroke="#dc2626"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <text
+                    x="30"
+                    y="52"
+                    fill="#dc2626"
+                    fontSize="7"
+                    fontFamily="sans-serif"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    FIRMA / DNI
+                  </text>
+                </svg>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom ballot indicator */}
+          <div className="flex items-center justify-between text-[6.5px] font-mono text-zinc-400 px-0.5">
+            <span>ONPE 2026</span>
+            <span>VOTO</span>
           </div>
         </div>
       </div>
@@ -141,6 +403,7 @@ export function TabArbitro() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           <button
+            type="button"
             onClick={() => setFilter("all")}
             className={`shrink-0 inline-flex items-baseline gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border ${
               filter === "all"
@@ -156,6 +419,7 @@ export function TabArbitro() {
           </button>
 
           <button
+            type="button"
             onClick={() => setFilter("valid")}
             className={`shrink-0 inline-flex items-baseline gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border ${
               filter === "valid"
@@ -170,6 +434,7 @@ export function TabArbitro() {
           </button>
 
           <button
+            type="button"
             onClick={() => setFilter("null")}
             className={`shrink-0 inline-flex items-baseline gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border ${
               filter === "null"
@@ -194,7 +459,7 @@ export function TabArbitro() {
         </div>
       </div>
 
-      {/* ── Casos Visuales de Voto ── */}
+      {/* ── Casos Visuales de Voto con Ilustración Realista ── */}
       <div className="space-y-3">
         {filteredScenarios.map((item) => (
           <section
@@ -224,7 +489,7 @@ export function TabArbitro() {
                 </p>
               </div>
 
-              {/* Graphic Ballot Box */}
+              {/* Graphic Realistic Ballot Box */}
               {renderVisualBallotBox(item.visualType)}
             </div>
 
