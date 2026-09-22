@@ -128,36 +128,65 @@ export function TabArbitro() {
               </div>
             </div>
 
-            {/* Secretario: Firmado */}
+            {/* Secretario: Firmado con rúbrica realista */}
             <div className="p-2 rounded-lg bg-background border border-border/70 text-center space-y-1">
               <span className="text-[8px] font-bold text-muted-foreground block">
                 SECRETARIO
               </span>
               <div className="h-6 flex items-center justify-center">
-                <svg className="w-16 h-5 text-blue-700" viewBox="0 0 50 16">
+                <svg
+                  className="w-16 h-6 text-blue-700"
+                  viewBox="0 0 70 24"
+                  fill="none"
+                >
+                  {/* Rúbrica peruana con lazo inicial, picos y trazo fluido */}
                   <path
-                    d="M 3 10 C 10 2, 16 14, 24 6 C 30 2, 36 12, 48 8"
+                    d="M 4 17 C 6 6, 12 2, 16 10 C 18 14, 16 19, 20 12 C 22 7, 25 15, 29 8 C 33 4, 37 9, 35 16 C 32 20, 28 17, 36 14 C 44 10, 52 11, 64 12"
                     stroke="currentColor"
-                    strokeWidth="1.8"
-                    fill="none"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M 10 20 Q 36 17 64 19"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
                     strokeLinecap="round"
                   />
+                  <circle cx="28" cy="5" r="1" fill="currentColor" />
                 </svg>
               </div>
             </div>
 
-            {/* 3er Miembro: Firmado */}
+            {/* 3er Miembro: Firmado con rúbrica realista */}
             <div className="p-2 rounded-lg bg-background border border-border/70 text-center space-y-1">
               <span className="text-[8px] font-bold text-muted-foreground block">
                 3er MIEMBRO
               </span>
               <div className="h-6 flex items-center justify-center">
-                <svg className="w-16 h-5 text-blue-700" viewBox="0 0 50 16">
+                <svg
+                  className="w-16 h-6 text-blue-700"
+                  viewBox="0 0 70 24"
+                  fill="none"
+                >
+                  {/* Rúbrica con bucle ascendente, garabato rápido y subrayado */}
                   <path
-                    d="M 3 8 C 12 14, 20 2, 30 10 C 36 14, 42 4, 48 10"
+                    d="M 6 13 C 8 3, 16 4, 14 12 C 12 18, 7 19, 16 17 C 22 15, 19 6, 25 12 C 29 16, 33 6, 37 13 C 41 8, 45 13, 49 8 C 54 5, 57 14, 65 11"
                     stroke="currentColor"
-                    strokeWidth="1.8"
-                    fill="none"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M 12 20 C 28 16, 45 21, 62 17"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M 44 18 L 50 22"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -175,7 +204,73 @@ export function TabArbitro() {
 
     // ── Casos de Marcado en Cédula (Cruz, Aspa, Mancha, etc.) ──
     return (
-      <div className="w-full h-32 sm:h-36 rounded-xl bg-[#fdfcf7] dark:bg-zinc-900/90 border border-border/80 p-2.5 flex flex-col justify-between select-none shadow-inner">
+      <div className="relative w-full h-32 sm:h-36 rounded-xl bg-[#fdfcf7] dark:bg-zinc-900/90 border border-border/80 p-2.5 flex flex-col justify-between select-none shadow-inner overflow-hidden">
+        {/* Full-width scribble/text overlay for texto_o_firma (Fuera y Dentro del recuadro) */}
+        {type === "texto_o_firma" && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-10">
+            <svg className="w-full h-full" viewBox="0 0 320 120" fill="none">
+              {/* Giant scribbles across the candidate name, symbol, and box */}
+              <path
+                d="M 20 65 C 45 40, 65 35, 80 60 C 95 75, 115 30, 135 55 C 155 42, 175 70, 205 50 C 235 38, 260 62, 305 48"
+                stroke="#dc2626"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 35 82 Q 160 70 290 78"
+                stroke="#dc2626"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+              {/* Handwritten text outside and across the box */}
+              <text
+                x="85"
+                y="45"
+                fill="#dc2626"
+                fontSize="13"
+                fontFamily="sans-serif"
+                fontWeight="900"
+                letterSpacing="1"
+                transform="rotate(-5 85 45)"
+              >
+                ¡TODOS CORRUPTOS!
+              </text>
+              {/* Handwritten DNI / signature across the margin */}
+              <text
+                x="35"
+                y="94"
+                fill="#dc2626"
+                fontSize="9.5"
+                fontFamily="monospace"
+                fontWeight="bold"
+                transform="rotate(1 35 94)"
+              >
+                DNI: 48921045
+              </text>
+              {/* Badge: Texto fuera y dentro */}
+              <rect
+                x="175"
+                y="85"
+                width="130"
+                height="18"
+                rx="4"
+                fill="#dc2626"
+              />
+              <text
+                x="240"
+                y="97"
+                fill="white"
+                fontSize="8"
+                fontFamily="monospace"
+                fontWeight="900"
+                textAnchor="middle"
+              >
+                TEXTO FUERA Y DENTRO
+              </text>
+            </svg>
+          </div>
+        )}
+
         {/* Top simulated ballot row header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-1 text-[8px] font-mono text-muted-foreground font-semibold uppercase tracking-wider">
           <span>ELECCIONES 2026 · CÉDULA DE SUFRAGIO</span>
@@ -261,32 +356,55 @@ export function TabArbitro() {
             {/* 3. Intersección sobre la línea o fuera */}
             {type === "cruz_linea" && (
               <div className="relative w-full h-full flex items-center justify-center overflow-visible">
+                {/* Cross whose intersection (20, 45) is visibly OUTSIDE the box to the left */}
                 <svg
-                  className="w-24 h-24 text-destructive absolute -bottom-4 -right-4 overflow-visible"
-                  viewBox="0 0 80 80"
+                  className="w-32 h-28 text-destructive absolute -top-5 -left-16 overflow-visible"
+                  viewBox="0 0 100 100"
                   fill="none"
                 >
+                  {/* Line 1: starts outside and extends into box */}
                   <path
-                    d="M 30 16 C 46 38, 60 58, 78 76"
+                    d="M 5 22 C 15 34, 35 48, 75 72"
                     stroke="#dc2626"
-                    strokeWidth="3.4"
+                    strokeWidth="3.6"
                     strokeLinecap="round"
                   />
+                  {/* Line 2: starts outside and extends into box */}
                   <path
-                    d="M 78 24 C 62 44, 46 62, 26 80"
+                    d="M 5 68 C 15 56, 35 42, 75 18"
                     stroke="#dc2626"
-                    strokeWidth="3.4"
+                    strokeWidth="3.6"
                     strokeLinecap="round"
                   />
-                  {/* Red circle showing intersection on line/outside */}
+                  {/* Red circle showing intersection point (20, 45). The voting box border begins at x=45, so this is 100% OUTSIDE */}
                   <circle
-                    cx="54"
-                    cy="52"
-                    r="5"
+                    cx="20"
+                    cy="45"
+                    r="6"
                     fill="#dc2626"
                     stroke="white"
-                    strokeWidth="1.5"
+                    strokeWidth="2"
                   />
+                  {/* Visual tag pointing out that intersection is OUTSIDE */}
+                  <rect
+                    x="2"
+                    y="60"
+                    width="44"
+                    height="14"
+                    rx="3"
+                    fill="#dc2626"
+                  />
+                  <text
+                    x="24"
+                    y="70"
+                    fill="white"
+                    fontSize="6.5"
+                    fontFamily="monospace"
+                    fontWeight="900"
+                    textAnchor="middle"
+                  >
+                    CRUCE FUERA
+                  </text>
                 </svg>
               </div>
             )}
@@ -335,35 +453,11 @@ export function TabArbitro() {
 
             {/* 6. Texto o firma */}
             {type === "texto_o_firma" && (
-              <svg
-                className="w-16 h-16 text-destructive"
-                viewBox="0 0 60 60"
-                fill="none"
-              >
-                <path
-                  d="M 6 32 C 12 20, 16 16, 20 34 C 23 44, 28 20, 34 32 C 38 26, 42 38, 54 28"
-                  stroke="#dc2626"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M 10 44 Q 30 40, 50 42"
-                  stroke="#dc2626"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <text
-                  x="30"
-                  y="53"
-                  fill="#dc2626"
-                  fontSize="6.5"
-                  fontFamily="sans-serif"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  FIRMA / TEXTO
-                </text>
-              </svg>
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-[9px] font-mono text-destructive/80 font-bold">
+                  Cruzado
+                </span>
+              </div>
             )}
           </div>
         </div>
