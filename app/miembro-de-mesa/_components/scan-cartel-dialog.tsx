@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { useCopilotoStore } from "../_lib/store";
 import { ElectionType } from "../_lib/types";
-import { OFFICIAL_ERM_2026_PARTIES } from "../_lib/constants";
 import {
   Credenza,
   CredenzaContent,
@@ -51,20 +50,45 @@ export function ScanCartelDialog({
   const [applyToAllSheets, setApplyToAllSheets] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(reader.result as string);
-      // Simulate/trigger fast extraction from Cartel image
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setImagePreview(dataUrl);
       setIsProcessing(true);
-      setTimeout(() => {
-        // Detected list from Cartel de Candidatos ERM
-        setPartiesText(OFFICIAL_ERM_2026_PARTIES.slice(0, 8).join("\n"));
+      setPartiesText("");
+
+      try {
+        // Extraer solo el base64 crudo (sin el prefijo data:image/...;base64,)
+        const base64 = dataUrl.split(",")[1];
+        const mimeType = file.type || "image/jpeg";
+
+        const response = await fetch("/api/miembro-de-mesa/scan-cartel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_base64: base64, mime_type: mimeType }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(
+            (err as { detail?: string }).detail ||
+              "Error al reconocer el cartel.",
+          );
+        }
+
+        const data = (await response.json()) as { parties: string[] };
+        setPartiesText(data.parties.join("\n"));
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : "Error inesperado.";
+        setPartiesText(`ERROR: ${message}`);
+      } finally {
         setIsProcessing(false);
-      }, 1200);
+      }
     };
     reader.readAsDataURL(file);
   };
