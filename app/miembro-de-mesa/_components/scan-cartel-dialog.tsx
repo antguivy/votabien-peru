@@ -89,8 +89,11 @@ export function ScanCartelDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="max-w-md max-h-[92vh] bg-background border-border text-foreground p-0 overflow-hidden flex flex-col">
-        <CredenzaHeader className="text-left px-5 pt-5 pb-3 border-b border-border/60">
+      <CredenzaContent
+        noScroll
+        className="w-full sm:max-w-md mx-auto max-h-[90vh] bg-background border-border text-foreground p-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl shadow-2xl"
+      >
+        <CredenzaHeader className="shrink-0 text-left px-5 pt-4 pb-3 border-b border-border/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-brand">
               <Camera className="h-4 w-4" />
@@ -114,7 +117,7 @@ export function ScanCartelDialog({
           </CredenzaDescription>
         </CredenzaHeader>
 
-        <CredenzaBody className="space-y-3 px-5 py-4 overflow-y-auto">
+        <CredenzaBody className="flex-1 min-h-0 space-y-3 px-5 py-4 overflow-y-auto">
           {/* Option A: Fast 1-tap Official Preset (100% Offline) */}
           <div className="p-3.5 rounded-2xl bg-brand/10 border border-brand/25 space-y-2">
             <div className="flex items-center gap-2 text-brand">
@@ -219,7 +222,7 @@ export function ScanCartelDialog({
           </div>
         </CredenzaBody>
 
-        <CredenzaFooter className="px-5 py-3 border-t border-border/60 bg-muted/20 flex justify-end">
+        <CredenzaFooter className="shrink-0 px-5 py-3 border-t border-border/60 bg-muted/20 flex justify-end">
           <CredenzaClose asChild>
             <Button
               variant="outline"

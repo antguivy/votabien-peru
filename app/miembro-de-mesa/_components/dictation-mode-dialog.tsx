@@ -75,7 +75,7 @@ export function DictationModeDialog({
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
         noScroll
-        className="max-w-md h-[88vh] max-h-[88vh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden"
+        className="w-full sm:max-w-md mx-auto h-[88vh] max-h-[88vh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
       >
         <CredenzaHeader className="shrink-0 text-left px-5 pt-3 pb-2.5 border-b border-border/60">
           <div className="flex items-center justify-between">
