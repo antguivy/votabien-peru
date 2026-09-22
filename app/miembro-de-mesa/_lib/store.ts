@@ -60,22 +60,22 @@ interface CopilotoState {
 const initialSheets: Record<ElectionType, ElectionSheetState> = {
   "5A": createInitialElectionSheet(
     "5A",
-    "Elección Regional — Gobernador",
+    "Gobernador y Vicegobernador Regional",
     "Hoja Borrador 5A y Acta Sección C",
   ),
   "5B": createInitialElectionSheet(
     "5B",
-    "Elección Regional — Consejeros",
+    "Consejeros Regionales",
     "Hoja Borrador 5B y Acta Sección C",
   ),
   "5C": createInitialElectionSheet(
     "5C",
-    "Elección Municipal — Provincial",
+    "Alcalde y Regidores Provinciales",
     "Hoja Borrador 5C y Acta Sección C",
   ),
   "5D": createInitialElectionSheet(
     "5D",
-    "Elección Municipal — Distrital",
+    "Alcalde y Regidores Distritales",
     "Hoja Borrador 5D y Acta Sección C",
   ),
 };

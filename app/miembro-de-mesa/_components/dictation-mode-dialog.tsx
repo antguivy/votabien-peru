@@ -41,7 +41,7 @@ export function DictationModeDialog({
 
   const generateSummaryText = () => {
     let text = `🗳️ RESUMEN DE MESA — ONPE 2026\n`;
-    text += `Elección: ${sheet.title} (${sheet.type})\n`;
+    text += `Acta de Escrutinio: Hoja ${sheet.type} — ${sheet.title}\n`;
     text += `Total Ciudadanos que Votaron: ${votersTarget}\n`;
     text += `Total Votos Emitidos: ${totalVotes}\n`;
     text += `Estado: ${totalVotes === votersTarget ? "✓ CUADRADO EXACTO" : "⚠️ DESCUADRADO"}\n\n`;
@@ -77,7 +77,7 @@ export function DictationModeDialog({
         noScroll
         className="w-full sm:max-w-md mx-auto h-[88vh] max-h-[88vh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
       >
-        <CredenzaHeader className="shrink-0 text-left px-5 pt-3 pb-2.5 border-b border-border/60">
+        <CredenzaHeader className="shrink-0 text-left px-5 pt-3.5 pb-2.5 border-b border-border/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-brand">
               <Lock className="h-4 w-4" />
@@ -95,30 +95,52 @@ export function DictationModeDialog({
               </Button>
             </CredenzaClose>
           </div>
+
+          {/* Prominent Election Name Badge to prevent dictating wrong election */}
+          <div className="flex items-center gap-2 pt-1.5 pb-0.5">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border bg-foreground text-background border-foreground shadow-2xs shrink-0">
+              HOJA {sheet.type}
+            </span>
+            <span className="text-xs sm:text-sm font-black text-foreground uppercase tracking-tight truncate">
+              {sheet.title}
+            </span>
+          </div>
+
           <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-0.5">
-            Dictale al Secretario mientras llena la Sección C del Acta con
-            lapicero negro.
+            Verificá que el Secretario tenga en mano el acta física de esta
+            misma elección (Sección C - Escrutinio).
           </CredenzaDescription>
         </CredenzaHeader>
 
         {/* Scrollable Container with pinned metric banner and party list */}
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3.5 space-y-3.5">
-          {/* Header Metric */}
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-2xs">
-            <div className="space-y-0.5">
-              <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
-                Total a Consignar en Acta
+          {/* Header Metric with Election Label */}
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-emerald-600/20 pb-1.5 text-[10.5px] font-mono font-bold">
+              <span className="uppercase tracking-tight text-emerald-900 dark:text-emerald-200 truncate pr-2">
+                Acta de Escrutinio · {sheet.title}
               </span>
-              <div className="text-xl font-black font-mono tracking-tight">
-                {totalVotes} VOTOS
-              </div>
+              <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded shrink-0">
+                SECCIÓN C
+              </span>
             </div>
-            <div className="text-right text-[10.5px] font-mono">
-              <div className="text-muted-foreground">
-                Votantes: {votersTarget}
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
+                  Total a Consignar en Acta
+                </span>
+                <div className="text-xl font-black font-mono tracking-tight">
+                  {totalVotes} VOTOS
+                </div>
               </div>
-              <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                ✓ CUADRADO
+              <div className="text-right text-[10.5px] font-mono">
+                <div className="text-muted-foreground">
+                  Votantes: {votersTarget}
+                </div>
+                <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                  ✓ CUADRADO
+                </div>
               </div>
             </div>
           </div>

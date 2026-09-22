@@ -22,22 +22,27 @@ const SHEETS_INFO: {
   {
     type: "5A",
     num: "01",
-    label: "5A: Gobernador",
+    label: "5A: Gobernador y Vicegobernador",
     shortLabel: "5A Gobernador",
   },
   {
     type: "5B",
     num: "02",
-    label: "5B: Consejeros",
+    label: "5B: Consejeros Regionales",
     shortLabel: "5B Consejeros",
   },
   {
     type: "5C",
     num: "03",
-    label: "5C: Provincial",
+    label: "5C: Alcalde Provincial",
     shortLabel: "5C Provincial",
   },
-  { type: "5D", num: "04", label: "5D: Distrital", shortLabel: "5D Distrital" },
+  {
+    type: "5D",
+    num: "04",
+    label: "5D: Alcalde Distrital",
+    shortLabel: "5D Distrital",
+  },
 ];
 
 export function TabCalculadora() {
