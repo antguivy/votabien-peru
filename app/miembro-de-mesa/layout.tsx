@@ -25,14 +25,13 @@ export default function MiembroDeMesaLayout({
       {/* Top Header */}
       <CopilotoHeader />
 
-      {/* Main Responsive Canvas (same max-w-4xl as candidatos/[candidatosId]) */}
-      <article className="w-full max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-16 text-foreground">
-        {/* Sticky Nav Chips with Auto-Scroll (exact same pattern as CandidateNavChips) */}
-        <CopilotoNav />
+      {/* Main Content Area (Fluid full-width on mobile, max-w-4xl on desktop) */}
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 pb-28 text-foreground">
+        {children}
+      </main>
 
-        {/* Content Modules */}
-        <div className="pt-4">{children}</div>
-      </article>
+      {/* New Styled Bottom Navbar */}
+      <CopilotoNav />
     </div>
   );
 }

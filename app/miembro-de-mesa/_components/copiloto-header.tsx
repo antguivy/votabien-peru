@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
 import { PHASES_CONFIG } from "../_lib/constants";
 import { ExitGuardDialog } from "./exit-guard-dialog";
@@ -23,23 +23,6 @@ import {
   UserCheck,
 } from "lucide-react";
 
-function subscribeOnline(callback: () => void) {
-  window.addEventListener("online", callback);
-  window.addEventListener("offline", callback);
-  return () => {
-    window.removeEventListener("online", callback);
-    window.removeEventListener("offline", callback);
-  };
-}
-
-function getOnlineSnapshot() {
-  return navigator.onLine;
-}
-
-function getServerOnlineSnapshot() {
-  return true;
-}
-
 const ROLE_LABELS: Record<string, string> = {
   presidente: "Presidente",
   secretario: "Secretario",
@@ -48,12 +31,6 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function CopilotoHeader() {
-  const isOnline = useSyncExternalStore(
-    subscribeOnline,
-    getOnlineSnapshot,
-    getServerOnlineSnapshot,
-  );
-
   const [showExitModal, setShowExitModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showProtocolsSheet, setShowProtocolsSheet] = useState(false);
@@ -120,18 +97,6 @@ export function CopilotoHeader() {
               <UserCheck className="h-2.5 w-2.5 text-brand" />
               <span>{selectedRole ? ROLE_LABELS[selectedRole] : "Rol"}</span>
             </button>
-
-            {/* Offline Status Dot */}
-            <div className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded border border-border/60 bg-muted/30">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isOnline ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
-                }`}
-              />
-              <span className="text-muted-foreground">
-                {isOnline ? "En línea" : "Offline"}
-              </span>
-            </div>
 
             {/* Tasks count */}
             <span className="text-[10px] font-mono text-muted-foreground px-2 py-0.5 rounded bg-muted/40 border border-border/60">

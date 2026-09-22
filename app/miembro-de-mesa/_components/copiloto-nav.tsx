@@ -1,15 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useCopilotoStore, CopilotoTab } from "../_lib/store";
 import { calculateElectionTotals } from "../_lib/reconciliation";
+import { ListChecks, Calculator, Scale, PackageCheck } from "lucide-react";
 
-interface NavChipItem {
+interface BottomNavItem {
   id: CopilotoTab;
-  num: string;
   label: string;
-  badge?: string;
+  shortLabel: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
+
+const NAV_ITEMS: BottomNavItem[] = [
+  {
+    id: "checklist",
+    label: "Fases & Tareas",
+    shortLabel: "Tareas",
+    icon: ListChecks,
+  },
+  {
+    id: "calculadora",
+    label: "Cuadre de Actas",
+    shortLabel: "Cuadre",
+    icon: Calculator,
+  },
+  {
+    id: "arbitro",
+    label: "Árbitro de Votos",
+    shortLabel: "Votos",
+    icon: Scale,
+  },
+  {
+    id: "sobres",
+    label: "Sobres Oficiales",
+    shortLabel: "Sobres",
+    icon: PackageCheck,
+  },
+];
 
 export function CopilotoNav() {
   const activeTab = useCopilotoStore((s) => s.activeTab);
@@ -17,89 +44,73 @@ export function CopilotoNav() {
   const votersTarget = useCopilotoStore((s) => s.votersTarget);
   const sheets = useCopilotoStore((s) => s.sheets);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Calculate status for the Cuadre tab
+  // Status for the Cuadre tab
   const activeSheetTotals = calculateElectionTotals(sheets["5A"]);
   const is5AMatched =
     votersTarget > 0 && activeSheetTotals.totalVotes === votersTarget;
-
-  const items: NavChipItem[] = [
-    { id: "checklist", num: "01", label: "Fases & Tareas" },
-    {
-      id: "calculadora",
-      num: "02",
-      label: "Cuadre de Actas",
-      badge: is5AMatched ? "✓ Cuadró" : undefined,
-    },
-    { id: "arbitro", num: "03", label: "Árbitro de Votos" },
-    { id: "sobres", num: "04", label: "Sobres de Seguridad" },
-  ];
-
-  // Auto-scroll active chip into horizontal view when activeTab changes
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const activeChip = containerRef.current.querySelector(
-      `[data-chip-id="${activeTab}"]`,
-    ) as HTMLElement | null;
-
-    if (activeChip) {
-      activeChip.scrollIntoView({
-        inline: "center",
-        block: "nearest",
-        behavior: "smooth",
-      });
-    }
-  }, [activeTab]);
+  const is5AMismatched =
+    votersTarget > 0 && activeSheetTotals.totalVotes !== votersTarget;
 
   return (
-    <nav
-      className="sticky top-[53px] z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 bg-background/90 backdrop-blur-md border-b border-border/70 shadow-xs"
-      aria-label="Navegación del copiloto de mesa"
-    >
-      <div
-        ref={containerRef}
-        className="max-w-4xl mx-auto flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5"
-        style={{ scrollbarWidth: "none" }}
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
+      <nav
+        className="w-full max-w-4xl bg-background/95 backdrop-blur-xl border-t border-border/80 px-2 sm:px-6 pt-1.5 pb-[calc(0.6rem+env(safe-area-inset-bottom))] flex items-center justify-around pointer-events-auto shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+        aria-label="Navegación principal de la mesa"
       >
-        {items.map((item) => {
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
           const isActive = activeTab === item.id;
+
           return (
             <button
               key={item.id}
               type="button"
-              data-chip-id={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`shrink-0 inline-flex items-baseline gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border select-none active:scale-95 ${
+              className={`relative flex-1 max-w-[140px] flex flex-col items-center justify-center gap-1 py-1.5 px-2 rounded-xl transition-all duration-150 select-none active:scale-95 ${
                 isActive
-                  ? "bg-foreground text-background border-foreground shadow-xs"
-                  : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground"
+                  ? "text-foreground font-bold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
-              aria-current={isActive ? "true" : "false"}
             >
-              <span
-                className={`text-[10px] font-bold ${
-                  isActive ? "text-background/70" : "text-brand"
+              {/* Active Indicator Top Glow Line */}
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-[3px] w-8 rounded-full bg-brand transition-all"
+                />
+              )}
+
+              <div
+                className={`relative p-1.5 rounded-xl transition-all ${
+                  isActive
+                    ? "bg-muted text-brand shadow-2xs"
+                    : "bg-transparent text-muted-foreground"
                 }`}
               >
-                {item.num}
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+
+                {/* Status Dot for Cuadre Tab */}
+                {item.id === "calculadora" && (
+                  <span
+                    className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-background ${
+                      is5AMatched
+                        ? "bg-emerald-500"
+                        : is5AMismatched
+                          ? "bg-destructive animate-pulse"
+                          : "hidden"
+                    }`}
+                  />
+                )}
+              </div>
+
+              <span className="text-[10px] sm:text-[11px] font-mono tracking-tight leading-none truncate">
+                <span className="hidden xs:inline">{item.label}</span>
+                <span className="xs:hidden">{item.shortLabel}</span>
               </span>
-              <span>{item.label}</span>
-              {item.badge && (
-                <span
-                  className={`text-[10px] font-bold px-1 rounded ${
-                    isActive
-                      ? "bg-background/20 text-background"
-                      : "bg-success/15 text-success"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
             </button>
           );
         })}
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
