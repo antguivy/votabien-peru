@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { VOTE_SCENARIOS } from "../_lib/constants";
 import { VoteScenario } from "../_lib/types";
-import { Shield, Search } from "lucide-react";
+import { Shield, Search, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export function TabArbitro() {
@@ -122,8 +122,9 @@ export function TabArbitro() {
                 PRESIDENTE
               </span>
               <div className="h-6 flex items-center justify-center">
-                <span className="text-[9px] font-black text-destructive tracking-tight">
-                  ✗ SIN FIRMA
+                <span className="text-[7.5px] font-black text-destructive tracking-tighter flex items-center gap-1">
+                  <X className="h-2.5 w-2.5" />
+                  <span>SIN FIRMA</span>
                 </span>
               </div>
             </div>
@@ -527,9 +528,7 @@ export function TabArbitro() {
                 : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground"
             }`}
           >
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-              ✓
-            </span>
+            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
             <span>Válidos</span>
           </button>
 
@@ -542,7 +541,7 @@ export function TabArbitro() {
                 : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground"
             }`}
           >
-            <span className="text-[10px] font-bold text-destructive">✗</span>
+            <X className="h-3 w-3 text-destructive" />
             <span>Nulos</span>
           </button>
         </div>
@@ -576,7 +575,17 @@ export function TabArbitro() {
                       : "text-destructive bg-destructive/10 border-destructive/30"
                   }`}
                 >
-                  {item.ruling === "valid" ? "✓ Voto Válido" : "✗ Voto Nulo"}
+                  {item.ruling === "valid" ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Check className="h-2.5 w-2.5" />
+                      <span>Voto Válido</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <X className="h-2.5 w-2.5" />
+                      <span>Voto Nulo</span>
+                    </span>
+                  )}
                 </span>
 
                 <span className="text-[10px] font-mono text-muted-foreground">

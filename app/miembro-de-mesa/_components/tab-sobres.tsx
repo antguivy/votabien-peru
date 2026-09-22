@@ -150,8 +150,18 @@ export function TabSobres() {
                   <ShieldCheck className="h-3 w-3" />
                   <span>Cinta de Seguridad Inviolable · ONPE</span>
                 </span>
-                <span className="opacity-80">
-                  {isSealed ? "🔒 LACRADO" : "🔓 PENDIENTE DE CIERRE"}
+                <span className="opacity-90 flex items-center gap-1 font-bold">
+                  {isSealed ? (
+                    <>
+                      <Lock className="h-2.5 w-2.5" />
+                      <span>LACRADO</span>
+                    </>
+                  ) : (
+                    <>
+                      <Unlock className="h-2.5 w-2.5" />
+                      <span>PENDIENTE DE CIERRE</span>
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -173,8 +183,9 @@ export function TabSobres() {
                       </span>
 
                       {isSealed && (
-                        <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                          ✓ Cerrado
+                        <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Cerrado</span>
                         </span>
                       )}
                     </div>

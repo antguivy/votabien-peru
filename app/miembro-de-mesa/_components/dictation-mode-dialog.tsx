@@ -7,7 +7,6 @@ import {
   CredenzaContent,
   CredenzaHeader,
   CredenzaTitle,
-  CredenzaDescription,
   CredenzaFooter,
   CredenzaClose,
 } from "@/components/ui/credenza";
@@ -40,11 +39,11 @@ export function DictationModeDialog({
     (Number(sheet.impugnedVotes) || 0);
 
   const generateSummaryText = () => {
-    let text = `🗳️ RESUMEN DE MESA — ONPE 2026\n`;
+    let text = `RESUMEN DE MESA — ONPE 2026\n`;
     text += `Acta de Escrutinio: Hoja ${sheet.type} — ${sheet.title}\n`;
     text += `Total Ciudadanos que Votaron: ${votersTarget}\n`;
     text += `Total Votos Emitidos: ${totalVotes}\n`;
-    text += `Estado: ${totalVotes === votersTarget ? "✓ CUADRADO EXACTO" : "⚠️ DESCUADRADO"}\n\n`;
+    text += `Estado: CUADRADO EXACTO\n\n`;
     text += `--- VOTOS POR ORGANIZACIÓN ---\n`;
     sheet.options.forEach((opt, idx) => {
       text += `${idx + 1}. ${opt.name}: ${opt.votes}\n`;
@@ -75,9 +74,10 @@ export function DictationModeDialog({
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
         noScroll
-        className="w-full sm:max-w-md mx-auto h-[88vh] max-h-[88vh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
+        className="w-full sm:max-w-md mx-auto h-[95dvh] max-h-[95dvh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
       >
-        <CredenzaHeader className="shrink-0 text-left px-5 pt-3.5 pb-2.5 border-b border-border/60">
+        {/* Pinned Header: Title, Election Name and Status Badge */}
+        <CredenzaHeader className="shrink-0 text-left px-5 pt-3.5 pb-2.5 border-b border-border/60 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-brand">
               <Lock className="h-4 w-4" />
@@ -96,57 +96,26 @@ export function DictationModeDialog({
             </CredenzaClose>
           </div>
 
-          {/* Prominent Election Name Badge to prevent dictating wrong election */}
-          <div className="flex items-center gap-2 pt-1.5 pb-0.5">
-            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded border bg-foreground text-background border-foreground shadow-2xs shrink-0">
-              HOJA {sheet.type}
-            </span>
-            <span className="text-xs sm:text-sm font-black text-foreground uppercase tracking-tight truncate">
-              {sheet.title}
+          {/* Prominent Election Name and Status Bar */}
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-foreground text-background shrink-0">
+                HOJA {sheet.type}
+              </span>
+              <span className="text-xs sm:text-sm font-black text-foreground uppercase tracking-tight truncate">
+                {sheet.title}
+              </span>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/30 shrink-0">
+              {totalVotes} votos · Cuadrado
             </span>
           </div>
-
-          <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-0.5">
-            Verificá que el Secretario tenga en mano el acta física de esta
-            misma elección (Sección C - Escrutinio).
-          </CredenzaDescription>
         </CredenzaHeader>
 
-        {/* Scrollable Container with pinned metric banner and party list */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3.5 space-y-3.5">
-          {/* Header Metric with Election Label */}
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 space-y-2 shadow-2xs">
-            <div className="flex items-center justify-between border-b border-emerald-600/20 pb-1.5 text-[10.5px] font-mono font-bold">
-              <span className="uppercase tracking-tight text-emerald-900 dark:text-emerald-200 truncate pr-2">
-                Acta de Escrutinio · {sheet.title}
-              </span>
-              <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded shrink-0">
-                SECCIÓN C
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
-                  Total a Consignar en Acta
-                </span>
-                <div className="text-xl font-black font-mono tracking-tight">
-                  {totalVotes} VOTOS
-                </div>
-              </div>
-              <div className="text-right text-[10.5px] font-mono">
-                <div className="text-muted-foreground">
-                  Votantes: {votersTarget}
-                </div>
-                <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                  ✓ CUADRADO
-                </div>
-              </div>
-            </div>
-          </div>
-
+        {/* Scrollable Body: Directly parties and non-valid votes without redundant banners */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-3">
           {/* Parties List */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <span className="text-[10px] uppercase font-mono text-muted-foreground font-bold tracking-wider block">
               Resultados por Partido (Copiar en este orden):
             </span>
@@ -157,7 +126,7 @@ export function DictationModeDialog({
                   key={opt.id}
                   className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border/80 shadow-2xs"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                     <span className="text-xs font-mono font-bold text-brand shrink-0">
                       #{idx + 1}
                     </span>
@@ -165,7 +134,7 @@ export function DictationModeDialog({
                       {opt.name}
                     </span>
                   </div>
-                  <div className="w-11 h-8 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-8 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-center shrink-0">
                     <span className="text-base font-mono font-black text-foreground">
                       {opt.votes}
                     </span>
@@ -212,22 +181,23 @@ export function DictationModeDialog({
           </div>
         </div>
 
-        <CredenzaFooter className="shrink-0 flex flex-col sm:flex-row gap-2 px-5 py-3 border-t border-border/60 bg-background">
+        {/* Footer: Single row with 2 columns */}
+        <CredenzaFooter className="shrink-0 grid grid-cols-2 gap-2 px-5 py-3 border-t border-border/60 bg-muted/20">
           <Button
             type="button"
             variant="outline"
             onClick={handleCopy}
-            className="w-full text-xs font-mono font-bold rounded-xl h-10 border-border"
+            className="w-full text-xs font-mono font-bold rounded-xl h-10 border-border bg-background hover:bg-muted text-foreground flex items-center justify-center gap-1.5"
           >
             {copied ? (
               <>
-                <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
-                Copiado al Portapapeles
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Copiado</span>
               </>
             ) : (
               <>
-                <Copy className="h-3.5 w-3.5 mr-1.5" />
-                Copiar Resumen
+                <Copy className="h-3.5 w-3.5" />
+                <span>Copiar Resumen</span>
               </>
             )}
           </Button>
@@ -235,10 +205,10 @@ export function DictationModeDialog({
           <Button
             type="button"
             onClick={handleShareWhatsApp}
-            className="w-full text-xs font-mono font-bold bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl h-10 shadow-xs"
+            className="w-full text-xs font-mono font-bold bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl h-10 shadow-xs flex items-center justify-center gap-1.5"
           >
-            <Share2 className="h-3.5 w-3.5 mr-1.5" />
-            Compartir por WhatsApp
+            <Share2 className="h-3.5 w-3.5" />
+            <span>WhatsApp</span>
           </Button>
         </CredenzaFooter>
       </CredenzaContent>

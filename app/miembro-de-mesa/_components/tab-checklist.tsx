@@ -13,6 +13,7 @@ import {
   Calculator,
   Filter,
   UserCheck,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -286,11 +287,21 @@ export function TabChecklist() {
                             <span
                               className={`text-[9.5px] font-mono font-bold px-2 py-0.5 rounded shrink-0 border ${roleBadgeClass}`}
                             >
-                              {isSharedAgreement
-                                ? assignedTo
-                                  ? `👤 ${assignedTo}`
-                                  : "🤝 Acuerdo Interno"
-                                : task.roleResponsible}
+                              {isSharedAgreement ? (
+                                assignedTo ? (
+                                  <>
+                                    <UserCheck className="h-2.5 w-2.5" />
+                                    <span>{assignedTo}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Users className="h-2.5 w-2.5" />
+                                    <span>Acuerdo Interno</span>
+                                  </>
+                                )
+                              ) : (
+                                <span>{task.roleResponsible}</span>
+                              )}
                             </span>
                           </div>
 

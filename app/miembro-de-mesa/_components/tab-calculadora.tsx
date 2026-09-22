@@ -9,7 +9,15 @@ import {
 } from "../_lib/reconciliation";
 import { ScanCartelDialog } from "./scan-cartel-dialog";
 import { DictationModeDialog } from "./dictation-mode-dialog";
-import { Users, Plus, Camera, Lock, Trash2 } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Camera,
+  Lock,
+  Trash2,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -135,11 +143,19 @@ export function TabCalculadora() {
                   : "text-destructive bg-destructive/10 border-destructive/30"
             }`}
           >
-            {reconciliation.status === "match"
-              ? "✓ Cuadre Exacto"
-              : reconciliation.status === "pending"
-                ? "Esperando Total de Votantes"
-                : "⚠️ Descuadre en Hoja Borrador"}
+            {reconciliation.status === "match" ? (
+              <span className="inline-flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                <span>Cuadre Exacto</span>
+              </span>
+            ) : reconciliation.status === "pending" ? (
+              "Esperando Total de Votantes"
+            ) : (
+              <span className="inline-flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                <span>Descuadre en Hoja Borrador</span>
+              </span>
+            )}
           </span>
         </div>
 
@@ -200,8 +216,14 @@ export function TabCalculadora() {
                 {info.num}
               </span>
               <span>{info.shortLabel}</span>
-              <span className="text-[10px] opacity-70">
-                ({isMatched ? "✓" : sheetTotals.totalVotes})
+              <span className="text-[10px] opacity-70 inline-flex items-center gap-0.5">
+                (
+                {isMatched ? (
+                  <Check className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  sheetTotals.totalVotes
+                )}
+                )
               </span>
             </button>
           );
