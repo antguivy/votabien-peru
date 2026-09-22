@@ -434,25 +434,25 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
   {
     color: "plomo",
     name: "Sobre Plomo",
-    badgeColorClass: "bg-slate-600 text-white",
-    bgClass: "bg-slate-900/60",
-    borderClass: "border-slate-500",
-    recipient: "ODPE / ONPE (Centro de Cómputo Oficial)",
-    priority: "MÁXIMA PRIORIDAD - El primer ejemplar procesado",
+    badgeColorClass: "bg-zinc-600 text-white",
+    bgClass: "bg-zinc-900/60",
+    borderClass: "border-zinc-500",
+    recipient: "ODPE (Oficina Descentralizada de Procesos Electorales)",
+    priority: "1er Ejemplar · Cómputo y Digitación Inmediata",
     contents: [
       {
         id: "sp-1",
-        text: "1er Ejemplar del Acta Electoral Regional (Instalación, Sufragio y Escrutinio con lámina)",
+        text: "1er Ejemplar del Acta Electoral (Instalación, Sufragio y Escrutinio)",
         isCritical: true,
       },
       {
         id: "sp-2",
-        text: "1er Ejemplar del Acta Electoral Municipal (Instalación, Sufragio y Escrutinio con lámina)",
+        text: "Láminas de protección autoadhesivas pegadas sobre resultados y observaciones",
         isCritical: true,
       },
     ],
     warning:
-      "Este sobre es el que se traslada inmediatamente a la ODPE para la digitación oficial del cómputo. No olvides colocar las láminas plásticas antes de meter el acta.",
+      "Este es el primer sobre procesado en el centro de cómputo de la ODPE para los resultados oficiales. Verifica que las láminas de protección estén bien pegadas antes de cerrar la cinta de seguridad.",
   },
   {
     color: "rojo",
@@ -460,22 +460,17 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
     badgeColorClass: "bg-red-600 text-white",
     bgClass: "bg-red-950/40",
     borderClass: "border-red-500",
-    recipient: "Jurado Nacional de Elecciones (JNE)",
-    priority: "Fiscalización Electoral Superior",
+    recipient: "ONPE (Sede Central en Lima)",
+    priority: "2do Ejemplar · Archivo y Custodia Nacional",
     contents: [
       {
         id: "sr-1",
-        text: "2do Ejemplar del Acta Electoral Regional (con lámina de protección)",
-        isCritical: true,
-      },
-      {
-        id: "sr-2",
-        text: "2do Ejemplar del Acta Electoral Municipal (con lámina de protección)",
+        text: "2do Ejemplar del Acta Electoral (con láminas de protección)",
         isCritical: true,
       },
     ],
     warning:
-      "Copia destinada al JNE para el cotejo oficial en caso de actas observadas o apeladas.",
+      "Copia destinada a la sede central de la ONPE en Lima para archivo histórico, control y auditoría electoral.",
   },
   {
     color: "verde",
@@ -483,22 +478,17 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
     badgeColorClass: "bg-emerald-600 text-white",
     bgClass: "bg-emerald-950/40",
     borderClass: "border-emerald-500",
-    recipient: "Jurado Electoral Especial (JEE)",
-    priority: "Justicia Electoral Jurisdiccional",
+    recipient: "JNE (Jurado Nacional de Elecciones)",
+    priority: "3er Ejemplar · Fiscalización Electoral Superior",
     contents: [
       {
         id: "sv-1",
-        text: "3er Ejemplar del Acta Electoral Regional (con lámina de protección)",
-        isCritical: true,
-      },
-      {
-        id: "sv-2",
-        text: "3er Ejemplar del Acta Electoral Municipal (con lámina de protección)",
+        text: "3er Ejemplar del Acta Electoral (con láminas de protección)",
         isCritical: true,
       },
     ],
     warning:
-      "Va directamente a la sede del Jurado Electoral Especial de la circunscripción.",
+      "Copia enviada al Pleno del Jurado Nacional de Elecciones para el cotejo oficial en caso de actas observadas o apeladas.",
   },
   {
     color: "celeste",
@@ -506,27 +496,27 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
     badgeColorClass: "bg-sky-600 text-white",
     bgClass: "bg-sky-950/40",
     borderClass: "border-sky-500",
-    recipient: "Oficina Nacional de Procesos Electorales (Archivo / ONPE)",
-    priority: "Archivo Institucional e Impugnaciones",
+    recipient: "JEE (Jurado Electoral Especial) + Impugnaciones",
+    priority: "4to Ejemplar · Justicia Electoral Jurisdiccional",
     contents: [
       {
         id: "sc-1",
-        text: "4to Ejemplar del Acta Electoral Regional (con lámina de protección)",
+        text: "4to Ejemplar del Acta Electoral (con láminas de protección)",
         isCritical: true,
       },
       {
         id: "sc-2",
-        text: "4to Ejemplar del Acta Electoral Municipal (con lámina de protección)",
-        isCritical: true,
+        text: "Sobres especiales conteniendo Cédulas de Votos Impugnados (si los hubiera)",
+        isCritical: false,
       },
       {
         id: "sc-3",
-        text: "Sobres especiales conteniendo Cédulas de Votos Impugnados (si los hubiera)",
+        text: "Sobres de Impugnación de Identidad del Elector (si los hubiera)",
         isCritical: false,
       },
     ],
     warning:
-      "Si hubo votos impugnados durante el escrutinio, sus sobres especiales van dentro de este sobre celeste.",
+      "⚠️ REGLA CRÍTICA DE LA ONPE: Si hubo votos impugnados o impugnaciones de identidad durante el sufragio o escrutinio, sus sobres especiales van EXCLUSIVAMENTE dentro de este sobre celeste para que los resuelva el JEE. Nunca en el sobre plomo.",
   },
   {
     color: "anaranjado",
@@ -534,12 +524,12 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
     badgeColorClass: "bg-orange-600 text-white",
     bgClass: "bg-orange-950/40",
     borderClass: "border-orange-500",
-    recipient: "Padrón Electoral y Documentación de Mesa",
-    priority: "Resguardo de Identidades y Asistencia",
+    recipient: "ODPE (Lista de Electores y Asistencia)",
+    priority: "Material Padronal · Control de Firmas y Asistencia",
     contents: [
       {
         id: "sa-1",
-        text: "Lista Oficial de Electores (con firmas, huellas y marcas de 'NO VOTÓ')",
+        text: "Lista de Electores completa (cuadernillo con firmas, huellas y sellos de 'NO VOTÓ')",
         isCritical: true,
       },
       {
@@ -549,12 +539,12 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
       },
       {
         id: "sa-3",
-        text: "Relación de Miembros de Mesa No Sorteados (si asumió alguien de la fila)",
+        text: "Relación de Miembros de Mesa No Sorteados (si asumió un suplente o de la fila)",
         isCritical: false,
       },
     ],
     warning:
-      "¡CUIDADO! Nunca metas las actas electorales aquí. Este sobre es exclusivo para el padrón de firmas y control de asistencia.",
+      "⛔ PROHIBIDO: Nunca colocar actas electorales aquí. Este sobre es exclusivo para el padrón de firmas y el control de asistencia.",
   },
 ];
 
