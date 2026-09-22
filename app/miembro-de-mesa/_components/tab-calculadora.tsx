@@ -317,7 +317,7 @@ export function TabCalculadora() {
                 className="w-full sm:w-auto h-9 text-xs font-bold bg-brand text-white hover:bg-brand/90 rounded-xl shadow-xs"
               >
                 <Camera className="h-3.5 w-3.5 mr-1.5" />
-                <span>Foto o Preset Oficial</span>
+                <span>Foto o Lista Oficial</span>
               </Button>
 
               {otherSheetWithParties && (
@@ -343,9 +343,9 @@ export function TabCalculadora() {
                 key={option.id}
                 className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60 hover:border-border transition-colors"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-foreground truncate">
-                    <span className="text-muted-foreground font-mono text-[11px] mr-1.5">
+                <div className="min-w-0 flex-1 pr-1.5">
+                  <p className="text-xs font-semibold text-foreground leading-snug break-words">
+                    <span className="text-muted-foreground font-mono text-[11px] mr-1.5 shrink-0 inline-block">
                       {idx + 1}.
                     </span>
                     {option.name}
