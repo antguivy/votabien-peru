@@ -95,36 +95,27 @@ export function TabSobres() {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* ── Encabezado Oficial de Sobres de Seguridad ── */}
-      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-2">
-        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
-          <div className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
-            <Mail className="h-3.5 w-3.5 text-brand" />
-            <span>Paso 24 y 34 · Manual de Instrucciones ONPE 2026</span>
-          </div>
-
-          <span
-            className={`text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider px-2.5 py-0.5 rounded border -rotate-1 shadow-2xs ${
-              sealedCount === totalCount
-                ? "text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400"
-                : "text-muted-foreground bg-muted/40 border-border"
-            }`}
-          >
-            {sealedCount}/{totalCount} sobres lacrados
-          </span>
-        </div>
-
-        <div>
-          <h2 className="text-base sm:text-lg font-black tracking-tight text-foreground">
-            Los 5 Sobres Plásticos de Seguridad
+      <section className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <h2 className="text-sm sm:text-base font-black tracking-tight text-foreground flex items-center gap-1.5">
+            <Mail className="h-4 w-4 text-brand" />
+            <span>Empaque de los 5 Sobres de Seguridad</span>
           </h2>
-          <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
-            Cada ejemplar del acta electoral tiene un destino legal
-            independiente. Antes de guardar cada acta,{" "}
-            <strong>pegá las láminas de protección autoadhesivas</strong> sobre
-            los resultados y observaciones. Luego, cerrá el sobre con su{" "}
-            <strong>cinta de seguridad inviolable</strong>.
+          <p className="text-xs text-muted-foreground font-medium">
+            Pegá las láminas adhesivas transparentes sobre los resultados del
+            acta antes de meterla al sobre.
           </p>
         </div>
+
+        <span
+          className={`text-[10.5px] font-mono font-black uppercase px-2.5 py-1 rounded border -rotate-1 shadow-2xs self-start sm:self-center shrink-0 ${
+            sealedCount === totalCount
+              ? "text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400"
+              : "text-muted-foreground bg-muted/40 border-border"
+          }`}
+        >
+          {sealedCount}/{totalCount} lacrados
+        </span>
       </section>
 
       {/* ── Lista de los 5 Sobres Oficiales con Réplica Física ── */}
@@ -249,30 +240,30 @@ export function TabSobres() {
                   </ul>
                 </div>
 
-                {/* Warning / Caution Box */}
-                <div
-                  className={`p-3 rounded-xl text-xs font-medium leading-relaxed flex items-start gap-2.5 ${
-                    env.color === "anaranjado"
-                      ? "bg-destructive/10 text-destructive border border-destructive/25"
-                      : env.color === "celeste"
-                        ? "bg-sky-500/10 text-sky-900 dark:text-sky-200 border border-sky-500/25"
-                        : "bg-muted/30 text-muted-foreground border border-border/60"
-                  }`}
-                >
-                  {env.color === "anaranjado" ? (
-                    <AlertOctagon className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  )}
-                  <div>
-                    <strong className="block text-[10px] font-mono uppercase tracking-wider mb-0.5">
-                      {env.color === "anaranjado"
-                        ? "Prohibición Estricta ONPE:"
-                        : "Instrucción de Seguridad:"}
-                    </strong>
-                    {env.warning}
+                {/* Warning / Caution Box only for critical envelopes (Celeste e Anaranjado) */}
+                {(env.color === "anaranjado" || env.color === "celeste") && (
+                  <div
+                    className={`p-3 rounded-xl text-xs font-medium leading-relaxed flex items-start gap-2.5 ${
+                      env.color === "anaranjado"
+                        ? "bg-destructive/10 text-destructive border border-destructive/25"
+                        : "bg-sky-500/10 text-sky-900 dark:text-sky-200 border border-sky-500/25"
+                    }`}
+                  >
+                    {env.color === "anaranjado" ? (
+                      <AlertOctagon className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-sky-700 dark:text-sky-300 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <strong className="block text-[10px] font-mono uppercase tracking-wider mb-0.5">
+                        {env.color === "anaranjado"
+                          ? "Prohibición Estricta:"
+                          : "Regla Obligatoria:"}
+                      </strong>
+                      {env.warning}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </section>
           );
