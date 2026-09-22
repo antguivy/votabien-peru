@@ -99,112 +99,87 @@ export function TabCalculadora() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* ── 1. Total de Ciudadanos que Votaron (Acta de Sufragio) ── */}
-      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-brand" />
-                <span>Total de Ciudadanos que Votaron</span>
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-foreground/90 font-medium">
-              Número de firmas y huellas contadas en la{" "}
-              <strong>Lista de Electores</strong> (anotado en la Sección B del{" "}
-              <strong>Acta de Sufragio</strong>).
+      {/* ── 1. Total de Ciudadanos que Votaron ── */}
+      <section className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <h3 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-brand" />
+              <span>¿Cuántos firmaron en la lista?</span>
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              Cuenta las firmas y huellas en el padrón a las 5:00 PM.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-center">
-            <span className="text-xs font-mono text-muted-foreground">
-              Total Votantes:
-            </span>
-            <div className="p-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs">
-              <Input
-                type="number"
-                min="0"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={votersTarget || ""}
-                onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
-                placeholder="0"
-                className="no-spinner w-24 h-10 text-center font-mono font-black text-lg bg-background border-border text-foreground focus:border-brand rounded-lg"
-              />
-            </div>
+          <div className="p-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs shrink-0">
+            <Input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={votersTarget || ""}
+              onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
+              placeholder="0"
+              className="no-spinner w-24 h-11 text-center font-mono font-black text-xl bg-background border-border text-foreground focus:border-brand rounded-lg"
+            />
           </div>
         </div>
       </section>
 
       {/* ── 2. Veredicto Matemático de Cuadre ── */}
-      <section
-        className={`p-4 sm:p-5 rounded-2xl border shadow-xs transition-all ${
-          reconciliation.status === "match"
-            ? "bg-card border-emerald-600/40 text-foreground"
-            : reconciliation.status === "pending"
-              ? "bg-card border-border/80 text-foreground"
-              : "bg-card border-destructive/40 text-foreground"
-        }`}
-      >
-        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
-          <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
-            Estado de Cuadre
-          </span>
+      {votersTarget === 0 ? (
+        <div className="p-3 rounded-xl bg-muted/30 border border-border/70 text-center text-xs font-medium text-muted-foreground">
+          Ingresa arriba cuántos electores firmaron en la lista para verificar
+          si la mesa cuadra.
+        </div>
+      ) : reconciliation.status === "match" ? (
+        <section className="p-4 rounded-2xl border border-emerald-600/40 bg-emerald-500/10 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Check className="h-5 w-5 stroke-[3]" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-emerald-900 dark:text-emerald-200 tracking-tight">
+                ¡CUADRE EXACTO! ({totalVotes} de {votersTarget})
+              </h3>
+              <p className="text-xs text-emerald-800/80 dark:text-emerald-300 font-medium">
+                Todo coincide perfecto. Ya podés pasar estos datos con lapicero
+                al acta.
+              </p>
+            </div>
+          </div>
 
-          <span
-            className={`text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider px-2.5 py-0.5 rounded border -rotate-1 shadow-2xs ${
-              reconciliation.status === "match"
-                ? "text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400"
-                : reconciliation.status === "pending"
-                  ? "text-muted-foreground bg-muted/40 border-border"
-                  : "text-destructive bg-destructive/10 border-destructive/30"
-            }`}
+          <Button
+            type="button"
+            onClick={() => setShowDictationDialog(true)}
+            className="h-10 px-5 text-xs font-mono font-bold bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-xs shrink-0 flex items-center justify-center gap-2"
           >
-            {reconciliation.status === "match" ? (
-              <span className="inline-flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                <span>Cuadre Exacto</span>
-              </span>
-            ) : reconciliation.status === "pending" ? (
-              "Esperando Total de Votantes"
-            ) : (
-              <span className="inline-flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" />
-                <span>Descuadre en Hoja Borrador</span>
-              </span>
-            )}
-          </span>
-        </div>
-
-        <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
-            {reconciliation.message}
-          </p>
-
-          <div className="flex items-center gap-2 font-mono text-xs shrink-0">
-            <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/70 text-foreground">
-              Contados: <strong>{totalVotes}</strong>
-            </span>
-            <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/70 text-foreground">
-              Esperados: <strong>{votersTarget}</strong>
-            </span>
+            <Lock className="h-4 w-4" />
+            <span>Dictar al Acta Oficial</span>
+          </Button>
+        </section>
+      ) : (
+        <section className="p-3.5 rounded-2xl border border-destructive/40 bg-destructive/10 shadow-xs flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-destructive text-white flex items-center justify-center shrink-0 shadow-xs">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black text-destructive tracking-tight">
+                {reconciliation.status === "surplus"
+                  ? `SOBRAN ${reconciliation.difference} VOTOS (${totalVotes} de ${votersTarget})`
+                  : `FALTAN ${Math.abs(reconciliation.difference)} VOTOS (${totalVotes} de ${votersTarget})`}
+              </h3>
+              <p className="text-xs text-destructive/80 font-medium">
+                {reconciliation.status === "surplus"
+                  ? "Hay más cédulas que votantes. Revisa si alguien sumó doble."
+                  : "Faltan votos por contar. Revisa el montón de blancos o nulos."}
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* Action to activate dictation mode */}
-        {reconciliation.status === "match" && (
-          <div className="pt-3 mt-3 border-t border-border/60">
-            <Button
-              type="button"
-              onClick={() => setShowDictationDialog(true)}
-              className="w-full text-xs font-mono font-bold bg-foreground text-background hover:bg-foreground/90 rounded-xl py-3.5 shadow-xs flex items-center justify-center gap-2"
-            >
-              <Lock className="h-3.5 w-3.5 text-brand" />
-              <span>Dictar al Acta Oficial</span>
-            </Button>
-          </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* ── 3. Chips de Selección de Elección (Color Dinámico por Estado) ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">

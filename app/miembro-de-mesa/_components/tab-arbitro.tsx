@@ -475,29 +475,20 @@ export function TabArbitro() {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* ── Regla de Oro (Veredicto de Autoridad de Mesa) ── */}
-      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-2">
-        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
-          <div className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
-            <Shield className="h-3.5 w-3.5 text-brand" />
-            <span>Ley Orgánica de Elecciones (Art. 283)</span>
-          </div>
-
-          <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider px-2.5 py-0.5 rounded border -rotate-1 shadow-2xs text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400">
-            Mayoría 2 de 3
-          </span>
-        </div>
-
-        <div>
-          <h2 className="text-base sm:text-lg font-black tracking-tight text-foreground">
-            La Mesa es la Máxima Autoridad
+      <section className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs flex items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <h2 className="text-sm sm:text-base font-black tracking-tight text-foreground flex items-center gap-1.5">
+            <Shield className="h-4 w-4 text-brand" />
+            <span>Regla de Oro: La Mesa manda (2 de 3)</span>
           </h2>
-          <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
-            La calificación de un voto se define exclusivamente por los{" "}
-            <strong>3 miembros de mesa por mayoría simple</strong>. Los
-            personeros no tienen voto ni deciden. Si discrepan, su único
-            mecanismo legal es formular una impugnación por escrito.
+          <p className="text-xs text-muted-foreground font-medium">
+            Los 3 miembros deciden por mayoría simple. Los personeros{" "}
+            <strong>NO votan</strong>. Si reclaman, que impugnen por escrito.
           </p>
         </div>
+        <span className="text-[10.5px] font-mono font-black uppercase px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/30 shrink-0">
+          Mayoría 2 de 3
+        </span>
       </section>
 
       {/* ── Filtros y Buscador (CandidateNavChips style) ── */}
@@ -601,24 +592,15 @@ export function TabArbitro() {
             {/* Realistic Graphic Ballot Illustration (Full Width Inside Card) */}
             <div>{renderRealisticBallot(item.visualType)}</div>
 
-            {/* Direct Clear Rule in Plain Language (No redundant box) */}
-            <div className="space-y-1.5 pt-1">
-              <p className="text-xs text-foreground/90 font-medium leading-relaxed">
-                {item.rule}
-              </p>
-
-              <div
-                className={`p-2.5 rounded-xl text-[11.5px] font-medium leading-snug ${
-                  item.ruling === "valid"
-                    ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-600/25"
-                    : "bg-destructive/10 text-destructive border border-destructive/25"
-                }`}
-              >
-                <strong className="block text-[10px] font-mono uppercase tracking-wider mb-0.5">
-                  Criterio de la mesa:
-                </strong>
-                {item.recommendation}
-              </div>
+            {/* Direct 1-Sentence Ruling (Argumento para personeros) */}
+            <div
+              className={`p-3 rounded-xl text-xs font-semibold leading-relaxed ${
+                item.ruling === "valid"
+                  ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 border border-emerald-600/25"
+                  : "bg-destructive/10 text-destructive border border-destructive/25"
+              }`}
+            >
+              {item.recommendation}
             </div>
           </section>
         ))}
