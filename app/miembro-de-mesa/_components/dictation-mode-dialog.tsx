@@ -8,7 +8,6 @@ import {
   CredenzaHeader,
   CredenzaTitle,
   CredenzaDescription,
-  CredenzaBody,
   CredenzaFooter,
   CredenzaClose,
 } from "@/components/ui/credenza";
@@ -74,8 +73,11 @@ export function DictationModeDialog({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="max-w-md max-h-[92vh] bg-background border-border text-foreground p-0 overflow-hidden flex flex-col">
-        <CredenzaHeader className="text-left px-5 pt-5 pb-3 border-b border-border/60">
+      <CredenzaContent
+        noScroll
+        className="max-w-md h-[88vh] max-h-[88vh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden"
+      >
+        <CredenzaHeader className="shrink-0 text-left px-5 pt-3 pb-2.5 border-b border-border/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-brand">
               <Lock className="h-4 w-4" />
@@ -93,20 +95,21 @@ export function DictationModeDialog({
               </Button>
             </CredenzaClose>
           </div>
-          <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-1">
-            Pantalla protegida para dictar casilla por casilla al Secretario
-            mientras llena la Sección C del Acta Oficial con lapicero.
+          <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-0.5">
+            Dictale al Secretario mientras llena la Sección C del Acta con
+            lapicero negro.
           </CredenzaDescription>
         </CredenzaHeader>
 
-        <CredenzaBody className="space-y-3 px-5 py-4 overflow-y-auto">
+        {/* Scrollable Container with pinned metric banner and party list */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3.5 space-y-3.5">
           {/* Header Metric */}
-          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-2xs">
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-2xs">
             <div className="space-y-0.5">
               <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
                 Total a Consignar en Acta
               </span>
-              <div className="text-2xl font-black font-mono tracking-tight">
+              <div className="text-xl font-black font-mono tracking-tight">
                 {totalVotes} VOTOS
               </div>
             </div>
@@ -130,9 +133,9 @@ export function DictationModeDialog({
               {sheet.options.map((opt, idx) => (
                 <div
                   key={opt.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/80 shadow-2xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border/80 shadow-2xs"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                     <span className="text-xs font-mono font-bold text-brand shrink-0">
                       #{idx + 1}
                     </span>
@@ -140,8 +143,8 @@ export function DictationModeDialog({
                       {opt.name}
                     </span>
                   </div>
-                  <div className="w-12 h-9 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-center shrink-0">
-                    <span className="text-lg font-mono font-black text-foreground">
+                  <div className="w-11 h-8 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-center shrink-0">
+                    <span className="text-base font-mono font-black text-foreground">
                       {opt.votes}
                     </span>
                   </div>
@@ -157,8 +160,8 @@ export function DictationModeDialog({
             </span>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
-                <span className="text-[10px] font-mono text-muted-foreground block">
+              <div className="p-2 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[9.5px] font-mono text-muted-foreground block">
                   Blancos
                 </span>
                 <span className="text-base font-mono font-black text-foreground">
@@ -166,8 +169,8 @@ export function DictationModeDialog({
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
-                <span className="text-[10px] font-mono text-muted-foreground block">
+              <div className="p-2 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[9.5px] font-mono text-muted-foreground block">
                   Nulos
                 </span>
                 <span className="text-base font-mono font-black text-destructive">
@@ -175,8 +178,8 @@ export function DictationModeDialog({
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
-                <span className="text-[10px] font-mono text-muted-foreground block">
+              <div className="p-2 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[9.5px] font-mono text-muted-foreground block">
                   Impugnados
                 </span>
                 <span className="text-base font-mono font-black text-amber-600 dark:text-amber-400">
@@ -185,9 +188,9 @@ export function DictationModeDialog({
               </div>
             </div>
           </div>
-        </CredenzaBody>
+        </div>
 
-        <CredenzaFooter className="flex flex-col sm:flex-row gap-2 px-5 py-3 border-t border-border/60 bg-muted/20">
+        <CredenzaFooter className="shrink-0 flex flex-col sm:flex-row gap-2 px-5 py-3 border-t border-border/60 bg-background">
           <Button
             type="button"
             variant="outline"
