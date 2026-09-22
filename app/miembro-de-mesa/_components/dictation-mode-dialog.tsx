@@ -130,7 +130,7 @@ export function DictationModeDialog({
                     <span className="text-xs font-mono font-bold text-brand shrink-0">
                       #{idx + 1}
                     </span>
-                    <span className="text-xs font-semibold text-foreground truncate">
+                    <span className="text-xs font-semibold text-foreground leading-snug break-words">
                       {opt.name}
                     </span>
                   </div>

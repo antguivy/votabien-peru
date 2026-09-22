@@ -177,17 +177,17 @@ export function ScanCartelDialog({
             </div>
           </button>
 
-          {/* Option A: Fast 1-tap Official Preset (100% Offline) */}
+          {/* Opción A: Lista Oficial Nacional (100% Offline) */}
           <div className="p-3.5 rounded-2xl bg-brand/10 border border-brand/25 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <Sparkles className="h-4 w-4 shrink-0" />
               <h4 className="text-xs font-bold uppercase tracking-wider">
-                Recomendado (100% Offline)
+                Lista Oficial Nacional (Sin internet)
               </h4>
             </div>
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Carga automática de las organizaciones políticas nacionales en
-              orden oficial.
+              Carga automática de las organizaciones políticas en orden oficial
+              ONPE.
             </p>
             <Button
               type="button"
@@ -195,16 +195,22 @@ export function ScanCartelDialog({
               className="w-full h-9 text-xs font-bold bg-brand text-brand-foreground shadow-sm rounded-xl"
             >
               <Check className="h-3.5 w-3.5 mr-1.5" />
-              Cargar Partidos Oficiales
+              Cargar Lista de Partidos
             </Button>
           </div>
 
-          {/* Option B: Photo of Cartel de Candidatos */}
+          {/* Opción B: Foto al Cartel con IA */}
           <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5">
-            <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Camera className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>Foto al Cartel de Candidatos del Aula</span>
-            </h4>
+            <div className="space-y-0.5">
+              <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Camera className="h-3.5 w-3.5 text-brand" />
+                <span>Foto al Cartel de Candidatos del Aula</span>
+              </h4>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                La Inteligencia Artificial lee los partidos de la foto en un
+                segundo.
+              </p>
+            </div>
 
             <input
               ref={fileInputRef}
