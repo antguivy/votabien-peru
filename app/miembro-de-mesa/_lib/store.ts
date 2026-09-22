@@ -6,6 +6,7 @@ import {
   ElectionSheetState,
   EnvelopeColor,
   MemberRole,
+  AgreementAssignee,
 } from "./types";
 import { createInitialElectionSheet } from "./reconciliation";
 import { OFFICIAL_ERM_2026_PARTIES } from "./constants";
@@ -21,6 +22,7 @@ interface CopilotoState {
   activeTab: CopilotoTab;
   activePhase: PhaseId;
   selectedRole: MemberRole | null;
+  internalAgreements: Record<string, AgreementAssignee>;
   completedTasks: Record<string, boolean>;
   votersTarget: number;
   sheets: Record<ElectionType, ElectionSheetState>;
@@ -30,6 +32,8 @@ interface CopilotoState {
   setActiveTab: (tab: CopilotoTab) => void;
   setActivePhase: (phase: PhaseId) => void;
   setSelectedRole: (role: MemberRole | null) => void;
+  assignAgreement: (taskId: string, assignee: AgreementAssignee) => void;
+  syncStateFromQR: (data: Partial<CopilotoState>) => void;
   toggleTask: (taskId: string) => void;
   setVotersTarget: (target: number) => void;
   updateOptionVotes: (
@@ -82,6 +86,7 @@ export const useCopilotoStore = create<CopilotoState>()(
       activeTab: "checklist",
       activePhase: "instalacion",
       selectedRole: null,
+      internalAgreements: {},
       completedTasks: {},
       votersTarget: 0,
       sheets: initialSheets,
@@ -96,6 +101,37 @@ export const useCopilotoStore = create<CopilotoState>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       setActivePhase: (phase) => set({ activePhase: phase }),
       setSelectedRole: (role) => set({ selectedRole: role }),
+
+      assignAgreement: (taskId, assignee) =>
+        set((state) => ({
+          internalAgreements: {
+            ...state.internalAgreements,
+            [taskId]: assignee,
+          },
+        })),
+
+      syncStateFromQR: (data) =>
+        set((state) => ({
+          ...state,
+          ...(data.internalAgreements
+            ? { internalAgreements: data.internalAgreements }
+            : {}),
+          ...(data.votersTarget !== undefined
+            ? { votersTarget: data.votersTarget }
+            : {}),
+          ...(data.completedTasks
+            ? {
+                completedTasks: {
+                  ...state.completedTasks,
+                  ...data.completedTasks,
+                },
+              }
+            : {}),
+          ...(data.sheets ? { sheets: data.sheets } : {}),
+          ...(data.sealedEnvelopes
+            ? { sealedEnvelopes: data.sealedEnvelopes }
+            : {}),
+        })),
 
       toggleTask: (taskId) =>
         set((state) => ({
@@ -244,6 +280,7 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
           activePhase: "instalacion",
           selectedRole: null,
+          internalAgreements: {},
         }),
     }),
     {

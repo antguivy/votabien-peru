@@ -11,6 +11,8 @@ export type MemberRole =
   | "tercer_miembro"
   | "todos";
 
+export type AgreementAssignee = "Presidente" | "Secretario" | "Tercer Miembro";
+
 export type RoleResponsible =
   | "Presidente"
   | "Secretario"
