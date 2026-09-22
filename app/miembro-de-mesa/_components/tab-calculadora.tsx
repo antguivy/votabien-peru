@@ -9,28 +9,35 @@ import {
 } from "../_lib/reconciliation";
 import { ScanCartelDialog } from "./scan-cartel-dialog";
 import { DictationModeDialog } from "./dictation-mode-dialog";
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Users,
-  Plus,
-  Info,
-  Camera,
-  Lock,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Users, Plus, Camera, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const SHEETS_INFO: {
   type: ElectionType;
+  num: string;
   label: string;
   shortLabel: string;
 }[] = [
-  { type: "5A", label: "5A: Gobernador", shortLabel: "5A Gob" },
-  { type: "5B", label: "5B: Consejeros", shortLabel: "5B Cons" },
-  { type: "5C", label: "5C: Provincial", shortLabel: "5C Prov" },
-  { type: "5D", label: "5D: Distrital", shortLabel: "5D Dist" },
+  {
+    type: "5A",
+    num: "01",
+    label: "5A: Gobernador",
+    shortLabel: "5A Gobernador",
+  },
+  {
+    type: "5B",
+    num: "02",
+    label: "5B: Consejeros",
+    shortLabel: "5B Consejeros",
+  },
+  {
+    type: "5C",
+    num: "03",
+    label: "5C: Provincial",
+    shortLabel: "5C Provincial",
+  },
+  { type: "5D", num: "04", label: "5D: Distrital", shortLabel: "5D Distrital" },
 ];
 
 export function TabCalculadora() {
@@ -60,92 +67,109 @@ export function TabCalculadora() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Target Voters Setup Card */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5 text-foreground font-bold text-xs">
-              <Users className="h-3.5 w-3.5 text-brand" />
-              <span>Padrón: Total Votantes</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Firmas y huellas contadas a las 5:00 PM (Sección B).
-            </p>
-          </div>
-
-          <div className="w-24 shrink-0">
-            <Input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={votersTarget || ""}
-              onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
-              placeholder="0"
-              className="no-spinner text-base font-black font-mono text-center h-10 rounded-xl bg-background border-border text-foreground focus:border-brand"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Real-time Reconciliation Status Banner */}
-      <div
-        className={`rounded-2xl border p-3.5 transition-all shadow-sm ${
-          reconciliation.status === "match"
-            ? "bg-success/10 border-success/30 text-success"
-            : reconciliation.status === "pending"
-              ? "bg-muted/40 border-border text-muted-foreground"
-              : "bg-destructive/10 border-destructive/30 text-destructive"
-        }`}
-      >
-        <div className="flex items-start gap-2.5">
-          {reconciliation.status === "match" ? (
-            <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
-          ) : reconciliation.status === "pending" ? (
-            <Info className="h-5 w-5 shrink-0 mt-0.5" />
-          ) : (
-            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-          )}
-
-          <div className="flex-1 space-y-0.5">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-black tracking-tight uppercase">
-                {reconciliation.status === "match"
-                  ? "Cuadre Exacto"
-                  : reconciliation.status === "pending"
-                    ? "Esperando Total Votantes"
-                    : "Descuadre en Borrador"}
-              </h3>
-              <span className="text-[11px] font-mono font-bold">
-                {totalVotes} / {votersTarget}
+    <div className="space-y-5 animate-in fade-in duration-200">
+      {/* ── 1. Padrón Base: Total Votantes (Double-Bezel limpio) ── */}
+      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-brand" />
+                <span>Padrón Electoral Base</span>
               </span>
             </div>
-
-            <p className="text-[11.5px] leading-snug font-medium">
-              {reconciliation.message}
+            <p className="text-xs sm:text-sm text-foreground/90 font-medium">
+              Total de firmas y huellas contadas a las 5:00 PM (Sección B del
+              Acta de Sufragio).
             </p>
+          </div>
 
-            {/* Dictation Mode Trigger when Matched */}
-            {reconciliation.status === "match" && (
-              <div className="pt-2">
-                <Button
-                  size="sm"
-                  type="button"
-                  onClick={() => setShowDictationDialog(true)}
-                  className="w-full h-8 text-xs font-bold bg-success text-white hover:bg-success/90 rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>Activar Modo Dictado al Acta Oficial</span>
-                </Button>
-              </div>
-            )}
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <span className="text-xs font-mono text-muted-foreground">
+              Votaron:
+            </span>
+            <div className="p-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs">
+              <Input
+                type="number"
+                min="0"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={votersTarget || ""}
+                onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
+                placeholder="0"
+                className="no-spinner w-24 h-10 text-center font-mono font-black text-lg bg-background border-border text-foreground focus:border-brand rounded-lg"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 4 Election Sheets Segmented Tabs */}
-      <div className="grid grid-cols-4 gap-1 p-1 bg-muted/50 rounded-xl border border-border/60">
+      {/* ── 2. Veredicto Matemático de Cuadre ── */}
+      <section
+        className={`p-4 sm:p-5 rounded-2xl border shadow-xs transition-all ${
+          reconciliation.status === "match"
+            ? "bg-card border-emerald-600/40 text-foreground"
+            : reconciliation.status === "pending"
+              ? "bg-card border-border/80 text-foreground"
+              : "bg-card border-destructive/40 text-foreground"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/60">
+          <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
+            Estado de Cuadre
+          </span>
+
+          <span
+            className={`text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider px-2.5 py-0.5 rounded border -rotate-1 shadow-2xs ${
+              reconciliation.status === "match"
+                ? "text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400"
+                : reconciliation.status === "pending"
+                  ? "text-muted-foreground bg-muted/40 border-border"
+                  : "text-destructive bg-destructive/10 border-destructive/30"
+            }`}
+          >
+            {reconciliation.status === "match"
+              ? "✓ Cuadre Exacto"
+              : reconciliation.status === "pending"
+                ? "Esperando Padrón"
+                : "⚠️ Descuadre en Borrador"}
+          </span>
+        </div>
+
+        <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
+            {reconciliation.message}
+          </p>
+
+          <div className="flex items-center gap-2 font-mono text-xs shrink-0">
+            <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/70 text-foreground">
+              Contados: <strong>{totalVotes}</strong>
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/70 text-foreground">
+              Esperados: <strong>{votersTarget}</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Action to activate dictation mode */}
+        {reconciliation.status === "match" && (
+          <div className="pt-3 mt-3 border-t border-border/60">
+            <Button
+              type="button"
+              onClick={() => setShowDictationDialog(true)}
+              className="w-full text-xs font-mono font-bold bg-foreground text-background hover:bg-foreground/90 rounded-xl py-4 shadow-xs flex items-center justify-center gap-2"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              <span>
+                Activar Modo Dictado al Acta Oficial (Pantalla Congelada)
+              </span>
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* ── 3. Chips de Selección de Elección (CandidateNavChips style) ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
         {SHEETS_INFO.map((info) => {
           const sheet = sheets[info.type];
           const sheetTotals = calculateElectionTotals(sheet);
@@ -157,70 +181,62 @@ export function TabCalculadora() {
             <button
               key={info.type}
               onClick={() => setActiveSheetType(info.type)}
-              className={`py-2 px-1 rounded-lg text-center transition-all select-none ${
+              className={`shrink-0 inline-flex items-baseline gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border select-none active:scale-95 ${
                 isCurrent
-                  ? "bg-background text-foreground font-bold shadow-sm"
-                  : "text-muted-foreground hover:text-foreground font-medium"
+                  ? "bg-foreground text-background border-foreground shadow-xs"
+                  : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground"
               }`}
             >
-              <span className="text-xs block leading-tight">
-                {info.shortLabel}
+              <span
+                className={`text-[10px] font-bold ${
+                  isCurrent ? "text-background/70" : "text-brand"
+                }`}
+              >
+                {info.num}
               </span>
-              <span className="text-[10px] font-mono block text-muted-foreground">
-                {isMatched ? (
-                  <span className="text-success font-bold">
-                    ✓ {sheetTotals.totalVotes}
-                  </span>
-                ) : (
-                  `${sheetTotals.totalVotes}`
-                )}
+              <span>{info.shortLabel}</span>
+              <span className="text-[10px] opacity-70">
+                ({isMatched ? "✓" : sheetTotals.totalVotes})
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Party Votes List (Clean & Minimalist) */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 space-y-3 shadow-sm">
-        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+      {/* ── 4. Lista de Organizaciones Políticas (Conteo Limpio) ── */}
+      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-border/60">
           <div>
-            <h3 className="text-xs font-bold text-foreground">
+            <h3 className="text-sm font-bold text-foreground">
               {currentSheet.title}
             </h3>
             <span className="text-[10px] text-muted-foreground font-mono">
-              Válidos: {validVotes} | Total: {totalVotes}
+              Válidos: {validVotes} | Total Emitidos: {totalVotes}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Quick Button to Load / Scan Real Parties */}
+            {/* Camera / Presets Button */}
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setShowScanDialog(true)}
-              className="h-7 px-2 text-[10.5px] border-border text-brand font-bold flex items-center gap-1 hover:bg-muted rounded-lg"
+              className="h-7 px-2.5 text-[10.5px] font-mono border-border/80 text-foreground font-bold flex items-center gap-1 hover:bg-muted/60 rounded-lg"
               title="Cargar partidos oficiales o foto del cartel"
             >
-              <Camera className="h-3 w-3" />
+              <Camera className="h-3 w-3 text-brand" />
               <span>Cargar Partidos</span>
             </Button>
-
-            <Badge
-              variant="outline"
-              className="text-[10px] font-mono border-border text-muted-foreground"
-            >
-              Hoja {activeSheetType}
-            </Badge>
           </div>
         </div>
 
-        {/* Rows with Ergonomic Steppers (No Spinners!) */}
+        {/* Stepper Rows */}
         <div className="space-y-2">
           {currentSheet.options.map((option, idx) => (
             <div
               key={option.id}
-              className="flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/20 border border-border/50"
+              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60 hover:border-border transition-colors"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-foreground truncate">
@@ -231,7 +247,7 @@ export function TabCalculadora() {
                 </p>
               </div>
 
-              {/* Minimal Stepper */}
+              {/* Minimal Stepper with Clean Touch Targets */}
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
@@ -242,7 +258,7 @@ export function TabCalculadora() {
                       Math.max(0, option.votes - 1),
                     )
                   }
-                  className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none"
+                  className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
                   aria-label="Restar un voto"
                 >
                   -
@@ -262,7 +278,7 @@ export function TabCalculadora() {
                     )
                   }
                   placeholder="0"
-                  className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                  className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand shadow-2xs"
                 />
 
                 <button
@@ -274,7 +290,7 @@ export function TabCalculadora() {
                       option.votes + 1,
                     )
                   }
-                  className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none"
+                  className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
                   aria-label="Sumar un voto"
                 >
                   +
@@ -284,23 +300,23 @@ export function TabCalculadora() {
           ))}
         </div>
 
-        {/* Add Party Toggle / Form */}
+        {/* Add Party Toggle */}
         {!showAddPartyInput ? (
           <div className="flex items-center justify-between pt-1 text-xs">
             <button
               type="button"
               onClick={() => setShowAddPartyInput(true)}
-              className="text-xs font-semibold text-brand hover:underline flex items-center gap-1"
+              className="text-xs font-mono font-semibold text-brand hover:underline flex items-center gap-1"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Añadir partido manual</span>
+              <span>Añadir lista manual</span>
             </button>
 
             {reconciliation.status === "match" && (
               <button
                 type="button"
                 onClick={() => setShowDictationDialog(true)}
-                className="text-xs font-bold text-success hover:underline flex items-center gap-1"
+                className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
               >
                 <Lock className="h-3.5 w-3.5" />
                 <span>Dictar al acta</span>
@@ -314,7 +330,7 @@ export function TabCalculadora() {
           >
             <Input
               type="text"
-              placeholder="Nombre del partido..."
+              placeholder="Nombre de la lista..."
               value={newPartyName}
               onChange={(e) => setNewPartyName(e.target.value)}
               className="text-xs h-8 bg-background border-border"
@@ -323,7 +339,7 @@ export function TabCalculadora() {
             <Button
               type="submit"
               size="sm"
-              className="h-8 text-xs bg-brand text-brand-foreground"
+              className="h-8 text-xs bg-foreground text-background font-mono"
             >
               Guardar
             </Button>
@@ -332,23 +348,23 @@ export function TabCalculadora() {
               variant="ghost"
               size="sm"
               onClick={() => setShowAddPartyInput(false)}
-              className="h-8 text-xs text-muted-foreground"
+              className="h-8 text-xs text-muted-foreground font-mono"
             >
               Cancelar
             </Button>
           </form>
         )}
-      </div>
+      </section>
 
-      {/* Special Votes Section (Blancos, Nulos, Impugnados) */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 space-y-2.5 shadow-sm">
-        <h4 className="text-xs font-bold text-foreground">
-          Votos en Blanco, Nulos e Impugnados
+      {/* ── 5. Votos en Blanco, Nulos e Impugnados ── */}
+      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3">
+        <h4 className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
+          Votos No Válidos (Obligatorios en Acta)
         </h4>
 
         <div className="space-y-2">
           {/* Blanco */}
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/20 border border-border/50">
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60">
             <span className="text-xs text-foreground font-medium">
               Votos en Blanco
             </span>
@@ -362,7 +378,7 @@ export function TabCalculadora() {
                     Math.max(0, currentSheet.whiteVotes - 1),
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 -
               </button>
@@ -380,7 +396,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -391,7 +407,7 @@ export function TabCalculadora() {
                     currentSheet.whiteVotes + 1,
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 +
               </button>
@@ -399,7 +415,7 @@ export function TabCalculadora() {
           </div>
 
           {/* Nulo */}
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/20 border border-border/50">
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60">
             <span className="text-xs text-foreground font-medium">
               Votos Nulos
             </span>
@@ -413,7 +429,7 @@ export function TabCalculadora() {
                     Math.max(0, currentSheet.nullVotes - 1),
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 -
               </button>
@@ -431,7 +447,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -442,7 +458,7 @@ export function TabCalculadora() {
                     currentSheet.nullVotes + 1,
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 +
               </button>
@@ -450,7 +466,7 @@ export function TabCalculadora() {
           </div>
 
           {/* Impugnados */}
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-muted/20 border border-border/50">
+          <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60">
             <span className="text-xs text-foreground font-medium">
               Votos Impugnados
             </span>
@@ -464,7 +480,7 @@ export function TabCalculadora() {
                     Math.max(0, currentSheet.impugnedVotes - 1),
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 -
               </button>
@@ -482,7 +498,7 @@ export function TabCalculadora() {
                   )
                 }
                 placeholder="0"
-                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
+                className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand"
               />
               <button
                 type="button"
@@ -493,14 +509,14 @@ export function TabCalculadora() {
                     currentSheet.impugnedVotes + 1,
                   )
                 }
-                className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
+                className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground active:scale-90"
               >
                 +
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Cartel / Photo Scanner Dialog */}
       <ScanCartelDialog

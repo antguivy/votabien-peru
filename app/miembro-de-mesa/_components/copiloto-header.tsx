@@ -15,11 +15,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   ShieldAlert,
-  Wifi,
-  WifiOff,
   RotateCcw,
   LogOut,
   HelpCircle,
@@ -43,7 +40,7 @@ function getServerOnlineSnapshot() {
   return true;
 }
 
-const ROLE_SHORT_LABELS: Record<string, string> = {
+const ROLE_LABELS: Record<string, string> = {
   presidente: "Presidente",
   secretario: "Secretario",
   tercer_miembro: "3er Miembro",
@@ -77,83 +74,86 @@ export function CopilotoHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-md px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2">
-          {/* Brand & Identity */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-sm shrink-0">
+      <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/95 backdrop-blur-md px-4 sm:px-6 py-2.5">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+          {/* Brand & Role Identity */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand text-brand-foreground shadow-xs shrink-0">
               <ShieldAlert className="h-4 w-4" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black tracking-tight text-foreground truncate">
-                  Mesa ONPE
-                </span>
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-brand/15 text-brand uppercase">
-                  2026
-                </span>
+
+            <div className="min-w-0 flex items-center gap-2">
+              <div>
+                <div className="flex items-center gap-1.5 leading-none">
+                  <span className="text-xs font-black tracking-tight text-foreground">
+                    Mesa ONPE
+                  </span>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-brand/15 text-brand uppercase">
+                    2026
+                  </span>
+                </div>
               </div>
+
               {/* Clickable Role Switcher Pill */}
               <button
                 type="button"
                 onClick={() => setShowRoleModal(true)}
-                className="flex items-center gap-1 text-[10px] text-brand hover:underline font-bold leading-none mt-0.5 text-left"
+                className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-muted/60 text-foreground border border-border/80 hover:bg-muted transition-colors"
+                title="Cambiar tu rol en la mesa"
               >
-                <UserCheck className="h-2.5 w-2.5" />
+                <UserCheck className="h-2.5 w-2.5 text-brand" />
                 <span>
-                  {selectedRole
-                    ? ROLE_SHORT_LABELS[selectedRole]
-                    : "Elegir tu Rol"}
+                  {selectedRole ? ROLE_LABELS[selectedRole] : "Elegir Rol"}
                 </span>
               </button>
             </div>
           </div>
 
-          {/* Quick Status & Actions */}
-          <div className="flex items-center gap-1.5">
-            {/* Minimal Offline / Online Indicator */}
-            <Badge
-              variant="outline"
-              className={`text-[10px] px-2 py-0.5 font-medium border ${
-                isOnline
-                  ? "bg-success/10 border-success/30 text-success"
-                  : "bg-warning/10 border-warning/30 text-warning animate-pulse"
-              }`}
+          {/* Quick Metrics & Actions */}
+          <div className="flex items-center gap-2">
+            {/* Mobile Role Switcher */}
+            <button
+              type="button"
+              onClick={() => setShowRoleModal(true)}
+              className="sm:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-muted/60 text-foreground border border-border/80"
             >
-              {isOnline ? (
-                <span className="flex items-center gap-1">
-                  <Wifi className="h-3 w-3" />
-                  <span className="hidden xs:inline">Online</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <WifiOff className="h-3 w-3" />
-                  <span>Offline</span>
-                </span>
-              )}
-            </Badge>
+              <UserCheck className="h-2.5 w-2.5 text-brand" />
+              <span>{selectedRole ? ROLE_LABELS[selectedRole] : "Rol"}</span>
+            </button>
 
-            {/* Progress Count */}
-            <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60 border border-border">
+            {/* Offline Status Dot */}
+            <div className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded border border-border/60 bg-muted/30">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isOnline ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
+                }`}
+              />
+              <span className="text-muted-foreground">
+                {isOnline ? "En línea" : "Offline"}
+              </span>
+            </div>
+
+            {/* Tasks count */}
+            <span className="text-[10px] font-mono text-muted-foreground px-2 py-0.5 rounded bg-muted/40 border border-border/60">
               {doneTasksCount}/{totalTasksCount}
             </span>
 
-            {/* Help / Protocols Drawer Trigger */}
+            {/* Protocols Drawer Trigger */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={() => setShowProtocolsSheet(true)}
-              title="Preguntas frecuentes y leyes"
+              title="Guía y marco legal"
             >
               <HelpCircle className="h-4 w-4" />
             </Button>
 
-            {/* Safe Exit Button */}
+            {/* Exit Button */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
               onClick={() => setShowExitModal(true)}
               title="Salir a VotaBien"
             >
