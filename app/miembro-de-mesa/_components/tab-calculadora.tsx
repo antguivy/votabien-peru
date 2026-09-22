@@ -17,6 +17,7 @@ import {
   Trash2,
   Check,
   AlertTriangle,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,16 +62,32 @@ export function TabCalculadora() {
   const addSheetOption = useCopilotoStore((s) => s.addSheetOption);
   const removeSheetOption = useCopilotoStore((s) => s.removeSheetOption);
   const updateSpecialVotes = useCopilotoStore((s) => s.updateSpecialVotes);
+  const copyOptionsToAllSheets = useCopilotoStore(
+    (s) => s.copyOptionsToAllSheets,
+  );
 
   const [activeSheetType, setActiveSheetType] = useState<ElectionType>("5A");
   const [newPartyName, setNewPartyName] = useState("");
   const [showAddPartyInput, setShowAddPartyInput] = useState(false);
   const [showScanDialog, setShowScanDialog] = useState(false);
   const [showDictationDialog, setShowDictationDialog] = useState(false);
+  const [copiedAllSuccess, setCopiedAllSuccess] = useState(false);
 
   const currentSheet = sheets[activeSheetType];
   const { validVotes, totalVotes } = calculateElectionTotals(currentSheet);
   const reconciliation = reconcileElection(totalVotes, votersTarget);
+
+  const otherSheetWithParties = SHEETS_INFO.find(
+    (info) =>
+      info.type !== activeSheetType &&
+      (sheets[info.type]?.options?.length || 0) > 0,
+  );
+
+  const handleCopyAll = () => {
+    copyOptionsToAllSheets(activeSheetType);
+    setCopiedAllSuccess(true);
+    setTimeout(() => setCopiedAllSuccess(false), 2000);
+  };
 
   const handleAddParty = (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,37 +206,59 @@ export function TabCalculadora() {
         )}
       </section>
 
-      {/* ── 3. Chips de Selección de Elección (CandidateNavChips style) ── */}
+      {/* ── 3. Chips de Selección de Elección (Color Dinámico por Estado) ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
         {SHEETS_INFO.map((info) => {
           const sheet = sheets[info.type];
           const sheetTotals = calculateElectionTotals(sheet);
           const isMatched =
             votersTarget > 0 && sheetTotals.totalVotes === votersTarget;
+          const isPending =
+            votersTarget > 0 && sheetTotals.totalVotes > 0 && !isMatched;
           const isCurrent = activeSheetType === info.type;
+
+          let chipClass = "";
+          if (isMatched) {
+            chipClass = isCurrent
+              ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
+              : "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-600/40 hover:bg-emerald-500/25";
+          } else if (isPending) {
+            chipClass = isCurrent
+              ? "bg-amber-600 text-white border-amber-700 shadow-xs"
+              : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25";
+          } else {
+            chipClass = isCurrent
+              ? "bg-foreground text-background border-foreground shadow-xs"
+              : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground";
+          }
 
           return (
             <button
               key={info.type}
               onClick={() => setActiveSheetType(info.type)}
-              className={`shrink-0 inline-flex items-baseline gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border select-none active:scale-95 ${
-                isCurrent
-                  ? "bg-foreground text-background border-foreground shadow-xs"
-                  : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground"
-              }`}
+              className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border select-none active:scale-95 ${chipClass}`}
             >
               <span
                 className={`text-[10px] font-bold ${
-                  isCurrent ? "text-background/70" : "text-brand"
+                  isCurrent && (isMatched || isPending)
+                    ? "text-white/80"
+                    : isCurrent
+                      ? "text-background/70"
+                      : "text-brand"
                 }`}
               >
                 {info.num}
               </span>
               <span>{info.shortLabel}</span>
-              <span className="text-[10px] opacity-70 inline-flex items-center gap-0.5">
+              <span className="text-[10px] opacity-85 inline-flex items-center gap-0.5">
                 (
                 {isMatched ? (
-                  <Check className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                  <Check className="h-2.5 w-2.5 text-current" />
+                ) : isPending ? (
+                  <span className="inline-flex items-center gap-0.5 font-bold">
+                    {sheetTotals.totalVotes}
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                  </span>
                 ) : (
                   sheetTotals.totalVotes
                 )}
@@ -243,6 +282,29 @@ export function TabCalculadora() {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {currentSheet.options.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCopyAll}
+                className="h-7 px-2 text-[10.5px] font-mono border-border/80 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg"
+                title="Copiar estas organizaciones a las demás hojas"
+              >
+                {copiedAllSuccess ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-600" />
+                    <span className="text-emerald-600 font-bold">Copiado</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    <span className="hidden sm:inline">Copiar a otras</span>
+                  </>
+                )}
+              </Button>
+            )}
+
             {/* Camera / Presets Button */}
             <Button
               type="button"
@@ -258,85 +320,129 @@ export function TabCalculadora() {
           </div>
         </div>
 
-        {/* Stepper Rows */}
-        <div className="space-y-2">
-          {currentSheet.options.map((option, idx) => (
-            <div
-              key={option.id}
-              className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60 hover:border-border transition-colors"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">
-                  <span className="text-muted-foreground font-mono text-[11px] mr-1.5">
-                    {idx + 1}.
-                  </span>
-                  {option.name}
-                </p>
-              </div>
-
-              {/* Minimal Stepper with Clean Touch Targets */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateOptionVotes(
-                      activeSheetType,
-                      option.id,
-                      Math.max(0, option.votes - 1),
-                    )
-                  }
-                  className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
-                  aria-label="Restar un voto"
-                >
-                  -
-                </button>
-
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={option.votes || ""}
-                  onChange={(e) =>
-                    updateOptionVotes(
-                      activeSheetType,
-                      option.id,
-                      parseInt(e.target.value) || 0,
-                    )
-                  }
-                  placeholder="0"
-                  className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand shadow-2xs"
-                />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateOptionVotes(
-                      activeSheetType,
-                      option.id,
-                      option.votes + 1,
-                    )
-                  }
-                  className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
-                  aria-label="Sumar un voto"
-                >
-                  +
-                </button>
-
-                {/* Remove button */}
-                <button
-                  type="button"
-                  onClick={() => removeSheetOption(activeSheetType, option.id)}
-                  className="w-8 h-8 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors ml-0.5 select-none"
-                  title="Eliminar organización política"
-                  aria-label={`Eliminar ${option.name}`}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
+        {/* Empty State when no parties loaded */}
+        {currentSheet.options.length === 0 ? (
+          <div className="p-6 rounded-2xl border-2 border-dashed border-border/80 bg-muted/10 text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-brand/10 text-brand mx-auto flex items-center justify-center">
+              <Camera className="h-5 w-5" />
             </div>
-          ))}
-        </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Sin organizaciones cargadas en Hoja {currentSheet.type}
+              </h4>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                Esta hoja inicia limpia para no hacerte perder tiempo borrando
+                listas de prueba. Cargá los partidos en 2 segundos:
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+              <Button
+                type="button"
+                onClick={() => setShowScanDialog(true)}
+                className="w-full sm:w-auto h-9 text-xs font-bold bg-brand text-white hover:bg-brand/90 rounded-xl shadow-xs"
+              >
+                <Camera className="h-3.5 w-3.5 mr-1.5" />
+                <span>Foto o Preset Oficial</span>
+              </Button>
+
+              {otherSheetWithParties && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    copyOptionsToAllSheets(otherSheetWithParties.type)
+                  }
+                  className="w-full sm:w-auto h-9 text-xs font-mono font-semibold rounded-xl border-border hover:bg-muted"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  <span>Copiar de {otherSheetWithParties.shortLabel}</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Stepper Rows */
+          <div className="space-y-2">
+            {currentSheet.options.map((option, idx) => (
+              <div
+                key={option.id}
+                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-muted/20 border border-border/60 hover:border-border transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    <span className="text-muted-foreground font-mono text-[11px] mr-1.5">
+                      {idx + 1}.
+                    </span>
+                    {option.name}
+                  </p>
+                </div>
+
+                {/* Minimal Stepper with Clean Touch Targets */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateOptionVotes(
+                        activeSheetType,
+                        option.id,
+                        Math.max(0, option.votes - 1),
+                      )
+                    }
+                    className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
+                    aria-label="Restar un voto"
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={option.votes || ""}
+                    onChange={(e) =>
+                      updateOptionVotes(
+                        activeSheetType,
+                        option.id,
+                        parseInt(e.target.value) || 0,
+                      )
+                    }
+                    placeholder="0"
+                    className="no-spinner w-12 h-8 rounded-lg bg-background border border-border/80 text-center font-mono font-bold text-xs text-foreground focus:outline-none focus:border-brand shadow-2xs"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateOptionVotes(
+                        activeSheetType,
+                        option.id,
+                        option.votes + 1,
+                      )
+                    }
+                    className="w-8 h-8 rounded-lg bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground active:scale-90 transition-all select-none shadow-2xs"
+                    aria-label="Sumar un voto"
+                  >
+                    +
+                  </button>
+
+                  {/* Remove button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      removeSheetOption(activeSheetType, option.id)
+                    }
+                    className="w-8 h-8 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors ml-0.5 select-none"
+                    title="Eliminar organización política"
+                    aria-label={`Eliminar ${option.name}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Add Party Toggle */}
         {!showAddPartyInput ? (

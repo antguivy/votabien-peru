@@ -13,12 +13,7 @@ export function createInitialElectionSheet(
     type,
     title,
     subtitle,
-    options: [
-      { id: "opt-1", name: "Organización Política 1", votes: 0 },
-      { id: "opt-2", name: "Organización Política 2", votes: 0 },
-      { id: "opt-3", name: "Organización Política 3", votes: 0 },
-      { id: "opt-4", name: "Organización Política 4", votes: 0 },
-    ],
+    options: [],
     whiteVotes: 0,
     nullVotes: 0,
     impugnedVotes: 0,

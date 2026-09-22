@@ -44,6 +44,7 @@ interface CopilotoState {
   addSheetOption: (type: ElectionType, name: string) => void;
   removeSheetOption: (type: ElectionType, optionId: string) => void;
   loadOfficialPartiesPreset: (type: ElectionType) => void;
+  copyOptionsToAllSheets: (sourceType: ElectionType) => void;
   setSheetOptions: (
     type: ElectionType,
     options: { id: string; name: string; votes: number }[],
@@ -224,6 +225,24 @@ export const useCopilotoStore = create<CopilotoState>()(
               },
             },
           };
+        }),
+
+      copyOptionsToAllSheets: (sourceType) =>
+        set((state) => {
+          const sourceOptions = state.sheets[sourceType]?.options || [];
+          const newSheets = { ...state.sheets };
+          (Object.keys(newSheets) as ElectionType[]).forEach((t) => {
+            if (t !== sourceType) {
+              newSheets[t] = {
+                ...newSheets[t],
+                options: sourceOptions.map((opt) => ({
+                  ...opt,
+                  votes: 0,
+                })),
+              };
+            }
+          });
+          return { sheets: newSheets };
         }),
 
       setSheetOptions: (type, options) =>

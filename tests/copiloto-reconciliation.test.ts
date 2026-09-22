@@ -15,7 +15,7 @@ describe("Copiloto Electoral — Reconciliación y Cuadre de Actas", () => {
     );
 
     expect(sheet.type).toBe("5A");
-    expect(sheet.options.length).toBe(4);
+    expect(sheet.options.length).toBe(0);
     expect(sheet.whiteVotes).toBe(0);
     expect(sheet.nullVotes).toBe(0);
     expect(sheet.impugnedVotes).toBe(0);
