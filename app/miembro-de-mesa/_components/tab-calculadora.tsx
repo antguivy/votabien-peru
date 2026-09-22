@@ -68,25 +68,26 @@ export function TabCalculadora() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* ── 1. Padrón Base: Total Votantes (Double-Bezel limpio) ── */}
+      {/* ── 1. Total de Ciudadanos que Votaron (Acta de Sufragio) ── */}
       <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-brand" />
-                <span>Padrón Electoral Base</span>
+                <span>Total de Ciudadanos que Votaron</span>
               </span>
             </div>
             <p className="text-xs sm:text-sm text-foreground/90 font-medium">
-              Total de firmas y huellas contadas a las 5:00 PM (Sección B del
-              Acta de Sufragio).
+              Número de firmas y huellas contadas en la{" "}
+              <strong>Lista de Electores</strong> (anotado en la Sección B del{" "}
+              <strong>Acta de Sufragio</strong>).
             </p>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-center">
             <span className="text-xs font-mono text-muted-foreground">
-              Votaron:
+              Total Votantes:
             </span>
             <div className="p-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs">
               <Input
@@ -131,8 +132,8 @@ export function TabCalculadora() {
             {reconciliation.status === "match"
               ? "✓ Cuadre Exacto"
               : reconciliation.status === "pending"
-                ? "Esperando Padrón"
-                : "⚠️ Descuadre en Borrador"}
+                ? "Esperando Total de Votantes"
+                : "⚠️ Descuadre en Hoja Borrador"}
           </span>
         </div>
 

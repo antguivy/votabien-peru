@@ -65,7 +65,7 @@ export function reconcileElection(
       difference: 0,
       status: "match",
       message:
-        "¡CUADRE PERFECTO! La suma de votos en la hoja borrador coincide exactamente con el padrón de electores.",
+        "¡CUADRE PERFECTO! El Total de Votos Emitidos coincide exactamente con el Total de Ciudadanos que Votaron del Acta de Sufragio.",
     };
   }
 
@@ -75,7 +75,7 @@ export function reconcileElection(
       targetVoters,
       difference: diff,
       status: "surplus",
-      message: `¡ALERTA DE DESCUADRE! Sobran ${diff} voto(s). Hay ${totalCounted} votos contados para ${targetVoters} electores. Recontar hojas borrador.`,
+      message: `¡ALERTA DE DESCUADRE! Sobran ${diff} voto(s). Hay ${totalCounted} votos contados en la Hoja Borrador para ${targetVoters} ciudadanos que votaron. Recontar cédulas y marcas.`,
     };
   }
 
@@ -84,6 +84,6 @@ export function reconcileElection(
     targetVoters,
     difference: diff,
     status: "deficit",
-    message: `¡ALERTA DE DESCUADRE! Faltan ${Math.abs(diff)} voto(s). Hay ${totalCounted} votos contados de los ${targetVoters} electores requeridos. Recontar hojas borrador.`,
+    message: `¡ALERTA DE DESCUADRE! Faltan ${Math.abs(diff)} voto(s). Hay ${totalCounted} votos contados en la Hoja Borrador de los ${targetVoters} ciudadanos que votaron. Recontar cédulas y marcas.`,
   };
 }
