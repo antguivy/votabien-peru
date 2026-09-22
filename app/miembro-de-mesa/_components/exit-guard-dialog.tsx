@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaDescription,
+  CredenzaBody,
+  CredenzaFooter,
+  CredenzaClose,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, LogOut } from "lucide-react";
+import { AlertTriangle, LogOut, X, ShieldCheck } from "lucide-react";
 
 interface ExitGuardDialogProps {
   open: boolean;
@@ -28,42 +30,71 @@ export function ExitGuardDialog({ open, onOpenChange }: ExitGuardDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-zinc-100">
-        <DialogHeader>
-          <div className="flex items-center gap-3 text-amber-500 mb-2">
-            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <AlertTriangle className="h-6 w-6" />
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent
+        noScroll
+        className="w-full sm:max-w-md mx-auto bg-background border-border text-foreground p-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl shadow-2xl"
+      >
+        <CredenzaHeader className="shrink-0 text-left px-5 pt-4 pb-3 border-b border-border/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-5 w-5" />
+              <CredenzaTitle className="text-base font-black tracking-tight text-foreground">
+                ¿Deseas salir del Copiloto?
+              </CredenzaTitle>
             </div>
-            <DialogTitle className="text-xl font-bold">
-              ¿Deseas salir del Copiloto de Mesa?
-            </DialogTitle>
+            <CredenzaClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CredenzaClose>
           </div>
-          <DialogDescription className="text-zinc-300 text-sm leading-relaxed">
-            Estás en el modo protegido de miembro de mesa. Tus datos guardados
-            permanecerán en este dispositivo, pero asegúrate de no cerrar la app
-            durante una fase crítica (como el conteo de escrutinio).
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-0 mt-4">
+          <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed pt-0.5">
+            Estás en el modo protegido de miembro de mesa electoral.
+          </CredenzaDescription>
+        </CredenzaHeader>
+
+        <CredenzaBody className="px-5 py-4 space-y-3">
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-600/30 text-xs text-foreground/90 leading-relaxed space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+              <ShieldCheck className="h-4 w-4" />
+              <span>Tus datos quedan guardados</span>
+            </div>
+            <p className="text-muted-foreground">
+              Tus tareas marcadas, acuerdos y números de escrutinio permanecen
+              en la memoria de este teléfono. Sin embargo, te recomendamos{" "}
+              <strong>no salir durante una fase crítica</strong> (como el conteo
+              de votos o el cuadre de actas).
+            </p>
+          </div>
+        </CredenzaBody>
+
+        <CredenzaFooter className="shrink-0 flex flex-col gap-2 px-5 py-3.5 border-t border-border/60 bg-muted/20">
           <Button
+            type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-zinc-700 hover:bg-zinc-800 text-zinc-200"
+            className="w-full text-xs font-mono font-bold h-10 rounded-xl border-border hover:bg-muted text-foreground"
           >
             Permanecer en la Mesa
           </Button>
+
           <Button
+            type="button"
             variant="destructive"
             onClick={handleExit}
             disabled={isConfirming}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-2"
+            className="w-full text-xs font-mono font-bold h-10 rounded-xl bg-destructive text-white hover:bg-destructive/90 flex items-center justify-center gap-2 shadow-xs"
           >
             <LogOut className="h-4 w-4" />
-            {isConfirming ? "Saliendo..." : "Sí, salir a VotaBien"}
+            <span>{isConfirming ? "Saliendo..." : "Sí, salir a VotaBien"}</span>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }
