@@ -54,6 +54,7 @@
 
   /* ----- Color de Marca (Logo) ----- */
   --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   /*  */
   --color-role-president: var(--chart-4); /* Rojo mate */
   --color-role-senator: var(--chart-1); /* Azul principal */
@@ -66,6 +67,7 @@
   :root {
     --radius: 0.3rem;
     --brand: oklch(0.4936 0.165 28.53);
+    --brand-foreground: oklch(0.99 0 0);
 
     /* ----- Superficies y Fondos ----- */
     --background: oklch(0.99 0.005 20); /* Blanco cálido, casi neutro */
@@ -127,6 +129,7 @@
 
   .dark {
     --brand: oklch(0.4936 0.165 28.53);
+    --brand-foreground: oklch(0.99 0 0);
 
     /* ----- Superficies y Fondos ----- */
     --background: oklch(0.12 0.02 20); /* Azul muy oscuro, profesional */
@@ -321,6 +324,17 @@ CHARTS:
   .bg-overlay {
     background: oklch(from var(--background) l c h / 0.95);
   }
+
+  /* Ocultar flechas (spinners) de inputs numéricos */
+  .no-spinner::-webkit-inner-spin-button,
+  .no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
   }
@@ -737,7 +751,11 @@ body {
   animation: flashHighlight 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Ocultar barra de navegación inferior durante el juego/mapa en mobile */
+/* Ocultar barra de navegación inferior durante el juego/mapa/simulador en mobile */
 html.hide-mobile-bottom-nav [data-mobile-bottom-nav] {
   display: none !important;
+}
+
+html.hide-mobile-bottom-nav main.h-dvh {
+  padding-bottom: 0 !important;
 }

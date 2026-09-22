@@ -66,6 +66,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
       { href: "/trivia", label: "Trivia", icon: HelpCircle },
       { href: "/match", label: "Mi Candidato", icon: Heart },
       { href: "/comparador", label: "Comparador", icon: Scale },
+      {
+        href: "/miembro-de-mesa",
+        label: "Miembros de Mesa",
+        icon: ShieldCheck,
+      },
     ],
   },
   {
