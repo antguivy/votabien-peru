@@ -5,13 +5,15 @@ import { useCopilotoStore } from "../_lib/store";
 import { ElectionType } from "../_lib/types";
 import { OFFICIAL_ERM_2026_PARTIES } from "../_lib/constants";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaDescription,
+  CredenzaBody,
+  CredenzaFooter,
+  CredenzaClose,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -21,6 +23,7 @@ import {
   Check,
   ListPlus,
   RefreshCw,
+  X,
 } from "lucide-react";
 
 interface ScanCartelDialogProps {
@@ -85,22 +88,35 @@ export function ScanCartelDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto bg-background border-border p-4 text-foreground">
-        <DialogHeader className="text-left pb-2 border-b border-border/60">
-          <DialogTitle className="text-base font-black tracking-tight flex items-center gap-2">
-            <Camera className="h-4 w-4 text-brand" />
-            <span>Cargar Partidos en Hoja {activeSheetType}</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="max-w-md max-h-[92vh] bg-background border-border text-foreground p-0 overflow-hidden flex flex-col">
+        <CredenzaHeader className="text-left px-5 pt-5 pb-3 border-b border-border/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-brand">
+              <Camera className="h-4 w-4" />
+              <CredenzaTitle className="text-base font-black tracking-tight text-foreground">
+                Cargar Partidos · Hoja {activeSheetType}
+              </CredenzaTitle>
+            </div>
+            <CredenzaClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CredenzaClose>
+          </div>
+          <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-1">
             Evita tipear uno por uno. Sacale foto al Cartel de Candidatos pegado
             en la pared del aula o cargá la lista oficial.
-          </DialogDescription>
-        </DialogHeader>
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        <div className="space-y-3 py-2">
+        <CredenzaBody className="space-y-3 px-5 py-4 overflow-y-auto">
           {/* Option A: Fast 1-tap Official Preset (100% Offline) */}
-          <div className="p-3 rounded-2xl bg-brand/10 border border-brand/25 space-y-2">
+          <div className="p-3.5 rounded-2xl bg-brand/10 border border-brand/25 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <Sparkles className="h-4 w-4 shrink-0" />
               <h4 className="text-xs font-bold uppercase tracking-wider">
@@ -108,21 +124,21 @@ export function ScanCartelDialog({
               </h4>
             </div>
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Carga automática de las 12 organizaciones políticas nacionales de
-              las ERM 2026 en orden oficial.
+              Carga automática de las organizaciones políticas nacionales en
+              orden oficial.
             </p>
             <Button
               type="button"
               onClick={handleApplyPreset}
-              className="w-full h-8 text-xs font-bold bg-brand text-brand-foreground shadow-sm rounded-xl"
+              className="w-full h-9 text-xs font-bold bg-brand text-brand-foreground shadow-sm rounded-xl"
             >
-              <Check className="h-3.5 w-3.5 mr-1" />
-              Cargar Partidos Nacionales ERM 2026
+              <Check className="h-3.5 w-3.5 mr-1.5" />
+              Cargar Partidos Oficiales
             </Button>
           </div>
 
           {/* Option B: Photo of Cartel de Candidatos */}
-          <div className="p-3 rounded-2xl bg-card border border-border space-y-2.5">
+          <div className="p-3.5 rounded-2xl bg-card border border-border space-y-2.5">
             <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Camera className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Foto al Cartel de Candidatos del Aula</span>
@@ -142,62 +158,79 @@ export function ScanCartelDialog({
                 type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full text-xs h-9 border-dashed border-border flex items-center justify-center gap-1.5 rounded-xl hover:bg-muted"
+                className="w-full h-16 border-dashed border-2 border-border hover:border-brand flex flex-col items-center justify-center gap-1 rounded-xl text-xs text-muted-foreground font-mono"
               >
-                <Upload className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>Tomar foto o subir imagen del cartel</span>
+                <Upload className="h-4 w-4 text-muted-foreground" />
+                <span>Tomar foto o subir imagen</span>
               </Button>
             ) : (
               <div className="space-y-2">
-                <div className="relative rounded-xl overflow-hidden border border-border aspect-video bg-muted flex items-center justify-center">
+                <div className="relative rounded-xl overflow-hidden border border-border h-28 bg-black/5 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePreview}
-                    alt="Cartel"
-                    className="w-full h-full object-cover"
+                    alt="Cartel Preview"
+                    className="max-h-full max-w-full object-contain"
                   />
                   {isProcessing && (
-                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white gap-1 text-xs">
-                      <RefreshCw className="h-5 w-5 animate-spin text-brand" />
-                      <span>Extrayendo organizaciones políticas...</span>
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center gap-2 text-xs font-mono font-bold text-foreground">
+                      <RefreshCw className="h-4 w-4 animate-spin text-brand" />
+                      <span>Reconociendo listas con IA...</span>
                     </div>
                   )}
                 </div>
 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setImagePreview(null);
+                    setPartiesText("");
+                  }}
+                  className="text-[11px] text-muted-foreground h-6 px-2"
+                >
+                  Cambiar foto
+                </Button>
+              </div>
+            )}
+
+            {partiesText && (
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[10.5px] font-mono text-muted-foreground block">
+                  Listas detectadas (puedes editar antes de aplicar):
+                </label>
                 <Textarea
-                  rows={4}
                   value={partiesText}
                   onChange={(e) => setPartiesText(e.target.value)}
-                  placeholder="Lista de partidos detectados (uno por línea)..."
-                  className="text-xs font-mono bg-background border-border"
+                  rows={5}
+                  className="text-xs font-mono bg-background border-border rounded-xl"
                 />
-
                 <Button
                   type="button"
                   onClick={handleApplyCustomList}
-                  disabled={!partiesText.trim() || isProcessing}
-                  className="w-full h-8 text-xs font-bold bg-brand text-brand-foreground rounded-xl"
+                  className="w-full h-9 text-xs font-bold bg-foreground text-background hover:bg-foreground/90 rounded-xl mt-1"
                 >
-                  <ListPlus className="h-3.5 w-3.5 mr-1" />
-                  Aplicar esta lista a la Hoja {activeSheetType}
+                  <ListPlus className="h-3.5 w-3.5 mr-1.5" />
+                  Aplicar estas organizaciones
                 </Button>
               </div>
             )}
           </div>
-        </div>
+        </CredenzaBody>
 
-        <DialogFooter className="pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="w-full text-xs text-muted-foreground"
-          >
-            Cerrar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <CredenzaFooter className="px-5 py-3 border-t border-border/60 bg-muted/20 flex justify-end">
+          <CredenzaClose asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs font-mono rounded-xl"
+            >
+              Cerrar
+            </Button>
+          </CredenzaClose>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }

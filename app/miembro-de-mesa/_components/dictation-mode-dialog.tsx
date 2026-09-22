@@ -3,11 +3,15 @@
 import { useState } from "react";
 import { ElectionSheetState } from "../_lib/types";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaDescription,
+  CredenzaBody,
+  CredenzaFooter,
+  CredenzaClose,
+} from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
 import { Lock, Copy, Check, Share2, X } from "lucide-react";
 
@@ -37,16 +41,16 @@ export function DictationModeDialog({
     (Number(sheet.impugnedVotes) || 0);
 
   const generateSummaryText = () => {
-    let text = `🗳️ RESUMEN DE MESA — ONPE ERM 2026\n`;
+    let text = `🗳️ RESUMEN DE MESA — ONPE 2026\n`;
     text += `Elección: ${sheet.title} (${sheet.type})\n`;
-    text += `Total Votantes del Padrón: ${votersTarget}\n`;
+    text += `Total Ciudadanos que Votaron: ${votersTarget}\n`;
     text += `Total Votos Emitidos: ${totalVotes}\n`;
     text += `Estado: ${totalVotes === votersTarget ? "✓ CUADRADO EXACTO" : "⚠️ DESCUADRADO"}\n\n`;
     text += `--- VOTOS POR ORGANIZACIÓN ---\n`;
     sheet.options.forEach((opt, idx) => {
       text += `${idx + 1}. ${opt.name}: ${opt.votes}\n`;
     });
-    text += `\n--- VOTOS NO VÁLIDOS ---\n`;
+    text += `\n--- VOTOS EN BLANCO, NULOS E IMPUGNADOS ---\n`;
     text += `Blancos: ${sheet.whiteVotes}\n`;
     text += `Nulos: ${sheet.nullVotes}\n`;
     text += `Impugnados: ${sheet.impugnedVotes}\n`;
@@ -69,143 +73,150 @@ export function DictationModeDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[95vh] overflow-y-auto bg-background border-border p-4 text-foreground">
-        <DialogHeader className="text-left pb-2 border-b border-border/60">
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="max-w-md max-h-[92vh] bg-background border-border text-foreground p-0 overflow-hidden flex flex-col">
+        <CredenzaHeader className="text-left px-5 pt-5 pb-3 border-b border-border/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-brand">
               <Lock className="h-4 w-4" />
-              <DialogTitle className="text-base font-black tracking-tight text-foreground">
-                Modo Dictado al Acta Oficial
-              </DialogTitle>
+              <CredenzaTitle className="text-base font-black tracking-tight text-foreground">
+                Dictado al Acta Oficial
+              </CredenzaTitle>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <CredenzaClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CredenzaClose>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-snug">
-            Pantalla protegida contra toques accidentales. Dictale al Secretario
-            mientras llena la Sección C del Acta Oficial con lapicero negro.
-          </p>
-        </DialogHeader>
+          <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-1">
+            Pantalla protegida para dictar casilla por casilla al Secretario
+            mientras llena la Sección C del Acta Oficial con lapicero.
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        {/* Big Numbers Dictation List */}
-        <div className="space-y-2 py-2">
+        <CredenzaBody className="space-y-3 px-5 py-4 overflow-y-auto">
           {/* Header Metric */}
-          <div className="p-3 rounded-2xl bg-success/15 border border-success/30 text-success flex items-center justify-between">
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-2xs">
             <div className="space-y-0.5">
-              <span className="text-[10px] uppercase font-mono font-bold">
+              <span className="text-[10px] uppercase font-mono font-bold tracking-wider">
                 Total a Consignar en Acta
               </span>
-              <div className="text-xl font-black font-mono">
+              <div className="text-2xl font-black font-mono tracking-tight">
                 {totalVotes} VOTOS
               </div>
             </div>
-            <div className="text-right text-[10px] font-mono">
-              <div>Padrón: {votersTarget}</div>
-              <div className="font-bold">✓ CUADRADO</div>
+            <div className="text-right text-[10.5px] font-mono">
+              <div className="text-muted-foreground">
+                Votantes: {votersTarget}
+              </div>
+              <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                ✓ CUADRADO
+              </div>
             </div>
           </div>
 
           {/* Parties List */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider block">
+          <div className="space-y-2">
+            <span className="text-[10px] uppercase font-mono text-muted-foreground font-bold tracking-wider block">
               Resultados por Partido (Copiar en este orden):
             </span>
 
-            {sheet.options.map((opt, idx) => (
-              <div
-                key={opt.id}
-                className="p-2.5 rounded-xl bg-card border border-border/80 flex items-center justify-between gap-2 shadow-sm"
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-mono text-muted-foreground mr-1">
-                    #{idx + 1}
-                  </span>
-                  <span className="text-xs font-bold text-foreground truncate">
-                    {opt.name}
-                  </span>
+            <div className="space-y-1.5">
+              {sheet.options.map((opt, idx) => (
+                <div
+                  key={opt.id}
+                  className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/80 shadow-2xs"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                    <span className="text-xs font-mono font-bold text-brand shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground truncate">
+                      {opt.name}
+                    </span>
+                  </div>
+                  <div className="w-12 h-9 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-center shrink-0">
+                    <span className="text-lg font-mono font-black text-foreground">
+                      {opt.votes}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-lg font-black font-mono text-brand px-2 py-0.5 rounded-lg bg-brand/10 shrink-0">
-                  {opt.votes}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          {/* Special Non-valid votes */}
-          <div className="pt-2 space-y-1.5 border-t border-border/60">
-            <span className="text-[10px] uppercase font-mono text-muted-foreground tracking-wider block">
+          {/* Votos no válidos */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[10px] uppercase font-mono text-muted-foreground font-bold tracking-wider block">
               Votos en Blanco, Nulos e Impugnados:
             </span>
 
-            <div className="grid grid-cols-3 gap-1.5">
-              <div className="p-2 rounded-xl bg-muted/40 border border-border text-center space-y-0.5">
-                <span className="text-[10px] text-muted-foreground block">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[10px] font-mono text-muted-foreground block">
                   Blancos
                 </span>
-                <span className="text-base font-black font-mono text-foreground">
+                <span className="text-base font-mono font-black text-foreground">
                   {sheet.whiteVotes}
                 </span>
               </div>
 
-              <div className="p-2 rounded-xl bg-muted/40 border border-border text-center space-y-0.5">
-                <span className="text-[10px] text-muted-foreground block">
+              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[10px] font-mono text-muted-foreground block">
                   Nulos
                 </span>
-                <span className="text-base font-black font-mono text-foreground">
+                <span className="text-base font-mono font-black text-destructive">
                   {sheet.nullVotes}
                 </span>
               </div>
 
-              <div className="p-2 rounded-xl bg-muted/40 border border-border text-center space-y-0.5">
-                <span className="text-[10px] text-muted-foreground block">
+              <div className="p-2.5 rounded-xl bg-card border border-border/80 text-center space-y-0.5">
+                <span className="text-[10px] font-mono text-muted-foreground block">
                   Impugnados
                 </span>
-                <span className="text-base font-black font-mono text-foreground">
+                <span className="text-base font-mono font-black text-amber-600 dark:text-amber-400">
                   {sheet.impugnedVotes}
                 </span>
               </div>
             </div>
           </div>
-        </div>
+        </CredenzaBody>
 
-        {/* Share & Copy Actions */}
-        <div className="space-y-2 pt-2 border-t border-border/60">
+        <CredenzaFooter className="flex flex-col sm:flex-row gap-2 px-5 py-3 border-t border-border/60 bg-muted/20">
           <Button
             type="button"
+            variant="outline"
             onClick={handleCopy}
-            className="w-full text-xs font-bold h-9 bg-brand text-brand-foreground rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+            className="w-full text-xs font-mono font-bold rounded-xl h-10 border-border"
           >
             {copied ? (
               <>
-                <Check className="h-4 w-4" />
-                <span>¡Copiado al Portapapeles!</span>
+                <Check className="h-3.5 w-3.5 mr-1.5 text-emerald-600" />
+                Copiado al Portapapeles
               </>
             ) : (
               <>
-                <Copy className="h-4 w-4" />
-                <span>Copiar Resumen para Guardar</span>
+                <Copy className="h-3.5 w-3.5 mr-1.5" />
+                Copiar Resumen
               </>
             )}
           </Button>
 
           <Button
             type="button"
-            variant="outline"
             onClick={handleShareWhatsApp}
-            className="w-full text-xs font-semibold h-9 border-border text-foreground hover:bg-muted rounded-xl flex items-center justify-center gap-1.5"
+            className="w-full text-xs font-mono font-bold bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl h-10 shadow-xs"
           >
-            <Share2 className="h-3.5 w-3.5 text-success" />
-            <span>Compartir Acta por WhatsApp</span>
+            <Share2 className="h-3.5 w-3.5 mr-1.5" />
+            Compartir por WhatsApp
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }

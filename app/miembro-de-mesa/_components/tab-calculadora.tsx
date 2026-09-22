@@ -9,7 +9,7 @@ import {
 } from "../_lib/reconciliation";
 import { ScanCartelDialog } from "./scan-cartel-dialog";
 import { DictationModeDialog } from "./dictation-mode-dialog";
-import { Users, Plus, Camera, Lock } from "lucide-react";
+import { Users, Plus, Camera, Lock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -46,6 +46,7 @@ export function TabCalculadora() {
   const sheets = useCopilotoStore((s) => s.sheets);
   const updateOptionVotes = useCopilotoStore((s) => s.updateOptionVotes);
   const addSheetOption = useCopilotoStore((s) => s.addSheetOption);
+  const removeSheetOption = useCopilotoStore((s) => s.removeSheetOption);
   const updateSpecialVotes = useCopilotoStore((s) => s.updateSpecialVotes);
 
   const [activeSheetType, setActiveSheetType] = useState<ElectionType>("5A");
@@ -158,12 +159,10 @@ export function TabCalculadora() {
             <Button
               type="button"
               onClick={() => setShowDictationDialog(true)}
-              className="w-full text-xs font-mono font-bold bg-foreground text-background hover:bg-foreground/90 rounded-xl py-4 shadow-xs flex items-center justify-center gap-2"
+              className="w-full text-xs font-mono font-bold bg-foreground text-background hover:bg-foreground/90 rounded-xl py-3.5 shadow-xs flex items-center justify-center gap-2"
             >
-              <Lock className="h-3.5 w-3.5" />
-              <span>
-                Activar Modo Dictado al Acta Oficial (Pantalla Congelada)
-              </span>
+              <Lock className="h-3.5 w-3.5 text-brand" />
+              <span>Dictar al Acta Oficial</span>
             </Button>
           </div>
         )}
@@ -295,6 +294,17 @@ export function TabCalculadora() {
                   aria-label="Sumar un voto"
                 >
                   +
+                </button>
+
+                {/* Remove button */}
+                <button
+                  type="button"
+                  onClick={() => removeSheetOption(activeSheetType, option.id)}
+                  className="w-8 h-8 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors ml-0.5 select-none"
+                  title="Eliminar organización política"
+                  aria-label={`Eliminar ${option.name}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
