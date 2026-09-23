@@ -1,36 +1,32 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   ChevronLeft,
   ChevronRight,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  X,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Play,
   RotateCcw,
-  List,
   ArrowRight,
-  Check,
-  Crosshair,
-  Lightbulb,
-  Minus,
-  Trophy,
   CheckCircle2,
   Square,
   XCircle,
   AlertTriangle,
-  Pen,
+  Play,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   Point,
   ColumnAnalysis,
-  SimulatorMode,
   SimulatorPhase,
+  ElectoralProcess,
+  ColumnDef,
 } from "@/interfaces/simulator";
-import { COLUMNS, CHALLENGES, L } from "@/constants/challenge";
+import {
+  COLUMNS_REGIONALES_2026,
+  COLUMNS_GENERALES_2026,
+  L,
+} from "@/constants/challenge";
 import type { BallotCanvasRef } from "@/components/simulador/ballot-canvas";
 import { Button } from "@/components/ui/button";
 
@@ -40,859 +36,750 @@ const BallotCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="w-full bg-muted/30 animate-pulse rounded-sm"
+        className="w-full bg-muted/30 animate-pulse rounded-2xl flex items-center justify-center text-xs font-mono text-muted-foreground"
         style={{ aspectRatio: `${L.W} / ${L.H}` }}
-      />
+      >
+        Cargando cédula...
+      </div>
     ),
   },
 );
-
-// ─── Result metadata ──────────────────────────────────────────────────────────
 
 type VoteResult = ColumnAnalysis["result"];
 
 const RESULT_META = {
   blank: {
-    label: "Blanco",
+    label: "En blanco",
     Icon: Square,
-    pill: "bg-muted text-muted-foreground",
-    banner: "bg-muted/60",
+    badge: "text-muted-foreground bg-muted/70 border-border/80",
     dot: "bg-muted-foreground/40",
     text: "text-muted-foreground",
-    ring: "ring-muted-foreground/20",
   },
   valid: {
     label: "Válido",
     Icon: CheckCircle2,
-    pill: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400",
-    banner: "bg-emerald-50/80 dark:bg-emerald-950/30",
+    badge:
+      "text-emerald-700 bg-emerald-500/10 border-emerald-600/30 dark:text-emerald-400",
     dot: "bg-emerald-500",
     text: "text-emerald-700 dark:text-emerald-400",
-    ring: "ring-emerald-200 dark:ring-emerald-800/60",
   },
   null: {
     label: "Nulo",
     Icon: XCircle,
-    pill: "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400",
-    banner: "bg-red-50/80 dark:bg-red-950/30",
+    badge: "text-destructive bg-destructive/10 border-destructive/30",
     dot: "bg-red-500",
-    text: "text-red-700 dark:text-red-400",
-    ring: "ring-red-200 dark:ring-red-800/60",
+    text: "text-destructive",
   },
   viciado: {
     label: "Viciado",
     Icon: AlertTriangle,
-    pill: "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400",
-    banner: "bg-amber-50/80 dark:bg-amber-950/30",
+    badge:
+      "text-amber-700 bg-amber-500/10 border-amber-600/30 dark:text-amber-400",
     dot: "bg-amber-500",
     text: "text-amber-700 dark:text-amber-400",
-    ring: "ring-amber-200 dark:ring-amber-800/60",
   },
 } as const satisfies Record<
   VoteResult,
   {
     label: string;
     Icon: React.ElementType;
-    pill: string;
-    banner: string;
+    badge: string;
     dot: string;
     text: string;
-    ring: string;
   }
 >;
 
-// ─── Intro ────────────────────────────────────────────────────────────────────
+function getColumnChipLines(type: string): [string, string] {
+  switch (type) {
+    case "gobernador":
+      return ["Gobernador y", "Vicegobernador"];
+    case "consejero":
+      return ["Consejero", "Regional"];
+    case "alcalde_provincial":
+      return ["Alcalde", "Provincial"];
+    case "alcalde_distrital":
+      return ["Alcalde", "Distrital"];
+    case "presidente":
+      return ["Presidente y", "Vicepresidente"];
+    case "senador_nacional":
+      return ["Senador", "Nacional"];
+    case "senador_regional":
+      return ["Senador", "Regional"];
+    case "diputado":
+      return ["Cámara de", "Diputados"];
+    case "parlamento_andino":
+      return ["Parlamento", "Andino"];
+    default:
+      return ["Autoridad", "Electoral"];
+  }
+}
 
-function IntroScreen({ onSelect }: { onSelect: (m: SimulatorMode) => void }) {
-  const [showColumns, setShowColumns] = useState(false);
+// ─── Process Selector ─────────────────────────────────────────────────────────
+
+function ProcessSelector({ process }: { process: ElectoralProcess }) {
+  return (
+    <div className="inline-flex p-1 rounded-xl bg-muted/50 border border-border/70 text-xs font-mono flex-wrap gap-1">
+      <button
+        type="button"
+        disabled
+        className="px-3 py-1.5 rounded-lg text-muted-foreground/50 cursor-not-allowed font-medium"
+      >
+        Generales 2026
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "px-3 py-1.5 rounded-lg font-semibold transition-all",
+          process === "regionales_2026"
+            ? "bg-background text-foreground shadow-2xs border border-border/60"
+            : "text-muted-foreground",
+        )}
+      >
+        Regionales y Municipales 2026 (4 Autoridades)
+      </button>
+    </div>
+  );
+}
+
+// ─── Intro Screen ────────────────────────────────────────────────────────────
+
+function IntroScreen({
+  process,
+  onStart,
+}: {
+  process: ElectoralProcess;
+  onStart: () => void;
+}) {
+  const columns =
+    process === "regionales_2026"
+      ? COLUMNS_REGIONALES_2026
+      : COLUMNS_GENERALES_2026;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto min-h-0 gap-6 pb-6 pr-0.5">
-      {/* Brand */}
-      <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-foreground leading-[1.15]">
+    <div className="flex flex-col h-full overflow-y-auto min-h-0 gap-5 pb-6 pr-0.5">
+      {/* Title & Subtitle */}
+      <div className="space-y-1.5">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
           Simulador de Votación
         </h1>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-[300px]">
-          Practica cómo marcar tu cédula antes del día de la elección.
+        <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+          Practica cómo marcar tu cédula para las Elecciones Regionales y
+          Municipales 2026. Aprende cómo funciona el voto cruzado entre
+          autoridades y cómo emitir un voto válido con aspa (✗) o cruz (+).
         </p>
       </div>
 
-      {/* Mode cards */}
-      <div className="flex flex-col gap-2.5">
-        <ModeCard
-          Icon={Pen}
-          label="Modo Libre"
-          desc="Vota en las 5 columnas como quieras y analiza el resultado."
-          onClick={() => onSelect("libre")}
-        />
-        <ModeCard
-          Icon={Crosshair}
-          label="Modo Retos"
-          desc="5 retos guiados para dominar cada tipo de voto."
-          onClick={() => onSelect("retos")}
-        />
+      {/* Proceso Electoral */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
+          Proceso Electoral
+        </p>
+        <ProcessSelector process={process} />
       </div>
 
-      {/* Vote types */}
+      {/* CTA Button (Ubicado inmediatamente después del selector y antes de las autoridades) */}
       <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em] mb-2.5">
-          Tipos de voto
-        </p>
-        <div className="grid grid-cols-2 gap-1.5">
-          {(
-            Object.entries(RESULT_META) as [
-              VoteResult,
-              (typeof RESULT_META)[VoteResult],
-            ][]
-          ).map(([key, meta]) => {
-            const Icon = meta.Icon;
+        <Button
+          onClick={onStart}
+          className="w-full h-12 text-sm font-mono font-bold tracking-wider uppercase bg-foreground text-background hover:bg-foreground/90 shadow-sm flex items-center justify-center gap-2"
+        >
+          <Play className="w-4 h-4 fill-current" />
+          Iniciar
+        </Button>
+      </div>
+
+      {/* Columnas que contiene la cédula */}
+      <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
+            Las 4 autoridades que eliges en la cédula
+          </span>
+          <span className="text-[11px] font-mono text-muted-foreground">
+            Voto independiente
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          {columns.map((col, idx) => {
+            const lines = getColumnChipLines(col.type);
             return (
               <div
-                key={key}
-                className={cn(
-                  "flex items-center gap-2 rounded-xl px-3 py-2",
-                  meta.pill,
-                )}
+                key={col.id}
+                className="p-3 rounded-xl bg-muted/40 border border-border/60 flex items-start gap-3"
               >
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={2} />
-                <span className="text-xs font-semibold">{meta.label}</span>
+                <span className="w-6 h-6 rounded-md bg-foreground text-background font-mono font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  0{idx + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground leading-tight">
+                    {lines[0]} {lines[1]}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-1">
+                    {col.description}
+                  </p>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Columns reference — collapsible */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{
-          boxShadow: "0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05)",
-        }}
-      >
-        <button
-          onClick={() => setShowColumns((v) => !v)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-card text-left"
-        >
-          <div className="flex items-center gap-2.5">
-            <List
-              className="w-3.5 h-3.5 text-muted-foreground"
-              strokeWidth={2}
-            />
-            <span className="text-xs font-semibold text-foreground">
-              Las 5 columnas de la cédula
-            </span>
-          </div>
-          <div
-            className={cn(
-              "w-5 h-5 rounded-full bg-muted flex items-center justify-center transition-transform duration-200",
-              showColumns && "rotate-180",
-            )}
-          >
-            <ChevronRight
-              className="w-3 h-3 text-muted-foreground rotate-90"
-              strokeWidth={2.5}
-            />
-          </div>
-        </button>
-
-        {showColumns && (
-          <div className="px-4 pb-4 bg-card border-t border-border/50 space-y-3 pt-3">
-            {COLUMNS.map((col, i) => (
-              <div key={col.id} className="flex items-start gap-3">
-                <span
-                  className="flex-shrink-0 w-5 h-5 rounded-full text-white text-[9px] font-black flex items-center justify-center mt-0.5"
-                  style={{ backgroundColor: "var(--brand)" }}
-                >
-                  {i + 1}
-                </span>
-                <div>
-                  <p className="text-xs font-semibold text-foreground">
-                    {col.label}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                    {col.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Tip clave del voto cruzado y la intersección */}
+      <div className="p-4 rounded-2xl border border-border/70 bg-muted/20 space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="w-4 h-4 text-amber-500" />
+          <span className="font-mono uppercase font-bold text-foreground text-[11px]">
+            Ten en cuenta antes de empezar
+          </span>
+        </div>
+        <ul className="text-muted-foreground space-y-1.5 leading-relaxed pl-1">
+          <li>
+            • <strong>Voto cruzado:</strong> Puedes marcar por organizaciones
+            distintas en cada una de las 4 columnas. Cada cargo se cuenta de
+            forma independiente.
+          </li>
+          <li>
+            • <strong>Regla del trazo:</strong> El punto donde se cruzan las
+            líneas (del aspa o la cruz) debe quedar dentro del recuadro del
+            símbolo para que el voto sea válido.
+          </li>
+        </ul>
       </div>
-
-      <p className="text-[10px] text-muted-foreground/40 text-center pb-2">
-        Partidos ficticios · Solo educativo · VotaBien Perú
-      </p>
     </div>
   );
 }
 
-function ModeCard({
-  Icon,
-  label,
-  desc,
-  onClick,
+// ─── NavChips Component con Auto-Centrado Inteligente y 2 Líneas ─────────────
+
+function NavChips({
+  columns,
+  activeIndex,
+  allAnalyses,
+  onSelect,
 }: {
-  Icon: React.ElementType;
-  label: string;
-  desc: string;
-  onClick: () => void;
+  columns: ColumnDef[];
+  activeIndex: number;
+  allAnalyses: Record<number, ColumnAnalysis>;
+  onSelect: (index: number) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-centra el chip activo horizontalmente cuando cambia el índice
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const activeChip = containerRef.current.querySelector(
+      `[data-chip-index="${activeIndex}"]`,
+    ) as HTMLElement | null;
+
+    if (activeChip) {
+      activeChip.scrollIntoView({
+        inline: "center",
+        block: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [activeIndex]);
+
   return (
-    <button
-      onClick={onClick}
-      className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-card text-left
-        active:scale-[0.98] transition-all duration-150"
-      style={{
-        boxShadow: "0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)",
-      }}
+    <div
+      ref={containerRef}
+      className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none select-none -mx-1 px-1"
+      style={{ scrollbarWidth: "none" }}
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{
-          backgroundColor: "color-mix(in oklch, var(--brand) 12%, transparent)",
-        }}
-      >
-        <Icon
-          className="w-4.5 h-4.5"
-          style={{ color: "var(--brand)" }}
-          strokeWidth={2}
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-          {desc}
+      {columns.map((col, i) => {
+        const isCurrent = i === activeIndex;
+        const analysis = allAnalyses[i];
+        const meta = analysis?.result ? RESULT_META[analysis.result] : null;
+        const lines = getColumnChipLines(col.type);
+
+        return (
+          <button
+            key={col.id}
+            type="button"
+            data-chip-index={i}
+            onClick={() => onSelect(i)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded-xl border text-left transition-all shrink-0 select-none",
+              isCurrent
+                ? "bg-foreground text-background border-foreground shadow-xs"
+                : "bg-card hover:bg-muted/60 text-muted-foreground border-border/80",
+            )}
+          >
+            <span
+              className={cn(
+                "font-mono text-[11px] font-bold px-1.5 py-0.5 rounded",
+                isCurrent
+                  ? "bg-background/20 text-background"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              0{i + 1}
+            </span>
+            <div className="flex flex-col text-xs leading-tight">
+              <span className="font-medium text-[10px] opacity-75">
+                {lines[0]}
+              </span>
+              <span className="font-bold">{lines[1]}</span>
+            </div>
+            {meta && (
+              <span
+                className={cn("w-2 h-2 rounded-full shrink-0 ml-0.5", meta.dot)}
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Panel de Evaluación del Trazo ───────────────────────────────────────────
+
+function PanelEvaluacion({
+  analysis,
+  col,
+}: {
+  analysis: ColumnAnalysis | null;
+  col: ColumnDef;
+}) {
+  if (!analysis || analysis.result === "blank") {
+    return (
+      <div className="p-4 rounded-2xl border border-border/80 bg-card shadow-2xs space-y-2">
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60">
+          <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
+            Resultado de tu trazo
+          </span>
+          <span className="text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded border -rotate-1 shadow-2xs text-muted-foreground bg-muted/60 border-border/70">
+            En blanco
+          </span>
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          Dibuja una cruz (+) o un aspa (✗) dentro del recuadro del símbolo de
+          tu preferencia.
         </p>
       </div>
-      <ArrowRight
-        className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 group-active:translate-x-0.5 transition-transform"
-        strokeWidth={2}
-      />
-    </button>
+    );
+  }
+
+  const meta = RESULT_META[analysis.result];
+  const isInterInside = analysis.isIntersectionInsideBox;
+  const hasInter = analysis.intersectionPoint !== undefined;
+
+  return (
+    <div className="p-4 rounded-2xl border border-border/80 bg-card shadow-2xs space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 pb-2.5 border-b border-border/60">
+        <span className="text-xs font-mono uppercase tracking-widest font-bold text-muted-foreground">
+          Resultado de tu trazo
+        </span>
+        <span
+          className={cn(
+            "text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded border -rotate-1 shadow-2xs",
+            meta.badge,
+          )}
+        >
+          {meta.label}
+        </span>
+      </div>
+
+      {/* Explicación en lenguaje sencillo */}
+      <div className="space-y-1.5">
+        <p className="text-sm font-semibold text-foreground leading-snug">
+          {analysis.submessage || analysis.message}
+        </p>
+
+        {analysis.hint && (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {analysis.hint}
+          </p>
+        )}
+      </div>
+
+      {/* Detalle visual de la intersección */}
+      {hasInter && (
+        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "w-2.5 h-2.5 rounded-full shrink-0",
+                isInterInside ? "bg-emerald-500" : "bg-destructive",
+              )}
+            />
+            <span className="font-medium text-foreground">
+              Punto de cruce del trazo:
+            </span>
+          </div>
+          <span
+            className={cn(
+              "font-mono font-bold text-[11px]",
+              isInterInside
+                ? "text-emerald-700 dark:text-emerald-400"
+                : "text-destructive",
+            )}
+          >
+            {isInterInside ? "Adentro (Válido)" : "Afuera (Nulo)"}
+          </span>
+        </div>
+      )}
+
+      {/* Detalle preferencial si aplica */}
+      {col.type !== "presidente" &&
+        analysis.result === "valid" &&
+        analysis.preferentialStatus &&
+        col.prefBoxCount > 0 && (
+          <div className="pt-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-md border",
+                analysis.preferentialStatus === "written"
+                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900"
+                  : "bg-muted text-muted-foreground border-border/60",
+              )}
+            >
+              <span>Voto Preferencial:</span>
+              <strong>
+                {analysis.preferentialStatus === "written"
+                  ? "Registrado ✓"
+                  : "No utilizado"}
+              </strong>
+            </span>
+          </div>
+        )}
+    </div>
   );
 }
 
 // ─── Voting Screen ────────────────────────────────────────────────────────────
 
 function VotingScreen({
-  mode,
+  process,
   colIndex,
   allStrokes,
   allAnalyses,
+  onSelectCol,
   onUpdate,
   onNext,
   onBack,
   onHome,
 }: {
-  mode: SimulatorMode;
+  process: ElectoralProcess;
   colIndex: number;
   allStrokes: Record<number, Point[][]>;
   allAnalyses: Record<number, ColumnAnalysis>;
+  onSelectCol: (i: number) => void;
   onUpdate: (strokes: Point[][], analysis: ColumnAnalysis) => void;
   onNext: () => void;
   onBack: () => void;
   onHome: () => void;
 }) {
-  const col = COLUMNS[colIndex];
+  const columns =
+    process === "regionales_2026"
+      ? COLUMNS_REGIONALES_2026
+      : COLUMNS_GENERALES_2026;
+
+  const col = columns[colIndex];
   const analysis = allAnalyses[colIndex] ?? null;
   const saved = allStrokes[colIndex] ?? [];
   const canvasRef = useRef<BallotCanvasRef>(null);
-  const [showTip, setShowTip] = useState(false);
-
-  const challenge = mode === "retos" ? CHALLENGES[colIndex] : null;
-  const emptyAnalysis: ColumnAnalysis = {
-    result: "blank",
-    feedbackType: "blank",
-    boxAnalyses: [],
-    hasOutOfBoxStrokes: false,
-    message: "",
-  };
-  const challengeDone = challenge
-    ? challenge.checkPassed(analysis ?? emptyAnalysis)
-    : true;
-  const canProceed = mode === "libre" || challengeDone;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ── Progress + header ── */}
-      <div className="flex-shrink-0 mb-3">
-        {/* Progress row: home button + dots + counter */}
-        <div className="flex items-center gap-2 mb-3">
-          {/* Home button */}
+    <div className="flex flex-col h-full overflow-hidden min-h-0">
+      {/* ── Barra Superior: Salir + Contador + Limpiar trazo ── */}
+      <div className="flex-shrink-0 space-y-2.5 pb-2.5 border-b border-border/60">
+        <div className="flex items-center justify-between gap-3">
           <Button
+            variant="ghost"
+            size="sm"
             onClick={onHome}
-            className="bg-brand"
-            aria-label="Volver al inicio"
+            className="text-xs font-mono text-muted-foreground hover:text-foreground h-8 px-2"
           >
-            <ChevronLeft className="w-3.5 h-3.5" strokeWidth={2} />
-            Salir
+            <ChevronLeft className="w-3.5 h-3.5 mr-1" />
+            Salir al menú
           </Button>
 
-          {/* Dots */}
-          <div className="flex items-center gap-1.5 flex-1">
-            {COLUMNS.map((_, i) => {
-              const r = allAnalyses[i]?.result as VoteResult | undefined;
-              const meta = r ? RESULT_META[r] : null;
-              const isCurrent = i === colIndex;
-              const isDone = i < colIndex;
-
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "rounded-full transition-all duration-300",
-                    isCurrent ? "w-6 h-1.5" : "w-1.5 h-1.5",
-                    isCurrent
-                      ? "opacity-100"
-                      : isDone && meta
-                        ? `${meta.dot} opacity-100`
-                        : "bg-border opacity-100",
-                  )}
-                  style={
-                    isCurrent ? { backgroundColor: "var(--brand)" } : undefined
-                  }
-                />
-              );
-            })}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-muted-foreground">
+              Columna {colIndex + 1} de {columns.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                canvasRef.current?.clear();
+              }}
+              className="text-xs font-mono h-8 px-2.5"
+            >
+              <RotateCcw className="w-3 h-3 mr-1.5" />
+              Limpiar
+            </Button>
           </div>
-
-          {/* Counter */}
-          <span className="text-[11px] text-muted-foreground font-medium flex-shrink-0">
-            {colIndex + 1} / {COLUMNS.length}
-          </span>
         </div>
 
-        {/* Column title + clear */}
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">
-              {mode === "retos" ? `Reto ${colIndex + 1}` : "Columna"}
-            </p>
-            <h2 className="text-lg font-bold text-foreground leading-tight mt-0.5">
-              {col.label}
-              <span className="text-sm font-normal text-muted-foreground ml-1.5">
-                {col.sublabel}
-              </span>
-            </h2>
+        {/* Chips Inteligentes de 2 Líneas con Auto-Centrado */}
+        <NavChips
+          columns={columns}
+          activeIndex={colIndex}
+          allAnalyses={allAnalyses}
+          onSelect={onSelectCol}
+        />
+      </div>
+
+      {/* ── Cédula & Evaluación (Responsive Grid) ── */}
+      <div className="flex-1 overflow-y-auto min-h-0 py-3 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+          {/* Cédula Canvas Container (Borde Único) */}
+          <div className="md:col-span-7 flex justify-center">
+            <div className="rounded-xl overflow-hidden border border-border/80 shadow-xs w-full max-w-[340px] bg-card">
+              <BallotCanvas
+                ref={canvasRef}
+                col={col}
+                savedStrokes={saved}
+                onUpdate={onUpdate}
+              />
+            </div>
           </div>
+
+          {/* Panel de Evaluación & Ficha del Cargo */}
+          <div className="md:col-span-5 space-y-3">
+            <PanelEvaluacion analysis={analysis} col={col} />
+
+            {/* Ficha del cargo */}
+            <div className="p-3.5 rounded-2xl border border-border/70 bg-muted/20 space-y-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
+                <span className="font-mono uppercase font-bold text-muted-foreground text-[10px]">
+                  Cargo a elegir
+                </span>
+              </div>
+              <p className="font-bold text-foreground text-sm">{col.label}</p>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                {col.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Barra de Navegación Inferior (Sticky al fondo) ── */}
+      <div className="flex-shrink-0 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border/60 flex items-center gap-2 bg-background">
+        {colIndex > 0 && (
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => {
-              canvasRef.current?.clear();
-              setShowTip(false);
-            }}
-            className="flex items-center gap-1.5 flex-shrink-0 mt-1"
-          >
-            <RotateCcw className="w-3 h-3" strokeWidth={2.5} />
-            Borrar
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Scrollable area: challenge banner + tip + canvas + feedback ── */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-3 pb-1">
-        {/* Challenge banner */}
-        {challenge && (
-          <div
-            className={cn(
-              "flex-shrink-0 rounded-2xl px-4 py-3 flex items-start gap-3 transition-all duration-300",
-              challengeDone
-                ? "bg-emerald-50 dark:bg-emerald-950/40"
-                : "bg-muted/50",
-            )}
-          >
-            <div
-              className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                challengeDone
-                  ? "bg-emerald-100 dark:bg-emerald-900/60"
-                  : "bg-muted",
-              )}
-            >
-              {challengeDone ? (
-                <Check
-                  className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"
-                  strokeWidth={3}
-                />
-              ) : (
-                <Crosshair
-                  className="w-3.5 h-3.5 text-muted-foreground"
-                  strokeWidth={2}
-                />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "text-xs font-semibold",
-                  challengeDone
-                    ? "text-emerald-800 dark:text-emerald-300"
-                    : "text-foreground",
-                )}
-              >
-                {challengeDone ? "¡Reto completado!" : challenge.title}
-              </p>
-              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-                {challengeDone
-                  ? 'Pulsa "Siguiente" para continuar.'
-                  : challenge.instruction}
-              </p>
-            </div>
-            {!challengeDone && (
-              <button
-                onClick={() => setShowTip((t) => !t)}
-                className={cn(
-                  "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors",
-                  showTip ? "bg-amber-100 dark:bg-amber-900/40" : "bg-muted",
-                )}
-              >
-                <Lightbulb
-                  className={cn(
-                    "w-3 h-3",
-                    showTip
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-muted-foreground",
-                  )}
-                  strokeWidth={2}
-                />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Tip */}
-        {showTip && challenge && !challengeDone && (
-          <div className="flex-shrink-0 rounded-2xl bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-3">
-            <Lightbulb
-              className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5"
-              strokeWidth={2}
-            />
-            <p className="text-xs text-amber-800 dark:text-amber-300 leading-snug">
-              {challenge.tip}
-            </p>
-          </div>
-        )}
-
-        {/* Canvas */}
-        <div
-          className="flex-shrink-0 rounded-2xl overflow-hidden bg-card"
-          style={{
-            boxShadow: "0 2px 20px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
-          }}
-        >
-          <BallotCanvas
-            ref={canvasRef}
-            col={col}
-            savedStrokes={saved}
-            onUpdate={onUpdate}
-          />
-        </div>
-
-        {/* Feedback */}
-        <div className="flex-shrink-0 min-h-[52px]">
-          {analysis ? (
-            <FeedbackPanel analysis={analysis} col={col} />
-          ) : (
-            <EmptyHint col={col} />
-          )}
-        </div>
-      </div>
-
-      {/* ── Navigation — always visible, never scrolls ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 pt-3">
-        {colIndex > 0 && (
-          <button
             onClick={onBack}
-            className="w-11 h-11 rounded-xl bg-muted/60 flex items-center justify-center
-              text-muted-foreground hover:bg-muted transition-colors active:scale-[0.96]"
+            className="h-11 px-4 text-xs font-mono"
           >
-            <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
-          </button>
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Anterior
+          </Button>
         )}
-        <button
+
+        <Button
           onClick={onNext}
-          disabled={!canProceed}
-          className={cn(
-            "flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5",
-            "transition-all duration-150 active:scale-[0.98]",
-            canProceed
-              ? "text-white shadow-sm"
-              : "bg-muted text-muted-foreground cursor-not-allowed",
-          )}
-          style={canProceed ? { backgroundColor: "var(--brand)" } : undefined}
+          className="flex-1 h-11 text-xs font-mono font-bold tracking-wider uppercase bg-foreground text-background hover:bg-foreground/90 shadow-xs"
         >
-          {colIndex < COLUMNS.length - 1 ? (
+          {colIndex < columns.length - 1 ? (
             <>
-              Siguiente
-              <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+              Siguiente Columna
+              <ChevronRight className="w-4 h-4 ml-1" />
             </>
           ) : (
             <>
-              Ver mi cédula
-              <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
+              Ver mi resultado
+              <ArrowRight className="w-4 h-4 ml-1" />
             </>
           )}
-        </button>
+        </Button>
       </div>
-    </div>
-  );
-}
-
-// ─── Feedback Panel ───────────────────────────────────────────────────────────
-
-function FeedbackPanel({
-  analysis,
-  col,
-}: {
-  analysis: ColumnAnalysis;
-  col: (typeof COLUMNS)[0];
-}) {
-  const meta = RESULT_META[analysis.result];
-  const Icon = meta.Icon;
-
-  return (
-    <div
-      className={cn(
-        "rounded-2xl px-4 py-3 transition-all duration-300",
-        meta.banner,
-      )}
-    >
-      <div className="flex items-start gap-2.5">
-        <Icon
-          className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
-          strokeWidth={2}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className={cn("text-xs font-bold", meta.text)}>
-              {meta.label}
-            </span>
-            {analysis.submessage && (
-              <span className="text-xs text-muted-foreground">
-                {analysis.submessage}
-              </span>
-            )}
-          </div>
-
-          {analysis.hint && (
-            <p className="text-[11px] text-muted-foreground leading-snug mt-1.5">
-              {analysis.hint}
-            </p>
-          )}
-
-          {col.type !== "presidente" &&
-            analysis.result === "valid" &&
-            analysis.preferentialStatus && (
-              <span
-                className={cn(
-                  "inline-block mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                  analysis.preferentialStatus === "written"
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {analysis.preferentialStatus === "written"
-                  ? "Con preferencial"
-                  : "Sin preferencial"}
-              </span>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EmptyHint({ col }: { col: (typeof COLUMNS)[0] }) {
-  const hint =
-    col.type === "presidente"
-      ? "Marca el logo o la foto del candidato con aspa (✗) o cruz (+)."
-      : col.type === "senador_nacional"
-        ? "Marca el logo. Opcionalmente escribe el número de candidato en cada recuadro."
-        : col.prefBoxCount > 0
-          ? "Marca el logo. Opcionalmente escribe el número del candidato."
-          : "Marca el logo del partido con aspa (✗) o cruz (+).";
-
-  return (
-    <div className="flex items-start gap-2.5 px-1 py-2">
-      <Minus
-        className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0 mt-0.5"
-        strokeWidth={2}
-      />
-      <p className="text-[11px] text-muted-foreground/50 leading-snug">
-        {hint}
-      </p>
     </div>
   );
 }
 
 // ─── Result Summary ───────────────────────────────────────────────────────────
+
 function ResultSummary({
+  process,
   allAnalyses,
   onRestart,
-  mode,
 }: {
+  process: ElectoralProcess;
   allAnalyses: Record<number, ColumnAnalysis>;
   onRestart: () => void;
-  mode: SimulatorMode;
 }) {
-  const results = COLUMNS.map(
+  const columns =
+    process === "regionales_2026"
+      ? COLUMNS_REGIONALES_2026
+      : COLUMNS_GENERALES_2026;
+
+  const results = columns.map(
     (_, i) => allAnalyses[i]?.result ?? "blank",
   ) as VoteResult[];
   const counts = { valid: 0, null: 0, blank: 0, viciado: 0 };
   results.forEach((r) => counts[r]++);
-  const allValid = counts.valid === COLUMNS.length;
-
-  // ── Retos: evaluar cuáles retos se superaron ──────────────────────────────
-  const emptyAnalysis: ColumnAnalysis = {
-    result: "blank",
-    feedbackType: "blank",
-    boxAnalyses: [],
-    hasOutOfBoxStrokes: false,
-    message: "",
-  };
-
-  const retoPassed = CHALLENGES.map((ch, i) =>
-    ch.checkPassed(allAnalyses[i] ?? emptyAnalysis),
-  );
-  const retosCount = retoPassed.filter(Boolean).length;
-  const allPassed = mode === "retos" && retosCount === CHALLENGES.length;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ── Scrollable content ── */}
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-4 pb-4">
-        {/* ── Header — distinto según modo ── */}
-        {mode === "retos" ? (
-          <div
-            className={cn(
-              "rounded-2xl px-4 py-4 flex items-start gap-3.5",
-              allPassed
-                ? "bg-emerald-50 dark:bg-emerald-950/40"
-                : "bg-amber-50 dark:bg-amber-950/30",
-            )}
-          >
-            <div
-              className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl",
-                allPassed
-                  ? "bg-emerald-100 dark:bg-emerald-900/60"
-                  : "bg-amber-100 dark:bg-amber-900/40",
-              )}
-            >
-              {allPassed ? "🏆" : "📋"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-bold text-foreground leading-tight">
-                {allPassed
-                  ? "¡Completaste todos los retos!"
-                  : retosCount > 0
-                    ? `Superaste ${retosCount} de ${CHALLENGES.length} retos`
-                    : "Modo Retos completado"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 leading-snug">
-                {allPassed
-                  ? "Dominaste los 5 escenarios electorales. Estás listo para el día de la votación."
-                  : "Revisa qué retos no superaste y vuelve a intentarlo."}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              {allValid ? (
-                <Trophy className="w-5 h-5 text-amber-500" strokeWidth={2} />
-              ) : (
-                <CheckCircle2
-                  className="w-5 h-5 text-muted-foreground"
-                  strokeWidth={2}
-                />
-              )}
-              <h2 className="text-xl font-bold text-foreground">
-                {allValid ? "¡Cédula perfecta!" : "Resumen de tu cédula"}
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Así quedaría registrada tu votación.
-            </p>
-          </div>
-        )}
+    <div className="flex flex-col h-full overflow-hidden min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-5 pb-4">
+        {/* Header */}
+        <div className="space-y-1.5">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+            Resultado
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            Revisa el estado de cada columna. Cada autoridad es independiente,
+            por lo que tus votos válidos se cuentan aunque hayas dejado otra
+            columna en blanco o anulada.
+          </p>
+        </div>
 
-        {/* ── Filas por columna ── */}
-        <div className="flex flex-col gap-1.5">
-          {COLUMNS.map((col, i) => {
-            const r = results[i];
+        {/* Resumen Bento Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {(Object.entries(counts) as [VoteResult, number][]).map(([r, n]) => {
             const meta = RESULT_META[r];
             const Icon = meta.Icon;
-            const a = allAnalyses[i];
-            const challenge = CHALLENGES[i];
-            const passed = retoPassed[i];
-
             return (
               <div
-                key={col.id}
-                className="rounded-2xl px-4 py-3 bg-card"
-                style={{
-                  boxShadow:
-                    "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-                }}
+                key={r}
+                className="p-3.5 rounded-2xl bg-card border border-border/80 shadow-2xs flex flex-col items-center justify-center space-y-1"
               >
-                {/* Título del reto (solo en modo retos) */}
-                {mode === "retos" && challenge && (
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={cn(
-                        "flex-shrink-0 text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-full",
-                        passed
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
-                          : "bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400",
-                      )}
-                    >
-                      {passed ? "✓ Superado" : "✗ No superado"}
-                    </span>
-                    <p className="text-[11px] text-muted-foreground leading-tight truncate">
-                      {challenge.title}
-                    </p>
-                  </div>
-                )}
-
-                {/* Resultado de la columna */}
-                <div className="flex items-start gap-3">
-                  <Icon
-                    className={cn("w-4 h-4 flex-shrink-0 mt-0.5", meta.text)}
-                    strokeWidth={2}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-1.5 flex-wrap">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider",
-                          meta.text,
-                        )}
-                      >
-                        {meta.label}
-                      </span>
-                      <span className="text-xs font-semibold text-foreground truncate">
-                        {col.label}
-                      </span>
-                    </div>
-                    {a?.submessage && (
-                      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                        {a.submessage}
-                      </p>
-                    )}
-                    {r === "valid" &&
-                      a?.preferentialStatus === "written" &&
-                      col.type !== "presidente" && (
-                        <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
-                          Con preferencial
-                        </span>
-                      )}
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  <Icon className={cn("w-3.5 h-3.5", meta.text)} />
+                  <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-muted-foreground">
+                    {meta.label}
+                  </span>
                 </div>
+                <span className="text-2xl font-black font-mono tabular-nums text-foreground">
+                  {n}
+                </span>
               </div>
             );
           })}
         </div>
 
-        {/* ── Stats (solo en modo libre) ── */}
-        {mode === "libre" && (
-          <div className="grid grid-cols-4 gap-1.5">
-            {(Object.entries(counts) as [VoteResult, number][]).map(
-              ([r, n]) => {
-                const meta = RESULT_META[r];
-                const Icon = meta.Icon;
-                return (
-                  <div
-                    key={r}
-                    className="rounded-2xl bg-card flex flex-col items-center justify-center py-3 gap-1"
-                    style={{
-                      boxShadow:
-                        "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-                    }}
-                  >
-                    <Icon
-                      className={cn("w-3.5 h-3.5", meta.text)}
-                      strokeWidth={2}
-                    />
-                    <p className="text-[22px] font-black leading-none text-foreground">
-                      {n}
-                    </p>
-                    <p
+        {/* Desglose por Autoridad (Borde Único) */}
+        <div className="divide-y divide-border/60 rounded-xl overflow-hidden bg-card border border-border/80 shadow-xs">
+          {columns.map((col, i) => {
+            const r = results[i];
+            const meta = RESULT_META[r];
+            const a = allAnalyses[i];
+            const lines = getColumnChipLines(col.type);
+
+            return (
+              <div
+                key={col.id}
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-muted text-foreground font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
+                      0{i + 1}
+                    </span>
+                    <h4 className="text-sm font-bold text-foreground">
+                      {lines[0]} {lines[1]}
+                    </h4>
+                    <span
                       className={cn(
-                        "text-[9px] font-bold tracking-wider uppercase",
-                        meta.text,
+                        "px-2 py-0.5 rounded border text-[10px] font-mono font-black uppercase tracking-wider -rotate-1 shadow-2xs",
+                        meta.badge,
                       )}
                     >
                       {meta.label}
-                    </p>
+                    </span>
                   </div>
-                );
-              },
-            )}
-          </div>
-        )}
 
-        {/* ── Tips ── */}
-        <div
-          className="rounded-2xl bg-card px-4 py-4"
-          style={{
-            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-          }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-            <p className="text-xs font-semibold text-foreground">
-              Para el día de la votación
-            </p>
-          </div>
-          <div className="space-y-2">
-            {[
-              "Solo aspa (✗) o cruz (+) en el logo o foto del candidato.",
-              "Los trazos deben cruzarse dentro del recuadro.",
-              "Un solo partido por columna — marcar dos vicia el voto.",
-              "Recuadros preferenciales: escribe el número, nunca una aspa.",
-              "Escribir solo el número preferencial también cuenta como voto válido.",
-              "Cada columna es independiente — un nulo no afecta a las demás.",
-            ].map((t, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0 mt-1.5" />
-                <p className="text-xs text-muted-foreground leading-snug">
-                  {t}
-                </p>
+                  {a?.submessage && (
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-7">
+                      {a.submessage}
+                    </p>
+                  )}
+                </div>
+
+                {a?.isIntersectionInsideBox !== undefined && (
+                  <div className="text-xs font-mono text-muted-foreground shrink-0 pl-7 sm:pl-0">
+                    Punto de cruce:{" "}
+                    <strong
+                      className={
+                        a.isIntersectionInsideBox
+                          ? "text-emerald-600"
+                          : "text-destructive"
+                      }
+                    >
+                      {a.isIntersectionInsideBox
+                        ? "Adentro (Válido)"
+                        : "Afuera (Nulo)"}
+                    </strong>
+                  </div>
+                )}
               </div>
-            ))}
+            );
+          })}
+        </div>
+
+        {/* Recordatorios Importantes */}
+        <div className="p-4 rounded-2xl border border-border/80 bg-card shadow-2xs space-y-2.5">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-mono uppercase tracking-widest font-bold text-foreground">
+              Puntos clave para el día de la elección
+            </span>
           </div>
+          <ul className="text-xs text-muted-foreground space-y-1.5 leading-relaxed">
+            <li>
+              • <strong>Intersección del trazo:</strong> Lo que define si tu
+              voto es válido es que el cruce de las dos líneas esté dentro del
+              recuadro del símbolo. Si las puntas salen un poco del recuadro
+              pero el centro está adentro, el voto se cuenta como válido.
+            </li>
+            <li>
+              • <strong>Voto cruzado:</strong> No es obligatorio votar por el
+              mismo partido en toda la cédula. Puedes elegir opciones distintas
+              para cada autoridad regional y municipal.
+            </li>
+            <li>
+              • <strong>Marcas válidas:</strong> Únicamente el aspa (✗) o la
+              cruz (+) son válidas. No firmes ni escribas palabras en la cédula.
+            </li>
+          </ul>
         </div>
       </div>
 
-      {/* ── Botón sticky ── */}
-      <div className="flex-shrink-0 pt-3">
-        <button
+      {/* Botón Inferior */}
+      <div className="flex-shrink-0 pt-3 pb-28 lg:pb-3 border-t border-border/60 bg-background">
+        <Button
           onClick={onRestart}
-          className="w-full h-11 rounded-xl text-white text-sm font-semibold
-            flex items-center justify-center gap-2 shadow-sm
-            active:scale-[0.98] transition-all duration-150"
-          style={{ backgroundColor: "var(--brand)" }}
+          className="w-full h-11 text-xs font-mono font-bold uppercase tracking-wider bg-foreground text-background hover:bg-foreground/90 shadow-xs"
         >
-          <RotateCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
-          Volver a simular
-        </button>
+          <RotateCcw className="w-3.5 h-3.5 mr-2" />
+          Volver a practicar
+        </Button>
       </div>
     </div>
   );
 }
-// ─── Orchestrator ─────────────────────────────────────────────────────────────
+
+// ─── Main Orchestrator ────────────────────────────────────────────────────────
 
 export default function SimuladorView() {
+  const [process] = useState<ElectoralProcess>("regionales_2026");
   const [phase, setPhase] = useState<SimulatorPhase>("intro");
-  const [mode, setMode] = useState<SimulatorMode>("libre");
   const [colIndex, setColIndex] = useState(0);
   const [allStrokes, setAllStrokes] = useState<Record<number, Point[][]>>({});
   const [allAnalyses, setAllAnalyses] = useState<
     Record<number, ColumnAnalysis>
   >({});
+
+  const columns = COLUMNS_REGIONALES_2026;
+
+  // Ocultar barra de navegación inferior móvil únicamente durante la votación
+  useEffect(() => {
+    if (phase === "voting") {
+      document.documentElement.classList.add("hide-mobile-bottom-nav");
+    } else {
+      document.documentElement.classList.remove("hide-mobile-bottom-nav");
+    }
+    return () => {
+      document.documentElement.classList.remove("hide-mobile-bottom-nav");
+    };
+  }, [phase]);
 
   const handleUpdate = useCallback(
     (strokes: Point[][], analysis: ColumnAnalysis) => {
@@ -903,21 +790,25 @@ export default function SimuladorView() {
   );
 
   const handleNext = useCallback(() => {
-    if (colIndex < COLUMNS.length - 1) setColIndex((i) => i + 1);
-    else setPhase("result");
-  }, [colIndex]);
+    if (colIndex < columns.length - 1) {
+      setColIndex((i) => i + 1);
+    } else {
+      setPhase("result");
+    }
+  }, [colIndex, columns.length]);
 
-  const handleBack = useCallback(
-    () => setColIndex((i) => Math.max(0, i - 1)),
-    [],
-  );
+  const handleBack = useCallback(() => {
+    setColIndex((i) => Math.max(0, i - 1));
+  }, []);
 
-  const handleStart = useCallback((m: SimulatorMode) => {
-    setMode(m);
+  const handleSelectCol = useCallback((i: number) => {
+    setColIndex(i);
+  }, []);
+
+  const handleStart = useCallback(() => {
     setPhase("voting");
   }, []);
 
-  // Resets everything and goes back to intro
   const handleHome = useCallback(() => {
     setPhase("intro");
     setColIndex(0);
@@ -932,22 +823,27 @@ export default function SimuladorView() {
     setAllAnalyses({});
   }, []);
 
-  if (phase === "intro") return <IntroScreen onSelect={handleStart} />;
-  if (phase === "result")
+  if (phase === "intro") {
+    return <IntroScreen process={process} onStart={handleStart} />;
+  }
+
+  if (phase === "result") {
     return (
       <ResultSummary
+        process={process}
         allAnalyses={allAnalyses}
         onRestart={handleRestart}
-        mode={mode}
       />
     );
+  }
 
   return (
     <VotingScreen
-      mode={mode}
+      process={process}
       colIndex={colIndex}
       allStrokes={allStrokes}
       allAnalyses={allAnalyses}
+      onSelectCol={handleSelectCol}
       onUpdate={handleUpdate}
       onNext={handleNext}
       onBack={handleBack}

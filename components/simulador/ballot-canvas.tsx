@@ -14,6 +14,7 @@ import type {
   ColumnDef,
   PartySymbol,
   CandidateGender,
+  PartyDef,
 } from "@/interfaces/simulator";
 import { L, PARTIES } from "@/constants/challenge";
 import { analyzeColumn } from "@/lib/stroke-analyzer";
@@ -166,13 +167,19 @@ function computeBoxes(col: ColumnDef): BoxBounds[] {
         h: bH,
       });
     } else {
+      // ERM 2026: Símbolo a la derecha, nombre a la izquierda
+      const ermBY = rY + ROW_PAD;
+      const ermBH = L.ROW_H - ROW_PAD * 2;
+      const boxSize = Math.min(ermBH, Math.floor(usableW * 0.36));
+      const boxX = startX + usableW - boxSize;
+      const boxY = ermBY + Math.floor((ermBH - boxSize) / 2);
       boxes.push({
         partyIdx: i,
         role: "logo",
-        x: startX,
-        y: bY,
-        w: usableW,
-        h: bH,
+        x: boxX,
+        y: boxY,
+        w: boxSize,
+        h: boxSize,
       });
     }
   }
@@ -214,7 +221,162 @@ function drawPartySymbol(
 ) {
   ctx.save();
 
-  if (symbol === "saw") {
+  if (symbol === "sun") {
+    // Sol radiante (Amanecer de Nuevo)
+    const r = size * 0.22;
+    ctx.fillStyle = "#f59e0b";
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = size * 0.05;
+    ctx.lineCap = "round";
+    const rays = 8;
+    for (let i = 0; i < rays; i++) {
+      const angle = (i * Math.PI * 2) / rays;
+      const x1 = cx + Math.cos(angle) * (r * 1.35);
+      const y1 = cy + Math.sin(angle) * (r * 1.35);
+      const x2 = cx + Math.cos(angle) * (r * 1.85);
+      const y2 = cy + Math.sin(angle) * (r * 1.85);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  } else if (symbol === "tree") {
+    // Árbol ecológico (Cuidemos el Planeta)
+    const trunkW = size * 0.12;
+    const trunkH = size * 0.32;
+    ctx.fillStyle = "#92400e";
+    ctx.fillRect(cx - trunkW / 2, cy + size * 0.05, trunkW, trunkH);
+
+    ctx.fillStyle = "#15803d";
+    ctx.beginPath();
+    ctx.arc(cx, cy - size * 0.14, size * 0.24, 0, Math.PI * 2);
+    ctx.arc(cx - size * 0.15, cy - size * 0.02, size * 0.18, 0, Math.PI * 2);
+    ctx.arc(cx + size * 0.15, cy - size * 0.02, size * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (symbol === "umbrella") {
+    // Paraguas
+    ctx.fillStyle = "#4f46e5";
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.32, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = size * 0.04;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy + size * 0.28);
+    ctx.arc(cx - size * 0.06, cy + size * 0.28, size * 0.06, 0, Math.PI);
+    ctx.stroke();
+  } else if (symbol === "water_drop") {
+    // Gota de lluvia (Gotas de Lluvia)
+    ctx.fillStyle = "#0284c7";
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size * 0.32);
+    ctx.bezierCurveTo(
+      cx + size * 0.28,
+      cy + size * 0.08,
+      cx + size * 0.22,
+      cy + size * 0.32,
+      cx,
+      cy + size * 0.32,
+    );
+    ctx.bezierCurveTo(
+      cx - size * 0.22,
+      cy + size * 0.32,
+      cx - size * 0.28,
+      cy + size * 0.08,
+      cx,
+      cy - size * 0.32,
+    );
+    ctx.fill();
+  } else if (symbol === "dice") {
+    // Dado (Los Campeones)
+    const dSize = size * 0.52;
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = size * 0.035;
+    rr(ctx, cx - dSize / 2, cy - dSize / 2, dSize, dSize, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#0f172a";
+    const dotR = size * 0.045;
+    const offset = dSize * 0.25;
+    const dots = [
+      [cx, cy],
+      [cx - offset, cy - offset],
+      [cx + offset, cy - offset],
+      [cx - offset, cy + offset],
+      [cx + offset, cy + offset],
+    ];
+    for (const [dx, dy] of dots) {
+      ctx.beginPath();
+      ctx.arc(dx, dy, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (symbol === "briefcase") {
+    // Maletín
+    const bW = size * 0.55;
+    const bH = size * 0.38;
+    ctx.fillStyle = "#78350f";
+    rr(ctx, cx - bW / 2, cy - bH / 2 + size * 0.05, bW, bH, 4);
+    ctx.fill();
+
+    ctx.strokeStyle = "#451a03";
+    ctx.lineWidth = size * 0.04;
+    ctx.beginPath();
+    ctx.moveTo(cx - size * 0.12, cy - bH / 2 + size * 0.05);
+    ctx.lineTo(cx - size * 0.12, cy - bH / 2 - size * 0.04);
+    ctx.lineTo(cx + size * 0.12, cy - bH / 2 - size * 0.04);
+    ctx.lineTo(cx + size * 0.12, cy - bH / 2 + size * 0.05);
+    ctx.stroke();
+  } else if (symbol === "star") {
+    // Estrella
+    ctx.fillStyle = "#eab308";
+    ctx.beginPath();
+    const spikes = 5;
+    const outerR = size * 0.32;
+    const innerR = size * 0.14;
+    for (let i = 0; i < spikes * 2; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const angle = (i * Math.PI) / spikes - Math.PI / 2;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  } else if (symbol === "heart") {
+    // Corazón
+    ctx.fillStyle = "#e11d48";
+    ctx.beginPath();
+    const topCurveH = size * 0.2;
+    ctx.moveTo(cx, cy + size * 0.28);
+    ctx.bezierCurveTo(
+      cx - size * 0.34,
+      cy + size * 0.04,
+      cx - size * 0.34,
+      cy - topCurveH,
+      cx,
+      cy - topCurveH + size * 0.1,
+    );
+    ctx.bezierCurveTo(
+      cx + size * 0.34,
+      cy - topCurveH,
+      cx + size * 0.34,
+      cy + size * 0.04,
+      cx,
+      cy + size * 0.28,
+    );
+    ctx.fill();
+  } else if (symbol === "saw") {
     const w = size * 0.7,
       h = size * 0.55;
     const x0 = cx - w / 2,
@@ -355,7 +517,6 @@ function drawCandidateSilhouette(
 
 // ─── Wrap text ────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -414,21 +575,16 @@ function drawBallot(
     drawRow(ctx, col, boxes, analysis, i);
 
   // Footer
-  ctx.fillStyle = C.textLt;
-  ctx.font = "9px Arial, sans-serif";
+  ctx.fillStyle = C.textMd;
+  ctx.font = "10px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(
-    "Simulador educativo — partidos ficticios - VotaBien Perú",
+    "Simulador educativo — VotaBien Perú",
     W / 2,
     H - L.FOOTER_H / 2,
   );
   ctx.textBaseline = "alphabetic";
-
-  ctx.strokeStyle = C.border;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([]);
-  ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
 
   ctx.restore();
 }
@@ -436,29 +592,51 @@ function drawBallot(
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 function drawHeader(ctx: CanvasRenderingContext2D, col: ColumnDef, W: number) {
-  ctx.fillStyle = C.red;
+  const isErm = col.prefBoxCount === 0 && !col.allowPhotoMark;
+
+  // Header background: dark slate/charcoal for authentic cédula, or red for Generales
+  ctx.fillStyle = isErm ? "#1f2937" : C.red;
   ctx.fillRect(0, 0, W, L.HEADER_H);
 
-  ctx.fillStyle = "rgba(255,255,255,0.10)";
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fillRect(0, 0, 4, L.HEADER_H);
   ctx.fillRect(W - 4, 0, 4, L.HEADER_H);
 
   ctx.textAlign = "center";
 
-  // ↑ Bigger instruction text
-  ctx.font = "9.5px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.60)";
-  ctx.fillText("Marque con aspa (✗) o cruz (+) dentro del recuadro", W / 2, 10);
+  // Instruction text — fits comfortably
+  ctx.font = "bold 8.5px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText(
+    isErm
+      ? "MARQUE CON CRUZ (+) O ASPA (✗) DENTRO DEL RECUADRO"
+      : "Marque con aspa (✗) o cruz (+) dentro del recuadro",
+    W / 2,
+    11,
+  );
 
-  // ↑ Bigger title
-  ctx.font = "bold 14px 'Georgia', serif";
+  // Title — dynamically sized so it NEVER cuts off, with 12px margin on each side
+  const maxTitleW = W - 24;
+  let titleFontSize = 14;
+  ctx.font = `bold ${titleFontSize}px 'Georgia', serif`;
+  while (
+    ctx.measureText(col.headerLabel).width > maxTitleW &&
+    titleFontSize > 9
+  ) {
+    titleFontSize -= 0.5;
+    ctx.font = `bold ${titleFontSize}px 'Georgia', serif`;
+  }
   ctx.fillStyle = "white";
-  ctx.fillText(col.headerLabel, W / 2, 27);
+  ctx.fillText(col.headerLabel, W / 2, 28);
 
-  // ↑ Bigger sublabel
-  ctx.font = "8px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.62)";
-  ctx.fillText(col.sublabel, W / 2, 39);
+  // Sublabel
+  ctx.font = "bold 8.5px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.fillText(
+    col.sublabel || "ELECCIONES REGIONALES Y MUNICIPALES",
+    W / 2,
+    40,
+  );
 
   ctx.strokeStyle = "rgba(255,255,255,0.18)";
   ctx.lineWidth = 0.5;
@@ -514,32 +692,95 @@ function drawRow(
     ctx.stroke();
   }
 
-  // ── Party name strip (full width, at top of row) ─────────────────────────
-  drawPartyNameStrip(ctx, party, partyIdx, rY);
+  const isErm = col.prefBoxCount === 0 && !col.allowPhotoMark;
 
-  // ── Logo ─────────────────────────────────────────────────────────────────
-  const logoBox = rowBoxes.find((b) => b.role === "logo")!;
-  if (logoBox) drawLogoBox(ctx, logoBox, party, analysis);
-
-  // ── Right side ────────────────────────────────────────────────────────────
-  if (col.type === "presidente") {
-    const photoBox = rowBoxes.find((b) => b.role === "photo")!;
-    if (photoBox) drawPhotoBox(ctx, photoBox, party, analysis);
-  } else if (col.prefBoxCount >= 2) {
-    const p1 = rowBoxes.find((b) => b.role === "pref_1")!;
-    const p2 = rowBoxes.find((b) => b.role === "pref_2")!;
-    if (p1 && p2) {
-      drawPrefLabel2(ctx, p1, p2, rY);
-      drawPrefBox(ctx, p1, "Candidato 1", analysis);
-      drawPrefBox(ctx, p2, "Candidato 2", analysis);
+  if (isErm) {
+    const logoBox = rowBoxes.find((b) => b.role === "logo");
+    if (logoBox) {
+      const nameW = logoBox.x - ROW_PAD - 12;
+      drawErmPartyName(ctx, party, partyIdx, rY, ROW_PAD + 6, nameW, L.ROW_H);
+      drawLogoBox(ctx, logoBox, party, analysis, true);
     }
   } else {
-    const ps = rowBoxes.find((b) => b.role === "pref_single")!;
-    if (ps) {
-      drawPrefLabelSingle(ctx, ps, rY);
-      drawPrefBox(ctx, ps, "N° candidato", analysis);
+    // ── Party name strip (full width, at top of row) ─────────────────────────
+    drawPartyNameStrip(ctx, party, partyIdx, rY);
+
+    // ── Logo ─────────────────────────────────────────────────────────────────
+    const logoBox = rowBoxes.find((b) => b.role === "logo")!;
+    if (logoBox) drawLogoBox(ctx, logoBox, party, analysis, false);
+
+    // ── Right side ────────────────────────────────────────────────────────────
+    if (col.type === "presidente") {
+      const photoBox = rowBoxes.find((b) => b.role === "photo")!;
+      if (photoBox) drawPhotoBox(ctx, photoBox, party, analysis);
+    } else if (col.prefBoxCount >= 2) {
+      const p1 = rowBoxes.find((b) => b.role === "pref_1")!;
+      const p2 = rowBoxes.find((b) => b.role === "pref_2")!;
+      if (p1 && p2) {
+        drawPrefLabel2(ctx, p1, p2, rY);
+        drawPrefBox(ctx, p1, "Candidato 1", analysis);
+        drawPrefBox(ctx, p2, "Candidato 2", analysis);
+      }
+    } else {
+      const ps = rowBoxes.find((b) => b.role === "pref_single")!;
+      if (ps) {
+        drawPrefLabelSingle(ctx, ps, rY);
+        drawPrefBox(ctx, ps, "N° candidato", analysis);
+      }
     }
   }
+}
+
+// ─── ERM Party Name (Left column in ERM ballot) ──────────────────────────────
+function drawErmPartyName(
+  ctx: CanvasRenderingContext2D,
+  party: PartyDef,
+  _partyIdx: number,
+  rY: number,
+  x: number,
+  maxWidth: number,
+  rowH: number,
+) {
+  ctx.save();
+  const centerY = rY + rowH / 2;
+
+  const isMov = party.organizationType === "movimiento_regional";
+  const orgType = isMov ? "MOVIMIENTO REGIONAL" : "PARTIDO POLÍTICO";
+
+  ctx.font = "bold 9.5px 'Courier New', monospace";
+  ctx.fillStyle = C.textMd;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(orgType, x, centerY - 24);
+
+  let cleanName = party.name;
+  if (cleanName.startsWith("PARTIDO POLÍTICO ")) {
+    cleanName = cleanName.replace("PARTIDO POLÍTICO ", "");
+  } else if (cleanName.startsWith("MOVIMIENTO REGIONAL ")) {
+    cleanName = cleanName.replace("MOVIMIENTO REGIONAL ", "");
+  }
+
+  // Dynamically scale font if any word exceeds maxWidth
+  let nameFontSize = 14;
+  ctx.font = `bold ${nameFontSize}px 'Georgia', serif`;
+  const words = cleanName.toUpperCase().split(" ");
+  for (const word of words) {
+    while (ctx.measureText(word).width > maxWidth - 6 && nameFontSize > 9) {
+      nameFontSize -= 0.5;
+      ctx.font = `bold ${nameFontSize}px 'Georgia', serif`;
+    }
+  }
+
+  ctx.fillStyle = C.textDk;
+  const lines = wrapText(ctx, cleanName.toUpperCase(), maxWidth, 3);
+  const lineHeight = nameFontSize + 3.5;
+  const startLineY = centerY - (lines.length * lineHeight) / 2 + 8;
+
+  lines.forEach((line, idx) => {
+    ctx.fillText(line, x, startLineY + idx * lineHeight);
+  });
+
+  ctx.restore();
 }
 
 // ─── Party name strip (replaces the old side column) ─────────────────────────
@@ -618,46 +859,62 @@ function drawPartyNameStrip(
 function drawLogoBox(
   ctx: CanvasRenderingContext2D,
   box: BoxBounds,
-  party: (typeof PARTIES)[0],
+  party: PartyDef,
   analysis: ColumnAnalysis | null,
+  isErm = false,
 ) {
   const { x, y, w, h } = box;
   const ba = analysis?.boxAnalyses.find(
     (b) => b.role === "logo" && b.partyIdx === box.partyIdx,
   );
 
-  ctx.fillStyle = party.color;
-  rr(ctx, x, y, w, h, 6);
-  ctx.fill();
+  if (isErm) {
+    // ERM Style: Authentic ONPE crisp square box with white background and crisp dark border
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x, y, w, h);
 
-  const shine = ctx.createLinearGradient(x, y, x, y + h * 0.55);
-  shine.addColorStop(0, "rgba(255,255,255,0.22)");
-  shine.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = shine;
-  rr(ctx, x, y, w, h, 6);
-  ctx.fill();
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
 
-  const cx = x + w / 2,
-    cy = y + h * 0.44;
-  const cachedLogo = party.logoUrl ? imgCache.get(party.logoUrl) : undefined;
-  if (cachedLogo) {
-    ctx.save();
-    rr(ctx, x, y, w, h, 6);
-    ctx.clip();
-    ctx.drawImage(cachedLogo, x, y, w, h);
-    ctx.restore();
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    drawPartySymbol(ctx, party.symbol, cx, cy, Math.min(w, h) * 0.72);
   } else {
-    drawPartySymbol(ctx, party.symbol, cx, cy, Math.min(w, h) * 0.85);
-  }
-
-  if (ba?.isInvalidMark) {
-    ctx.fillStyle = "rgba(255,220,0,0.18)";
+    // Generales Style
+    ctx.fillStyle = party.color;
     rr(ctx, x, y, w, h, 6);
     ctx.fill();
-    ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 24px Arial, sans-serif";
+
+    const shine = ctx.createLinearGradient(x, y, x, y + h * 0.55);
+    shine.addColorStop(0, "rgba(255,255,255,0.22)");
+    shine.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = shine;
+    rr(ctx, x, y, w, h, 6);
+    ctx.fill();
+
+    const cx = x + w / 2,
+      cy = y + h * 0.44;
+    const cachedLogo = party.logoUrl ? imgCache.get(party.logoUrl) : undefined;
+    if (cachedLogo) {
+      ctx.save();
+      rr(ctx, x, y, w, h, 6);
+      ctx.clip();
+      ctx.drawImage(cachedLogo, x, y, w, h);
+      ctx.restore();
+    } else {
+      drawPartySymbol(ctx, party.symbol, cx, cy, Math.min(w, h) * 0.85);
+    }
+  }
+
+  if (ba?.isInvalidMark && ba.shape !== "aspa" && ba.shape !== "cruz") {
+    ctx.fillStyle = "rgba(255,220,0,0.18)";
+    rr(ctx, x, y, w, h, isErm ? 0 : 6);
+    ctx.fill();
+    ctx.fillStyle = "#b45309";
+    ctx.font = "bold 12px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("¡Usa ✗ o +!", cx, y + h - 5);
+    ctx.fillText("¡Usa ✗ o +!", x + w / 2, y + h - 6);
   }
 
   if (ba?.isValidMark && analysis) {
@@ -668,10 +925,14 @@ function drawLogoBox(
           ? C.viciado
           : C.null;
     ctx.strokeStyle = rc;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.setLineDash([]);
-    rr(ctx, x - 3, y - 3, w + 6, h + 6, 9);
-    ctx.stroke();
+    if (isErm) {
+      ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+    } else {
+      rr(ctx, x - 3, y - 3, w + 6, h + 6, 9);
+      ctx.stroke();
+    }
   }
 }
 
@@ -710,7 +971,7 @@ function drawPhotoBox(
     );
   }
 
-  if (ba?.isInvalidMark) {
+  if (ba?.isInvalidMark && ba.shape !== "aspa" && ba.shape !== "cruz") {
     ctx.fillStyle = "rgba(255,220,0,0.15)";
     rr(ctx, x, y, w, h, 5);
     ctx.fill();
@@ -855,6 +1116,29 @@ function drawStrokes(
 
   for (const s of strokes) path(s, ink);
   if (current.length > 1) path(current, C.ink + "88");
+
+  // Visual intersection indicator for pedagogical feedback
+  if (analysis?.intersectionPoint) {
+    const { x, y } = analysis.intersectionPoint;
+    const isInside = analysis.isIntersectionInsideBox;
+    const ptColor = isInside ? "#15803d" : "#dc2626";
+
+    ctx.save();
+    // Halo ring
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.strokeStyle = ptColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = ptColor;
+    ctx.fill();
+    ctx.restore();
+  }
+
   ctx.restore();
 }
 
