@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Briefcase, ShieldAlert } from "lucide-react";
+import { Briefcase, ShieldAlert, Landmark } from "lucide-react";
 import { CandidateDetail } from "@/interfaces/candidate";
 
 interface CandidateHeroProps {
@@ -56,6 +56,41 @@ export function CandidateHero({ candidate }: CandidateHeroProps) {
         </div>
       )}
 
+      {candidate.succession && (
+        <div className="mb-4 px-3.5 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-start gap-2.5 animate-in fade-in duration-300">
+          <Landmark className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <div className="space-y-0.5 min-w-0">
+            <p className="font-bold text-amber-900 dark:text-amber-200">
+              Encabeza la lista y asume la titularidad por vacancia
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Inscrito(a) formalmente ante el JNE como{" "}
+              <strong className="text-foreground">
+                {formatCandidacyRole(candidate.type)}
+              </strong>
+              . Al encontrarse la candidatura titular
+              {candidate.succession.original_candidate_name
+                ? ` (${candidate.succession.original_candidate_name})`
+                : ""}{" "}
+              {candidate.succession.reason === "RENUNCIA"
+                ? "en condición de renuncia"
+                : candidate.succession.reason === "EXCLUIDO"
+                  ? "excluida"
+                  : candidate.succession.reason === "TACHADO"
+                    ? "tachada"
+                    : candidate.succession.reason === "FALLECIMIENTO"
+                      ? "en baja por fallecimiento"
+                      : "inactiva"}
+              , de resultar electa la lista, asumirá las funciones de{" "}
+              <strong className="text-foreground">
+                {formatCandidacyRole(candidate.succession.target_type)}
+              </strong>{" "}
+              de conformidad con el {candidate.succession.legal_basis}.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-5 md:gap-7 items-start">
         {/* ── Marco de foto con Double-Bezel limpio ── */}
         <div className="relative shrink-0 mx-auto sm:mx-0">
@@ -76,14 +111,14 @@ export function CandidateHero({ candidate }: CandidateHeroProps) {
             </div>
           </div>
 
-          {/* Número electoral limpio (sin la palabra "Lista") */}
+          {/* Número electoral oculto para ERM
           {candidate.list_number && (
             <div className="absolute -bottom-2 -left-2 min-w-[34px] h-[34px] px-2 bg-foreground text-background rounded-lg shadow-sm border border-background/20 flex items-center justify-center">
               <span className="text-base font-black tabular-nums leading-none">
                 {candidate.list_number}
               </span>
             </div>
-          )}
+          )} */}
 
           {/* Logo del partido */}
           {party?.logo_url && (

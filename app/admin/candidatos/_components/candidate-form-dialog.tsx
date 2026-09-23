@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -37,9 +37,21 @@ import {
   Trash2,
   Landmark,
   Building2,
+  Building,
+  MapPin,
+  ChevronDown,
+  X,
   ShieldCheck,
   Award,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { LocationModal } from "@/components/politics/location-modal";
+import {
+  UserLocationSelection,
+  resolveLocationFromParam,
+  normalizeText,
+} from "@/lib/ubigeo-helpers";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 import {
   Credenza,
   CredenzaBody,
@@ -170,6 +182,7 @@ export function CandidateFormDialog({
   >(null);
   const [globalSearch, setGlobalSearch] = useState("");
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const emptyValues: CandidateFormValues = {
     id: "",
@@ -206,6 +219,7 @@ export function CandidateFormDialog({
       setEditCandidateData(null);
       setSenatorDistricType(null);
       setGlobalSearch("");
+      setLocationModalOpen(false);
       return;
     }
 
@@ -245,36 +259,187 @@ export function CandidateFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, candidateId]);
 
-  const filteredDistricts = useMemo(() => {
-    if (!districts) return [];
+  const watchedDistrictId = form.watch("electoral_district_id");
+
+  const selectedDistrict = useMemo(() => {
+    if (!watchedDistrictId || !districts) return null;
+    return districts.find((d) => d.id === watchedDistrictId) || null;
+  }, [watchedDistrictId, districts]);
+
+  const selectedLocation = useMemo<UserLocationSelection | null>(() => {
+    if (!watchedDistrictId || !districts) return null;
+    return resolveLocationFromParam(watchedDistrictId, districts);
+  }, [watchedDistrictId, districts]);
+
+  const displayDistrictLabel = useMemo(() => {
+    if (!selectedDistrict) {
+      const typeStr = watchedType?.toString() || "";
+      if (
+        typeStr === "GOBERNADOR_REGIONAL" ||
+        typeStr === "VICEGOBERNADOR_REGIONAL"
+      ) {
+        return "Seleccionar región / departamento...";
+      }
+      if (
+        typeStr === "ALCALDE_PROVINCIAL" ||
+        typeStr === "REGIDOR_PROVINCIAL" ||
+        typeStr === "CONSEJERO_REGIONAL"
+      ) {
+        return "Seleccionar provincia...";
+      }
+      if (typeStr === "ALCALDE_DISTRITAL" || typeStr === "REGIDOR_DISTRITAL") {
+        return "Seleccionar distrito municipal...";
+      }
+      return "Seleccionar circunscripción electoral...";
+    }
+
+    if (selectedLocation?.fullLabel) {
+      return selectedLocation.fullLabel;
+    }
+    if (selectedDistrict.parent_id === null && !selectedDistrict.is_national) {
+      return `Región ${selectedDistrict.name}`;
+    }
+    if (selectedDistrict.level === "PROVINCIAL") {
+      const parent = districts?.find(
+        (d) => d.id === selectedDistrict.parent_id,
+      );
+      return `Provincia ${selectedDistrict.name}${parent ? ` (${parent.name})` : ""}`;
+    }
+    if (selectedDistrict.level === "DISTRITAL") {
+      const parent = districts?.find(
+        (d) => d.id === selectedDistrict.parent_id,
+      );
+      return `Distrito ${selectedDistrict.name}${parent ? ` (${parent.name})` : ""}`;
+    }
+    return selectedDistrict.name;
+  }, [selectedDistrict, selectedLocation, watchedType, districts]);
+
+  const DistrictLocationIcon = useMemo(() => {
+    if (!selectedDistrict) return MapPin;
+    if (selectedDistrict.level === "DISTRITAL") return Building;
+    if (selectedDistrict.level === "PROVINCIAL") return Building2;
+    return Landmark;
+  }, [selectedDistrict]);
+
+  const handleLocationSelect = (loc: UserLocationSelection) => {
+    if (!districts || districts.length === 0) return;
 
     const typeStr = watchedType?.toString() || "";
 
-    if (
-      typeStr === "DIPUTADO" ||
+    const isRegional =
       typeStr === "GOBERNADOR_REGIONAL" ||
       typeStr === "VICEGOBERNADOR_REGIONAL" ||
-      (typeStr === "SENADOR" && senatorDistricType === "MULTIPLE")
-    ) {
-      return districts.filter((d) => d.level === "REGIONAL");
-    }
+      typeStr === "DIPUTADO" ||
+      (typeStr === "SENADOR" && senatorDistricType === "MULTIPLE");
 
-    if (
+    const isProvincial =
       typeStr === "ALCALDE_PROVINCIAL" ||
       typeStr === "REGIDOR_PROVINCIAL" ||
-      typeStr === "CONSEJERO_REGIONAL"
-    ) {
-      return districts.filter((d) => d.level === "PROVINCIAL");
+      typeStr === "CONSEJERO_REGIONAL";
+
+    const isDistrital =
+      typeStr === "ALCALDE_DISTRITAL" || typeStr === "REGIDOR_DISTRITAL";
+
+    let targetDistrict: ElectoralDistrictBase | undefined;
+
+    if (isRegional) {
+      const deptName = loc.department || loc.district || "";
+      targetDistrict = districts.find(
+        (d) =>
+          d.parent_id === null &&
+          !d.is_national &&
+          (d.id === loc.districtId ||
+            normalizeText(d.name) === normalizeText(deptName) ||
+            (deptName.toUpperCase().includes("LIMA") &&
+              (d.code === "LIM" || d.code === "LMP"))),
+      );
+
+      // Si el usuario eligió un distrito/provincia dentro de la región, ascender al ancestro raíz
+      if (!targetDistrict && loc.districtId) {
+        const dist = districts.find((d) => d.id === loc.districtId);
+        if (dist) {
+          let curr = dist;
+          while (curr.parent_id) {
+            const p = districts.find((d) => d.id === curr.parent_id);
+            if (!p) break;
+            curr = p;
+          }
+          if (curr.parent_id === null && !curr.is_national) {
+            targetDistrict = curr;
+          }
+        }
+      }
+
+      if (!targetDistrict) {
+        toast.error("Por favor seleccione un departamento/región válido.");
+        return;
+      }
+    } else if (isProvincial) {
+      if (loc.provinceCode || loc.districtId) {
+        targetDistrict = districts.find(
+          (d) =>
+            d.level === "PROVINCIAL" &&
+            (d.id === loc.provinceCode || d.id === loc.districtId),
+        );
+      }
+      if (!targetDistrict && loc.districtId) {
+        const dist = districts.find((d) => d.id === loc.districtId);
+        if (dist?.parent_id) {
+          targetDistrict = districts.find(
+            (d) => d.id === dist.parent_id && d.level === "PROVINCIAL",
+          );
+        }
+      }
+      if (!targetDistrict) {
+        toast.error("Para este cargo debe seleccionar una provincia.");
+        return;
+      }
+    } else if (isDistrital) {
+      if (loc.districtId) {
+        targetDistrict = districts.find(
+          (d) => d.level === "DISTRITAL" && d.id === loc.districtId,
+        );
+      }
+      if (!targetDistrict) {
+        toast.error("Para este cargo debe seleccionar un distrito específico.");
+        return;
+      }
+    } else {
+      if (loc.districtId) {
+        targetDistrict = districts.find((d) => d.id === loc.districtId);
+      }
+      if (!targetDistrict && loc.department) {
+        targetDistrict = districts.find(
+          (d) =>
+            d.parent_id === null &&
+            !d.is_national &&
+            normalizeText(d.name) === normalizeText(loc.department || ""),
+        );
+      }
     }
 
-    if (typeStr === "ALCALDE_DISTRITAL" || typeStr === "REGIDOR_DISTRITAL") {
-      return districts.filter((d) => d.level === "DISTRITAL");
+    if (targetDistrict) {
+      form.setValue("electoral_district_id", targetDistrict.id, {
+        shouldValidate: true,
+      });
+      setLocationModalOpen(false);
+      toast.success(`Distrito electoral seleccionado: ${targetDistrict.name}`);
+    } else {
+      toast.error("No se pudo resolver el distrito electoral seleccionado.");
     }
+  };
 
-    return districts.filter((d) => d.id !== nationalDistrictId);
-  }, [districts, watchedType, senatorDistricType, nationalDistrictId]);
+  const prevWatchedTypeRef = useRef(watchedType);
+  const prevSenatorTypeRef = useRef(senatorDistricType);
 
   useEffect(() => {
+    const typeChanged = prevWatchedTypeRef.current !== watchedType;
+    const senatorChanged = prevSenatorTypeRef.current !== senatorDistricType;
+    prevWatchedTypeRef.current = watchedType;
+    prevSenatorTypeRef.current = senatorDistricType;
+
+    if (!typeChanged && !senatorChanged) return;
+
     if (
       (watchedType === "SENADOR" && senatorDistricType === "UNICO") ||
       watchedType === "VICEPRESIDENTE_1" ||
@@ -290,7 +455,7 @@ export function CandidateFormDialog({
         form.setValue("electoral_district_id", "");
       }
     } else {
-      if (mode === "create") {
+      if (mode === "create" && typeChanged) {
         form.setValue("electoral_district_id", "");
       }
     }
@@ -781,7 +946,7 @@ export function CandidateFormDialog({
                       <FormField
                         control={form.control}
                         name="electoral_district_id"
-                        render={({ field }) => {
+                        render={() => {
                           const typeStr = watchedType?.toString() || "";
                           const isPresidential =
                             typeStr === "PRESIDENTE" ||
@@ -807,36 +972,50 @@ export function CandidateFormDialog({
                                   </Badge>
                                 </div>
                               ) : (
-                                <Select
-                                  onValueChange={field.onChange}
-                                  value={field.value || undefined}
-                                  disabled={
-                                    typeStr === "SENADOR" && !senatorDistricType
-                                  }
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue
-                                        placeholder={
-                                          typeStr === "SENADOR" &&
-                                          !senatorDistricType
-                                            ? "Seleccione tipo de senado primero"
-                                            : "Seleccione distrito"
-                                        }
-                                      />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent className="max-h-[300px]">
-                                    {filteredDistricts?.map((district) => (
-                                      <SelectItem
-                                        key={district.id}
-                                        value={district.id}
-                                      >
-                                        {district.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setLocationModalOpen(true)}
+                                    disabled={
+                                      typeStr === "SENADOR" &&
+                                      !senatorDistricType
+                                    }
+                                    className={cn(
+                                      "w-full h-10 px-3 justify-between text-left font-normal text-sm bg-background border border-input rounded-md hover:bg-accent hover:text-accent-foreground",
+                                      !selectedDistrict &&
+                                        "text-muted-foreground",
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      <DistrictLocationIcon className="size-4 shrink-0 text-muted-foreground" />
+                                      <span className="truncate">
+                                        {displayDistrictLabel}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                                      {selectedDistrict && (
+                                        <span
+                                          role="button"
+                                          tabIndex={0}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            form.setValue(
+                                              "electoral_district_id",
+                                              "",
+                                              { shouldValidate: true },
+                                            );
+                                          }}
+                                          className="text-muted-foreground hover:text-foreground p-0.5 rounded-sm hover:bg-muted"
+                                          title="Limpiar ubicación"
+                                        >
+                                          <X className="size-3.5" />
+                                        </span>
+                                      )}
+                                      <ChevronDown className="size-4 opacity-50" />
+                                    </div>
+                                  </Button>
+                                </FormControl>
                               )}
 
                               <FormMessage />
@@ -959,6 +1138,16 @@ export function CandidateFormDialog({
           </Form>
         )}
       </CredenzaContent>
+      <LocationModal
+        open={locationModalOpen}
+        onOpenChange={setLocationModalOpen}
+        distritos={districts}
+        selectedLocation={selectedLocation}
+        onSelect={handleLocationSelect}
+        onClear={() => {
+          form.setValue("electoral_district_id", "", { shouldValidate: true });
+        }}
+      />
     </Credenza>
   );
 }

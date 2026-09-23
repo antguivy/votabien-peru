@@ -256,6 +256,7 @@ enum candidacystatus {
   ADMITIDO
   PUBLICADO_PARA_TACHAS
   TACHA_EN_TRAMITE
+  FALLECIMIENTO
 }
 
 enum candidacytype {

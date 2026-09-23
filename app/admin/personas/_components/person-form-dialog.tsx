@@ -598,6 +598,14 @@ function AssetsManager({
   );
 }
 
+// Helper para extraer el ID/Hash de una URL de Voto Informado o dejar el ID tal cual
+function extractHojaVidaId(input: string): string {
+  const trimmed = input.trim();
+  const match = trimmed.match(/hoja-vida\/([a-zA-Z0-9_\-]+)/);
+  if (match) return match[1];
+  return trimmed;
+}
+
 // --- Componente Principal ---
 
 export function PersonFormDialog({
@@ -608,6 +616,7 @@ export function PersonFormDialog({
 }: PersonFormDialogProps) {
   const router = useRouter();
   const [loadingJNE, setLoadingJNE] = useState(false);
+  const [jneUrl, setJneUrl] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -647,6 +656,7 @@ export function PersonFormDialog({
 
   useEffect(() => {
     if (!open) return;
+    setJneUrl("");
 
     if (mode === "create" || !personId) {
       form.reset(emptyValues);
@@ -770,12 +780,16 @@ export function PersonFormDialog({
 
   const [jneMode, setJneMode] = useState<"classic" | "consolidated">("classic");
 
-  const handleAutoFill = async (jneMode: string) => {
+  const handleAutoFill = async (currentJneMode: string) => {
+    const rawUrlOrId = jneUrl.trim();
+    const idHojaVida = rawUrlOrId ? extractHojaVidaId(rawUrlOrId) : null;
     const rop = form.getValues("party_number_rop");
     const dni = form.getValues("dni");
 
-    if (!dni || dni.length < 8) {
-      toast.warning("Ingresa un DNI válido (8 dígitos) para buscar en el JNE.");
+    if (!idHojaVida && (!dni || dni.length < 8)) {
+      toast.warning(
+        "Ingresa la URL / ID de Hoja de Vida o un DNI válido (8 dígitos) para buscar en el JNE.",
+      );
       return;
     }
 
@@ -783,7 +797,12 @@ export function PersonFormDialog({
     toast.info("Consultando JNE (esto toma unos segundos)...");
 
     try {
-      const result = await fetchCandidateFromJNE(jneMode, rop, dni);
+      const result = await fetchCandidateFromJNE(
+        currentJneMode,
+        rop,
+        dni,
+        idHojaVida,
+      );
 
       if (typeof result !== "object" || !("success" in result)) {
         throw new Error("Respuesta inesperada del servidor");
@@ -794,6 +813,14 @@ export function PersonFormDialog({
       }
 
       const data = result.data;
+
+      // Autocompletar DNI y ROP si vinieron del JNE
+      if (data.dni) {
+        form.setValue("dni", data.dni, { shouldValidate: true });
+      }
+      if (data.party_number_rop) {
+        form.setValue("party_number_rop", String(data.party_number_rop));
+      }
 
       // Datos Generales
       form.setValue("name", data.name, { shouldValidate: true });
@@ -872,7 +899,14 @@ export function PersonFormDialog({
               <div className="p-4 bg-muted/50 rounded-lg border border-dashed flex flex-col gap-4">
                 {/* Toggle JNE Mode */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Modo JNE</span>
+                  <div>
+                    <span className="text-sm font-medium">
+                      Importación desde el JNE
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      Pega la URL de Voto Informado o busca por DNI y ROP.
+                    </p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
                       Clásico
@@ -884,12 +918,50 @@ export function PersonFormDialog({
                       }
                     />
                     <span className="text-xs text-muted-foreground">
-                      Opcional
+                      Consolidado
                     </span>
                   </div>
                 </div>
 
-                {/* Campos */}
+                {/* Campo URL o ID de Hoja de Vida */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-foreground">
+                      URL o ID de Hoja de Vida (Voto Informado)
+                    </label>
+                    <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded border">
+                      Recomendado
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      placeholder="https://votoinformado.jne.gob.pe/candidatos/hoja-vida/F3BqiXi... o hash"
+                      value={jneUrl}
+                      onChange={(e) => setJneUrl(e.target.value)}
+                      className="bg-background pr-8"
+                    />
+                    {jneUrl && (
+                      <button
+                        type="button"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                        onClick={() => setJneUrl("")}
+                        title="Limpiar URL"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="h-px bg-border flex-1" />
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    O por Organización y DNI
+                  </span>
+                  <div className="h-px bg-border flex-1" />
+                </div>
+
+                {/* Campos Tradicionales */}
                 <div className="flex flex-col sm:flex-row gap-4 items-end">
                   <FormField
                     control={form.control}

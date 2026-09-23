@@ -25,15 +25,15 @@ interface RegionAssets {
 
 export const REGION_ASSETS: Record<GameRegion, RegionAssets> = {
   costa: {
-    background: "/bg/costa_bg.png",
+    background: "/bg/costa_bg.webp",
     avatar: "/avatars/avatar_costa.png",
   },
   sierra: {
-    background: "/bg/sierra_bg.png",
+    background: "/bg/sierra_bg.webp",
     avatar: "/avatars/avatar_sierra.png",
   },
   selva: {
-    background: "/bg/selva_bg.png",
+    background: "/bg/selva_bg.webp",
     avatar: "/avatars/avatar_selva.png",
   },
   hanan_pacha: {

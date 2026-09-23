@@ -73,10 +73,27 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
   const education =
     typeof params.education === "string" ? params.education : "";
 
+  // Determinar si la circunscripción activa es Lima Metropolitana (no tiene gobernador regional)
+  const primaryDistrict = districtsArray[0] || "";
+  const isLimaMetro =
+    primaryDistrict === "hxvfxkwrav0ogbpsi3mvb4cw" ||
+    primaryDistrict === "LIM" ||
+    primaryDistrict.toUpperCase() === "LIMA METROPOLITANA";
+
+  let initialType = params.type || "GOBERNADOR_REGIONAL";
+  if (
+    isLimaMetro &&
+    (initialType === "GOBERNADOR_REGIONAL" ||
+      initialType === "VICEGOBERNADOR_REGIONAL" ||
+      initialType === "CONSEJERO_REGIONAL")
+  ) {
+    initialType = "ALCALDE_PROVINCIAL";
+  }
+
   // Filtros para el componente cliente
   const currentParams = {
     search: params.search || "",
-    type: params.type || "GOBERNADOR_REGIONAL",
+    type: initialType,
     parties: partiesArray,
     districts: districtsArray,
     no_sentencias: noSentencias,
@@ -147,10 +164,17 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
     pageSize: limit,
   };
 
+  const hasLocationOrSearch =
+    (districtsArray.length > 0 && Boolean(districtsArray[0])) ||
+    Boolean(params.search?.trim());
+
   // ── Fetching en paralelo ──
   const distritosPromise = getDistritos();
   const partiesPromise = getPartidosList({ active: true, limit: 120 });
-  const candidaturasPromise = getCandidatesCards(apiParams);
+  // Si no se ha seleccionado ubicación ni búsqueda, no disparamos la query a la base de datos
+  const candidaturasPromise = hasLocationOrSearch
+    ? getCandidatesCards(apiParams)
+    : Promise.resolve([]);
 
   const [distritos, partiesData] = await Promise.all([
     distritosPromise,
@@ -182,7 +206,7 @@ const CandidatosPage = async ({ searchParams }: PageProps) => {
       />
       <section className="px-4 md:px-0 pt-4 container mx-auto pb-20 lg:pb-0">
         <div className="sticky top-0 z-30 space-y-2 mb-4 bg-background border border-brand/20 rounded-2xl p-2 shadow-sm">
-          <TypeBar currentType={currentParams.type} />
+          <TypeBar currentType={currentParams.type} distritos={distritos} />
           <NewFilterPanel
             currentType={currentParams.type}
             currentSearch={currentParams.search}

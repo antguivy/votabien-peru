@@ -96,8 +96,9 @@ const TYPE_CONFIG: Record<
 const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
   const typeKey = candidato.type as string;
   const config = TYPE_CONFIG[typeKey] ?? TYPE_CONFIG.DEFAULT;
-  const { person, political_party, list_number } = candidato;
+  const { person, political_party, list_number: _list_number } = candidato;
   const partyColorHex = political_party?.color_hex || "#6b7280";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dynamicTextColorClass = getTextColor(partyColorHex);
 
   // ── Datos derivados ──
@@ -204,6 +205,7 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                     />
                   </div>
                 )}
+                {/* Oculto en elecciones regionales y municipales (ERM no usa número preferencial)
                 {list_number != null && (
                   <div
                     style={{ backgroundColor: partyColorHex }}
@@ -217,13 +219,20 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
                       {list_number}
                     </span>
                   </div>
-                )}
+                )} */}
               </div>
-              <Badge
-                className={cn("text-[10px] h-[18px] px-1.5", config.bgBadge)}
-              >
-                {config.label}
-              </Badge>
+              <div className="flex items-center gap-1 flex-wrap justify-end">
+                {candidato.succession && (
+                  <Badge className="text-[9px] h-[18px] px-1.5 bg-amber-600/90 text-white font-bold backdrop-blur-sm shadow-xs border-0">
+                    Encabeza Lista
+                  </Badge>
+                )}
+                <Badge
+                  className={cn("text-[10px] h-[18px] px-1.5", config.bgBadge)}
+                >
+                  {config.label}
+                </Badge>
+              </div>
             </div>
           </div>
 
@@ -241,6 +250,21 @@ const CandidateCardItem = ({ candidato }: { candidato: CandidateCard }) => {
               </span>
             )}
           </div>
+
+          {/* ── Fila 2.5: Aviso cívico de sucesión por vacancia del titular ── */}
+          {candidato.succession && (
+            <div className="rounded-xl bg-amber-500/10 border border-amber-500/25 px-2 py-1.5 leading-snug">
+              <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                Titular inactivo
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                Asume como{" "}
+                {TYPE_CONFIG[candidato.succession.target_type]?.label ??
+                  "el cargo"}{" "}
+                si la lista gana.
+              </p>
+            </div>
+          )}
 
           {/* ── Fila 3: meta chips ── */}
           {hasMeta && (
@@ -396,6 +420,8 @@ const DistrictHintBanner = ({
     switch (currentType) {
       case "GOBERNADOR_REGIONAL":
         return "gobernadores regionales";
+      case "VICEGOBERNADOR_REGIONAL":
+        return "vicegobernadores regionales";
       case "CONSEJERO_REGIONAL":
         return "consejeros regionales";
       case "ALCALDE_PROVINCIAL":
@@ -635,7 +661,7 @@ const CandidatosList = ({
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 font-manrope">
-        {showDistrictHint && (
+        {showDistrictHint && currentDistrict && (
           <DistrictHintBanner
             currentType={currentFilters.type}
             currentDistrict={currentDistrict}
@@ -679,23 +705,45 @@ const CandidatosList = ({
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        ) : candidatos.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-24 text-center opacity-0 animate-in fade-in zoom-in duration-500">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Star className="w-8 h-8 text-muted-foreground/30" />
+        ) : !currentDistrict && !currentFilters.search ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center rounded-3xl border border-dashed border-border/80 bg-muted/20 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 rounded-2xl bg-brand/10 text-brand flex items-center justify-center mb-4">
+              <MapPin className="w-8 h-8" />
             </div>
-            <h3 className="text-2xl font-bebas text-foreground mb-1">
-              No se encontraron candidatos
+            <h3 className="text-lg font-bold text-foreground mb-1.5">
+              Selecciona tu circunscripción para ver tus candidatos
             </h3>
-            <p className="text-sm text-muted-foreground max-w-xs mb-4">
-              No se registraron candidatos para los filtros seleccionados.
+            <p className="text-xs text-muted-foreground max-w-md mb-5 leading-relaxed">
+              En las Elecciones Regionales y Municipales cada voto depende de tu
+              región, provincia o distrito. Elige tu lugar de votación para
+              cargar las listas oficiales correspondientes a tu cédula.
+            </p>
+            <button
+              onClick={handleOpenFilters}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/20 hover:bg-brand/90 transition-all active:scale-95"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Elegir mi región o distrito</span>
+            </button>
+          </div>
+        ) : candidatos.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4 text-center rounded-3xl border border-dashed border-border/80 bg-muted/10 animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-3">
+              <Star className="w-6 h-6 text-muted-foreground/30" />
+            </div>
+            <h3 className="text-base font-bold text-foreground mb-1">
+              No hay candidatos registrados en esta circunscripción
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-sm mb-4">
+              Aún no se registran listas o candidatos para este cargo en la
+              ubicación seleccionada.
             </p>
             <button
               onClick={handleOpenFilters}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold border border-border/60 transition-all"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Cambiar ubicación o filtros</span>
+              <span>Cambiar ubicación</span>
             </button>
           </div>
         ) : (

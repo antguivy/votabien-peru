@@ -21,7 +21,7 @@ export default function LandingMobileHeader() {
           width={120}
           height={38}
           priority
-          className="object-contain drop-shadow-sm"
+          className="h-9 w-auto object-contain drop-shadow-sm"
         />
       </Link>
 

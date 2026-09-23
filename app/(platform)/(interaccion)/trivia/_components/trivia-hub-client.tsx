@@ -12,13 +12,23 @@ import {
   Trophy,
   MapPin,
   RotateCcw,
+  Compass,
+  Zap,
+  Clock,
 } from "lucide-react";
 import {
-  ResponsiveSelect,
-  ResponsiveSelectContent,
-  ResponsiveSelectItem,
-  ResponsiveSelectTrigger,
-} from "@/components/ui/responsive-select";
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+} from "@/components/ui/credenza";
+import {
+  RegionSelectorCredenza,
+  formatRegionLabel,
+  isAllowedTriviaRegion,
+} from "./region-selector-credenza";
 import { getSavedUserLocation, saveUserLocation } from "@/lib/ubigeo-helpers";
 import TriviaMapClient from "./trivia-map-client";
 import { TriviaGameView } from "./trivia-game-view";
@@ -28,27 +38,7 @@ import {
 } from "@/constants/regions-data";
 import { buildStratifiedMapQuestions } from "@/lib/level-hydrator";
 
-export function formatRegionLabel(region: {
-  name: string;
-  code?: string | null;
-}): string {
-  const upper = region.name.toUpperCase().trim();
-  if (
-    region.code === "LIM" ||
-    upper === "LIMA METROPOLITANA" ||
-    upper === "LIMA"
-  ) {
-    return "Lima Metropolitana (Elección Municipal)";
-  }
-  if (
-    region.code === "LMP" ||
-    upper === "LIMA PROVINCIAS" ||
-    upper === "LIMA REGION"
-  ) {
-    return "Lima Provincias (Elección Regional)";
-  }
-  return region.name;
-}
+export { formatRegionLabel };
 
 function shuffleArray<T>(items: T[]): T[] {
   const result = [...items];
@@ -164,6 +154,8 @@ export function TriviaHubClient({
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [isRegionCredenzaOpen, setIsRegionCredenzaOpen] = useState(false);
+  const [showMapRouteModal, setShowMapRouteModal] = useState(false);
   const [activeQuizQuestions, setActiveQuizQuestions] = useState<
     TriviaQuestion[]
   >([]);
@@ -171,15 +163,18 @@ export function TriviaHubClient({
     null,
   );
 
-  // Filtrar para ERM 2026: excluir PERUANOS RESIDENTES EN EL EXTRANJERO / NACIONAL
+  // Filtrar para ERM 2026: acotar a las 13 regiones autorizadas
   const availableRegions = useMemo(
     () =>
-      initialRegions.filter(
-        (r) =>
-          r.code !== "PRE" &&
-          !r.name.toUpperCase().includes("EXTRANJERO") &&
-          !r.name.toUpperCase().includes("NACIONAL"),
-      ),
+      initialRegions
+        .filter(
+          (r) =>
+            r.code !== "PRE" &&
+            !r.name.toUpperCase().includes("EXTRANJERO") &&
+            !r.name.toUpperCase().includes("NACIONAL") &&
+            isAllowedTriviaRegion(r),
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, "es")),
     [initialRegions],
   );
 
@@ -195,6 +190,18 @@ export function TriviaHubClient({
         );
         if (match) {
           setSelectedRegionId(match.id);
+          return;
+        }
+      }
+
+      // Si no hay ubicación previa guardada ni en deep links, mostrar credenza de selección la primera vez
+      if (
+        typeof window !== "undefined" &&
+        !localStorage.getItem("votabien_trivia_onboarding_shown")
+      ) {
+        const topicParam = searchParams.get("topic");
+        if (!topicParam) {
+          setIsRegionCredenzaOpen(true);
         }
       }
     };
@@ -207,7 +214,7 @@ export function TriviaHubClient({
         window.removeEventListener("votabien-location-changed", syncLocation);
       };
     }
-  }, [availableRegions]);
+  }, [availableRegions, searchParams]);
 
   // Ocultar MobileBottomNav en móviles mientras el usuario está en partida o mapa
   useEffect(() => {
@@ -391,9 +398,13 @@ export function TriviaHubClient({
   }, [initialTopics, playableTopic]);
 
   const currentTheme = useMemo(
-    () => getRegionByLevel(highestUnlockedLevel || 1),
-    [highestUnlockedLevel],
+    () => getRegionByLevel(highestUnlockedLevel || 1, overrideRegion),
+    [highestUnlockedLevel, overrideRegion],
   );
+
+  const totalMapLevels = useMemo(() => {
+    return Math.max(1, Math.ceil(mapQuestions.length / 3));
+  }, [mapQuestions.length]);
 
   // --- VISTA DE JUEGO ACTIVA ---
   if (isPlaying && (currentTopic || playableTopic || activeQuizTopic)) {
@@ -462,106 +473,113 @@ export function TriviaHubClient({
             normas vigentes. Aprende qué facultades tienen tus autoridades y
             descubre qué proponen para tu territorio.
           </p>
+        </div>
 
-          {/* Selector Territorial tipo pasaporte */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 pt-1">
-            <div className="relative inline-flex items-center w-full sm:w-auto">
-              <ResponsiveSelect
-                value={selectedRegionId || "ALL"}
-                title="Selecciona tu región electoral"
-                onValueChange={(val) => {
-                  if (val === "ALL") {
-                    setSelectedRegionId(null);
-                  } else {
-                    handleRegionChange(val);
-                  }
-                }}
+        {/* TARJETA DE CONTEXTO TERRITORIAL DESTACADA (PASAPORTE CÍVICO) */}
+        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+              <div
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                  selectedRegionObj
+                    ? "bg-brand/10 border-brand/25 text-brand"
+                    : "bg-amber-500/10 border-amber-500/25 text-amber-500"
+                }`}
               >
-                <ResponsiveSelectTrigger className="h-10 sm:h-9 py-1.5 px-3.5 rounded-full border border-border/80 bg-card hover:bg-muted/40 text-xs shadow-2xs gap-2 transition-all cursor-pointer w-full sm:w-auto max-w-full select-none">
-                  <MapPin className="h-3.5 w-3.5 text-brand shrink-0" />
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground font-semibold shrink-0">
-                    Región:
+                {selectedRegionObj ? (
+                  <MapPin className="h-5 w-5" />
+                ) : (
+                  <Compass className="h-5 w-5" />
+                )}
+              </div>
+
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-[10px] tracking-wider uppercase font-bold text-muted-foreground">
+                    Territorio electoral:
                   </span>
-                  <span className="font-bold text-foreground truncate text-xs">
+                  <Badge
+                    variant={selectedRegionObj ? "default" : "secondary"}
+                    className="text-[11px] font-bold px-2 py-0.5"
+                  >
                     {selectedRegionObj
                       ? formatRegionLabel(selectedRegionObj)
-                      : "Todas las regiones"}
-                  </span>
-                  <span className="text-muted-foreground/40 font-mono hidden sm:inline">
-                    |
-                  </span>
-                  <span className="text-muted-foreground hover:text-foreground text-[11px] font-medium hidden sm:inline-flex items-center gap-1 shrink-0">
-                    <RotateCcw className="h-3 w-3 text-muted-foreground" />
-                    cambiar
-                  </span>
-                </ResponsiveSelectTrigger>
-                <ResponsiveSelectContent>
-                  <ResponsiveSelectItem value="ALL">
-                    🇵🇪 Todas las regiones (Nacional)
-                  </ResponsiveSelectItem>
-                  {availableRegions.map((region) => (
-                    <ResponsiveSelectItem key={region.id} value={region.id}>
-                      {formatRegionLabel(region)}
-                    </ResponsiveSelectItem>
-                  ))}
-                </ResponsiveSelectContent>
-              </ResponsiveSelect>
+                      : "Modo Nacional"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {selectedRegionObj
+                    ? `Preguntas de autoridades, debates oficiales y candidatos de ${selectedRegionObj.name}.`
+                    : "Preguntas de cobertura nacional. Puedes acotar los retos eligiendo entre las 13 regiones autorizadas."}
+                </p>
+              </div>
             </div>
-            <span className="text-[11px] text-muted-foreground">
-              Las preguntas se calibran con autoridades y temas de tu
-              territorio.
-            </span>
+
+            <div className="shrink-0 self-start sm:self-center">
+              <button
+                type="button"
+                onClick={() => setIsRegionCredenzaOpen(true)}
+                className="h-9 py-1.5 px-3.5 rounded-xl border border-border/80 bg-muted/60 hover:bg-muted text-xs font-semibold shadow-2xs gap-2 transition-all cursor-pointer inline-flex items-center select-none"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>
+                  {selectedRegionObj ? "Cambiar región" : "Seleccionar región"}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* TARJETA HERO ASIMÉTRICA: DESAFÍO REGIONAL EXPRESS */}
+        {/* TARJETA HERO: DESAFÍO REGIONAL EXPRESS */}
         {heroTopic && (
-          <div className="relative overflow-hidden rounded-3xl bg-[#181615] dark:bg-card border border-neutral-800 dark:border-border/80 p-6 sm:p-8 lg:p-10 text-white shadow-xl">
-            {/* Filigrana número 10 en marca de agua de fondo */}
-            <div
-              aria-hidden="true"
-              className="hidden sm:block absolute -right-2 -bottom-10 select-none pointer-events-none text-white/[0.04] dark:text-foreground/[0.04] font-serif font-black text-[170px] sm:text-[220px] leading-none"
-            >
-              10
-            </div>
-
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/30 p-6 sm:p-8 lg:p-9 shadow-xs">
             <div className="relative z-10 space-y-4">
               {/* Eyebrow */}
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-bold text-neutral-400 dark:text-muted-foreground">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+                <span className="font-mono text-[10px] sm:text-[11px] tracking-wider uppercase font-bold text-muted-foreground">
                   Desafío Cívico Rápido ·{" "}
-                  <span className="text-amber-400 dark:text-brand font-black">
+                  <span className="text-foreground font-black">
                     {selectedRegionObj ? selectedRegionObj.name : "Nacional"}
                   </span>
                 </span>
               </div>
 
               {/* Titular */}
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight max-w-xl">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground tracking-tight leading-tight max-w-xl">
                 10 preguntas para poner a prueba tu voto.
               </h2>
 
-              {/* Subtítulo amigable */}
-              <p className="text-xs sm:text-sm text-neutral-300/90 dark:text-neutral-400 max-w-xl leading-relaxed">
+              {/* Subtítulo */}
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
                 Mide qué tanto recuerdas de las propuestas, videos de debates y
-                competencias de tus autoridades.
+                competencias de tus autoridades en tu territorio.
               </p>
 
               {/* Chips informativos + Botón de acción */}
-              <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-neutral-200 font-semibold text-[11px]">
-                    ⚡ 10 preguntas
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/70 border border-border/70 text-foreground font-mono text-xs font-semibold">
+                    <Zap
+                      size={13}
+                      className="text-amber-500 fill-amber-500/20 shrink-0"
+                    />
+                    <span>10 preguntas</span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 font-semibold text-[11px]">
-                    🏆 +100 XP
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-mono text-xs font-bold">
+                    <Trophy size={13} className="text-amber-500 shrink-0" />
+                    <span>+100 XP</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/40 border border-border/60 text-muted-foreground font-mono text-xs font-medium">
+                    <Clock size={13} className="shrink-0" />
+                    <span>~3 min</span>
                   </span>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleStartExpressGame}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-white text-neutral-950 hover:bg-neutral-100 dark:bg-foreground dark:text-background active:scale-[0.98] font-black text-xs sm:text-sm transition-all shadow-md group cursor-pointer shrink-0"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-brand/90 text-brand-foreground active:scale-[0.98] font-bold text-xs sm:text-sm transition-all shadow-xs group cursor-pointer shrink-0"
                 >
                   <span>Iniciar trivia rápida</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -574,7 +592,13 @@ export function TriviaHubClient({
         {/* MODO MAPA AVENTURA (CAMPAÑA 25 NIVELES) */}
         <button
           type="button"
-          onClick={() => handleStartTopicGame(playableTopic, "MAP")}
+          onClick={() => {
+            if (!selectedRegionId) {
+              setShowMapRouteModal(true);
+            } else {
+              handleStartTopicGame(playableTopic, "MAP");
+            }
+          }}
           className="w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl border border-border/80 bg-card hover:bg-muted/40 transition-all text-left group cursor-pointer shadow-2xs"
         >
           <div className="flex items-center gap-3.5 min-w-0">
@@ -584,15 +608,19 @@ export function TriviaHubClient({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-sm font-bold text-foreground">
-                  Mapa Aventura Regional
+                  {selectedRegionObj
+                    ? `Mapa Aventura · ${selectedRegionObj.name}`
+                    : "Mapa Aventura Regional"}
                 </p>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-muted border border-border/70 text-muted-foreground">
-                  NIVEL {highestUnlockedLevel || 1} DE 25
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-muted border border-border/70 text-muted-foreground uppercase">
+                  NIVEL {Math.min(highestUnlockedLevel || 1, totalMapLevels)} DE{" "}
+                  {totalMapLevels}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                Recorre el Perú respondiendo sobre funciones públicas. Hito
-                actual: {currentTheme?.name || "Costa"}.
+                {selectedRegionObj
+                  ? `Aventura personalizada para ${selectedRegionObj.name}. Hito actual: ${currentTheme?.name || "Sierra"}.`
+                  : `Recorre el Perú respondiendo sobre funciones públicas. Hito actual: ${currentTheme?.name || "Costa"}.`}
               </p>
             </div>
           </div>
@@ -729,16 +757,7 @@ export function TriviaHubClient({
                     <span className="font-mono text-[10px] uppercase text-muted-foreground/70 font-semibold shrink-0">
                       En preparación
                     </span>
-                    <div className="h-1.5 flex-1 max-w-[120px] sm:max-w-[150px] rounded-full overflow-hidden bg-muted/70 opacity-60">
-                      <div
-                        className="h-full w-full"
-                        style={{
-                          backgroundImage:
-                            "repeating-linear-gradient(45deg, transparent, transparent 3px, currentColor 3px, currentColor 6px)",
-                          color: "var(--muted-foreground)",
-                        }}
-                      />
-                    </div>
+                    <div className="h-1.5 flex-1 max-w-[120px] sm:max-w-[150px] rounded-full bg-muted/60" />
                     <span className="font-mono text-[10px] text-muted-foreground/50 shrink-0">
                       —
                     </span>
@@ -749,6 +768,94 @@ export function TriviaHubClient({
           </div>
         </div>
       </div>
+
+      {/* MODAL RUTA DE MAPA HECHO EN CREDENZA */}
+      <Credenza open={showMapRouteModal} onOpenChange={setShowMapRouteModal}>
+        <CredenzaContent className="sm:max-w-md p-0 overflow-hidden flex flex-col">
+          <CredenzaHeader className="px-5 py-4 border-b bg-muted/20 shrink-0 text-left">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                <MapIcon className="h-4 w-4" />
+              </div>
+              <CredenzaTitle className="text-base sm:text-lg font-bold">
+                ¿Cómo deseas recorrer el mapa?
+              </CredenzaTitle>
+            </div>
+            <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed">
+              Actualmente estás en el Modo Nacional. Puedes elegir recorrer todo
+              el país o enfocarte en las autoridades y debates de tu
+              departamento.
+            </CredenzaDescription>
+          </CredenzaHeader>
+
+          <CredenzaBody className="p-4 space-y-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowMapRouteModal(false);
+                handleStartTopicGame(playableTopic, "MAP");
+              }}
+              className="w-full p-4 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition-all text-left flex items-start gap-3.5 group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center shrink-0 mt-0.5">
+                <Compass className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground group-hover:text-brand transition-colors">
+                  Ruta Nacional
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Recorre Costa, Sierra y Selva nivel por nivel con preguntas de
+                  cultura cívica de cobertura general.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowMapRouteModal(false);
+                setIsRegionCredenzaOpen(true);
+              }}
+              className="w-full p-4 rounded-xl border border-brand/30 bg-brand/5 hover:bg-brand/10 transition-all text-left flex items-start gap-3.5 group cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/20 flex items-center justify-center text-brand shrink-0 mt-0.5">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground group-hover:text-brand transition-colors">
+                  Aventura Regional (13 plazas electorales)
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Elige tu región para jugar el mapa con candidatos, propuestas
+                  y debates de tu realidad territorial.
+                </p>
+              </div>
+            </button>
+          </CredenzaBody>
+        </CredenzaContent>
+      </Credenza>
+
+      {/* CREDENZA DE SELECCIÓN DE REGIÓN */}
+      <RegionSelectorCredenza
+        open={isRegionCredenzaOpen}
+        onOpenChange={(open) => {
+          setIsRegionCredenzaOpen(open);
+          if (!open) {
+            localStorage.setItem("votabien_trivia_onboarding_shown", "1");
+          }
+        }}
+        selectedRegionId={selectedRegionId}
+        regions={availableRegions}
+        onSelectRegion={(newId) => {
+          if (newId === null) {
+            setSelectedRegionId(null);
+          } else {
+            handleRegionChange(newId);
+          }
+          localStorage.setItem("votabien_trivia_onboarding_shown", "1");
+        }}
+      />
     </div>
   );
 }

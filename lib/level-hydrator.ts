@@ -34,6 +34,18 @@ export function buildStratifiedMapQuestions(
 ): TriviaQuestion[] {
   if (!allQuestions || allQuestions.length === 0) return [];
 
+  // Cuando hay una región seleccionada, se acota el universo estrictamente a:
+  // 1. Preguntas generales sin distrito electoral (Ejes 1 y 3)
+  // 2. Preguntas de la región seleccionada (Eje 5 territorial)
+  // Se excluyen las preguntas de otras regiones para no inflar artificialmente los niveles.
+  const eligibleQuestions = selectedRegionId
+    ? allQuestions.filter(
+        (q) =>
+          !q.electoral_district_id ||
+          q.electoral_district_id === selectedRegionId,
+      )
+    : allQuestions;
+
   // 1. Identificar tópico de debate / multimedia
   const debateTopic = topics.find(
     (t) =>
@@ -49,8 +61,8 @@ export function buildStratifiedMapQuestions(
     .filter((t) => t.id !== debateTopic?.id && t.slug !== debateTopic?.slug)
     .sort((a, b) => a.order_index - b.order_index);
 
-  // 2. Clasificar pool de debates
-  const allDebateQuestions = allQuestions.filter(
+  // 2. Clasificar pool de debates sobre las preguntas elegibles
+  const allDebateQuestions = eligibleQuestions.filter(
     (q) =>
       (debateTopic && q.topic_id === debateTopic.id) ||
       q.display_type === "PERSON" ||
@@ -70,8 +82,9 @@ export function buildStratifiedMapQuestions(
     regionalDebates = allDebateQuestions
       .filter((q) => q.electoral_district_id === selectedRegionId)
       .sort((a, b) => a.global_index - b.global_index);
+    // Debates generales neutros (sin distrito electoral asignado)
     otherDebates = allDebateQuestions
-      .filter((q) => q.electoral_district_id !== selectedRegionId)
+      .filter((q) => !q.electoral_district_id)
       .sort((a, b) => a.global_index - b.global_index);
   } else {
     regionalDebates = allDebateQuestions.sort(
@@ -79,11 +92,11 @@ export function buildStratifiedMapQuestions(
     );
   }
 
-  // Lista unificada de debates: primero territorio del usuario, luego el resto
+  // Lista unificada de debates
   const debatePool = [...regionalDebates, ...otherDebates];
 
   // 3. Agrupar preguntas generales por eje temático en orden de order_index
-  const nonDebateQuestions = allQuestions.filter(
+  const nonDebateQuestions = eligibleQuestions.filter(
     (q) => !allDebateQuestions.some((d) => d.id === q.id),
   );
 
@@ -145,7 +158,7 @@ export function buildStratifiedMapQuestions(
   const maxRounds = Math.max(
     Math.ceil(totalGeneralQuestions / 2),
     debatePool.length,
-    Math.ceil(allQuestions.length / 3),
+    Math.ceil(eligibleQuestions.length / 3),
   );
 
   const stratified: TriviaQuestion[] = [];
@@ -155,7 +168,7 @@ export function buildStratifiedMapQuestions(
     // Slot 1: Round-Robin sobre ejes generales
     let q1: TriviaQuestion | undefined = getNextGeneralQuestion();
     if (!q1) {
-      q1 = allQuestions.find((q) => !usedIds.has(q.id));
+      q1 = eligibleQuestions.find((q) => !usedIds.has(q.id));
     }
     if (q1) {
       markUsed(q1);
@@ -165,7 +178,7 @@ export function buildStratifiedMapQuestions(
     // Slot 2: Round-Robin sobre ejes generales
     let q2: TriviaQuestion | undefined = getNextGeneralQuestion();
     if (!q2) {
-      q2 = allQuestions.find((q) => !usedIds.has(q.id));
+      q2 = eligibleQuestions.find((q) => !usedIds.has(q.id));
     }
     if (q2) {
       markUsed(q2);
@@ -178,7 +191,7 @@ export function buildStratifiedMapQuestions(
       q3 = debatePool[debIdx++];
     }
     if (!q3) {
-      q3 = allQuestions.find((q) => !usedIds.has(q.id));
+      q3 = eligibleQuestions.find((q) => !usedIds.has(q.id));
     }
     if (q3) {
       markUsed(q3);
@@ -190,8 +203,8 @@ export function buildStratifiedMapQuestions(
     }
   }
 
-  // Agregar preguntas restantes si hubiera alguna
-  for (const q of allQuestions) {
+  // Agregar preguntas restantes elegibles si hubiera alguna
+  for (const q of eligibleQuestions) {
     if (!usedIds.has(q.id)) {
       usedIds.add(q.id);
       stratified.push(q);

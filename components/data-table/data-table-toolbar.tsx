@@ -47,7 +47,12 @@ function DataTableToolbarSearchInput<TData>({
   column: Column<TData, unknown>;
   placeholder?: string;
 }) {
-  const filterValue = (column.getFilterValue() as string) ?? "";
+  const rawValue = column.getFilterValue();
+  const filterValue = Array.isArray(rawValue)
+    ? String(rawValue[0] ?? "")
+    : typeof rawValue === "string"
+      ? rawValue
+      : "";
   return (
     <DataTableSearchInput
       placeholder={placeholder}

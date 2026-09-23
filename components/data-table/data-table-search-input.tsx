@@ -16,6 +16,12 @@ interface DataTableSearchInputProps {
   onClear?: () => void;
 }
 
+function normalizeString(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  if (Array.isArray(val)) return String(val[0] ?? "");
+  return String(val);
+}
+
 /**
  * Componente de búsqueda por disparador integrado dentro del input para DataTables.
  * Evita el debounce continuo y coloca el botón de disparo y limpieza en el interior del campo.
@@ -38,8 +44,9 @@ export function DataTableSearchInput({
     parseAsInteger.withDefault(1).withOptions({ shallow: false }),
   );
 
-  const activeValue =
-    onSearch && controlledValue !== undefined ? controlledValue : query;
+  const activeValue = normalizeString(
+    onSearch && controlledValue !== undefined ? controlledValue : query,
+  );
 
   const [prevActiveValue, setPrevActiveValue] = React.useState(activeValue);
   const [localValue, setLocalValue] = React.useState(activeValue);
@@ -50,8 +57,10 @@ export function DataTableSearchInput({
     setLocalValue(activeValue);
   }
 
+  const safeLocalValue = normalizeString(localValue);
+
   const handleTriggerSearch = () => {
-    const trimmed = localValue.trim();
+    const trimmed = safeLocalValue.trim();
     if (onSearch) {
       onSearch(trimmed);
     } else {
@@ -80,7 +89,8 @@ export function DataTableSearchInput({
   };
 
   const hasPendingChange =
-    localValue.trim() !== activeValue.trim() && localValue.trim().length > 0;
+    safeLocalValue.trim() !== activeValue.trim() &&
+    safeLocalValue.trim().length > 0;
 
   return (
     <div className={cn("relative flex items-center", className)}>
@@ -88,7 +98,7 @@ export function DataTableSearchInput({
       <Input
         type="text"
         placeholder={placeholder}
-        value={localValue}
+        value={safeLocalValue}
         onChange={(e) => setLocalValue(e.target.value)}
         onKeyDown={handleKeyDown}
         className={cn(
@@ -97,7 +107,7 @@ export function DataTableSearchInput({
         )}
       />
       <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-        {localValue && (
+        {safeLocalValue && (
           <button
             type="button"
             onClick={handleClear}

@@ -9,6 +9,7 @@ import {
   getRegionByLevel,
   REGION_START_LEVELS,
   getNaturalRegionByDepartment,
+  REGIONS_CONFIG,
 } from "@/constants/regions-data";
 import { useGameStore } from "@/store/game-store";
 import { GameLevel, GameRegion, TriviaQuestion } from "@/interfaces/game-types";
@@ -174,6 +175,10 @@ export default function TriviaMapClient({
   const [selectedLevel, setSelectedLevel] = useState<GameLevel | null>(null);
   const [activeLevelId, setActiveLevelId] = useState<number | null>(null);
   const [showRegionTransition, setShowRegionTransition] = useState(false);
+  const [parallaxRatio, setParallaxRatio] = useState(0.5);
+  const [activeViewportRegion, setActiveViewportRegion] = useState<GameRegion>(
+    overrideRegion || "costa",
+  );
   const prevHighest = useRef(highestUnlockedLevel);
 
   useEffect(() => {
@@ -206,6 +211,24 @@ export default function TriviaMapClient({
   // El juego se cierra cuando el usuario presiona "Continuar" en ResultsScreen → onExit.
   const handleLevelComplete = () => {
     markTriviaRegion(currentTheme.id);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
+    const maxScroll = Math.max(1, target.scrollHeight - target.clientHeight);
+    const ratio = Math.min(1, Math.max(0, scrollTop / maxScroll));
+    setParallaxRatio(ratio);
+
+    if (!overrideRegion && regionSections.length > 1) {
+      const centerY = scrollTop + target.clientHeight / 2;
+      const currentSec = regionSections.find(
+        (sec) => centerY >= sec.top && centerY <= sec.top + sec.height,
+      );
+      if (currentSec && currentSec.regionId !== activeViewportRegion) {
+        setActiveViewportRegion(currentSec.regionId);
+      }
+    }
   };
 
   const getNodeX = (i: number) =>
@@ -272,6 +295,49 @@ export default function TriviaMapClient({
         style={{ backgroundColor: currentTheme.colors.backgroundTop }}
       />
 
+      {/* Fondo en viewport desacoplado del scroll con Parallax sutil — mantiene nitidez 1:1 en móvil (9:16) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {(Object.keys(REGION_ASSETS) as GameRegion[]).map((regionKey) => {
+          const assets = REGION_ASSETS[regionKey];
+          const regTheme = REGIONS_CONFIG[regionKey];
+          const isVisible = overrideRegion
+            ? overrideRegion === regionKey
+            : activeViewportRegion === regionKey;
+
+          return (
+            <div
+              key={regionKey}
+              className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+              style={{ opacity: isVisible ? 1 : 0 }}
+            >
+              {assets?.background && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={assets.background}
+                  alt=""
+                  className="w-full h-full object-cover object-center will-change-transform"
+                  style={{
+                    transform: `translate3d(0, ${(parallaxRatio - 0.5) * 60}px, 0) scale(1.12)`,
+                    transformOrigin: "center center",
+                    transition: "transform 0.12s ease-out",
+                  }}
+                />
+              )}
+              {/* Gradiente atmosférico para contraste visual óptimo con los nodos */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(to bottom, ${regTheme?.colors.backgroundTop || "#000000"}33, ${regTheme?.colors.backgroundBottom || "#000000"}66)`,
+                }}
+              />
+            </div>
+          );
+        })}
+
+        {/* Capa de oscurecimiento suave para legibilidad de textos y caminos */}
+        <div className="absolute inset-0 bg-black/10 backdrop-contrast-[1.03]" />
+      </div>
+
       {/* Floating header */}
       <div className="absolute top-3 left-4 right-4 z-10 flex items-center gap-3 bg-card border border-border rounded-full px-3 py-2 shadow-lg">
         <div
@@ -309,51 +375,15 @@ export default function TriviaMapClient({
       {/* Scrollable map */}
       <div
         ref={scrollRef}
-        className="absolute inset-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden"
+        onScroll={handleScroll}
+        className="absolute inset-0 z-[1] overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none" }}
       >
         <div
           className="absolute inset-x-0 top-0"
           ref={containerRef}
           style={{ height: totalScrollHeight, pointerEvents: "none" }}
-        >
-          {/* Fondos por sección de región — cada región muestra su propia imagen */}
-          {regionSections.map(({ regionId, top, height, theme }) => {
-            const bg = REGION_ASSETS[regionId]?.background;
-            return (
-              <div
-                key={regionId}
-                className="absolute inset-x-0 overflow-hidden"
-                style={{ top, height }}
-              >
-                {bg && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={bg}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                )}
-                {/* Gradiente sutil por región — más liviano que antes */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(to bottom, ${theme.colors.backgroundTop}44, ${theme.colors.backgroundBottom}77)`,
-                  }}
-                />
-              </div>
-            );
-          })}
-
-          {/* Capa de oscurecimiento mínima — solo para legibilidad de los nodos */}
-          <div
-            className="absolute inset-0"
-            style={{
-              height: totalScrollHeight,
-              backgroundColor: "rgba(0,0,0,0.08)",
-            }}
-          />
-        </div>
+        />
 
         <div
           style={{
@@ -552,7 +582,7 @@ export default function TriviaMapClient({
           title="Volver al selector de temas"
         >
           <ArrowLeft size={14} />
-          <span>Salir al Hub</span>
+          <span>Salir</span>
         </button>
       )}
     </div>

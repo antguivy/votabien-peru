@@ -244,27 +244,6 @@ export function useDataTable<TData>({
     }
   }
 
-  // Filter
-  const initialColumnFilters: ColumnFiltersState = React.useMemo(() => {
-    return enableAdvancedFilter
-      ? []
-      : Object.entries(filterValues).reduce<ColumnFiltersState>(
-          (filters, [key, value]) => {
-            if (value !== null) {
-              filters.push({
-                id: key,
-                value: Array.isArray(value) ? value : [value],
-              });
-            }
-            return filters;
-          },
-          [],
-        );
-  }, [filterValues, enableAdvancedFilter]);
-
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>(initialColumnFilters);
-
   // Memoize computation of searchableColumns and filterableColumns
   const { searchableColumns, filterableColumns } = React.useMemo(() => {
     return enableAdvancedFilter
@@ -274,6 +253,34 @@ export function useDataTable<TData>({
           filterableColumns: filterFields.filter((field) => field.options),
         };
   }, [filterFields, enableAdvancedFilter]);
+
+  // Filter
+  const initialColumnFilters: ColumnFiltersState = React.useMemo(() => {
+    return enableAdvancedFilter
+      ? []
+      : Object.entries(filterValues).reduce<ColumnFiltersState>(
+          (filters, [key, value]) => {
+            if (value !== null) {
+              const isSearch = searchableColumns.some((col) => col.id === key);
+              filters.push({
+                id: key,
+                value: isSearch
+                  ? Array.isArray(value)
+                    ? value[0]
+                    : value
+                  : Array.isArray(value)
+                    ? value
+                    : [value],
+              });
+            }
+            return filters;
+          },
+          [],
+        );
+  }, [filterValues, enableAdvancedFilter, searchableColumns]);
+
+  const [columnFilters, setColumnFilters] =
+    React.useState<ColumnFiltersState>(initialColumnFilters);
 
   const onColumnFiltersChange = React.useCallback(
     (updaterOrValue: Updater<ColumnFiltersState>) => {
