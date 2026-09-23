@@ -17,11 +17,19 @@ export interface BoxBounds {
 // ─── Column / Box taxonomy ────────────────────────────────────────────────────
 
 export type ColumnType =
+  // Elecciones Regionales y Municipales (ERM 2026)
+  | "gobernador"
+  | "consejero"
+  | "alcalde_provincial"
+  | "alcalde_distrital"
+  // Elecciones Generales (Bicameral + Presidencial con voto preferencial)
   | "presidente"
   | "senador_nacional"
   | "senador_regional"
   | "diputado"
   | "parlamento_andino";
+
+export type ElectoralProcess = "regionales_2026" | "generales_2026";
 
 /**
  * logo / photo  → accept ONLY aspa (✗) or cruz (+)
@@ -52,6 +60,8 @@ export interface BoxAnalysis {
   shape?: StrokeShape;
   isValidMark: boolean; // true = correct aspa/cruz in logo/photo, OR number in pref
   isInvalidMark: boolean; // true = aspa/cruz in pref box, OR non-cross in logo/photo
+  intersectionPoint?: Point;
+  isIntersectionInside?: boolean;
 }
 
 export interface ColumnAnalysis {
@@ -64,6 +74,8 @@ export interface ColumnAnalysis {
   message: string;
   submessage?: string;
   hint?: string;
+  intersectionPoint?: Point;
+  isIntersectionInsideBox?: boolean;
 }
 
 // ─── Column definition ────────────────────────────────────────────────────────
@@ -81,7 +93,17 @@ export interface ColumnDef {
 
 // ─── Party / candidate definitions ───────────────────────────────────────────
 
-export type PartySymbol = "saw" | "ball";
+export type PartySymbol =
+  | "saw"
+  | "ball"
+  | "sun"
+  | "tree"
+  | "umbrella"
+  | "water_drop"
+  | "dice"
+  | "briefcase"
+  | "star"
+  | "heart";
 export type CandidateGender = "female" | "male";
 
 export interface PartyDef {
@@ -89,6 +111,7 @@ export interface PartyDef {
   color: string;
   letter: string;
   name: string;
+  organizationType?: "partido" | "movimiento_regional";
   symbol: PartySymbol;
   candidateGender: CandidateGender;
   logoUrl?: string; // opcional — si no hay, usa el símbolo canvas

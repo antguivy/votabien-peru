@@ -288,53 +288,225 @@ function detectShapeForPref(strokes: Point[][]): StrokeShape {
   return "number_stroke";
 }
 
+function isInBoxWithMargin(p: Point, b: BoxBounds, margin = 4): boolean {
+  return (
+    p.x >= b.x - margin &&
+    p.x <= b.x + b.w + margin &&
+    p.y >= b.y - margin &&
+    p.y <= b.y + b.h + margin
+  );
+}
+
+// ─── Exact Segment Intersection ───────────────────────────────────────────────
+
+function lineSegmentsIntersect(
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  p4: Point,
+): Point | null {
+  const d = (p2.x - p1.x) * (p4.y - p3.y) - (p2.y - p1.y) * (p4.x - p3.x);
+  if (Math.abs(d) < 1e-6) return null; // parallel or coincident
+
+  const u = ((p3.x - p1.x) * (p4.y - p3.y) - (p3.y - p1.y) * (p4.x - p3.x)) / d;
+  const v = ((p3.x - p1.x) * (p2.y - p1.y) - (p3.y - p1.y) * (p2.x - p1.x)) / d;
+
+  if (u >= 0 && u <= 1 && v >= 0 && v <= 1) {
+    return {
+      x: p1.x + u * (p2.x - p1.x),
+      y: p1.y + u * (p2.y - p1.y),
+    };
+  }
+  return null;
+}
+
+export function findStrokesIntersection(
+  s1: Point[],
+  s2: Point[],
+): Point | null {
+  if (s1.length < 2 || s2.length < 2) return null;
+
+  for (let i = 0; i < s1.length - 1; i++) {
+    for (let j = 0; j < s2.length - 1; j++) {
+      const pt = lineSegmentsIntersect(s1[i], s1[i + 1], s2[j], s2[j + 1]);
+      if (pt) return pt;
+    }
+  }
+
+  // Fallback: endpoints of strokes
+  const p1 = s1[0];
+  const p2 = s1[s1.length - 1];
+  const p3 = s2[0];
+  const p4 = s2[s2.length - 1];
+  return lineSegmentsIntersect(p1, p2, p3, p4);
+}
+
+function findSelfIntersection(s: Point[]): Point | null {
+  if (s.length < 6) return null;
+  const step = Math.max(1, Math.floor(s.length / 16));
+  for (let i = 0; i < s.length - step * 2; i += step) {
+    for (let j = i + step * 2; j < s.length - step; j += step) {
+      const pt = lineSegmentsIntersect(s[i], s[i + step], s[j], s[j + step]);
+      if (pt) return pt;
+    }
+  }
+  return null;
+}
+
+export interface FoundCross {
+  pt: Point;
+  shape: "aspa" | "cruz";
+  strokeIndices: number[];
+}
+
+export function findCrosses(strokes: Point[][]): FoundCross[] {
+  const crosses: FoundCross[] = [];
+  const usedStrokes = new Set<number>();
+
+  for (let i = 0; i < strokes.length; i++) {
+    for (let j = i + 1; j < strokes.length; j++) {
+      const s1 = strokes[i];
+      const s2 = strokes[j];
+      const diff = angleDiff(primaryAngle(s1), primaryAngle(s2));
+      if (diff < (Math.PI / 180) * 16) continue;
+
+      const pt = findStrokesIntersection(s1, s2);
+      if (pt) {
+        crosses.push({
+          pt,
+          shape: diff > (Math.PI / 180) * 60 ? "cruz" : "aspa",
+          strokeIndices: [i, j],
+        });
+        usedStrokes.add(i);
+        usedStrokes.add(j);
+      }
+    }
+
+    if (!usedStrokes.has(i)) {
+      const selfPt = findSelfIntersection(strokes[i]);
+      if (selfPt) {
+        crosses.push({
+          pt: selfPt,
+          shape: "aspa",
+          strokeIndices: [i],
+        });
+        usedStrokes.add(i);
+      }
+    }
+  }
+
+  return crosses;
+}
+
 // ─── Box-level analysis ───────────────────────────────────────────────────────
 
-function analyzeBox(strokes: Point[][], box: BoxBounds): BoxAnalysis {
-  const inBox = strokes.filter((s) => primarilyIn(s, box));
-  if (!inBox.length) {
+function analyzeBox(
+  strokes: Point[][],
+  box: BoxBounds,
+  crosses: FoundCross[],
+): BoxAnalysis {
+  const isPref = PREF_ROLES.has(box.role);
+
+  if (isPref) {
+    const inBox = strokes.filter((s) => primarilyIn(s, box));
+    if (!inBox.length) {
+      return {
+        role: box.role,
+        partyIdx: box.partyIdx,
+        hasStroke: false,
+        isValidMark: false,
+        isInvalidMark: false,
+      };
+    }
+    const shape = detectShapeForPref(inBox);
+    const isCross = shape === "aspa" || shape === "cruz";
+    const isScribble = shape === "scribble";
+    const isInvalidMark = isCross || isScribble;
+    const isValidMark = !isInvalidMark && shape !== "dot";
     return {
       role: box.role,
       partyIdx: box.partyIdx,
-      hasStroke: false,
-      isValidMark: false,
-      isInvalidMark: false,
+      hasStroke: true,
+      shape,
+      isValidMark,
+      isInvalidMark,
     };
   }
 
-  const isPref = PREF_ROLES.has(box.role);
-  const isMark = MARK_ROLES.has(box.role);
-  const shape = isPref ? detectShapeForPref(inBox) : detectShapeForMark(inBox);
-
-  let isValidMark = false;
-  let isInvalidMark = false;
-
-  if (isMark) {
-    isValidMark = shape === "aspa" || shape === "cruz";
-    isInvalidMark = !isValidMark && shape !== "dot";
+  // ── Logo / Photo box analysis (Aspa / Cruz) ─────────────────────────────────
+  // 1. ¿Hay un aspa/cruz cuya intersección cayó dentro del recuadro?
+  const insideCross = crosses.find((c) => isInBoxWithMargin(c.pt, box, 4));
+  if (insideCross) {
+    return {
+      role: box.role,
+      partyIdx: box.partyIdx,
+      hasStroke: true,
+      shape: insideCross.shape,
+      isValidMark: true,
+      isInvalidMark: false,
+      intersectionPoint: insideCross.pt,
+      isIntersectionInside: true,
+    };
   }
 
-  if (isPref) {
-    const isCross = shape === "aspa" || shape === "cruz";
-    const isScribble = shape === "scribble";
-    isInvalidMark = isCross || isScribble;
-    isValidMark = !isInvalidMark && shape !== "dot";
+  // 2. ¿Hay un aspa/cruz en la misma fila pero con la intersección AFUERA del recuadro?
+  const rowCross = crosses.find(
+    (c) =>
+      c.pt.y >= box.y - 15 &&
+      c.pt.y <= box.y + box.h + 15 &&
+      c.pt.x >= box.x - 180 &&
+      c.pt.x <= box.x + box.w + 60,
+  );
+  if (rowCross) {
+    return {
+      role: box.role,
+      partyIdx: box.partyIdx,
+      hasStroke: true,
+      shape: rowCross.shape,
+      isValidMark: false,
+      isInvalidMark: true,
+      intersectionPoint: rowCross.pt,
+      isIntersectionInside: false,
+    };
+  }
+
+  // 3. Si no hay cruce, verificar si hay trazos sueltos (líneas o garabatos) en la caja
+  const touchingStrokes = strokes.filter(
+    (s) => coverage(s, box) > 0.15 || isInBox(strokeCentroid(s), box),
+  );
+  if (touchingStrokes.length > 0) {
+    const shape = detectShapeForMark(touchingStrokes);
+    return {
+      role: box.role,
+      partyIdx: box.partyIdx,
+      hasStroke: true,
+      shape: shape === "aspa" || shape === "cruz" ? shape : "line",
+      isValidMark: false,
+      isInvalidMark: true,
+    };
   }
 
   return {
     role: box.role,
     partyIdx: box.partyIdx,
-    hasStroke: true,
-    shape,
-    isValidMark,
-    isInvalidMark,
+    hasStroke: false,
+    isValidMark: false,
+    isInvalidMark: false,
   };
 }
 
 // ─── Out-of-box detection ─────────────────────────────────────────────────────
 
-function outOfBoxStrokes(strokes: Point[][], boxes: BoxBounds[]): boolean {
-  return strokes.filter(nonTrivial).some((stroke) => {
+function outOfBoxStrokes(
+  strokes: Point[][],
+  boxes: BoxBounds[],
+  crosses: FoundCross[],
+): boolean {
+  // Los trazos que forman una cruz/aspa identificada quedan exentos del chequeo de desborde
+  const crossStrokeIndices = new Set(crosses.flatMap((c) => c.strokeIndices));
+
+  return strokes.filter(nonTrivial).some((stroke, idx) => {
+    if (crossStrokeIndices.has(idx)) return false;
     const maxCov = Math.max(...boxes.map((b) => coverage(stroke, b)));
     if (maxCov < 0.3) return true;
     const fitsAny = boxes.some((b) => strokeFitsInBox(stroke, b));
@@ -352,8 +524,9 @@ export function analyzeColumn(
   const meaningful = strokes.filter(nonTrivial);
   if (!meaningful.length) return blankAnalysis();
 
-  const boxAnalyses = boxes.map((b) => analyzeBox(meaningful, b));
-  const hasOutOfBox = outOfBoxStrokes(meaningful, boxes);
+  const crosses = findCrosses(meaningful);
+  const boxAnalyses = boxes.map((b) => analyzeBox(meaningful, b, crosses));
+  const hasOutOfBox = outOfBoxStrokes(meaningful, boxes, crosses);
 
   return applyRules(col, boxAnalyses, hasOutOfBox);
 }
@@ -401,15 +574,21 @@ function applyRules(
     (b) => MARK_ROLES.has(b.role) && b.isInvalidMark,
   );
   if (badMark) {
+    const isInterOutside = badMark.isIntersectionInside === false;
     return {
       result: "null",
       feedbackType: "error",
       boxAnalyses,
       hasOutOfBoxStrokes: false,
+      intersectionPoint: badMark.intersectionPoint,
+      isIntersectionInsideBox: false,
       message: "Voto NULO",
-      submessage:
-        "La marca no es válida. Se reconoció como una línea o garabato.",
-      hint: "Solo aspa (✗) o cruz (+) son marcas válidas. Dibuja una X clara cuyos trazos se crucen dentro del recuadro.",
+      submessage: isInterOutside
+        ? "El punto de cruce (intersección) de tus trazos quedó fuera del recuadro del símbolo."
+        : "La marca no es válida. Se reconoció como una sola línea o garabato.",
+      hint: isInterOutside
+        ? "Regla electoral: La intersección debe quedar adentro del recuadro del símbolo para ser un voto válido."
+        : "Solo aspa (✗) o cruz (+) son marcas válidas. Dibuja dos líneas cuyos trazos se crucen dentro del recuadro.",
     };
   }
 
@@ -480,7 +659,7 @@ function applyRules(
 
   // ── No logo/photo marked — check for preferential-only vote ──────────────
   //
-  // Según la capacitación para miembros de mesa (ONPE): escribir un número
+  // Según las normas electorales: escribir un número
   // válido en la casilla preferencial SIN marcar el logo cuenta como voto
   // válido. Aplica solo a columnas con casillas preferenciales (no presidente).
   //
@@ -517,7 +696,7 @@ function applyRules(
         preferentialStatus: "written",
         message: "Voto VÁLIDO ✓",
         submessage:
-          "Número preferencial escrito sin marcar el logo — válido según reglamento ONPE.",
+          "Número preferencial escrito sin marcar el logo — válido según la normativa electoral.",
         hint: "El número en la casilla preferencial basta para emitir un voto válido. Opcionalmente también puedes marcar el logo del partido.",
       };
     }
@@ -574,6 +753,10 @@ function applyRules(
     preferentialStatus = "invalid_mark";
   else if (prefBoxes.some((b) => b.isValidMark)) preferentialStatus = "written";
 
+  const validMarkBox = boxAnalyses.find(
+    (b) => b.isValidMark && b.intersectionPoint,
+  );
+
   return {
     result: "valid",
     feedbackType: "success",
@@ -581,6 +764,8 @@ function applyRules(
     boxAnalyses,
     hasOutOfBoxStrokes: false,
     preferentialStatus,
+    intersectionPoint: validMarkBox?.intersectionPoint,
+    isIntersectionInsideBox: validMarkBox?.isIntersectionInside ?? true,
     message: "Voto VÁLIDO ✓",
     submessage: buildValidDetail(col, preferentialStatus),
     hint: buildValidHint(col, preferentialStatus),
@@ -588,6 +773,9 @@ function applyRules(
 }
 
 function buildValidDetail(col: ColumnDef, pref: PreferentialStatus): string {
+  if (col.prefBoxCount === 0 && !col.allowPhotoMark) {
+    return "Símbolo marcado válidamente conforme a las normas electorales.";
+  }
   if (col.type === "presidente")
     return "Voto presidencial registrado correctamente.";
   if (pref === "written") {
@@ -602,6 +790,9 @@ function buildValidHint(
   col: ColumnDef,
   pref: PreferentialStatus,
 ): string | undefined {
+  if (col.prefBoxCount === 0 && !col.allowPhotoMark) {
+    return "En las elecciones regionales y municipales podés votar por organizaciones distintas en cada columna (voto cruzado).";
+  }
   if (col.type === "presidente" || pref !== "blank") return undefined;
   return col.prefBoxCount >= 2
     ? "Opcional: escribe el número de hasta dos candidatos, uno por recuadro."

@@ -24,8 +24,8 @@ export default async function SimuladorPage() {
 
   return (
     <ContentPlatformLayout fullHeight>
-      <div className="h-full overflow-hidden flex justify-center bg-background px-4 py-3 md:py-4">
-        <div className="w-full max-w-[460px] flex flex-col min-h-0 h-full">
+      <div className="h-full overflow-hidden flex justify-center bg-background px-4 py-3 md:py-6">
+        <div className="w-full max-w-4xl flex flex-col min-h-0 h-full mx-auto">
           <SimuladorView />
         </div>
       </div>
