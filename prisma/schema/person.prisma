@@ -26,7 +26,7 @@ model person {
   id                       String              @id @db.VarChar
   name                     String              @db.VarChar(150)
   lastname                 String              @db.VarChar(150)
-  fullname                 String              @unique(map: "ix_person_fullname") @db.VarChar(300)
+  fullname                 String              @db.VarChar(300)
   image_url                String?             @db.VarChar
   birth_date               DateTime?           @db.Timestamptz(6)
   profession               String?             @db.VarChar(200)
@@ -72,6 +72,7 @@ model person {
   triviagame               triviagame[]
   research_proposals       research_proposals[]
 
+  @@index([fullname], map: "idx_person_fullname")
   @@index([dni(ops: raw("gin_trgm_ops"))], map: "idx_person_dni_trgm", type: Gin)
   @@index([fullname(ops: raw("gin_trgm_ops"))], map: "idx_person_fullname_trgm", type: Gin)
 }

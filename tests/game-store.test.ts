@@ -217,7 +217,7 @@ describe("Stratified Level Hydrator (Slot Architecture & Index Gaps Invariants)"
     expect(result[8].id).toBe(303); // Slot 3: Debate Junín
   });
 
-  it("prioritizes selected region debate questions before debates of other regions", () => {
+  it("prioritizes selected region debate questions and excludes debates of other regions", () => {
     const questions: TriviaQuestion[] = [
       mockQuestion(101, "top_1", 1),
       mockQuestion(201, "top_3", 10),
@@ -230,7 +230,39 @@ describe("Stratified Level Hydrator (Slot Architecture & Index Gaps Invariants)"
     // Nivel 1 debe tomar el debate de Junín en el Slot 3
     expect(result[0].id).toBe(101); // Eje 1
     expect(result[1].id).toBe(201); // Eje 3
-    expect(result[2].id).toBe(302); // Debate Junín (priorizado sobre Arequipa)
+    expect(result[2].id).toBe(302); // Debate Junín
+    expect(result.some((q) => q.id === 301)).toBe(false); // Arequipa excluida al jugar Junín
+  });
+
+  it("limits total map questions strictly to general pools plus selected region debates", () => {
+    const questions: TriviaQuestion[] = [
+      ...Array.from({ length: 14 }, (_, i) =>
+        mockQuestion(100 + i, "top_1", i + 1),
+      ),
+      ...Array.from({ length: 14 }, (_, i) =>
+        mockQuestion(200 + i, "top_3", i + 15),
+      ),
+      ...Array.from({ length: 12 }, (_, i) =>
+        mockQuestion(300 + i, "top_5", i + 30, "dist_piura"),
+      ),
+      ...Array.from({ length: 10 }, (_, i) =>
+        mockQuestion(400 + i, "top_5", i + 50, "dist_arequipa"),
+      ),
+      ...Array.from({ length: 15 }, (_, i) =>
+        mockQuestion(500 + i, "top_5", i + 70, "dist_lima"),
+      ),
+    ];
+
+    const result = buildStratifiedMapQuestions(questions, topics, "dist_piura");
+
+    // 14 (Eje 1) + 14 (Eje 3) + 12 (Piura) = 40 preguntas (= 14 niveles), NUNCA 65 preguntas
+    expect(result.length).toBe(40);
+    expect(
+      result.some((q) => q.electoral_district_id === "dist_arequipa"),
+    ).toBe(false);
+    expect(result.some((q) => q.electoral_district_id === "dist_lima")).toBe(
+      false,
+    );
   });
 
   it("distributes questions fairly across 4 active general topics via dynamic round-robin", () => {

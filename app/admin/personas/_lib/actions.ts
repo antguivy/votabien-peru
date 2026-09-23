@@ -42,6 +42,19 @@ export async function createPerson(data: CreatePersonRequest) {
       }
     }
 
+    if (data.fullname) {
+      const homonyms = await prisma.person.findMany({
+        where: { fullname: { equals: data.fullname, mode: "insensitive" } },
+        select: { id: true, fullname: true, dni: true },
+      });
+
+      if (homonyms.length > 0) {
+        console.info(
+          `[createPerson] Homonimia detectada para "${data.fullname}": existen ${homonyms.length} registro(s) previo(s) con este nombre. DNIs existentes: ${homonyms.map((h) => h.dni || "sin-dni").join(", ")}. Nuevo DNI: ${data.dni || "sin-dni"}`,
+        );
+      }
+    }
+
     const personId = createId();
 
     const personData = {
@@ -90,6 +103,18 @@ export async function createPerson(data: CreatePersonRequest) {
     return { success: true, data: person };
   } catch (error) {
     console.error("[createPerson] Error capturado:", error);
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
+      return {
+        success: false,
+        error:
+          "Ya existe un registro con este dato único (posible duplicado de DNI u otro campo restringido).",
+      };
+    }
     return {
       success: false,
       error: extractErrorMessage(error),

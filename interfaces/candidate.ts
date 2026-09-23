@@ -21,6 +21,7 @@ export enum CandidacyStatus {
   IMPROCEDENTE = "IMPROCEDENTE", // No cumplió requisitos de forma
   RENUNCIA = "RENUNCIA", // El candidato se bajó
   APELACION = "APELACION", // Está peleando su exclusión
+  FALLECIMIENTO = "FALLECIMIENTO", // Baja oficial por fallecimiento
 }
 
 export enum CandidacyType {
@@ -41,6 +42,7 @@ export enum CandidacyType {
 
 export type FilterCandidacyType =
   | "GOBERNADOR_REGIONAL"
+  | "VICEGOBERNADOR_REGIONAL"
   | "CONSEJERO_REGIONAL"
   | "ALCALDE_PROVINCIAL"
   | "ALCALDE_DISTRITAL"
@@ -146,6 +148,21 @@ export interface CandidateBasicInfo {
   electoral_process_id: string | number;
 }
 
+export type SuccessionReason =
+  | "RENUNCIA"
+  | "EXCLUIDO"
+  | "TACHADO"
+  | "IMPROCEDENTE"
+  | "FALLECIMIENTO"
+  | "INACTIVO";
+
+export interface CandidateSuccession {
+  target_type: CandidacyType;
+  original_candidate_name?: string | null;
+  reason: SuccessionReason;
+  legal_basis: string;
+}
+
 export interface CandidateCard extends CandidateBase {
   person: PersonBackgroundToCard;
   political_party: PoliticalPartyBase;
@@ -153,6 +170,7 @@ export interface CandidateCard extends CandidateBase {
   has_metrics: boolean;
   ai_score?: number;
   ai_analysis?: string;
+  succession?: CandidateSuccession;
 }
 
 export interface CandidatePresidentials {
@@ -168,6 +186,7 @@ export interface CandidateDetail extends CandidateBase {
   electoral_district: ElectoralDistrictBasic | null;
   ai_score?: number;
   ai_analysis?: string;
+  succession?: CandidateSuccession;
 }
 
 export interface CreateCandidatePeriodRequest extends CandidateBase {

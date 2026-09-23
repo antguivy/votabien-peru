@@ -3,13 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { typeOptions } from "@/interfaces/candidate";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { ElectoralDistrictBase } from "@/interfaces/electoral-district";
 
 interface TypeBarProps {
   currentType: string;
+  distritos?: ElectoralDistrictBase[];
 }
 
-export function TypeBar({ currentType }: TypeBarProps) {
+export function TypeBar({ currentType, distritos }: TypeBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -17,8 +19,57 @@ export function TypeBar({ currentType }: TypeBarProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const currentIndex = typeOptions.findIndex((o) => o.value === currentType);
-  const activeOption = typeOptions[currentIndex];
+  const districtsParam = searchParams.get("districts") || "";
+
+  const isLimaMetropolitana = useMemo(() => {
+    if (!districtsParam) return false;
+    const clean = districtsParam.trim();
+    if (
+      clean === "hxvfxkwrav0ogbpsi3mvb4cw" ||
+      clean === "LIM" ||
+      clean.toUpperCase() === "LIMA METROPOLITANA"
+    ) {
+      return true;
+    }
+    if (distritos && distritos.length > 0) {
+      const d = distritos.find(
+        (item) => item.id === clean || item.code === clean,
+      );
+      if (d?.parent_id === "hxvfxkwrav0ogbpsi3mvb4cw" || d?.code === "LIM") {
+        return true;
+      }
+    }
+    return false;
+  }, [districtsParam, distritos]);
+
+  const availableOptions = useMemo(() => {
+    if (isLimaMetropolitana) {
+      return typeOptions.filter(
+        (o) =>
+          o.value === "ALCALDE_PROVINCIAL" || o.value === "ALCALDE_DISTRITAL",
+      );
+    }
+    return typeOptions;
+  }, [isLimaMetropolitana]);
+
+  // Si está en Lima Metropolitana y se encuentra en un cargo regional, conmutar a Alcalde Provincial
+  useEffect(() => {
+    if (
+      isLimaMetropolitana &&
+      (currentType === "GOBERNADOR_REGIONAL" ||
+        currentType === "VICEGOBERNADOR_REGIONAL" ||
+        currentType === "CONSEJERO_REGIONAL")
+    ) {
+      const next = new URLSearchParams(searchParams.toString());
+      next.set("type", "ALCALDE_PROVINCIAL");
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    }
+  }, [isLimaMetropolitana, currentType, searchParams, pathname, router]);
+
+  const currentIndex = availableOptions.findIndex(
+    (o) => o.value === currentType,
+  );
+  const activeOption = availableOptions[currentIndex];
 
   // Cierra al hacer click fuera
   useEffect(() => {
@@ -45,7 +96,7 @@ export function TypeBar({ currentType }: TypeBarProps) {
     <div className="flex flex-col gap-2.5">
       {/* Botones abreviados — una sola fila, siempre */}
       <div className="flex gap-1.5">
-        {typeOptions.map((opt) => {
+        {availableOptions.map((opt) => {
           const isActive = currentType === opt.value;
           return (
             <button

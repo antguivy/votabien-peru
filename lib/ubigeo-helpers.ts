@@ -219,6 +219,23 @@ export function resolveLocationFromParam(
         };
       }
 
+      // Caso especial: Lima Metropolitana es provincia y circunscripción autonómica simultáneamente
+      if (
+        found.code === "LIM" ||
+        found.name.toUpperCase().includes("LIMA METROPOLITANA")
+      ) {
+        return {
+          department: "LIMA METROPOLITANA",
+          departmentCode: "LIM",
+          province: "LIMA",
+          provinceCode: found.code || found.id,
+          district: undefined,
+          districtCode: undefined,
+          districtId: found.id,
+          fullLabel: "LIMA METROPOLITANA",
+        };
+      }
+
       // Nivel Región / Nacional
       return {
         department: found.name,
@@ -228,7 +245,9 @@ export function resolveLocationFromParam(
         district: undefined,
         districtCode: undefined,
         districtId: found.id,
-        fullLabel: `Región ${found.name}`,
+        fullLabel: found.name.startsWith("LIMA")
+          ? found.name
+          : `Región ${found.name}`,
       };
     }
   }

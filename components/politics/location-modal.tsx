@@ -91,10 +91,15 @@ export function LocationModal({
   // 1. Departamentos / Regiones naturales (25 departamentos)
   const departments = useMemo(() => {
     if (!hasDbDistricts) {
-      return DEPARTMENTS_DATA.map((d) => ({
-        name: d.name,
-        code: d.dep_code,
-      }));
+      return DEPARTMENTS_DATA.flatMap((d) => {
+        if (d.name === "LIMA") {
+          return [
+            { name: "LIMA METROPOLITANA", code: "LIM" },
+            { name: "LIMA PROVINCIAS", code: "LMP" },
+          ];
+        }
+        return [{ name: d.name, code: d.dep_code }];
+      });
     }
 
     const deptSet = new Set<string>();
@@ -108,10 +113,14 @@ export function LocationModal({
       ) {
         if (
           d.code === "LIM" ||
-          d.code === "LMP" ||
-          d.name.toUpperCase().includes("LIMA")
+          d.name.toUpperCase().includes("LIMA METROPOLITANA")
         ) {
-          deptSet.add("LIMA");
+          deptSet.add("LIMA METROPOLITANA");
+        } else if (
+          d.code === "LMP" ||
+          d.name.toUpperCase().includes("LIMA PROVINCIAS")
+        ) {
+          deptSet.add("LIMA PROVINCIAS");
         } else {
           deptSet.add(d.name.toUpperCase());
         }
@@ -138,20 +147,19 @@ export function LocationModal({
       }));
     }
 
-    if (selectedDepName === "LIMA") {
-      // Provincia Lima (Lima Metropolitana)
+    if (selectedDepName === "LIMA METROPOLITANA") {
       const limMetro = distritos.find((d) => d.code === "LIM");
-      // Las 9 provincias de Lima Provincias (LMP)
+      return limMetro ? [{ id: limMetro.id, name: "LIMA", code: "LIM" }] : [];
+    }
+
+    if (selectedDepName === "LIMA PROVINCIAS") {
       const provsLMP = distritos.filter((d) => {
         const parent = d.parent_id ? distMap.get(d.parent_id) : null;
         return parent?.code === "LMP" && d.level === "PROVINCIAL";
       });
-
-      const list = [
-        ...(limMetro ? [{ id: limMetro.id, name: "LIMA", code: "LIM" }] : []),
-        ...provsLMP.map((p) => ({ id: p.id, name: p.name, code: p.code })),
-      ];
-      return list.sort((a, b) => a.name.localeCompare(b.name, "es"));
+      return provsLMP
+        .map((p) => ({ id: p.id, name: p.name, code: p.code }))
+        .sort((a, b) => a.name.localeCompare(b.name, "es"));
     }
 
     if (selectedDepName === "CALLAO") {
@@ -231,7 +239,7 @@ export function LocationModal({
             if (found.parent_id) {
               const parent = distMap.get(found.parent_id);
               if (parent?.code === "LIM") {
-                setSelectedDepName("LIMA");
+                setSelectedDepName("LIMA METROPOLITANA");
                 setSelectedProvId(parent.id);
               } else if (parent?.level === "PROVINCIAL") {
                 setSelectedProvId(parent.id);
@@ -239,7 +247,7 @@ export function LocationModal({
                   ? distMap.get(parent.parent_id)
                   : null;
                 if (grandParent?.code === "LMP") {
-                  setSelectedDepName("LIMA");
+                  setSelectedDepName("LIMA PROVINCIAS");
                 } else {
                   setSelectedDepName(grandParent?.name || parent.name);
                 }
@@ -252,21 +260,23 @@ export function LocationModal({
             setSelectedProvId(found.id);
             setSelectedDistId("");
             if (found.code === "LIM") {
-              setSelectedDepName("LIMA");
+              setSelectedDepName("LIMA METROPOLITANA");
             } else {
               const parent = found.parent_id
                 ? distMap.get(found.parent_id)
                 : null;
               if (parent?.code === "LMP") {
-                setSelectedDepName("LIMA");
+                setSelectedDepName("LIMA PROVINCIAS");
               } else {
                 setSelectedDepName(parent?.name || "");
               }
             }
           } else {
             // Nivel departamental / regional
-            if (found.code === "LMP" || found.code === "LIM") {
-              setSelectedDepName("LIMA");
+            if (found.code === "LIM") {
+              setSelectedDepName("LIMA METROPOLITANA");
+            } else if (found.code === "LMP") {
+              setSelectedDepName("LIMA PROVINCIAS");
             } else {
               setSelectedDepName(found.name);
             }
@@ -276,8 +286,10 @@ export function LocationModal({
         }
       } else if (selectedLocation?.department) {
         const normDep = normalizeText(selectedLocation.department);
-        if (normDep.includes("lima")) {
-          setSelectedDepName("LIMA");
+        if (normDep.includes("metropolitana")) {
+          setSelectedDepName("LIMA METROPOLITANA");
+        } else if (normDep.includes("provincias")) {
+          setSelectedDepName("LIMA PROVINCIAS");
         } else {
           const found = departments.find(
             (d) => normalizeText(d.name) === normDep,
@@ -377,15 +389,16 @@ export function LocationModal({
         list.push({
           id: d.id,
           name: "LIMA",
-          label: "LIMA, LIMA",
+          label: "LIMA, LIMA METROPOLITANA",
           type: "provincia",
           rawItem: d,
-          depName: "LIMA",
+          depName: "LIMA METROPOLITANA",
           provName: "LIMA",
         });
       } else if (d.level === "PROVINCIAL") {
         const reg = d.parent_id ? distMap.get(d.parent_id) : null;
-        const regName = reg?.code === "LMP" ? "LIMA" : reg?.name || "";
+        const regName =
+          reg?.code === "LMP" ? "LIMA PROVINCIAS" : reg?.name || "";
         list.push({
           id: d.id,
           name: d.name,
@@ -401,10 +414,10 @@ export function LocationModal({
           list.push({
             id: d.id,
             name: d.name,
-            label: `${d.name}, LIMA, LIMA`,
+            label: `${d.name}, LIMA METROPOLITANA`,
             type: "distrito",
             rawItem: d,
-            depName: "LIMA",
+            depName: "LIMA METROPOLITANA",
             provName: "LIMA",
             distName: d.name,
           });
@@ -415,7 +428,7 @@ export function LocationModal({
           const provName = parent?.level === "PROVINCIAL" ? parent.name : "";
           const regName =
             grandparent?.code === "LMP"
-              ? "LIMA"
+              ? "LIMA PROVINCIAS"
               : grandparent?.name || parent?.name || "";
           const labelParts = [d.name, provName, regName].filter(Boolean);
 
@@ -475,15 +488,30 @@ export function LocationModal({
         fullLabel: `Provincia ${currentProv.name}, ${selectedDepName}`,
       };
     } else {
+      let rootDept: ElectoralDistrictBase | undefined;
+      if (selectedDepName === "LIMA METROPOLITANA") {
+        rootDept = distritos.find((d) => d.code === "LIM");
+      } else if (selectedDepName === "LIMA PROVINCIAS") {
+        rootDept = distritos.find((d) => d.code === "LMP");
+      } else {
+        rootDept = distritos.find(
+          (d) =>
+            d.parent_id === null &&
+            !d.is_national &&
+            normalizeText(d.name) === normalizeText(selectedDepName),
+        );
+      }
       loc = {
         department: selectedDepName,
-        departmentCode: selectedDepName,
+        departmentCode: rootDept?.code || selectedDepName,
         province: undefined,
         provinceCode: undefined,
         district: undefined,
         districtCode: undefined,
-        districtId: selectedDepName,
-        fullLabel: `Región ${selectedDepName}`,
+        districtId: rootDept?.id || selectedDepName,
+        fullLabel: selectedDepName.startsWith("LIMA")
+          ? selectedDepName
+          : `Región ${selectedDepName}`,
       };
     }
 
@@ -518,15 +546,30 @@ export function LocationModal({
         fullLabel: `Provincia ${item.provName || item.name}, ${item.depName}`,
       };
     } else {
+      let rootDept: ElectoralDistrictBase | undefined;
+      if (item.depName === "LIMA METROPOLITANA") {
+        rootDept = distritos.find((d) => d.code === "LIM");
+      } else if (item.depName === "LIMA PROVINCIAS") {
+        rootDept = distritos.find((d) => d.code === "LMP");
+      } else {
+        rootDept = distritos.find(
+          (d) =>
+            d.parent_id === null &&
+            !d.is_national &&
+            normalizeText(d.name) === normalizeText(item.depName),
+        );
+      }
       loc = {
         department: item.depName,
         province: undefined,
         provinceCode: undefined,
         district: undefined,
         districtCode: undefined,
-        districtId: item.name,
-        departmentCode: item.name,
-        fullLabel: `Región ${item.depName}`,
+        districtId: rootDept?.id || item.id || item.name,
+        departmentCode: rootDept?.code || item.name,
+        fullLabel: item.depName.startsWith("LIMA")
+          ? item.depName
+          : `Región ${item.depName}`,
       };
     }
 

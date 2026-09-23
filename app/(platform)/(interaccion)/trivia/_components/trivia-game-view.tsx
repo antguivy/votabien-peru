@@ -193,12 +193,12 @@ function OptionCard({
 
       <div className="flex-1 min-w-0">
         <p
-          className={`text-xs sm:text-[13px] font-bold leading-snug line-clamp-3 ${nameClass}`}
+          className={`text-xs sm:text-sm font-semibold leading-relaxed ${nameClass}`}
         >
           {option.name}
         </p>
         {option.subtitle && (
-          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
             {option.subtitle}
           </p>
         )}
@@ -743,14 +743,14 @@ export function TriviaGameView({
               </p>
             </div>
 
-            {/* Options grid */}
+            {/* Options list / grid */}
             {question && (
               <div
                 className={cn(
-                  "grid gap-2 flex-shrink-0",
+                  "gap-2 flex-shrink-0",
                   question.display_type === "TRUE_FALSE"
-                    ? "grid-cols-2"
-                    : "grid-cols-1 sm:grid-cols-2",
+                    ? "grid grid-cols-2"
+                    : "flex flex-col gap-2.5",
                 )}
               >
                 {question.options.map((opt: TriviaOption) => (

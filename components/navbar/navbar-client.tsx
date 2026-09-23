@@ -31,7 +31,7 @@ const NavbarClient = memo(({ user }: NavbarClientProps) => {
                   width={130}
                   height={44}
                   priority
-                  className="drop-shadow-sm"
+                  className="h-10 w-auto drop-shadow-sm object-contain"
                 />
               </div>
             </Link>

@@ -263,7 +263,8 @@ export function NewFilterPanel({
     useState<UserLocationSelection | null>(() => {
       if (currentDistrict) {
         return (
-          resolveLocationFromParam(currentDistrict) || getSavedUserLocation()
+          resolveLocationFromParam(currentDistrict, distritos) ||
+          getSavedUserLocation()
         );
       }
       return getSavedUserLocation();
