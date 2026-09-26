@@ -16,7 +16,8 @@ RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --ignore-scripts
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts
 
 # ==========================================
 # STAGE 2: Builder
@@ -62,7 +63,8 @@ ENV NEXT_PUBLIC_PATREON_URL=$NEXT_PUBLIC_PATREON_URL
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN pnpm run build
+RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache \
+    pnpm run build
 
 # ==========================================
 # Runner (NO necesita las vars en runtime)
