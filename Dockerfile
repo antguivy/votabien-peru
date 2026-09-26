@@ -17,7 +17,7 @@ RUN corepack enable && corepack prepare pnpm@11.21.0 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --ignore-scripts
+    pnpm install --ignore-scripts
 
 # ==========================================
 # STAGE 2: Builder
