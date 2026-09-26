@@ -74,6 +74,7 @@ export function DictationModeDialog({
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
         noScroll
+        showCloseButton={false}
         className="w-full sm:max-w-md mx-auto h-[95dvh] max-h-[95dvh] bg-background border-border text-foreground p-0 flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
       >
         {/* Pinned Header: Title, Election Name and Status Badge */}

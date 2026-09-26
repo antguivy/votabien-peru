@@ -38,6 +38,7 @@ interface CredenzaProps extends BaseProps {
   className?: string;
   asChild?: boolean;
   noScroll?: boolean;
+  showCloseButton?: boolean;
   onInteractOutside?: (e: Event) => void;
   onEscapeKeyDown?: (e: KeyboardEvent) => void;
 }
@@ -95,6 +96,7 @@ const CredenzaContent = ({
   className,
   children,
   noScroll,
+  showCloseButton,
   ...props
 }: CredenzaProps) => {
   const { isMobile } = useCredenzaContext();
@@ -108,7 +110,12 @@ const CredenzaContent = ({
   }
 
   return (
-    <DialogContent className={className} {...props}>
+    <DialogContent
+      className={className}
+      noScroll={noScroll}
+      showCloseButton={showCloseButton}
+      {...props}
+    >
       {children}
     </DialogContent>
   );

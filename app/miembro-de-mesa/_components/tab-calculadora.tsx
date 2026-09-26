@@ -144,7 +144,7 @@ export function TabCalculadora() {
                 ¡CUADRE EXACTO! ({totalVotes} de {votersTarget})
               </h3>
               <p className="text-xs text-emerald-800/80 dark:text-emerald-300 font-medium">
-                Todo coincide perfecto. Ya podés pasar estos datos con lapicero
+                Todo coincide perfecto. Ya puedes pasar estos datos con lapicero
                 al acta.
               </p>
             </div>
