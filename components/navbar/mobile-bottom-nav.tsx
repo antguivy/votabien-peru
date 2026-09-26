@@ -132,10 +132,29 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
             const showActive = isActive || isMenuActive;
 
             const sharedClass = cn(
-              "relative flex flex-col items-center justify-center gap-1.5",
-              "pt-3 pb-1 w-[60px] rounded-lg select-none",
+              "relative flex flex-col items-center justify-start gap-1",
+              "pt-2.5 pb-1 w-[60px] min-h-[54px] rounded-lg select-none",
               "transition-transform duration-150 active:scale-90",
             );
+
+            const renderLabel = (label: string) => {
+              if (label === "Miembros de Mesa") {
+                return (
+                  <>
+                    <span className="block leading-[1.1]">Miembros</span>
+                    <span className="block leading-[1.1]">de Mesa</span>
+                  </>
+                );
+              }
+              if (label.includes("\n")) {
+                return label.split("\n").map((line, i) => (
+                  <span key={i} className="block leading-[1.1]">
+                    {line}
+                  </span>
+                ));
+              }
+              return <span className="block leading-[1.1]">{label}</span>;
+            };
 
             const content = (
               <>
@@ -151,13 +170,13 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
                 />
                 <span
                   className={cn(
-                    "text-[9.5px] leading-none transition-all duration-200",
+                    "text-[9.5px] text-center w-full transition-all duration-200",
                     showActive
                       ? "text-brand font-extrabold"
                       : "text-foreground/[0.58] font-semibold dark:text-white/[0.65]",
                   )}
                 >
-                  {item.label}
+                  {renderLabel(item.label)}
                 </span>
               </>
             );
