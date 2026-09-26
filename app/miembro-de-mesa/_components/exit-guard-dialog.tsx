@@ -33,6 +33,7 @@ export function ExitGuardDialog({ open, onOpenChange }: ExitGuardDialogProps) {
     <Credenza open={open} onOpenChange={onOpenChange}>
       <CredenzaContent
         noScroll
+        showCloseButton={false}
         className="w-full sm:max-w-md mx-auto bg-background border-border text-foreground p-0 overflow-hidden flex flex-col rounded-t-2xl sm:rounded-2xl shadow-2xl"
       >
         <CredenzaHeader className="shrink-0 text-left px-5 pt-4 pb-3 border-b border-border/60">

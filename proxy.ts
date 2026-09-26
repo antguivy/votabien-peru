@@ -24,6 +24,8 @@ export async function proxy(request: NextRequest) {
     "/candidatos",
     "/partidos",
     "/comparador",
+    "/miembro-de-mesa",
+    "/miembros-de-mesa",
     "/match",
     "/simulador",
     "/trivia",
