@@ -19,7 +19,7 @@ jobs:
   # STAGE 1: Quality Gate (Lint, Type-check, Unit Tests)
   # ========================================================
   quality-check:
-    name: Quality Gate & Tests
+    name: Quality Check & Tests
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
