@@ -21,6 +21,15 @@ const nextConfig: NextConfig = {
     "pg",
     "@prisma/adapter-pg",
   ],
+  async redirects() {
+    return [
+      {
+        source: "/miembros-de-mesa",
+        destination: "/miembro-de-mesa",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Optimización de Next.js desactivada en producción
     // (Cloudflare lo manejará)

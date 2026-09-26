@@ -6,8 +6,6 @@ import {
   getPlayableQuestions,
 } from "./_lib/data";
 import { getRegiones } from "@/queries/public/electoral-districts";
-import UnderConstruction from "@/components/under-construction";
-import { serverGetUser } from "@/lib/auth-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,16 +16,6 @@ export const metadata = {
 };
 
 export default async function TriviaPage() {
-  const { user } = await serverGetUser();
-
-  if (!user) {
-    return (
-      <ContentPlatformLayout fullHeight>
-        <UnderConstruction feature="trivia" isTeam />
-      </ContentPlatformLayout>
-    );
-  }
-
   const [topics, audiences, questions, regions] = await Promise.all([
     getPlayableTopics(),
     getPlayableAudiences(),

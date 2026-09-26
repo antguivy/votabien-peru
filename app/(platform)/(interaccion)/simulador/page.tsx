@@ -1,7 +1,5 @@
 import { ContentPlatformLayout } from "@/components/navbar/content-layout";
 import SimuladorView from "./_components/simulador-view";
-import UnderConstruction from "@/components/under-construction";
-import { serverGetUser } from "@/lib/auth-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +10,6 @@ export const metadata = {
 };
 
 export default async function SimuladorPage() {
-  const { user } = await serverGetUser();
-
-  if (!user) {
-    return (
-      <ContentPlatformLayout fullHeight>
-        <UnderConstruction feature="simulador" isTeam />
-      </ContentPlatformLayout>
-    );
-  }
-
   return (
     <ContentPlatformLayout fullHeight>
       <div className="h-full overflow-hidden flex justify-center bg-background px-4 py-3 md:py-6">

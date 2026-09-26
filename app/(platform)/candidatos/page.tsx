@@ -10,8 +10,6 @@ import { CandidatosListSkeleton } from "./_components/candidatos-list-skeleton";
 import { TypeBar } from "@/components/politics/type-bar";
 import { NewFilterPanel } from "@/components/ui/filter-panel-candidates";
 import { getDistritos } from "@/queries/public/electoral-districts";
-import UnderConstruction from "@/components/under-construction";
-import { serverGetUser } from "@/lib/auth-actions";
 
 interface PageProps {
   searchParams: Promise<{
@@ -29,16 +27,6 @@ interface PageProps {
 export const dynamic = "force-dynamic";
 
 const CandidatosPage = async ({ searchParams }: PageProps) => {
-  const { user } = await serverGetUser();
-
-  if (!user) {
-    return (
-      <ContentPlatformLayout>
-        <UnderConstruction feature="candidatos" isTeam />
-      </ContentPlatformLayout>
-    );
-  }
-
   const params = await searchParams;
   const limit = 40;
 
