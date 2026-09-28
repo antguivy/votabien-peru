@@ -4,7 +4,7 @@ import {
   Landmark, // Congresistas — edificio institucional (congreso)
   Scale, // Comparador — balanza, justicia
   HelpCircle, // Trivia — pregunta
-  Heart, // Match — compatibilidad
+  // _Heart, // Match — compatibilidad
   Vote, // Simulador
   Users, // Equipo
   Target, // Misión y Visión — objetivo/meta
@@ -65,8 +65,8 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     children: [
       { href: "/simulador", label: "Simulador", icon: Vote },
       { href: "/trivia", label: "Trivia", icon: HelpCircle },
-      { href: "/match", label: "Mi Candidato", icon: Heart },
-      { href: "/comparador", label: "Comparador", icon: Scale },
+      // { href: "/match", label: "Mi Candidato", icon: Heart },
+      // { href: "/comparador", label: "Comparador", icon: Scale },
       {
         href: "/miembro-de-mesa",
         label: "Miembros de Mesa",
