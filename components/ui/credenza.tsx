@@ -178,7 +178,9 @@ const CredenzaFooter = ({ className, children, ...props }: CredenzaProps) => {
   return (
     <Component
       className={cn(
-        "shrink-0 bg-background",
+        // El footer nunca debe scrollear con el contenido: se mantiene
+        // anclado al borde inferior del contenedor de scroll.
+        "shrink-0 bg-background sticky bottom-0 z-10",
         isMobile
           ? "flex flex-col-reverse gap-2 p-4 pt-2 border-t border-border/80 w-full"
           : "flex flex-row justify-end gap-2 p-4 border-t border-border/80",

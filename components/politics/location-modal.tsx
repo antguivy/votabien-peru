@@ -22,6 +22,13 @@ import {
   CredenzaDescription,
   CredenzaFooter,
 } from "@/components/ui/credenza";
+import {
+  ResponsiveSelect,
+  ResponsiveSelectContent,
+  ResponsiveSelectItem,
+  ResponsiveSelectTrigger,
+  ResponsiveSelectValue,
+} from "@/components/ui/responsive-select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,6 +62,13 @@ interface UbigeoDepartment {
 }
 
 const DEPARTMENTS_DATA = ubigeoTreeData as UbigeoDepartment[];
+
+/**
+ * Valor centinela para las opciones "Toda la región / Toda la provincia".
+ * `Select` (Radix) prohíbe el value vacío, por lo que se mapea a "" al
+ * aplicar la selección.
+ */
+const ALL_OPTION_VALUE = "__ALL__";
 
 interface LocationModalProps {
   open: boolean;
@@ -589,7 +603,10 @@ export function LocationModal({
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-lg p-0 overflow-hidden flex flex-col max-h-[85vh]">
+      <CredenzaContent
+        noScroll
+        className="sm:max-w-lg p-0 overflow-hidden flex flex-col max-h-[85vh]"
+      >
         <CredenzaHeader className="px-6 pt-6 pb-3 border-b border-border/40 bg-muted/20">
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center text-brand">
@@ -645,24 +662,27 @@ export function LocationModal({
                   <Landmark className="w-3.5 h-3.5 text-brand" />
                   1. Región / Departamento
                 </label>
-                <select
+                <ResponsiveSelect
+                  nested
                   value={selectedDepName}
-                  onChange={(e) => {
-                    setSelectedDepName(e.target.value);
+                  onValueChange={(value) => {
+                    setSelectedDepName(value);
                     setSelectedProvId("");
                     setSelectedDistId("");
                   }}
-                  className="w-full h-10 px-3 rounded-xl border border-border/60 bg-background text-xs font-semibold focus:ring-2 focus:ring-brand/20 outline-none"
+                  title="Región / Departamento"
                 >
-                  <option value="">
-                    Selecciona tu departamento / región...
-                  </option>
-                  {departments.map((dep) => (
-                    <option key={dep.name} value={dep.name}>
-                      {dep.name}
-                    </option>
-                  ))}
-                </select>
+                  <ResponsiveSelectTrigger className="h-10 text-xs font-semibold rounded-xl bg-background border-border/60">
+                    <ResponsiveSelectValue placeholder="Selecciona tu departamento / región..." />
+                  </ResponsiveSelectTrigger>
+                  <ResponsiveSelectContent>
+                    {departments.map((dep) => (
+                      <ResponsiveSelectItem key={dep.name} value={dep.name}>
+                        {dep.name}
+                      </ResponsiveSelectItem>
+                    ))}
+                  </ResponsiveSelectContent>
+                </ResponsiveSelect>
               </div>
 
               {/* Paso 2: Provincia (Aparece al elegir Departamento) */}
@@ -672,23 +692,33 @@ export function LocationModal({
                     <Building2 className="w-3.5 h-3.5 text-brand" />
                     2. Provincia
                   </label>
-                  <select
+                  <ResponsiveSelect
+                    nested
                     value={selectedProvId}
-                    onChange={(e) => {
-                      setSelectedProvId(e.target.value);
+                    onValueChange={(value) => {
+                      setSelectedProvId(
+                        value === ALL_OPTION_VALUE ? "" : value,
+                      );
                       setSelectedDistId("");
                     }}
-                    className="w-full h-10 px-3 rounded-xl border border-border/60 bg-background text-xs font-semibold focus:ring-2 focus:ring-brand/20 outline-none"
+                    title="Provincia"
                   >
-                    <option value="">
-                      Toda la región {selectedDepName}...
-                    </option>
-                    {provinces.map((prov) => (
-                      <option key={prov.id} value={prov.id}>
-                        {prov.name}
-                      </option>
-                    ))}
-                  </select>
+                    <ResponsiveSelectTrigger className="h-10 text-xs font-semibold rounded-xl bg-background border-border/60">
+                      <ResponsiveSelectValue
+                        placeholder={`Toda la región ${selectedDepName}`}
+                      />
+                    </ResponsiveSelectTrigger>
+                    <ResponsiveSelectContent>
+                      <ResponsiveSelectItem value={ALL_OPTION_VALUE}>
+                        Toda la región {selectedDepName}
+                      </ResponsiveSelectItem>
+                      {provinces.map((prov) => (
+                        <ResponsiveSelectItem key={prov.id} value={prov.id}>
+                          {prov.name}
+                        </ResponsiveSelectItem>
+                      ))}
+                    </ResponsiveSelectContent>
+                  </ResponsiveSelect>
                 </div>
               )}
 
@@ -699,20 +729,32 @@ export function LocationModal({
                     <Building className="w-3.5 h-3.5 text-brand" />
                     3. Distrito
                   </label>
-                  <select
+                  <ResponsiveSelect
+                    nested
                     value={selectedDistId}
-                    onChange={(e) => setSelectedDistId(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-border/60 bg-background text-xs font-semibold focus:ring-2 focus:ring-brand/20 outline-none"
+                    onValueChange={(value) => {
+                      setSelectedDistId(
+                        value === ALL_OPTION_VALUE ? "" : value,
+                      );
+                    }}
+                    title="Distrito"
                   >
-                    <option value="">
-                      Toda la provincia {currentProv?.name}...
-                    </option>
-                    {districts.map((dist) => (
-                      <option key={dist.id} value={dist.id}>
-                        {dist.name}
-                      </option>
-                    ))}
-                  </select>
+                    <ResponsiveSelectTrigger className="h-10 text-xs font-semibold rounded-xl bg-background border-border/60">
+                      <ResponsiveSelectValue
+                        placeholder={`Toda la provincia ${currentProv?.name ?? ""}`}
+                      />
+                    </ResponsiveSelectTrigger>
+                    <ResponsiveSelectContent>
+                      <ResponsiveSelectItem value={ALL_OPTION_VALUE}>
+                        Toda la provincia {currentProv?.name}
+                      </ResponsiveSelectItem>
+                      {districts.map((dist) => (
+                        <ResponsiveSelectItem key={dist.id} value={dist.id}>
+                          {dist.name}
+                        </ResponsiveSelectItem>
+                      ))}
+                    </ResponsiveSelectContent>
+                  </ResponsiveSelect>
                 </div>
               )}
 

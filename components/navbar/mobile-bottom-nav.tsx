@@ -303,14 +303,12 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-foreground tracking-tight">
-                    Copiloto Miembro de Mesa
-                  </span>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand/20 text-brand uppercase">
-                    ONPE 2026
+                    Guía para Miembro de Mesa
                   </span>
                 </div>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  Checklist offline, calculadora de cuadre y árbitro de votos
+                <p className="text-[11px] text-muted-foreground">
+                  Checklist de actividades por tipo de cargo, calculadora de
+                  cuadre y validación de votos
                 </p>
               </div>
             </div>
