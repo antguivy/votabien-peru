@@ -106,17 +106,18 @@ function IncumbentRow({ legislatorId }: { legislatorId?: string | null }) {
   return (
     <Row icon={Landmark} level="neutral">
       <p className="text-sm font-semibold text-foreground leading-tight">
-        Congresista en ejercicio
+        Congresista del último periodo
       </p>
       <p className="text-xs text-muted-foreground">
-        Actualmente ocupa un escaño en el Congreso de la República.
+        Registra mandato en el Congreso de la República durante el último
+        periodo parlamentario (2021-2026).
       </p>
       {legislatorId && (
         <Link
           href={`/legisladores/${legislatorId}`}
           className="inline-flex items-center gap-1 text-xs text-info hover:underline transition-colors"
         >
-          Ver perfil de congresista
+          Ver perfil parlamentario
           <ExternalLink className="w-3 h-3" />
         </Link>
       )}
