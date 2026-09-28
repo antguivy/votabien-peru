@@ -661,10 +661,10 @@ const CandidatosList = ({
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 font-manrope">
-        {showDistrictHint && currentDistrict && (
+        {showDistrictHint && !currentDistrict && currentFilters.search && (
           <DistrictHintBanner
             currentType={currentFilters.type}
-            currentDistrict={currentDistrict}
+            currentDistrict=""
             distritos={distritos}
             onOpenFilters={handleOpenFilters}
           />

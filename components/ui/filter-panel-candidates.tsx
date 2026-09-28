@@ -358,7 +358,7 @@ export function NewFilterPanel({
   const [prevDrawerOpen, setPrevDrawerOpen] = useState(false);
   if (isDrawerOpen && !prevDrawerOpen) {
     setPrevDrawerOpen(true);
-    setPendingSearch(currentSearch);
+    setPendingSearch(localSearch || currentSearch);
     setPendingParty(currentParty);
     setPendingDistrict(currentDistrict);
     setPendingNoSentencias(currentNoSentencias);
@@ -580,6 +580,7 @@ export function NewFilterPanel({
 
   // ── Mobile handlers ──
   const applyMobile = useCallback(() => {
+    setLocalSearch(pendingSearch);
     router.replace(
       buildUrl(
         pendingSearch,
@@ -927,8 +928,8 @@ export function NewFilterPanel({
           Mobile Drawer de Filtros
       ══════════════════════════════════════════ */}
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
-          <DrawerHeader className="border-b border-border/40 pb-3">
+        <DrawerContent noScroll className="max-h-[88vh] flex flex-col">
+          <DrawerHeader className="border-b border-border/40 pb-3 shrink-0">
             <DrawerTitle className="text-base font-bold flex items-center justify-between">
               <span>Filtros de Búsqueda</span>
               {activeCount > 0 && (
@@ -939,30 +940,38 @@ export function NewFilterPanel({
             </DrawerTitle>
           </DrawerHeader>
 
-          <div className="p-5 flex-1 overflow-y-auto space-y-5 text-sm">
-            {/* 1. Ubicación */}
+          <div className="p-5 flex-1 overflow-y-auto min-h-0 space-y-5 text-sm">
+            {/* 1. Búsqueda por Nombre */}
             <div>
-              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
-                Ubicación de Votación
+              <label className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">
+                <Search className="w-3.5 h-3.5 text-brand" />
+                Buscar por Nombre
               </label>
-              <button
-                onClick={() => {
-                  setIsDrawerOpen(false);
-                  setTimeout(() => setIsLocationModalOpen(true), 200);
-                }}
-                className="w-full flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 font-semibold text-left"
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <MapPin className="w-4 h-4 text-brand flex-shrink-0" />
-                  <span className="truncate">
-                    {userLocation?.fullLabel ||
-                      userLocation?.district ||
-                      userLocation?.department ||
-                      "Elegir región, provincia o distrito"}
-                  </span>
-                </div>
-                <ChevronDown className="w-4 h-4 opacity-50 flex-shrink-0" />
-              </button>
+              <div className="relative flex items-center">
+                <Input
+                  type="text"
+                  placeholder="Escribe el nombre del candidato…"
+                  value={pendingSearch}
+                  onChange={(e) => setPendingSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyMobile();
+                    }
+                  }}
+                  className="pl-3.5 pr-8 h-10 text-xs rounded-xl bg-card border-border/60 focus-visible:border-brand/50 focus-visible:ring-brand/20"
+                />
+                {pendingSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPendingSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                    aria-label="Limpiar búsqueda"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* 2. Filtro Ético */}
@@ -986,8 +995,9 @@ export function NewFilterPanel({
 
             {/* 3. Experiencia Laboral */}
             <div>
-              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
-                💼 Experiencia Laboral
+              <label className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">
+                <Briefcase className="w-3.5 h-3.5 text-brand" />
+                Experiencia Laboral
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {WORK_OPTIONS.map((opt) => (
@@ -1009,8 +1019,9 @@ export function NewFilterPanel({
 
             {/* 4. Nivel de Estudios */}
             <div>
-              <label className="text-xs font-bold text-muted-foreground block mb-2 uppercase tracking-wider">
-                🎓 Nivel Académico
+              <label className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wider">
+                <GraduationCap className="w-3.5 h-3.5 text-brand" />
+                Nivel Académico
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {EDUCATION_OPTIONS.map((opt) => (
@@ -1031,7 +1042,7 @@ export function NewFilterPanel({
             </div>
           </div>
 
-          <div className="p-4 border-t border-border/40 bg-muted/10 flex items-center gap-2">
+          <div className="p-4 border-t border-border/40 bg-background shrink-0 mt-auto flex items-center gap-2">
             <button
               onClick={() => {
                 setPendingSearch("");
@@ -1041,8 +1052,9 @@ export function NewFilterPanel({
                 setPendingMinWork(0);
                 setPendingEducation("");
               }}
-              className="flex-1 py-2.5 rounded-xl border border-border/60 text-xs font-bold text-muted-foreground hover:bg-muted text-center"
+              className="flex-1 py-2.5 rounded-xl border border-border/60 text-xs font-bold text-muted-foreground hover:bg-muted text-center inline-flex items-center justify-center gap-1.5"
             >
+              <RotateCcw className="w-3.5 h-3.5" />
               Restablecer
             </button>
             <button

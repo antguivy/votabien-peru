@@ -73,6 +73,12 @@ export interface ResponsiveSelectProps {
   disabled?: boolean;
   title?: string;
   name?: string;
+  /**
+   * Marca el drawer móvil como anidado (por ejemplo, dentro de otra
+   * Credenza/Drawer). Vaul requiere esta bandera para apilar correctamente
+   * dos drawers sin romper la interacción del inferior.
+   */
+  nested?: boolean;
 }
 
 export function ResponsiveSelect({
@@ -85,6 +91,7 @@ export function ResponsiveSelect({
   disabled,
   title,
   name,
+  nested = false,
 }: ResponsiveSelectProps) {
   const isMobile = useIsMobile();
   const [uncontrolledValue, setUncontrolledValue] = React.useState<string>(
@@ -175,7 +182,7 @@ export function ResponsiveSelect({
   if (isMobile) {
     return (
       <ResponsiveSelectContext.Provider value={contextValue}>
-        <Drawer open={open} onOpenChange={handleOpenChange}>
+        <Drawer open={open} onOpenChange={handleOpenChange} nested={nested}>
           {children}
         </Drawer>
       </ResponsiveSelectContext.Provider>
