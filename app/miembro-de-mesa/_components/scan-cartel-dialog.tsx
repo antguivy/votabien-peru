@@ -40,14 +40,10 @@ export function ScanCartelDialog({
   const loadOfficialPartiesPreset = useCopilotoStore(
     (s) => s.loadOfficialPartiesPreset,
   );
-  const copyOptionsToAllSheets = useCopilotoStore(
-    (s) => s.copyOptionsToAllSheets,
-  );
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [partiesText, setPartiesText] = useState("");
-  const [applyToAllSheets, setApplyToAllSheets] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,9 +91,6 @@ export function ScanCartelDialog({
 
   const handleApplyPreset = () => {
     loadOfficialPartiesPreset(activeSheetType);
-    if (applyToAllSheets) {
-      copyOptionsToAllSheets(activeSheetType);
-    }
     onOpenChange(false);
   };
 
@@ -114,9 +107,6 @@ export function ScanCartelDialog({
         votes: 0,
       }));
       setSheetOptions(activeSheetType, options);
-      if (applyToAllSheets) {
-        copyOptionsToAllSheets(activeSheetType);
-      }
     }
     onOpenChange(false);
   };
@@ -147,37 +137,12 @@ export function ScanCartelDialog({
             </CredenzaClose>
           </div>
           <CredenzaDescription className="text-xs text-muted-foreground leading-snug pt-1">
-            Evita tipear uno por uno. Sacale foto al Cartel de Candidatos pegado
-            en la pared del aula o cargá la lista oficial.
+            Evite digitar uno por uno. Tome una foto al Cartel de Candidatos
+            pegado en el aula o cargue la lista oficial para esta acta.
           </CredenzaDescription>
         </CredenzaHeader>
 
         <CredenzaBody className="flex-1 min-h-0 space-y-3 px-5 py-4 overflow-y-auto">
-          {/* Toggle: Aplicar a todas las hojas de la mesa */}
-          <button
-            type="button"
-            onClick={() => setApplyToAllSheets((v) => !v)}
-            className="w-full p-3 rounded-xl bg-muted/30 border border-border/80 flex items-center justify-between text-left transition-colors select-none hover:bg-muted/50"
-          >
-            <div className="space-y-0.5 pr-2">
-              <span className="text-xs font-bold text-foreground block">
-                Aplicar a todas las hojas de la mesa
-              </span>
-              <span className="text-[10.5px] text-muted-foreground block leading-tight">
-                Copia las mismas organizaciones a 5B, 5C y 5D con votos en 0
-              </span>
-            </div>
-            <div
-              className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${
-                applyToAllSheets
-                  ? "bg-foreground text-background border-foreground shadow-2xs"
-                  : "border-border bg-background"
-              }`}
-            >
-              {applyToAllSheets && <Check className="h-3.5 w-3.5" />}
-            </div>
-          </button>
-
           {/* Opción A: Lista Oficial Nacional (100% Offline) */}
           <div className="p-3.5 rounded-2xl bg-brand/10 border border-brand/25 space-y-2">
             <div className="flex items-center gap-2 text-brand">

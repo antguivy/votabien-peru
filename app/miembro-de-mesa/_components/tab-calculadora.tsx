@@ -17,7 +17,6 @@ import {
   Trash2,
   Check,
   AlertTriangle,
-  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,32 +61,16 @@ export function TabCalculadora() {
   const addSheetOption = useCopilotoStore((s) => s.addSheetOption);
   const removeSheetOption = useCopilotoStore((s) => s.removeSheetOption);
   const updateSpecialVotes = useCopilotoStore((s) => s.updateSpecialVotes);
-  const copyOptionsToAllSheets = useCopilotoStore(
-    (s) => s.copyOptionsToAllSheets,
-  );
 
   const [activeSheetType, setActiveSheetType] = useState<ElectionType>("5A");
   const [newPartyName, setNewPartyName] = useState("");
   const [showAddPartyInput, setShowAddPartyInput] = useState(false);
   const [showScanDialog, setShowScanDialog] = useState(false);
   const [showDictationDialog, setShowDictationDialog] = useState(false);
-  const [copiedAllSuccess, setCopiedAllSuccess] = useState(false);
 
   const currentSheet = sheets[activeSheetType];
   const { validVotes, totalVotes } = calculateElectionTotals(currentSheet);
   const reconciliation = reconcileElection(totalVotes, votersTarget);
-
-  const otherSheetWithParties = SHEETS_INFO.find(
-    (info) =>
-      info.type !== activeSheetType &&
-      (sheets[info.type]?.options?.length || 0) > 0,
-  );
-
-  const handleCopyAll = () => {
-    copyOptionsToAllSheets(activeSheetType);
-    setCopiedAllSuccess(true);
-    setTimeout(() => setCopiedAllSuccess(false), 2000);
-  };
 
   const handleAddParty = (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,29 +240,6 @@ export function TabCalculadora() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {currentSheet.options.length > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleCopyAll}
-                className="h-7 px-2 text-[10.5px] font-mono border-border/80 text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg"
-                title="Copiar estas organizaciones a las demás hojas"
-              >
-                {copiedAllSuccess ? (
-                  <>
-                    <Check className="h-3 w-3 text-emerald-600" />
-                    <span className="text-emerald-600 font-bold">Copiado</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    <span className="hidden sm:inline">Copiar a otras</span>
-                  </>
-                )}
-              </Button>
-            )}
-
             {/* Camera / Presets Button */}
             <Button
               type="button"
@@ -306,8 +266,9 @@ export function TabCalculadora() {
                 Sin organizaciones cargadas en Hoja {currentSheet.type}
               </h4>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                Esta hoja inicia limpia para no hacerte perder tiempo borrando
-                listas de prueba. Cargá los partidos en 2 segundos:
+                Esta hoja inicia limpia para procesar los partidos específicos
+                de esta elección. Cargue los partidos con foto del cartel o
+                lista oficial:
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
@@ -319,20 +280,6 @@ export function TabCalculadora() {
                 <Camera className="h-3.5 w-3.5 mr-1.5" />
                 <span>Foto o Lista Oficial</span>
               </Button>
-
-              {otherSheetWithParties && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    copyOptionsToAllSheets(otherSheetWithParties.type)
-                  }
-                  className="w-full sm:w-auto h-9 text-xs font-mono font-semibold rounded-xl border-border hover:bg-muted"
-                >
-                  <Copy className="h-3.5 w-3.5 mr-1.5" />
-                  <span>Copiar de {otherSheetWithParties.shortLabel}</span>
-                </Button>
-              )}
             </div>
           </div>
         ) : (
