@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
-import { PHASES_CONFIG, getTaskVisualItemIds } from "../_lib/constants";
+import { PHASES_CONFIG, getTaskVisualKeys } from "../_lib/constants";
 import { TaskVisualRefs } from "./task-visual-refs";
 import { ChecklistTask, MemberRole, AgreementAssignee } from "../_lib/types";
 import { useScrollSpy } from "../_lib/use-scroll-spy";
@@ -15,8 +15,17 @@ import {
   Filter,
   UserCheck,
   Users,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 function isTaskForRole(
   task: ChecklistTask,
@@ -50,17 +59,25 @@ const SECTION_IDS = PHASES_CONFIG.map((p) => `sec-${p.id}`);
 export function TabChecklist() {
   const selectedRole = useCopilotoStore((s) => s.selectedRole);
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
-  const completedVisualItems = useCopilotoStore((s) => s.completedVisualItems);
+  const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
   const toggleTask = useCopilotoStore((s) => s.toggleTask);
   const setTaskVisualCompletion = useCopilotoStore(
     (s) => s.setTaskVisualCompletion,
   );
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
   const assignAgreement = useCopilotoStore((s) => s.assignAgreement);
+  const resetTasks = useCopilotoStore((s) => s.resetTasks);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
 
   const [onlyMyTasks, setOnlyMyTasks] = useState(true);
+  const [showResetTasksModal, setShowResetTasksModal] = useState(false);
   const chipsContainerRef = useRef<HTMLDivElement>(null);
+
+  const totalTasksCount = PHASES_CONFIG.reduce(
+    (acc, phase) => acc + phase.tasks.length,
+    0,
+  );
+  const doneTotalCount = Object.values(completedTasks).filter(Boolean).length;
 
   // ScrollSpy to track active phase during continuous scroll
   const { activeId, scrollToSection } = useScrollSpy({
@@ -68,19 +85,19 @@ export function TabChecklist() {
     offsetPx: 110,
   });
 
-  // Tasks with visual verification items auto-complete when every item is verified
+  // Tasks with a visual checklist auto-complete when every reference image is verified
   useEffect(() => {
     PHASES_CONFIG.forEach((phase) => {
       phase.tasks.forEach((task) => {
-        const itemIds = getTaskVisualItemIds(task);
-        if (itemIds.length === 0) return;
-        const derived = itemIds.every((id) => completedVisualItems[id]);
+        const visualKeys = getTaskVisualKeys(task);
+        if (visualKeys.length === 0) return;
+        const derived = visualKeys.every((key) => completedVisualRefs[key]);
         if (!!completedTasks[task.id] !== derived) {
           setTaskVisualCompletion(task.id, derived);
         }
       });
     });
-  }, [completedVisualItems, completedTasks, setTaskVisualCompletion]);
+  }, [completedVisualRefs, completedTasks, setTaskVisualCompletion]);
 
   // Auto-scroll active chip into horizontal view when activeId changes
   useEffect(() => {
@@ -150,9 +167,9 @@ export function TabChecklist() {
         </div>
       </nav>
 
-      {/* ── Barra de Filtro de Rol ── */}
-      {selectedRole && selectedRole !== "todos" && (
-        <div className="flex items-center justify-between gap-2 px-1 text-xs">
+      {/* ── Barra de Control: Filtro de Rol y Reinicio de Tareas ── */}
+      <div className="flex items-center justify-between gap-2 px-1 text-xs">
+        {selectedRole && selectedRole !== "todos" ? (
           <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5">
             <Filter className="h-3 w-3 text-brand" />
             <span>
@@ -162,16 +179,36 @@ export function TabChecklist() {
               </strong>
             </span>
           </span>
+        ) : (
+          <span className="text-[11px] text-muted-foreground font-mono">
+            {doneTotalCount} de {totalTasksCount} tareas completadas
+          </span>
+        )}
 
-          <button
-            type="button"
-            onClick={() => setOnlyMyTasks(!onlyMyTasks)}
-            className="text-[10.5px] font-mono font-bold text-brand hover:underline"
-          >
-            {onlyMyTasks ? "[ Ver toda la mesa ]" : "[ Ver solo mi cargo ]"}
-          </button>
+        <div className="flex items-center gap-3">
+          {selectedRole && selectedRole !== "todos" && (
+            <button
+              type="button"
+              onClick={() => setOnlyMyTasks(!onlyMyTasks)}
+              className="text-[10.5px] font-mono font-bold text-brand hover:underline"
+            >
+              {onlyMyTasks ? "[ Ver toda la mesa ]" : "[ Ver solo mi cargo ]"}
+            </button>
+          )}
+
+          {doneTotalCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowResetTasksModal(true)}
+              className="text-[10.5px] font-mono text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
+              title="Reiniciar el checklist de tareas a 0"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Limpiar tareas</span>
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ── Secciones Continuas de Lectura y Checklist ── */}
       <div className="space-y-8 divide-y divide-border/60">
@@ -238,8 +275,7 @@ export function TabChecklist() {
               <div className="space-y-2.5">
                 {filteredTasks.map((task, index) => {
                   const isDone = !!completedTasks[task.id];
-                  const visualItemIds = getTaskVisualItemIds(task);
-                  const hasVisualVerification = visualItemIds.length > 0;
+                  const hasVisualChecklist = (task.visualRefs?.length ?? 0) > 0;
                   const isSharedAgreement =
                     task.roleResponsible === "Coordinación Interna";
                   const assignedTo = internalAgreements[task.id];
@@ -273,12 +309,12 @@ export function TabChecklist() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (hasVisualVerification) return;
+                            if (hasVisualChecklist) return;
                             toggleTask(task.id);
                           }}
                           className="pt-0.5 focus:outline-none"
                           aria-label={`Marcar tarea ${task.title}`}
-                          aria-disabled={hasVisualVerification}
+                          aria-disabled={hasVisualChecklist}
                         >
                           <div
                             className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
@@ -296,7 +332,7 @@ export function TabChecklist() {
                           <div className="flex flex-wrap items-start justify-between gap-1.5">
                             <h3
                               onClick={() => {
-                                if (hasVisualVerification) return;
+                                if (hasVisualChecklist) return;
                                 toggleTask(task.id);
                               }}
                               className={`text-xs sm:text-sm font-bold leading-snug cursor-pointer ${
@@ -333,15 +369,15 @@ export function TabChecklist() {
                             </span>
                           </div>
 
-                          <p
-                            onClick={() => {
-                              if (hasVisualVerification) return;
-                              toggleTask(task.id);
-                            }}
-                            className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer"
-                          >
-                            {task.description}
-                          </p>
+                          {/* For visual-checklist tasks the description lives in the gallery credenza */}
+                          {!hasVisualChecklist && (
+                            <p
+                              onClick={() => toggleTask(task.id)}
+                              className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer"
+                            >
+                              {task.description}
+                            </p>
+                          )}
 
                           {/* ONPE reference screenshots with checkable items */}
                           {task.visualRefs && task.visualRefs.length > 0 && (
@@ -433,6 +469,46 @@ export function TabChecklist() {
           );
         })}
       </div>
+
+      {/* Modal de confirmación para reiniciar tareas */}
+      <Dialog open={showResetTasksModal} onOpenChange={setShowResetTasksModal}>
+        <DialogContent className="max-w-xs bg-background border-border text-foreground">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-destructive mb-1">
+              <RotateCcw className="h-4 w-4" />
+              <DialogTitle className="text-base font-bold">
+                ¿Reiniciar tareas?
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Se desmarcarán todas las tareas y verificaciones del checklist
+              (volverá a 0/{totalTasksCount}). Los acuerdos y datos de votación
+              no se modificarán.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetTasksModal(false)}
+              className="text-xs border-border"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                resetTasks();
+                setShowResetTasksModal(false);
+              }}
+              className="text-xs font-semibold"
+            >
+              Sí, reiniciar tareas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

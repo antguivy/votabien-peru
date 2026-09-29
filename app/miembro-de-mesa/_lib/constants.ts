@@ -28,63 +28,30 @@ const REF_UTILES: VisualRef = {
   src: "/miembros_mesa/paquete_utiles.png",
   alt: "Paquete de útiles: lapiceros, tampón para huella y cinta de embalaje ONPE",
   caption: "Paquete de Útiles",
-  items: [
-    { id: "utiles-01", label: "3 lapiceros" },
-    { id: "utiles-02", label: "1 tampón para huella" },
-    { id: "utiles-02b", label: "1 bolsa para reciclaje (va dentro)" },
-    { id: "utiles-03", label: "1 cinta de embalaje" },
-  ],
 };
 
 const REF_INSTALACION_1: VisualRef = {
   src: "/miembros_mesa/paquete_instalacion_1.jpeg",
   alt: "Contenido del paquete de instalación: manual de miembros de mesa, cartilla de personeros y etiqueta de restos electorales",
   caption: "Paquete de Instalación",
-  items: [
-    {
-      id: "inst-p1-01",
-      label: "Manual de instrucciones para miembros de mesa",
-    },
-    { id: "inst-p1-02", label: "Cartilla de instrucciones para personeros" },
-    { id: "inst-p1-03", label: "1 etiqueta de restos electorales" },
-  ],
 };
 
 const REF_INSTALACION_2: VisualRef = {
   src: "/miembros_mesa/paquete_instalacion_2.jpeg",
   alt: "Cédulas de sufragio, hoja de control de asistencia 3a y relación de miembros de mesa no sorteados 3b",
   caption: "Paquete de Instalación (cédulas y hojas de control)",
-  items: [
-    { id: "inst-p2-01", label: "Cédulas de sufragio (4 tipos de elección)" },
-    { id: "inst-p2-02", label: "Hoja de control de asistencia (3a)" },
-    {
-      id: "inst-p2-03",
-      label: "Relación de miembros de mesa no sorteados (3b)",
-    },
-  ],
 };
 
 const REF_INSTALACION_3: VisualRef = {
   src: "/miembros_mesa/paquete_instalacion_3.jpeg",
   alt: "Actas de instalación y sufragio (anverso) y actas de escrutinio (reverso)",
   caption: "Paquete de Instalación (actas)",
-  items: [
-    { id: "inst-p3-01", label: "4 actas de instalación y sufragio (4a-4c)" },
-    { id: "inst-p3-02", label: "4 actas de escrutinio (4b y 4d)" },
-  ],
 };
 
 const REF_SOBRES_COLORES: VisualRef = {
   src: "/miembros_mesa/paquete_escrutinio_1.png",
   alt: "Sobres plásticos de colores: plomo ODPE, verde JNE, celeste JEE, rojo ONPE y bolsa de repliegue de cédulas",
   caption: "Sobres plásticos de colores",
-  items: [
-    { id: "sobres-01", label: "Sobre plomo (ODPE)" },
-    { id: "sobres-02", label: "Sobre verde (JNE)" },
-    { id: "sobres-03", label: "Sobre celeste (JEE)" },
-    { id: "sobres-04", label: "Sobre rojo (ONPE)" },
-    { id: "sobres-05", label: "Bolsa de repliegue de cédulas" },
-  ],
 };
 
 const REF_LAMINAS: VisualRef = {
@@ -103,14 +70,6 @@ const REF_CARGO_ENTREGA: VisualRef = {
   src: "/miembros_mesa/paquete_escrutinio_4.png",
   alt: "Cargo de entrega de actas y material electoral al coordinador de la ONPE",
   caption: "Cargo de entrega",
-  items: [
-    { id: "cargo-01", label: "Los 5 sobres plásticos listados en el cargo" },
-    {
-      id: "cargo-02",
-      label: "Cabinas, ánfora, caja de restos y caja de repliegue",
-    },
-    { id: "cargo-03", label: "Copia firmada conservada por el Presidente" },
-  ],
 };
 
 const REF_BOLSA_RECICLAJE: VisualRef = {
@@ -129,12 +88,6 @@ const REF_LISTA_Y_MARCA: VisualRef = {
   src: "/miembros_mesa/paquete_instalacion_5.jpeg",
   alt: "Lista de electores, sobre plástico anaranjado y material para el marcado de cédulas",
   caption: "Lista de electores y material de marcado",
-  items: [
-    {
-      id: "lista-01",
-      label: "Lista de electores (pegada en la puerta del aula)",
-    },
-  ],
 };
 
 export const PHASES_CONFIG: PhaseDefinition[] = [
@@ -754,11 +707,18 @@ export const PROTOCOLS_LIST: ProtocolItem[] = [
 ];
 
 /**
- * Ids of the checkable visual verification items attached to a task
- * (via its visualRefs). Empty for tasks with reference-only images or none.
+ * Stable check key for one visual reference of a task: the image itself is
+ * the checkable item. Key format: "<taskId>::<image src>".
  */
-export function getTaskVisualItemIds(task: ChecklistTask): string[] {
-  return (task.visualRefs ?? []).flatMap(
-    (ref) => ref.items?.map((item) => item.id) ?? [],
+export function getTaskVisualKey(taskId: string, src: string): string {
+  return `${taskId}::${src}`;
+}
+
+/**
+ * Check keys for every visual reference attached to a task.
+ */
+export function getTaskVisualKeys(task: ChecklistTask): string[] {
+  return (task.visualRefs ?? []).map((ref) =>
+    getTaskVisualKey(task.id, ref.src),
   );
 }

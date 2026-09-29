@@ -24,7 +24,7 @@ interface CopilotoState {
   selectedRole: MemberRole | null;
   internalAgreements: Record<string, AgreementAssignee>;
   completedTasks: Record<string, boolean>;
-  completedVisualItems: Record<string, boolean>;
+  completedVisualRefs: Record<string, boolean>;
   votersTarget: number;
   sheets: Record<ElectionType, ElectionSheetState>;
   sealedEnvelopes: Record<EnvelopeColor, boolean>;
@@ -36,7 +36,7 @@ interface CopilotoState {
   assignAgreement: (taskId: string, assignee: AgreementAssignee) => void;
   syncStateFromQR: (data: Partial<CopilotoState>) => void;
   toggleTask: (taskId: string) => void;
-  toggleVisualItem: (itemId: string) => void;
+  toggleVisualRef: (key: string) => void;
   setTaskVisualCompletion: (taskId: string, done: boolean) => void;
   setVotersTarget: (target: number) => void;
   updateOptionVotes: (
@@ -58,6 +58,7 @@ interface CopilotoState {
     count: number,
   ) => void;
   toggleEnvelopeSealed: (color: EnvelopeColor) => void;
+  resetTasks: () => void;
   resetAllData: () => void;
 }
 
@@ -92,7 +93,7 @@ export const useCopilotoStore = create<CopilotoState>()(
       selectedRole: null,
       internalAgreements: {},
       completedTasks: {},
-      completedVisualItems: {},
+      completedVisualRefs: {},
       votersTarget: 0,
       sheets: initialSheets,
       sealedEnvelopes: {
@@ -119,10 +120,12 @@ export const useCopilotoStore = create<CopilotoState>()(
         set((state) => ({
           ...state,
           ...(data.internalAgreements
-            ? { internalAgreements: data.internalAgreements }
-            : {}),
-          ...(data.votersTarget !== undefined
-            ? { votersTarget: data.votersTarget }
+            ? {
+                internalAgreements: {
+                  ...state.internalAgreements,
+                  ...data.internalAgreements,
+                },
+              }
             : {}),
           ...(data.completedTasks
             ? {
@@ -132,17 +135,13 @@ export const useCopilotoStore = create<CopilotoState>()(
                 },
               }
             : {}),
-          ...(data.completedVisualItems
+          ...(data.completedVisualRefs
             ? {
-                completedVisualItems: {
-                  ...state.completedVisualItems,
-                  ...data.completedVisualItems,
+                completedVisualRefs: {
+                  ...state.completedVisualRefs,
+                  ...data.completedVisualRefs,
                 },
               }
-            : {}),
-          ...(data.sheets ? { sheets: data.sheets } : {}),
-          ...(data.sealedEnvelopes
-            ? { sealedEnvelopes: data.sealedEnvelopes }
             : {}),
         })),
 
@@ -154,11 +153,11 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
         })),
 
-      toggleVisualItem: (itemId) =>
+      toggleVisualRef: (key) =>
         set((state) => ({
-          completedVisualItems: {
-            ...state.completedVisualItems,
-            [itemId]: !state.completedVisualItems[itemId],
+          completedVisualRefs: {
+            ...state.completedVisualRefs,
+            [key]: !state.completedVisualRefs[key],
           },
         })),
 
@@ -313,10 +312,16 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
         })),
 
+      resetTasks: () =>
+        set({
+          completedTasks: {},
+          completedVisualRefs: {},
+        }),
+
       resetAllData: () =>
         set({
           completedTasks: {},
-          completedVisualItems: {},
+          completedVisualRefs: {},
           votersTarget: 0,
           sheets: initialSheets,
           sealedEnvelopes: {

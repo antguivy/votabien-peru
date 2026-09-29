@@ -32,11 +32,10 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Store state to sync
+  // Store state to sync (solo tareas y acuerdos entre miembros)
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
+  const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
-  const votersTarget = useCopilotoStore((s) => s.votersTarget);
-  const sheets = useCopilotoStore((s) => s.sheets);
   const syncStateFromQR = useCopilotoStore((s) => s.syncStateFromQR);
 
   // Stop camera helper
@@ -60,9 +59,8 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
       version: 1,
       timestamp: Date.now(),
       completedTasks,
+      completedVisualRefs,
       internalAgreements,
-      votersTarget,
-      sheets,
     };
 
     const json = JSON.stringify(payload);
@@ -81,9 +79,8 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
     open,
     activeTab,
     completedTasks,
+    completedVisualRefs,
     internalAgreements,
-    votersTarget,
-    sheets,
   ]);
 
   // Scan QR from Camera using jsQR
@@ -125,7 +122,7 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
           error.name === "PermissionDeniedError"
         ) {
           setScanError(
-            "Permiso de cámara denegado. Habilitalo en los ajustes.",
+            "Permiso de cámara denegado. Habilítelo en la configuración del navegador.",
           );
         } else {
           setScanError("No se pudo iniciar la cámara en este dispositivo.");
@@ -220,8 +217,8 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
             </CredenzaClose>
           </div>
           <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed pt-0.5">
-            Pasa los acuerdos y el conteo de un teléfono a otro al instante
-            mediante código QR, sin necesidad de internet.
+            Transfiera los acuerdos y el avance del checklist de un teléfono a
+            otro al instante mediante código QR, sin necesidad de internet.
           </CredenzaDescription>
         </CredenzaHeader>
 
@@ -274,9 +271,9 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
               </div>
 
               <p className="text-[11.5px] text-muted-foreground text-center leading-relaxed max-w-xs">
-                Mostrale este código al otro miembro de mesa. Desde su Copiloto
-                debe tocar <strong>Escanear QR</strong> para recibir tus
-                acuerdos y conteo.
+                Muestre este código al otro miembro de mesa. Desde su
+                dispositivo debe pulsar <strong>Escanear QR</strong> para
+                sincronizar los acuerdos y tareas.
               </p>
             </div>
           )}
@@ -293,7 +290,7 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
                     ¡Mesa Sincronizada!
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    Se actualizaron los acuerdos y los datos de la mesa en tu
+                    Se sincronizaron los acuerdos y el avance de tareas en su
                     dispositivo.
                   </p>
                 </div>
@@ -316,7 +313,7 @@ export function QrSyncDialog({ open, onOpenChange }: QrSyncDialogProps) {
                   {/* Target overlay scan box */}
                   <div className="absolute inset-0 border-2 border-brand/50 m-12 rounded-2xl pointer-events-none animate-pulse flex items-center justify-center">
                     <span className="text-[10px] font-mono font-bold text-white bg-black/60 px-2 py-0.5 rounded">
-                      Apuntá al QR del otro miembro
+                      Enfoque el código QR del otro miembro
                     </span>
                   </div>
                 </div>
