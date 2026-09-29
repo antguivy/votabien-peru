@@ -1,8 +1,10 @@
 import {
+  ChecklistTask,
   PhaseDefinition,
   VoteScenario,
   SecurityEnvelope,
   ProtocolItem,
+  VisualRef,
 } from "./types";
 
 export const OFFICIAL_ERM_2026_PARTIES = [
@@ -19,6 +21,121 @@ export const OFFICIAL_ERM_2026_PARTIES = [
   "Acción Popular",
   "Partido Patriótico del Perú",
 ];
+
+/* ── ONPE reference screenshots (public/miembros_mesa/) ── */
+
+const REF_UTILES: VisualRef = {
+  src: "/miembros_mesa/paquete_utiles.png",
+  alt: "Paquete de útiles: lapiceros, tampón para huella y cinta de embalaje ONPE",
+  caption: "Paquete de Útiles",
+  items: [
+    { id: "utiles-01", label: "3 lapiceros" },
+    { id: "utiles-02", label: "1 tampón para huella" },
+    { id: "utiles-02b", label: "1 bolsa para reciclaje (va dentro)" },
+    { id: "utiles-03", label: "1 cinta de embalaje" },
+  ],
+};
+
+const REF_INSTALACION_1: VisualRef = {
+  src: "/miembros_mesa/paquete_instalacion_1.jpeg",
+  alt: "Contenido del paquete de instalación: manual de miembros de mesa, cartilla de personeros y etiqueta de restos electorales",
+  caption: "Paquete de Instalación",
+  items: [
+    {
+      id: "inst-p1-01",
+      label: "Manual de instrucciones para miembros de mesa",
+    },
+    { id: "inst-p1-02", label: "Cartilla de instrucciones para personeros" },
+    { id: "inst-p1-03", label: "1 etiqueta de restos electorales" },
+  ],
+};
+
+const REF_INSTALACION_2: VisualRef = {
+  src: "/miembros_mesa/paquete_instalacion_2.jpeg",
+  alt: "Cédulas de sufragio, hoja de control de asistencia 3a y relación de miembros de mesa no sorteados 3b",
+  caption: "Paquete de Instalación (cédulas y hojas de control)",
+  items: [
+    { id: "inst-p2-01", label: "Cédulas de sufragio (4 tipos de elección)" },
+    { id: "inst-p2-02", label: "Hoja de control de asistencia (3a)" },
+    {
+      id: "inst-p2-03",
+      label: "Relación de miembros de mesa no sorteados (3b)",
+    },
+  ],
+};
+
+const REF_INSTALACION_3: VisualRef = {
+  src: "/miembros_mesa/paquete_instalacion_3.jpeg",
+  alt: "Actas de instalación y sufragio (anverso) y actas de escrutinio (reverso)",
+  caption: "Paquete de Instalación (actas)",
+  items: [
+    { id: "inst-p3-01", label: "4 actas de instalación y sufragio (4a-4c)" },
+    { id: "inst-p3-02", label: "4 actas de escrutinio (4b y 4d)" },
+  ],
+};
+
+const REF_SOBRES_COLORES: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_1.png",
+  alt: "Sobres plásticos de colores: plomo ODPE, verde JNE, celeste JEE, rojo ONPE y bolsa de repliegue de cédulas",
+  caption: "Sobres plásticos de colores",
+  items: [
+    { id: "sobres-01", label: "Sobre plomo (ODPE)" },
+    { id: "sobres-02", label: "Sobre verde (JNE)" },
+    { id: "sobres-03", label: "Sobre celeste (JEE)" },
+    { id: "sobres-04", label: "Sobre rojo (ONPE)" },
+    { id: "sobres-05", label: "Bolsa de repliegue de cédulas" },
+  ],
+};
+
+const REF_LAMINAS: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_2.png",
+  alt: "Láminas autoadhesivas de protección para resultados y campo de observaciones",
+  caption: "Láminas de protección",
+};
+
+const REF_IMPUGNACIONES: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_3.png",
+  alt: "Sobre y formulario para impugnaciones de identidad del elector y de voto",
+  caption: "Sobre para impugnaciones",
+};
+
+const REF_CARGO_ENTREGA: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_4.png",
+  alt: "Cargo de entrega de actas y material electoral al coordinador de la ONPE",
+  caption: "Cargo de entrega",
+  items: [
+    { id: "cargo-01", label: "Los 5 sobres plásticos listados en el cargo" },
+    {
+      id: "cargo-02",
+      label: "Cabinas, ánfora, caja de restos y caja de repliegue",
+    },
+    { id: "cargo-03", label: "Copia firmada conservada por el Presidente" },
+  ],
+};
+
+const REF_BOLSA_RECICLAJE: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_5.png",
+  alt: "Bolsa para reciclaje con etiqueta de materiales permitidos",
+  caption: "Bolsa de reciclaje",
+};
+
+const REF_HOJAS_BORRADOR: VisualRef = {
+  src: "/miembros_mesa/paquete_instalacion_4.jpeg",
+  alt: "Hojas borrador 5a-5d, certificados de participación y carteles de resultados",
+  caption: "Hojas borrador, certificados y carteles",
+};
+
+const REF_LISTA_Y_MARCA: VisualRef = {
+  src: "/miembros_mesa/paquete_instalacion_5.jpeg",
+  alt: "Lista de electores, sobre plástico anaranjado y material para el marcado de cédulas",
+  caption: "Lista de electores y material de marcado",
+  items: [
+    {
+      id: "lista-01",
+      label: "Lista de electores (pegada en la puerta del aula)",
+    },
+  ],
+};
 
 export const PHASES_CONFIG: PhaseDefinition[] = [
   {
@@ -38,6 +155,17 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El Presidente recibe la caja sellada de la ONPE. Se abre entre todos los miembros de mesa para revisar los paquetes de útiles, instalación y escrutinio (Manual Pág. 8, paso 1).",
         isCritical: true,
         roleResponsible: "Todos",
+        visualRefs: [
+          REF_UTILES,
+          REF_INSTALACION_1,
+          REF_INSTALACION_2,
+          REF_INSTALACION_3,
+          REF_SOBRES_COLORES,
+          REF_LAMINAS,
+          REF_IMPUGNACIONES,
+          REF_CARGO_ENTREGA,
+          REF_BOLSA_RECICLAJE,
+        ],
       },
       {
         id: "inst-02",
@@ -47,6 +175,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Verificar que la 'Relación de electores' esté pegada en la puerta del aula y los carteles de candidatos en la cámara secreta. Los personeros pueden participar (Pág. 9, paso 3).",
         isCritical: false,
         roleResponsible: "Todos",
+        // TODO: add visualRefs when the aula/camara secreta screenshot is captured
       },
       {
         id: "inst-03",
@@ -56,6 +185,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Pegar la etiqueta oficial 'Restos Electorales' en la caja vacía y colocarla al costado de la mesa (Pág. 8, paso 2).",
         isCritical: false,
         roleResponsible: "Coordinación Interna",
+        visualRefs: [REF_INSTALACION_1, REF_BOLSA_RECICLAJE],
       },
       {
         id: "inst-04",
@@ -67,6 +197,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Si hay faltante o sobrante de cédulas sin abrir la mesa, repórtalo de inmediato al coordinador de ONPE.",
         roleResponsible: "Todos",
+        visualRefs: [REF_INSTALACION_2],
       },
       {
         id: "inst-05",
@@ -79,6 +210,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "¡ALERTA MÁXIMA! Cédula sin firma de miembros en el reverso será declarada NULA en el escrutinio.",
         roleResponsible: "Todos",
         legalNote: "Manual ONPE 2026 Pág. 9, paso 4",
+        visualRefs: [REF_INSTALACION_2],
       },
       {
         id: "inst-06",
@@ -88,6 +220,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El Secretario llama en voz alta a cada miembro para firmar y colocar huella. Escribe 'FALTÓ' a ausentes. El Presidente marca si recibió información de Reniec y refrigerios, y firma (Pág. 10, paso 5).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_INSTALACION_2],
       },
       {
         id: "inst-07",
@@ -97,6 +230,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Llenar en letras y números claros las 4 actas regionales y 4 municipales: hora de inicio, estado del material y cantidad de cédulas. Firman los tres miembros (Pág. 11, paso 6).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_INSTALACION_3],
       },
     ],
   },
@@ -135,6 +269,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "1. Presidente solicita DNI. 2. Encargado de lista busca número de orden y valida foto. 3. Presidente entrega cédula. 4. Encargado de ánfora vigila depósito. 5. Elector firma y huella. 6. Presidente devuelve DNI (Págs. 12-13).",
         isCritical: true,
         roleResponsible: "Todos",
+        visualRefs: [REF_LISTA_Y_MARCA, REF_INSTALACION_2],
       },
       {
         id: "suf-04",
@@ -226,6 +361,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
         roleResponsible: "Presidente",
+        visualRefs: [REF_INSTALACION_2, REF_INSTALACION_3],
       },
       {
         id: "esc-03",
@@ -235,6 +371,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El Presidente lee cada voto en voz alta y muestra la cédula a los personeros. Toda duda se resuelve en la mesa por mayoría simple (Art. 283 LOE / Pág. 25, paso 6).",
         isCritical: true,
         roleResponsible: "Presidente",
+        visualRefs: [REF_IMPUGNACIONES],
       },
       {
         id: "esc-04",
@@ -244,6 +381,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El miembro a cargo de la hoja borrador escucha y traza un palote por voto agrupados de cinco en cinco. Repetir en 5A, 5B, 5C y 5D (Pág. 25, paso 7).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_HOJAS_BORRADOR],
       },
       {
         id: "esc-05",
@@ -264,6 +402,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Copiar resultados a las 8 actas oficiales con letra clara. Firman los 3 miembros y personeros (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_INSTALACION_3],
       },
       {
         id: "esc-07",
@@ -275,6 +414,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "¡PUNTO DE NO RETORNO! Una vez pegada la lámina, no se puede enmendar.",
         roleResponsible: "Todos",
+        visualRefs: [REF_LAMINAS],
       },
     ],
   },
@@ -295,6 +435,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Llenar y pegar los carteles de resultados regional y municipal en la parte exterior del aula (Pág. 3 PDF).",
         isCritical: false,
         roleResponsible: "Coordinación Interna",
+        visualRefs: [REF_HOJAS_BORRADOR],
       },
       {
         id: "ent-02",
@@ -306,6 +447,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Los sobres tienen adhesivo inviolable. No metas actas en el sobre anaranjado.",
         roleResponsible: "Todos",
+        visualRefs: [REF_SOBRES_COLORES, REF_LISTA_Y_MARCA],
       },
       {
         id: "ent-03",
@@ -315,6 +457,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Guardar todas las cédulas usadas no impugnadas en la bolsa oficial y colocar cinta de embalaje (Pág. 7).",
         isCritical: true,
         roleResponsible: "Coordinación Interna",
+        visualRefs: [REF_SOBRES_COLORES, REF_BOLSA_RECICLAJE],
       },
       {
         id: "ent-04",
@@ -326,6 +469,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Guarda tu copia firmada del cargo. Es tu comprobante legal.",
         roleResponsible: "Presidente",
+        visualRefs: [REF_CARGO_ENTREGA],
       },
       {
         id: "ent-05",
@@ -335,6 +479,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Recibir constancia o certificado oficial para tramitar el día de descanso remunerado ante tu empleador (Ley 32231).",
         isCritical: false,
         roleResponsible: "Todos",
+        visualRefs: [REF_HOJAS_BORRADOR],
       },
     ],
   },
@@ -607,3 +752,13 @@ export const PROTOCOLS_LIST: ProtocolItem[] = [
     legalReference: "Ley Nº 32231 - Congreso de la República",
   },
 ];
+
+/**
+ * Ids of the checkable visual verification items attached to a task
+ * (via its visualRefs). Empty for tasks with reference-only images or none.
+ */
+export function getTaskVisualItemIds(task: ChecklistTask): string[] {
+  return (task.visualRefs ?? []).flatMap(
+    (ref) => ref.items?.map((item) => item.id) ?? [],
+  );
+}

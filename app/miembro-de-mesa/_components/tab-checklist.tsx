@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
-import { PHASES_CONFIG } from "../_lib/constants";
+import { PHASES_CONFIG, getTaskVisualItemIds } from "../_lib/constants";
+import { TaskVisualRefs } from "./task-visual-refs";
 import { ChecklistTask, MemberRole, AgreementAssignee } from "../_lib/types";
 import { useScrollSpy } from "../_lib/use-scroll-spy";
 import {
@@ -49,7 +50,11 @@ const SECTION_IDS = PHASES_CONFIG.map((p) => `sec-${p.id}`);
 export function TabChecklist() {
   const selectedRole = useCopilotoStore((s) => s.selectedRole);
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
+  const completedVisualItems = useCopilotoStore((s) => s.completedVisualItems);
   const toggleTask = useCopilotoStore((s) => s.toggleTask);
+  const setTaskVisualCompletion = useCopilotoStore(
+    (s) => s.setTaskVisualCompletion,
+  );
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
   const assignAgreement = useCopilotoStore((s) => s.assignAgreement);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
@@ -62,6 +67,20 @@ export function TabChecklist() {
     sectionIds: SECTION_IDS,
     offsetPx: 110,
   });
+
+  // Tasks with visual verification items auto-complete when every item is verified
+  useEffect(() => {
+    PHASES_CONFIG.forEach((phase) => {
+      phase.tasks.forEach((task) => {
+        const itemIds = getTaskVisualItemIds(task);
+        if (itemIds.length === 0) return;
+        const derived = itemIds.every((id) => completedVisualItems[id]);
+        if (!!completedTasks[task.id] !== derived) {
+          setTaskVisualCompletion(task.id, derived);
+        }
+      });
+    });
+  }, [completedVisualItems, completedTasks, setTaskVisualCompletion]);
 
   // Auto-scroll active chip into horizontal view when activeId changes
   useEffect(() => {
@@ -219,6 +238,8 @@ export function TabChecklist() {
               <div className="space-y-2.5">
                 {filteredTasks.map((task, index) => {
                   const isDone = !!completedTasks[task.id];
+                  const visualItemIds = getTaskVisualItemIds(task);
+                  const hasVisualVerification = visualItemIds.length > 0;
                   const isSharedAgreement =
                     task.roleResponsible === "Coordinación Interna";
                   const assignedTo = internalAgreements[task.id];
@@ -251,9 +272,13 @@ export function TabChecklist() {
                         {/* Large Clean Checkbox Target */}
                         <button
                           type="button"
-                          onClick={() => toggleTask(task.id)}
+                          onClick={() => {
+                            if (hasVisualVerification) return;
+                            toggleTask(task.id);
+                          }}
                           className="pt-0.5 focus:outline-none"
                           aria-label={`Marcar tarea ${task.title}`}
+                          aria-disabled={hasVisualVerification}
                         >
                           <div
                             className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
@@ -270,7 +295,10 @@ export function TabChecklist() {
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex flex-wrap items-start justify-between gap-1.5">
                             <h3
-                              onClick={() => toggleTask(task.id)}
+                              onClick={() => {
+                                if (hasVisualVerification) return;
+                                toggleTask(task.id);
+                              }}
                               className={`text-xs sm:text-sm font-bold leading-snug cursor-pointer ${
                                 isDone
                                   ? "line-through text-muted-foreground"
@@ -306,11 +334,19 @@ export function TabChecklist() {
                           </div>
 
                           <p
-                            onClick={() => toggleTask(task.id)}
+                            onClick={() => {
+                              if (hasVisualVerification) return;
+                              toggleTask(task.id);
+                            }}
                             className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer"
                           >
                             {task.description}
                           </p>
+
+                          {/* ONPE reference screenshots with checkable items */}
+                          {task.visualRefs && task.visualRefs.length > 0 && (
+                            <TaskVisualRefs task={task} />
+                          )}
 
                           {/* Interactive Role Assignment for Internal Coordination Tasks */}
                           {isSharedAgreement && !isDone && (

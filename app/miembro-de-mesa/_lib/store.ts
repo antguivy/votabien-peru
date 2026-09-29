@@ -24,6 +24,7 @@ interface CopilotoState {
   selectedRole: MemberRole | null;
   internalAgreements: Record<string, AgreementAssignee>;
   completedTasks: Record<string, boolean>;
+  completedVisualItems: Record<string, boolean>;
   votersTarget: number;
   sheets: Record<ElectionType, ElectionSheetState>;
   sealedEnvelopes: Record<EnvelopeColor, boolean>;
@@ -35,6 +36,8 @@ interface CopilotoState {
   assignAgreement: (taskId: string, assignee: AgreementAssignee) => void;
   syncStateFromQR: (data: Partial<CopilotoState>) => void;
   toggleTask: (taskId: string) => void;
+  toggleVisualItem: (itemId: string) => void;
+  setTaskVisualCompletion: (taskId: string, done: boolean) => void;
   setVotersTarget: (target: number) => void;
   updateOptionVotes: (
     type: ElectionType,
@@ -89,6 +92,7 @@ export const useCopilotoStore = create<CopilotoState>()(
       selectedRole: null,
       internalAgreements: {},
       completedTasks: {},
+      completedVisualItems: {},
       votersTarget: 0,
       sheets: initialSheets,
       sealedEnvelopes: {
@@ -128,6 +132,14 @@ export const useCopilotoStore = create<CopilotoState>()(
                 },
               }
             : {}),
+          ...(data.completedVisualItems
+            ? {
+                completedVisualItems: {
+                  ...state.completedVisualItems,
+                  ...data.completedVisualItems,
+                },
+              }
+            : {}),
           ...(data.sheets ? { sheets: data.sheets } : {}),
           ...(data.sealedEnvelopes
             ? { sealedEnvelopes: data.sealedEnvelopes }
@@ -139,6 +151,22 @@ export const useCopilotoStore = create<CopilotoState>()(
           completedTasks: {
             ...state.completedTasks,
             [taskId]: !state.completedTasks[taskId],
+          },
+        })),
+
+      toggleVisualItem: (itemId) =>
+        set((state) => ({
+          completedVisualItems: {
+            ...state.completedVisualItems,
+            [itemId]: !state.completedVisualItems[itemId],
+          },
+        })),
+
+      setTaskVisualCompletion: (taskId, done) =>
+        set((state) => ({
+          completedTasks: {
+            ...state.completedTasks,
+            [taskId]: done,
           },
         })),
 
@@ -288,6 +316,7 @@ export const useCopilotoStore = create<CopilotoState>()(
       resetAllData: () =>
         set({
           completedTasks: {},
+          completedVisualItems: {},
           votersTarget: 0,
           sheets: initialSheets,
           sealedEnvelopes: {

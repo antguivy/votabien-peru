@@ -20,6 +20,20 @@ export type RoleResponsible =
   | "Coordinación Interna"
   | "Todos";
 
+export interface VisualChecklistItem {
+  id: string;
+  label: string;
+}
+
+export interface VisualRef {
+  src: string;
+  alt: string;
+  /** Short caption shown under the thumbnail, e.g. "Paquete de Útiles (ONPE)" */
+  caption: string;
+  /** Interactive check items the member must verify against the image. Omit for reference-only images. */
+  items?: VisualChecklistItem[];
+}
+
 export interface ChecklistTask {
   id: string;
   phaseId: PhaseId;
@@ -29,6 +43,8 @@ export interface ChecklistTask {
   irreversibleWarning?: string;
   roleResponsible?: RoleResponsible;
   legalNote?: string;
+  /** ONPE reference screenshots the member can open to verify physical material with a checklist. */
+  visualRefs?: VisualRef[];
 }
 
 export interface PhaseDefinition {
