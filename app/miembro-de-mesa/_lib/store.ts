@@ -58,7 +58,6 @@ interface CopilotoState {
     count: number,
   ) => void;
   toggleEnvelopeSealed: (color: EnvelopeColor) => void;
-  resetTasks: () => void;
   resetAllData: () => void;
 }
 
@@ -311,12 +310,6 @@ export const useCopilotoStore = create<CopilotoState>()(
             [color]: !state.sealedEnvelopes[color],
           },
         })),
-
-      resetTasks: () =>
-        set({
-          completedTasks: {},
-          completedVisualRefs: {},
-        }),
 
       resetAllData: () =>
         set({

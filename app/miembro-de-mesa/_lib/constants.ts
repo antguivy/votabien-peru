@@ -48,10 +48,16 @@ const REF_INSTALACION_3: VisualRef = {
   caption: "Paquete de Instalación (actas)",
 };
 
+const REF_ESCRUTINIO_PAQUETE: VisualRef = {
+  src: "/miembros_mesa/paquete_escrutinio_1.png",
+  alt: "Paquete de escrutinio: sobres de colores para actas y bolsa para repliegue de cédulas",
+  caption: "Paquete de Escrutinio",
+};
+
 const REF_SOBRES_COLORES: VisualRef = {
   src: "/miembros_mesa/paquete_escrutinio_1.png",
   alt: "Sobres plásticos de colores: plomo ODPE, verde JNE, celeste JEE, rojo ONPE y bolsa de repliegue de cédulas",
-  caption: "Sobres plásticos de colores",
+  caption: "Sobres de Seguridad",
 };
 
 const REF_LAMINAS: VisualRef = {
@@ -108,17 +114,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El Presidente recibe la caja sellada de la ONPE. Se abre entre todos los miembros de mesa para revisar los paquetes de útiles, instalación y escrutinio (Manual Pág. 8, paso 1).",
         isCritical: true,
         roleResponsible: "Todos",
-        visualRefs: [
-          REF_UTILES,
-          REF_INSTALACION_1,
-          REF_INSTALACION_2,
-          REF_INSTALACION_3,
-          REF_SOBRES_COLORES,
-          REF_LAMINAS,
-          REF_IMPUGNACIONES,
-          REF_CARGO_ENTREGA,
-          REF_BOLSA_RECICLAJE,
-        ],
+        visualRefs: [REF_UTILES, REF_INSTALACION_1, REF_ESCRUTINIO_PAQUETE],
       },
       {
         id: "inst-02",
@@ -222,7 +218,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "1. Presidente solicita DNI. 2. Encargado de lista busca número de orden y valida foto. 3. Presidente entrega cédula. 4. Encargado de ánfora vigila depósito. 5. Elector firma y huella. 6. Presidente devuelve DNI (Págs. 12-13).",
         isCritical: true,
         roleResponsible: "Todos",
-        visualRefs: [REF_LISTA_Y_MARCA, REF_INSTALACION_2],
+        visualRefs: [REF_LISTA_Y_MARCA],
       },
       {
         id: "suf-04",
@@ -314,7 +310,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
         roleResponsible: "Presidente",
-        visualRefs: [REF_INSTALACION_2, REF_INSTALACION_3],
+        visualRefs: [REF_INSTALACION_2],
       },
       {
         id: "esc-03",
@@ -400,7 +396,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Los sobres tienen adhesivo inviolable. No metas actas en el sobre anaranjado.",
         roleResponsible: "Todos",
-        visualRefs: [REF_SOBRES_COLORES, REF_LISTA_Y_MARCA],
+        visualRefs: [REF_SOBRES_COLORES],
       },
       {
         id: "ent-03",

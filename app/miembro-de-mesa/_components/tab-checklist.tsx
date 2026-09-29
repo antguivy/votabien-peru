@@ -15,17 +15,8 @@ import {
   Filter,
   UserCheck,
   Users,
-  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 function isTaskForRole(
   task: ChecklistTask,
@@ -66,18 +57,10 @@ export function TabChecklist() {
   );
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
   const assignAgreement = useCopilotoStore((s) => s.assignAgreement);
-  const resetTasks = useCopilotoStore((s) => s.resetTasks);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
 
   const [onlyMyTasks, setOnlyMyTasks] = useState(true);
-  const [showResetTasksModal, setShowResetTasksModal] = useState(false);
   const chipsContainerRef = useRef<HTMLDivElement>(null);
-
-  const totalTasksCount = PHASES_CONFIG.reduce(
-    (acc, phase) => acc + phase.tasks.length,
-    0,
-  );
-  const doneTotalCount = Object.values(completedTasks).filter(Boolean).length;
 
   // ScrollSpy to track active phase during continuous scroll
   const { activeId, scrollToSection } = useScrollSpy({
@@ -167,9 +150,9 @@ export function TabChecklist() {
         </div>
       </nav>
 
-      {/* ── Barra de Control: Filtro de Rol y Reinicio de Tareas ── */}
-      <div className="flex items-center justify-between gap-2 px-1 text-xs">
-        {selectedRole && selectedRole !== "todos" ? (
+      {/* ── Barra de Filtro de Rol ── */}
+      {selectedRole && selectedRole !== "todos" && (
+        <div className="flex items-center justify-between gap-2 px-1 text-xs">
           <span className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5">
             <Filter className="h-3 w-3 text-brand" />
             <span>
@@ -179,36 +162,16 @@ export function TabChecklist() {
               </strong>
             </span>
           </span>
-        ) : (
-          <span className="text-[11px] text-muted-foreground font-mono">
-            {doneTotalCount} de {totalTasksCount} tareas completadas
-          </span>
-        )}
 
-        <div className="flex items-center gap-3">
-          {selectedRole && selectedRole !== "todos" && (
-            <button
-              type="button"
-              onClick={() => setOnlyMyTasks(!onlyMyTasks)}
-              className="text-[10.5px] font-mono font-bold text-brand hover:underline"
-            >
-              {onlyMyTasks ? "[ Ver toda la mesa ]" : "[ Ver solo mi cargo ]"}
-            </button>
-          )}
-
-          {doneTotalCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowResetTasksModal(true)}
-              className="text-[10.5px] font-mono text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
-              title="Reiniciar el checklist de tareas a 0"
-            >
-              <RotateCcw className="h-3 w-3" />
-              <span>Limpiar tareas</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setOnlyMyTasks(!onlyMyTasks)}
+            className="text-[10.5px] font-mono font-bold text-brand hover:underline"
+          >
+            {onlyMyTasks ? "[ Ver toda la mesa ]" : "[ Ver solo mi cargo ]"}
+          </button>
         </div>
-      </div>
+      )}
 
       {/* ── Secciones Continuas de Lectura y Checklist ── */}
       <div className="space-y-8 divide-y divide-border/60">
@@ -469,46 +432,6 @@ export function TabChecklist() {
           );
         })}
       </div>
-
-      {/* Modal de confirmación para reiniciar tareas */}
-      <Dialog open={showResetTasksModal} onOpenChange={setShowResetTasksModal}>
-        <DialogContent className="max-w-xs bg-background border-border text-foreground">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-destructive mb-1">
-              <RotateCcw className="h-4 w-4" />
-              <DialogTitle className="text-base font-bold">
-                ¿Reiniciar tareas?
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Se desmarcarán todas las tareas y verificaciones del checklist
-              (volverá a 0/{totalTasksCount}). Los acuerdos y datos de votación
-              no se modificarán.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowResetTasksModal(false)}
-              className="text-xs border-border"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                resetTasks();
-                setShowResetTasksModal(false);
-              }}
-              className="text-xs font-semibold"
-            >
-              Sí, reiniciar tareas
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
