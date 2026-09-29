@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ImageIcon } from "lucide-react";
+import { Check, ImageIcon, ArrowRight } from "lucide-react";
 import {
   Credenza,
-  CredenzaBody,
   CredenzaContent,
   CredenzaDescription,
   CredenzaHeader,
@@ -15,205 +14,311 @@ import { useCopilotoStore } from "../_lib/store";
 import { ChecklistTask, VisualRef } from "../_lib/types";
 import { getTaskVisualKey } from "../_lib/constants";
 
-/* ── Check card: one image = one checkable item ── */
+/* ── Feed: compact thumbnail card for a pending material ── */
 
-interface VisualCheckCardProps {
+interface FeedVisualCardProps {
   task: ChecklistTask;
   ref_: VisualRef;
-  /** Tap on the image body (feed: opens gallery; gallery: toggles check) */
-  onImageClick: () => void;
-  large?: boolean;
-  /** Motion layoutId for FLIP animation between tab groups (gallery only) */
-  layoutId?: string;
+  onOpen: () => void;
 }
 
-function VisualCheckCard({
-  task,
-  ref_,
-  onImageClick,
-  large,
-  layoutId,
-}: VisualCheckCardProps) {
-  const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
+function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
   const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
-
   const key = getTaskVisualKey(task.id, ref_.src);
-  const isDone = !!completedVisualRefs[key];
-
-  const thumbClasses = large ? "h-36 sm:h-44" : "h-20 sm:h-24";
 
   return (
     <motion.div
       layout
-      layoutId={layoutId}
-      initial={{ opacity: 0, y: 14, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.16 } }}
-      transition={{ type: "spring", stiffness: 380, damping: 32 }}
-      className="relative"
+      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 420, damping: 30 }}
+      className="group relative rounded-xl border border-border/80 bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden shadow-2xs hover:border-brand/40 transition-colors select-none"
     >
-      {/* Image body */}
+      {/* Click image → open full-height inspection drawer */}
       <button
         type="button"
-        onClick={onImageClick}
-        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-xl group"
-        aria-label={`Referencia visual: ${ref_.caption}`}
+        onClick={onOpen}
+        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        aria-label={`Ver imagen completa: ${ref_.caption}`}
       >
-        <div
-          className={`${thumbClasses} w-full rounded-xl overflow-hidden border-2 bg-muted/30 transition-all group-active:scale-[0.98] ${
-            isDone
-              ? "border-emerald-600/50"
-              : "border-border/80 group-hover:border-brand/50"
-          }`}
-        >
+        <div className="aspect-[16/10] w-full flex items-center justify-center p-1.5 bg-muted/20">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={ref_.src}
             alt={ref_.alt}
-            className="h-full w-full object-cover object-top"
+            className="w-full h-full object-contain select-none transition-transform group-hover:scale-[1.02]"
             loading="lazy"
           />
         </div>
-        <p
-          className={`mt-1 text-[9.5px] sm:text-[10px] font-mono font-bold leading-tight line-clamp-1 ${
-            isDone
-              ? "text-emerald-700 dark:text-emerald-400"
-              : "text-muted-foreground"
-          }`}
-        >
-          {ref_.caption}
-        </p>
+
+        <div className="px-2 py-1.5 bg-background/90 backdrop-blur-xs border-t border-border/60">
+          <p className="text-[10px] sm:text-[11px] font-bold text-foreground truncate">
+            {ref_.caption}
+          </p>
+        </div>
       </button>
 
-      {/* Check control → verifies this image */}
+      {/* Check button with visible GRAY checkmark when pending */}
       <button
         type="button"
-        onClick={() => toggleVisualRef(key)}
-        aria-pressed={isDone}
-        aria-label={
-          isDone ? `Desmarcar ${ref_.caption}` : `Verificar ${ref_.caption}`
-        }
-        className={`absolute top-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center border-2 shadow-sm transition-all active:scale-90 ${
-          isDone
-            ? "bg-emerald-600 border-emerald-600 text-white"
-            : "bg-background/90 backdrop-blur border-border hover:border-emerald-500"
-        }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleVisualRef(key);
+        }}
+        aria-label={`Marcar verificado: ${ref_.caption}`}
+        className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-background/95 dark:bg-zinc-800/95 border border-border/90 shadow-xs flex items-center justify-center hover:scale-110 active:scale-90 transition-all hover:border-emerald-500"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          {isDone && (
-            <motion.span
-              key="check"
-              initial={{ scale: 0, rotate: -30 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0 }}
-              transition={{ type: "spring", stiffness: 500, damping: 24 }}
-            >
-              <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <Check
+          className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500 hover:text-emerald-600 transition-colors"
+          strokeWidth={2.5}
+        />
       </button>
     </motion.div>
   );
 }
 
-/* ── Gallery credenza: description + Pendiente/Realizado groups ── */
+/* ── Drawer: full-inspection card with 100% visible image ── */
 
-function TaskVisualGallery({
+interface DrawerInspectionCardProps {
+  task: ChecklistTask;
+  ref_: VisualRef;
+  isDone: boolean;
+}
+
+function DrawerInspectionCard({
   task,
-  open,
-  onOpenChange,
-}: {
+  ref_,
+  isDone,
+}: DrawerInspectionCardProps) {
+  const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
+  const key = getTaskVisualKey(task.id, ref_.src);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 360, damping: 28 }}
+      className={`rounded-2xl border p-3 sm:p-4 space-y-3 transition-colors ${
+        isDone
+          ? "bg-emerald-500/5 border-emerald-600/30"
+          : "bg-card border-border/80 shadow-xs"
+      }`}
+    >
+      {/* 100% visible image container: object-contain with max-height constraint */}
+      <div className="w-full rounded-xl overflow-hidden border border-border/70 bg-zinc-100 dark:bg-zinc-900/60 p-2 sm:p-3 flex items-center justify-center min-h-[160px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={ref_.src}
+          alt={ref_.alt}
+          className="w-full h-auto max-h-[42vh] object-contain select-none"
+          loading="eager"
+        />
+      </div>
+
+      {/* Control row with caption and prominent verify button */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-xs sm:text-sm font-bold text-foreground">
+            {ref_.caption}
+          </h4>
+          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+            {isDone
+              ? "✓ Material revisado y conforme"
+              : "Verifica el contenido físico antes de marcar"}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => toggleVisualRef(key)}
+          className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border ${
+            isDone
+              ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+              : "bg-background hover:bg-muted text-foreground border-border hover:border-zinc-400"
+          }`}
+        >
+          <div
+            className={`h-4 w-4 rounded-full flex items-center justify-center border transition-colors ${
+              isDone
+                ? "border-white bg-white/20"
+                : "border-zinc-400 dark:border-zinc-500 bg-muted/60"
+            }`}
+          >
+            <Check
+              className={`h-2.5 w-2.5 ${
+                isDone
+                  ? "text-white stroke-[3]"
+                  : "text-zinc-500 dark:text-zinc-400 stroke-[2.5]"
+              }`}
+            />
+          </div>
+          <span>{isDone ? "Verificado" : "Marcar"}</span>
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Full-height inspection drawer with conditional tabs ── */
+
+interface TaskVisualDrawerProps {
   task: ChecklistTask;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}) {
+}
+
+function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
   const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
-  const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
+  const [activeTab, setActiveTab] = useState<"pending" | "done">("pending");
 
   const refs = task.visualRefs ?? [];
   const entries = refs.map((ref_) => {
     const key = getTaskVisualKey(task.id, ref_.src);
     return { ref_, key, isDone: !!completedVisualRefs[key] };
   });
+
   const pending = entries.filter((e) => !e.isDone);
   const done = entries.filter((e) => e.isDone);
-  const showGroups = done.length > 0;
 
-  const renderCard = (e: (typeof entries)[number]) => (
-    <VisualCheckCard
-      key={e.key}
-      task={task}
-      ref_={e.ref_}
-      large
-      layoutId={`gallery-${e.key}`}
-      onImageClick={() => toggleVisualRef(e.key)}
-    />
-  );
+  // Tabs are completely hidden when 0 items are verified (clean single-purpose view)
+  const showTabs = done.length > 0;
+
+  // Auto-switch back to pending tab if done items were all cleared
+  const currentTab = showTabs ? activeTab : "pending";
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-2xl p-0">
-        <CredenzaHeader className="px-4 sm:px-6 pt-4 pb-3 border-b border-border/60 space-y-1">
-          <CredenzaTitle className="text-sm sm:text-base font-black tracking-tight text-left flex items-center gap-2">
-            <ImageIcon className="h-4 w-4 text-brand shrink-0" />
-            {task.title.replace(/^\d+\.\s*/, "")}
-          </CredenzaTitle>
-          <CredenzaDescription className="text-[11px] sm:text-xs text-left leading-relaxed">
+      <CredenzaContent
+        noScroll
+        className="!max-h-[94dvh] !h-[92dvh] !mt-2 sm:max-w-2xl flex flex-col p-0 overflow-hidden rounded-t-2xl"
+      >
+        {/* Static Header */}
+        <CredenzaHeader className="px-4 sm:px-6 pt-3 pb-2.5 border-b border-border/60 shrink-0 text-left space-y-1">
+          <div className="flex items-center justify-between gap-2">
+            <CredenzaTitle className="text-sm sm:text-base font-black tracking-tight flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-brand shrink-0" />
+              <span>{task.title.replace(/^\d+\.\s*/, "")}</span>
+            </CredenzaTitle>
+
+            <span
+              className={`text-[10.5px] font-mono font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+                pending.length === 0
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-600/30"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}
+            >
+              {done.length}/{refs.length} listos
+            </span>
+          </div>
+
+          <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed">
             {task.description}
           </CredenzaDescription>
         </CredenzaHeader>
 
-        <CredenzaBody className="px-4 sm:px-6 py-4 space-y-4 max-h-[65vh] overflow-y-auto">
-          {/* Group headers appear only after the first image is verified */}
-          {showGroups && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center py-1.5 text-[10px] font-mono font-black uppercase tracking-wider rounded-lg bg-background border border-border/70 shadow-xs text-muted-foreground">
+        {/* Scrollable inspection body */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 space-y-4">
+          {/* Tabs appear ONLY after the user verifies at least 1 image */}
+          {showTabs && (
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-muted/50 border border-border/60 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
+              <button
+                type="button"
+                onClick={() => setActiveTab("pending")}
+                className={`py-1.5 text-xs font-mono font-bold rounded-lg transition-all ${
+                  currentTab === "pending"
+                    ? "bg-background text-foreground shadow-xs border border-border/70"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
                 Pendientes ({pending.length})
-              </div>
-              <div className="text-center py-1.5 text-[10px] font-mono font-black uppercase tracking-wider rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/30">
-                Realizadas ({done.length})
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("done")}
+                className={`py-1.5 text-xs font-mono font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  currentTab === "done"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>Realizadas ({done.length})</span>
+                <Check className="h-3 w-3 stroke-[3]" />
+              </button>
             </div>
           )}
 
-          {/* Pending — the next image rises as one above is verified */}
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {pending.map(renderCard)}
-            </AnimatePresence>
-            {showGroups && pending.length === 0 && (
-              <motion.p
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-emerald-700 dark:text-emerald-400 text-center font-mono font-bold py-6"
-              >
-                ✓ Todo verificado en esta tarea
-              </motion.p>
-            )}
-          </div>
-
-          {/* Done group */}
-          {showGroups && (
-            <div className="space-y-3 pt-3 border-t border-border/50">
+          {/* Pending items list: when an item is checked, next item rises smoothly from below */}
+          {currentTab === "pending" && (
+            <div className="space-y-4">
               <AnimatePresence mode="popLayout" initial={false}>
-                {done.map(renderCard)}
+                {pending.map((e) => (
+                  <DrawerInspectionCard
+                    key={e.key}
+                    task={task}
+                    ref_={e.ref_}
+                    isDone={false}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {/* All completed celebration */}
+              {pending.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="py-10 text-center space-y-3"
+                >
+                  <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 flex items-center justify-center mx-auto">
+                    <Check className="h-6 w-6 stroke-[3]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">
+                      ¡Todos los materiales verificados!
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      La tarea se ha marcado automáticamente en tu lista.
+                    </p>
+                  </div>
+                  {done.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("done")}
+                      className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-brand hover:underline pt-2"
+                    >
+                      <span>Ver {done.length} materiales verificados</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          {/* Done items list */}
+          {currentTab === "done" && (
+            <div className="space-y-4">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {done.map((e) => (
+                  <DrawerInspectionCard
+                    key={e.key}
+                    task={task}
+                    ref_={e.ref_}
+                    isDone={true}
+                  />
+                ))}
               </AnimatePresence>
             </div>
           )}
-
-          {!showGroups && (
-            <p className="text-[10.5px] text-muted-foreground text-center font-mono pb-1">
-              Compara el material físico con cada imagen y márcala con el ✓
-            </p>
-          )}
-        </CredenzaBody>
+        </div>
       </CredenzaContent>
     </Credenza>
   );
 }
 
-/* ── Inline visual checklist inside the task card ── */
+/* ── Public entrypoint for TabChecklist ── */
 
 interface TaskVisualRefsProps {
   task: ChecklistTask;
@@ -221,29 +326,68 @@ interface TaskVisualRefsProps {
 
 export function TaskVisualRefs({ task }: TaskVisualRefsProps) {
   const refs = task.visualRefs ?? [];
+  const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
   const [open, setOpen] = useState(false);
+
   if (refs.length === 0) return null;
 
+  const entries = refs.map((ref_) => {
+    const key = getTaskVisualKey(task.id, ref_.src);
+    return { ref_, key, isDone: !!completedVisualRefs[key] };
+  });
+
+  const pending = entries.filter((e) => !e.isDone);
+  // done count not needed in root trigger
+
+  // Maximum 3 pending thumbnails shown in the feed (anti-clutter rule)
+  const visiblePending = pending.slice(0, 3);
+  const allCompleted = pending.length === 0;
+
   return (
-    <div className="mt-2.5 rounded-xl bg-muted/20 border border-border/50 p-2.5 space-y-2">
-      <p className="text-[9.5px] font-mono uppercase tracking-widest font-bold text-muted-foreground flex items-center gap-1.5">
-        <ImageIcon className="h-3 w-3 text-brand" />
-        <span>Checklist visual — toca la imagen para verla grande</span>
-      </p>
+    <div className="mt-2.5 space-y-2 select-none">
+      {/* Feed thumbnail grid — shows ONLY pending items (max 3) */}
+      {!allCompleted && (
+        <div
+          className={`grid gap-2 ${
+            visiblePending.length === 1
+              ? "grid-cols-1 sm:max-w-xs"
+              : visiblePending.length === 2
+                ? "grid-cols-2 sm:max-w-md"
+                : "grid-cols-3"
+          }`}
+        >
+          <AnimatePresence mode="popLayout" initial={false}>
+            {visiblePending.map((e) => (
+              <FeedVisualCard
+                key={e.key}
+                task={task}
+                ref_={e.ref_}
+                onOpen={() => setOpen(true)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
-      {/* Feed row: tap image → gallery, tap ✓ → verify */}
-      <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2.5">
-        {refs.map((ref_) => (
-          <VisualCheckCard
-            key={ref_.src}
-            task={task}
-            ref_={ref_}
-            onImageClick={() => setOpen(true)}
-          />
-        ))}
-      </div>
+      {/* Clean status pill when all materials are verified */}
+      {allCompleted && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-600/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold hover:bg-emerald-500/15 transition-all shadow-2xs active:scale-95"
+        >
+          <Check className="h-3.5 w-3.5 stroke-[3]" />
+          <span>
+            {refs.length}/{refs.length} materiales verificados
+          </span>
+          <span className="text-[10px] font-sans font-normal text-muted-foreground underline ml-1">
+            Ver fotos
+          </span>
+        </button>
+      )}
 
-      <TaskVisualGallery task={task} open={open} onOpenChange={setOpen} />
+      {/* Full-height drawer for large-scale inspection */}
+      <TaskVisualDrawer task={task} open={open} onOpenChange={setOpen} />
     </div>
   );
 }
