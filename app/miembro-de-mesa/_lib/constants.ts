@@ -227,7 +227,9 @@ const ACTAS_INSTALACION: VisualRef = {
       src: "/miembros_mesa/1_7_si_no_puede_firmar.png",
       alt: "Procedimiento si un miembro no puede firmar",
       caption:
-        "Si un miembro no puede firmar: imprime huella digital y se anota",
+        "Si un miembro no puede firmar: imprime huella digital y se anota en observaciones",
+      isOptional: true,
+      optionalBadge: "Solo si aplica",
     },
   ],
 };
@@ -471,7 +473,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         description:
           "Presidente: administra cédulas y DNI. Un miembro: maneja Lista de Electores y tampón. Otro miembro: custodia el ánfora (Pág. 12, paso 1).",
         isCritical: true,
-        roleResponsible: "Coordinación Interna",
+        roleResponsible: "Todos",
       },
       {
         id: "suf-03",
@@ -966,18 +968,30 @@ export const PROTOCOLS_LIST: ProtocolItem[] = [
 ];
 
 /**
- * Stable check key for one visual reference of a task: the visual unit itself is
- * the checkable item. Key format: "<taskId>::<ref.id>".
+ * Stable check key for one specific reference image / subtask.
+ * Key format: "<taskId>::<image.src>".
  */
-export function getTaskVisualKey(taskId: string, refId: string): string {
-  return `${taskId}::${refId}`;
+export function getTaskVisualItemKey(taskId: string, imageSrc: string): string {
+  return `${taskId}::${imageSrc}`;
 }
 
 /**
- * Check keys for every visual reference attached to a task.
+ * Returns required check keys for images attached to a task.
+ * Filters out images marked with isOptional: true so conditional steps don't block 100%.
  */
-export function getTaskVisualKeys(task: ChecklistTask): string[] {
-  return (task.visualRefs ?? []).map((ref) =>
-    getTaskVisualKey(task.id, ref.id),
+export function getTaskVisualRequiredKeys(task: ChecklistTask): string[] {
+  return (task.visualRefs ?? []).flatMap((ref) =>
+    ref.images
+      .filter((img) => !img.isOptional)
+      .map((img) => getTaskVisualItemKey(task.id, img.src)),
+  );
+}
+
+/**
+ * Returns all check keys attached to a task, including optional ones.
+ */
+export function getAllTaskVisualKeys(task: ChecklistTask): string[] {
+  return (task.visualRefs ?? []).flatMap((ref) =>
+    ref.images.map((img) => getTaskVisualItemKey(task.id, img.src)),
   );
 }

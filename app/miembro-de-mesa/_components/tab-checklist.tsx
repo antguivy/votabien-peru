@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
-import { PHASES_CONFIG, getTaskVisualKeys } from "../_lib/constants";
+import { PHASES_CONFIG, getTaskVisualRequiredKeys } from "../_lib/constants";
 import { TaskVisualRefs } from "./task-visual-refs";
 import { ChecklistTask, MemberRole, AgreementAssignee } from "../_lib/types";
 import { useScrollSpy } from "../_lib/use-scroll-spy";
@@ -68,13 +68,13 @@ export function TabChecklist() {
     offsetPx: 110,
   });
 
-  // Tasks with a visual checklist auto-complete when every reference image is verified
+  // Tasks with a visual checklist auto-complete when all required reference images are verified
   useEffect(() => {
     PHASES_CONFIG.forEach((phase) => {
       phase.tasks.forEach((task) => {
-        const visualKeys = getTaskVisualKeys(task);
-        if (visualKeys.length === 0) return;
-        const derived = visualKeys.every((key) => completedVisualRefs[key]);
+        const requiredKeys = getTaskVisualRequiredKeys(task);
+        if (requiredKeys.length === 0) return;
+        const derived = requiredKeys.every((key) => completedVisualRefs[key]);
         if (!!completedTasks[task.id] !== derived) {
           setTaskVisualCompletion(task.id, derived);
         }

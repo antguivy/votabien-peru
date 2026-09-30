@@ -25,6 +25,10 @@ export interface VisualImage {
   alt: string;
   /** Detailed caption of what is shown in this specific screenshot */
   caption: string;
+  /** If true, this item is conditional (e.g. "si un miembro no puede firmar") and does NOT block 100% completion */
+  isOptional?: boolean;
+  /** Label shown in the pill badge, e.g. "Solo si aplica", "Excepción" */
+  optionalBadge?: string;
 }
 
 export interface VisualRef {
