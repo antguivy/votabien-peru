@@ -246,7 +246,7 @@ const _REF_LISTA_ELECTORES: VisualRef = {
   ],
 };
 
-const REF_ACTAS_ESCRUTINIO: VisualRef = {
+const _REF_ACTAS_ESCRUTINIO: VisualRef = {
   id: "actas-escrutinio",
   title: "Actas de Escrutinio (Sección C)",
   images: [
@@ -258,7 +258,7 @@ const REF_ACTAS_ESCRUTINIO: VisualRef = {
   ],
 };
 
-const REF_IMPUGNACIONES: VisualRef = {
+const _REF_IMPUGNACIONES: VisualRef = {
   id: "sobre-impugnaciones",
   title: "Sobre de Impugnaciones",
   images: [
@@ -270,7 +270,7 @@ const REF_IMPUGNACIONES: VisualRef = {
   ],
 };
 
-const REF_HOJAS_BORRADOR: VisualRef = {
+const _REF_HOJAS_BORRADOR: VisualRef = {
   id: "hojas-borrador",
   title: "Hojas Borrador (5a-5d)",
   images: [
@@ -282,7 +282,7 @@ const REF_HOJAS_BORRADOR: VisualRef = {
   ],
 };
 
-const REF_LAMINAS: VisualRef = {
+const _REF_LAMINAS: VisualRef = {
   id: "laminas-proteccion",
   title: "Láminas Autoadhesivas",
   images: [
@@ -573,7 +573,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         isCritical: true,
         irreversibleWarning:
           "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
-        roleResponsible: "Presidente",
+        roleResponsible: "Todos",
         // visualRefs: [FIRMA_CEDULAS],
       },
       {
@@ -584,7 +584,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El Presidente lee cada voto en voz alta y muestra la cédula a los personeros. Toda duda se resuelve en la mesa por mayoría simple (Art. 283 LOE / Pág. 25, paso 6).",
         isCritical: true,
         roleResponsible: "Presidente",
-        visualRefs: [REF_IMPUGNACIONES],
+        // visualRefs: [REF_IMPUGNACIONES],
       },
       {
         id: "esc-04",
@@ -594,7 +594,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "El miembro a cargo de la hoja borrador escucha y traza un palote por voto agrupados de cinco en cinco. Repetir en 5A, 5B, 5C y 5D (Pág. 25, paso 7).",
         isCritical: true,
         roleResponsible: "Secretario",
-        visualRefs: [REF_HOJAS_BORRADOR],
+        // visualRefs: [REF_HOJAS_BORRADOR],
       },
       {
         id: "esc-05",
@@ -615,7 +615,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
           "Copiar resultados a las 8 actas oficiales con letra clara. Firman los 3 miembros y personeros (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Secretario",
-        visualRefs: [REF_ACTAS_ESCRUTINIO],
+        visualRefs: [],
       },
       {
         id: "esc-07",
@@ -627,7 +627,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "¡PUNTO DE NO RETORNO! Una vez pegada la lámina, no se puede enmendar.",
         roleResponsible: "Todos",
-        visualRefs: [REF_LAMINAS],
+        visualRefs: [],
       },
     ],
   },

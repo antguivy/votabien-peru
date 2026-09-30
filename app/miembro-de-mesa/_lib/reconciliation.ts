@@ -2,7 +2,12 @@ import {
   ElectionSheetState,
   ElectionType,
   ReconciliationResult,
+  TallyItem,
 } from "./types";
+
+export function calculateTallyTotal(items: TallyItem[] = []): number {
+  return items.reduce((acc, it) => acc + Math.max(0, Number(it.value) || 0), 0);
+}
 
 export function createInitialElectionSheet(
   type: ElectionType,

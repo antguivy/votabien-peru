@@ -1,7 +1,7 @@
 "use client";
 
 import { useCopilotoStore, CopilotoTab } from "../_lib/store";
-import { calculateElectionTotals } from "../_lib/reconciliation";
+import { calculateTallyTotal } from "../_lib/reconciliation";
 import { ListChecks, Calculator, Scale, PackageCheck } from "lucide-react";
 
 interface BottomNavItem {
@@ -42,14 +42,13 @@ export function CopilotoNav() {
   const activeTab = useCopilotoStore((s) => s.activeTab);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
   const votersTarget = useCopilotoStore((s) => s.votersTarget);
-  const sheets = useCopilotoStore((s) => s.sheets);
+  const tallies = useCopilotoStore((s) => s.tallies);
 
   // Status for the Cuadre tab
-  const activeSheetTotals = calculateElectionTotals(sheets["5A"]);
-  const is5AMatched =
-    votersTarget > 0 && activeSheetTotals.totalVotes === votersTarget;
+  const total5A = calculateTallyTotal(tallies?.["5A"] ?? []);
+  const is5AMatched = votersTarget > 0 && total5A === votersTarget;
   const is5AMismatched =
-    votersTarget > 0 && activeSheetTotals.totalVotes !== votersTarget;
+    votersTarget > 0 && total5A > 0 && total5A !== votersTarget;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center pointer-events-none">

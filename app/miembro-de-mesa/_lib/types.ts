@@ -67,6 +67,12 @@ export interface PhaseDefinition {
 
 export type ElectionType = "5A" | "5B" | "5C" | "5D";
 
+export interface TallyItem {
+  id: string;
+  value: number;
+  label?: string;
+}
+
 export interface ElectionOption {
   id: string;
   name: string;

@@ -7,6 +7,7 @@ import {
   EnvelopeColor,
   MemberRole,
   AgreementAssignee,
+  TallyItem,
 } from "./types";
 import { createInitialElectionSheet } from "./reconciliation";
 import { OFFICIAL_ERM_2026_PARTIES } from "./constants";
@@ -27,6 +28,7 @@ interface CopilotoState {
   completedVisualRefs: Record<string, boolean>;
   votersTarget: number;
   sheets: Record<ElectionType, ElectionSheetState>;
+  tallies: Record<ElectionType, TallyItem[]>;
   sealedEnvelopes: Record<EnvelopeColor, boolean>;
 
   // Actions
@@ -58,8 +60,24 @@ interface CopilotoState {
     count: number,
   ) => void;
   toggleEnvelopeSealed: (color: EnvelopeColor) => void;
+  addTallyItem: (type: ElectionType, value: number, label?: string) => void;
+  updateTallyItem: (
+    type: ElectionType,
+    itemId: string,
+    value: number,
+    label?: string,
+  ) => void;
+  removeTallyItem: (type: ElectionType, itemId: string) => void;
+  clearTally: (type: ElectionType) => void;
   resetAllData: () => void;
 }
+
+const initialTallies: Record<ElectionType, TallyItem[]> = {
+  "5A": [],
+  "5B": [],
+  "5C": [],
+  "5D": [],
+};
 
 const initialSheets: Record<ElectionType, ElectionSheetState> = {
   "5A": createInitialElectionSheet(
@@ -95,6 +113,7 @@ export const useCopilotoStore = create<CopilotoState>()(
       completedVisualRefs: {},
       votersTarget: 0,
       sheets: initialSheets,
+      tallies: initialTallies,
       sealedEnvelopes: {
         plomo: false,
         rojo: false,
@@ -311,12 +330,67 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
         })),
 
+      addTallyItem: (type, value, label) =>
+        set((state) => {
+          const currentList = state.tallies?.[type] ?? [];
+          const newItem: TallyItem = {
+            id: `tally-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            value: Math.max(0, Number(value) || 0),
+            label: label?.trim() || `Fila ${currentList.length + 1}`,
+          };
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: [...currentList, newItem],
+            },
+          };
+        }),
+
+      updateTallyItem: (type, itemId, value, label) =>
+        set((state) => {
+          const currentList = state.tallies?.[type] ?? [];
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: currentList.map((item) =>
+                item.id === itemId
+                  ? {
+                      ...item,
+                      value: Math.max(0, Number(value) || 0),
+                      ...(label !== undefined ? { label } : {}),
+                    }
+                  : item,
+              ),
+            },
+          };
+        }),
+
+      removeTallyItem: (type, itemId) =>
+        set((state) => {
+          const currentList = state.tallies?.[type] ?? [];
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: currentList.filter((item) => item.id !== itemId),
+            },
+          };
+        }),
+
+      clearTally: (type) =>
+        set((state) => ({
+          tallies: {
+            ...(state.tallies ?? initialTallies),
+            [type]: [],
+          },
+        })),
+
       resetAllData: () =>
         set({
           completedTasks: {},
           completedVisualRefs: {},
           votersTarget: 0,
           sheets: initialSheets,
+          tallies: initialTallies,
           sealedEnvelopes: {
             plomo: false,
             rojo: false,
