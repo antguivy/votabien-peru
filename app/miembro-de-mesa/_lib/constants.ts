@@ -208,20 +208,20 @@ const ACTAS_INSTALACION: VisualRef = {
   description: "Llenado con letra clara en las actas regionales y municipales",
   images: [
     {
-      src: "/miembros_mesa/1_7_completar_acta_instalacion.png",
-      alt: "Llenar la Sección A del Acta de Instalación",
-      caption:
-        "Paso 1: Llenar hora de inicio, estado del material y cantidad de cédulas",
-    },
-    {
       src: "/miembros_mesa/1_7_desglozar_actas_regionales.png",
       alt: "Desglose de actas regionales",
-      caption: "Paso 2: Desglosar las 4 actas electorales regionales",
+      caption: "Desglosar las 4 actas electorales regionales",
     },
     {
       src: "/miembros_mesa/1_7_desglozar_actas_municipales.png",
       alt: "Desglose de actas municipales",
-      caption: "Paso 3: Desglosar las 4 actas electorales municipales",
+      caption: "Desglosar las 4 actas electorales municipales",
+    },
+    {
+      src: "/miembros_mesa/1_7_completar_acta_instalacion.png",
+      alt: "Llenar la Sección A del Acta de Instalación",
+      caption:
+        "Llenar hora de inicio, estado del material y cantidad de cédulas",
     },
     {
       src: "/miembros_mesa/1_7_si_no_puede_firmar.png",
@@ -234,7 +234,7 @@ const ACTAS_INSTALACION: VisualRef = {
   ],
 };
 
-const REF_LISTA_ELECTORES: VisualRef = {
+const _REF_LISTA_ELECTORES: VisualRef = {
   id: "lista-electores",
   title: "Lista de Electores",
   images: [
@@ -410,7 +410,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         isCritical: true,
         irreversibleWarning:
           "Si hay faltante o sobrante de cédulas sin abrir la mesa, repórtalo de inmediato al coordinador de ONPE.",
-        roleResponsible: "Todos",
+        roleResponsible: "Coordinación Interna",
         visualRefs: [CONTEO_CEDULAS],
       },
       {
@@ -471,28 +471,31 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "sufragio",
         title: "Distribución de los 3 puestos de atención",
         description:
-          "Presidente: administra cédulas y DNI. Un miembro: maneja Lista de Electores y tampón. Otro miembro: custodia el ánfora (Pág. 12, paso 1).",
+          "Presidente: administra cédulas y DNI. Secretario: maneja Lista de Electores y tampón. Tercer miembro: custodia el ánfora.",
         isCritical: true,
         roleResponsible: "Todos",
       },
       {
         id: "suf-03",
         phaseId: "sufragio",
-        title: "Circuito de atención en 6 pasos",
-        description:
-          "1. Presidente solicita DNI. 2. Encargado de lista busca número de orden y valida foto. 3. Presidente entrega cédula. 4. Encargado de ánfora vigila depósito. 5. Elector firma y huella. 6. Presidente devuelve DNI (Págs. 12-13).",
+        title: "Circuito de atención a electores",
+        description: `1. Presidente solicita DNI.\n
+           2. Encargado de lista busca número de orden y valida foto. \n
+           3. Presidente entrega cédula. \n
+           4. Encargado de ánfora vigila depósito. \n
+           5. Elector firma y huella. \n
+           6. Presidente devuelve DNI (Págs. 12-13).`,
         isCritical: true,
         roleResponsible: "Todos",
-        visualRefs: [REF_LISTA_ELECTORES],
       },
       {
         id: "suf-04",
         phaseId: "sufragio",
-        title: "Atención preferente y Módulo Temporal (MTV)",
+        title: "Atención preferente y Módulo Temporal de Votación",
         description:
-          "Prioridad a adultos mayores, gestantes y personas con discapacidad. Si hay baja movilidad en el MTV, trasladarse con cédula, lista, tampón y ánfora (Pág. 2 PDF).",
+          "Prioridad a adultos mayores, gestantes y personas con discapacidad. Si hay baja movilidad, trasladarse con cédula, lista, tampón y ánfora (dejando el resto del material bajo resguardo de ONPE).",
         isCritical: false,
-        roleResponsible: "Coordinación Interna",
+        roleResponsible: "Todos",
       },
     ],
   },
@@ -500,7 +503,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
     id: "cierre",
     title: "3. Cierre de Sufragio",
     subtitle: "05:00 PM: Cierre de puertas y consolidación del padrón",
-    timeframe: "05:00 PM puntual",
+    timeframe: "05:00 PM APROXIMADAMENTE",
     color: "from-amber-600 to-orange-700",
     warningAlert:
       "A las 5:00 PM se cierran las puertas del local. Solo sufragan quienes ya estaban en la fila dentro del aula.",

@@ -146,23 +146,15 @@ function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
   );
 }
 
-/* ── Drawer: individual sub-item card with uncropped image and own check ── */
+/* ── Drawer: clean editorial step item without nested card borders ── */
 
-interface DrawerSubItemCardProps {
+interface DrawerStepItemProps {
   task: ChecklistTask;
-  ref_: VisualRef;
   image: VisualImage;
-  index: number;
-  totalInPackage: number;
+  stepNumber: number;
 }
 
-function DrawerSubItemCard({
-  task,
-  ref_,
-  image,
-  index,
-  totalInPackage,
-}: DrawerSubItemCardProps) {
+function DrawerStepItem({ task, image, stepNumber }: DrawerStepItemProps) {
   const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
   const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
 
@@ -172,61 +164,55 @@ function DrawerSubItemCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 380, damping: 28 }}
-      className={`rounded-2xl border p-3 sm:p-4 space-y-3 transition-colors ${
-        isDone
-          ? "bg-emerald-500/5 border-emerald-600/30"
-          : "bg-card border-border/80 shadow-xs"
+      className={`space-y-3 pb-6 border-b border-border/50 last:border-b-0 ${
+        isDone ? "opacity-75" : ""
       }`}
     >
-      {/* Sub-item meta header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {totalInPackage > 1 && (
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
-              {index + 1} de {totalInPackage}
-            </span>
-          )}
-          <span className="text-xs font-bold text-foreground">
-            {ref_.title}
+      {/* Step Action Bar: Step number badge + Caption + Optional badge + Verify Button */}
+      <div className="flex items-start justify-between gap-3 pt-1">
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          {/* Step number badge (01, 02...) */}
+          <span
+            className={`shrink-0 inline-flex items-center justify-center h-6 px-2 rounded-md font-mono text-[11px] font-black tracking-wider ${
+              isDone
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/30"
+                : "bg-muted text-foreground border border-border"
+            }`}
+          >
+            {String(stepNumber).padStart(2, "0")}
           </span>
+
+          <div className="min-w-0 space-y-1">
+            <p
+              className={`text-xs sm:text-sm font-bold leading-snug ${
+                isDone
+                  ? "line-through text-muted-foreground"
+                  : "text-foreground"
+              }`}
+            >
+              {image.caption}
+            </p>
+
+            {image.isOptional && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                <Sparkles className="h-2.5 w-2.5 text-amber-500" />
+                <span>{image.optionalBadge ?? "Solo si aplica"}</span>
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Optional / conditional badge */}
-        {image.isOptional && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-            <Sparkles className="h-2.5 w-2.5 text-amber-500" />
-            <span>{image.optionalBadge ?? "Solo si aplica"}</span>
-          </span>
-        )}
-      </div>
-
-      {/* 100% uncropped image: object-contain with max-height constraint */}
-      <div className="w-full rounded-xl overflow-hidden border border-border/70 bg-zinc-100 dark:bg-zinc-900/60 p-2 sm:p-3 flex items-center justify-center min-h-[170px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image.src}
-          alt={image.alt}
-          className="w-full h-auto max-h-[42vh] object-contain select-none"
-          loading="eager"
-        />
-      </div>
-
-      {/* Caption & Verify button */}
-      <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/40">
-        <p className="text-xs text-muted-foreground font-medium leading-relaxed flex-1">
-          {image.caption}
-        </p>
-
+        {/* Verify button right at the top next to step title */}
         <button
           type="button"
           onClick={() => toggleVisualRef(key)}
-          className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border ${
+          className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border shadow-2xs ${
             isDone
-              ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+              ? "bg-emerald-600 text-white border-emerald-600"
               : "bg-background hover:bg-muted text-foreground border-border hover:border-zinc-400"
           }`}
         >
@@ -248,11 +234,26 @@ function DrawerSubItemCard({
           <span>{isDone ? "Listo" : "Marcar ✓"}</span>
         </button>
       </div>
+
+      {/* Clean uncropped image container without nested card borders */}
+      <div
+        className={`w-full rounded-2xl overflow-hidden bg-zinc-100/80 dark:bg-zinc-900/60 p-2 sm:p-3 flex items-center justify-center min-h-[160px] border transition-colors ${
+          isDone ? "border-emerald-600/20" : "border-border/60"
+        }`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={image.src}
+          alt={image.alt}
+          className="w-full h-auto max-h-[44vh] object-contain select-none"
+          loading="eager"
+        />
+      </div>
     </motion.div>
   );
 }
 
-/* ── Full-height inspection drawer with item-by-item breakdown ── */
+/* ── Full-height inspection drawer with clean editorial sections ── */
 
 interface TaskVisualDrawerProps {
   task: ChecklistTask;
@@ -266,29 +267,40 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
 
   const refs = task.visualRefs ?? [];
 
-  // Flatten every image with its parent ref metadata
-  const allItems = refs.flatMap((ref_) =>
-    ref_.images.map((image, index) => {
+  // Grouped structure: each ref has its images
+  let globalStepCounter = 0;
+  const groupedData = refs.map((ref_) => {
+    const items = ref_.images.map((image) => {
+      globalStepCounter++;
       const key = getTaskVisualItemKey(task.id, image.src);
       return {
         key,
         ref_,
         image,
-        index,
-        totalInPackage: ref_.images.length,
+        stepNumber: globalStepCounter,
         isDone: !!completedVisualRefs[key],
       };
-    }),
-  );
+    });
 
+    const refDoneCount = items.filter((it) => it.isDone).length;
+    return {
+      ref_,
+      items,
+      refDoneCount,
+      totalCount: items.length,
+    };
+  });
+
+  const allItems = groupedData.flatMap((g) => g.items);
   const pending = allItems.filter((it) => !it.isDone);
   const done = allItems.filter((it) => it.isDone);
-
   const requiredPending = pending.filter((it) => !it.image.isOptional);
 
   // Tabs appear ONLY after the user verifies at least 1 image
   const showTabs = done.length > 0;
   const currentTab = showTabs ? activeTab : "pending";
+
+  const hasMultipleRefs = refs.length > 1;
 
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
@@ -320,8 +332,8 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
           </CredenzaDescription>
         </CredenzaHeader>
 
-        {/* Scrollable inspection body with item-by-item breakdown */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 space-y-4">
+        {/* Scrollable inspection body with clean editorial dividers */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
           {/* Tabs appear ONLY after the user verifies at least 1 image */}
           {showTabs && (
             <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-muted/50 border border-border/60 sticky top-0 z-10 backdrop-blur-sm bg-background/95">
@@ -351,21 +363,46 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
             </div>
           )}
 
-          {/* Pending items list: item-by-item with smooth rise when one is verified */}
+          {/* Pending items list */}
           {currentTab === "pending" && (
-            <div className="space-y-4">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {pending.map((it) => (
-                  <DrawerSubItemCard
-                    key={it.key}
-                    task={task}
-                    ref_={it.ref_}
-                    image={it.image}
-                    index={it.index}
-                    totalInPackage={it.totalInPackage}
-                  />
-                ))}
-              </AnimatePresence>
+            <div className="space-y-6">
+              {groupedData.map((group) => {
+                const groupPending = group.items.filter((it) => !it.isDone);
+                if (groupPending.length === 0) return null;
+
+                return (
+                  <div key={group.ref_.id} className="space-y-4">
+                    {/* Package Section Header: rendered ONCE per ref only if multiple refs exist */}
+                    {hasMultipleRefs && (
+                      <div className="pt-2 pb-1 border-b border-border/70 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-brand" />
+                          <h3 className="text-xs sm:text-sm font-black text-foreground uppercase tracking-wide font-mono">
+                            {group.ref_.title}
+                          </h3>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-muted-foreground">
+                          {group.refDoneCount}/{group.totalCount} listos
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Steps list */}
+                    <div className="space-y-5">
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {groupPending.map((it) => (
+                          <DrawerStepItem
+                            key={it.key}
+                            task={task}
+                            image={it.image}
+                            stepNumber={it.stepNumber}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                );
+              })}
 
               {/* All required completed celebration */}
               {requiredPending.length === 0 && (
@@ -391,7 +428,7 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
                       onClick={() => setActiveTab("done")}
                       className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-brand hover:underline pt-2"
                     >
-                      <span>Ver {done.length} materiales listos</span>
+                      <span>Ver {done.length} pasos realizados</span>
                       <ArrowRight className="h-3 w-3" />
                     </button>
                   )}
@@ -402,19 +439,42 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
 
           {/* Done items list */}
           {currentTab === "done" && (
-            <div className="space-y-4">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {done.map((it) => (
-                  <DrawerSubItemCard
-                    key={it.key}
-                    task={task}
-                    ref_={it.ref_}
-                    image={it.image}
-                    index={it.index}
-                    totalInPackage={it.totalInPackage}
-                  />
-                ))}
-              </AnimatePresence>
+            <div className="space-y-6">
+              {groupedData.map((group) => {
+                const groupDone = group.items.filter((it) => it.isDone);
+                if (groupDone.length === 0) return null;
+
+                return (
+                  <div key={group.ref_.id} className="space-y-4">
+                    {hasMultipleRefs && (
+                      <div className="pt-2 pb-1 border-b border-border/70 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-emerald-600" />
+                          <h3 className="text-xs sm:text-sm font-black text-foreground uppercase tracking-wide font-mono">
+                            {group.ref_.title}
+                          </h3>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                          {groupDone.length}/{group.totalCount} listos
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="space-y-5">
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {groupDone.map((it) => (
+                          <DrawerStepItem
+                            key={it.key}
+                            task={task}
+                            image={it.image}
+                            stepNumber={it.stepNumber}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
