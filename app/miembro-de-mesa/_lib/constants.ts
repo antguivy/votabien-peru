@@ -479,12 +479,8 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         id: "suf-03",
         phaseId: "sufragio",
         title: "Circuito de atención a electores",
-        description: `1. Presidente solicita DNI.\n
-           2. Encargado de lista busca número de orden y valida foto. \n
-           3. Presidente entrega cédula. \n
-           4. Encargado de ánfora vigila depósito. \n
-           5. Elector firma y huella. \n
-           6. Presidente devuelve DNI (Págs. 12-13).`,
+        description:
+          "1. Presidente solicita DNI.\n2. Encargado de lista busca número de orden y valida foto.\n3. Presidente entrega cédula.\n4. Encargado de ánfora vigila depósito.\n5. Elector firma y huella.\n6. Presidente devuelve DNI (Págs. 12-13).",
         isCritical: true,
         roleResponsible: "Todos",
       },
@@ -522,7 +518,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "cierre",
         title: "Marcado de 'NO VOTÓ' a ausentes",
         description:
-          "Revisar la Lista de Electores página por página. Escribir o sellar 'NO VOTÓ' en el espacio de firma de cada ciudadano que no acudió (Pág. 2 PDF).",
+          "Revisar la Lista de Electores página por página. Escribir 'NO VOTÓ' en el espacio de firma de cada ciudadano que no acudió (Pág. 2 PDF).",
         isCritical: true,
         irreversibleWarning:
           "No olvides marcar a los ausentes antes de sumar el total general de firmas.",
@@ -564,9 +560,9 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         phaseId: "escrutinio",
         title: "Organización de los 3 puestos de conteo",
         description:
-          "Presidente al centro: cédulas por escrutar. Un miembro: a cargo de las Hojas Borrador (5a, 5b, 5c, 5d). Otro miembro: a cargo de las cédulas escrutadas (Pág. 24, paso 5).",
+          "Presidente al centro: cédulas por escrutar.\nSecretario: a cargo de las Hojas Borrador (5a, 5b, 5c, 5d).\nTercer miembro: a cargo de las cédulas escrutadas.",
         isCritical: true,
-        roleResponsible: "Coordinación Interna",
+        roleResponsible: "Todos",
       },
       {
         id: "esc-02",
@@ -578,7 +574,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
         irreversibleWarning:
           "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
         roleResponsible: "Presidente",
-        visualRefs: [FIRMA_CEDULAS],
+        // visualRefs: [FIRMA_CEDULAS],
       },
       {
         id: "esc-03",

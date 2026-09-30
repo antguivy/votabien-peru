@@ -327,7 +327,7 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
             </span>
           </div>
 
-          <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed">
+          <CredenzaDescription className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
             {task.description}
           </CredenzaDescription>
         </CredenzaHeader>

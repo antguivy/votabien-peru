@@ -336,7 +336,7 @@ export function TabChecklist() {
                           {!hasVisualChecklist && (
                             <p
                               onClick={() => toggleTask(task.id)}
-                              className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer"
+                              className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer whitespace-pre-line"
                             >
                               {task.description}
                             </p>
