@@ -20,11 +20,22 @@ export type RoleResponsible =
   | "Coordinación Interna"
   | "Todos";
 
-export interface VisualRef {
+export interface VisualImage {
   src: string;
   alt: string;
-  /** Short caption shown under the thumbnail, e.g. "Paquete de Útiles (ONPE)" */
+  /** Detailed caption of what is shown in this specific screenshot */
   caption: string;
+}
+
+export interface VisualRef {
+  /** Unique stable identifier for checklist tracking (e.g. "recep-utiles") */
+  id: string;
+  /** Primary label of this package or verification unit (e.g. "Paquete de Instalación") */
+  title: string;
+  /** Optional summary or instruction */
+  description?: string;
+  /** One or more reference screenshots belonging to this verification unit */
+  images: VisualImage[];
 }
 
 export interface ChecklistTask {
@@ -36,7 +47,7 @@ export interface ChecklistTask {
   irreversibleWarning?: string;
   roleResponsible?: RoleResponsible;
   legalNote?: string;
-  /** ONPE reference screenshots acting as the task's visual checklist: each image is one checkable item. */
+  /** ONPE reference screenshots acting as the task's visual checklist */
   visualRefs?: VisualRef[];
 }
 

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ImageIcon, ArrowRight } from "lucide-react";
+import {
+  Check,
+  ImageIcon,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+} from "lucide-react";
 import {
   Credenza,
   CredenzaContent,
@@ -14,7 +21,7 @@ import { useCopilotoStore } from "../_lib/store";
 import { ChecklistTask, VisualRef } from "../_lib/types";
 import { getTaskVisualKey } from "../_lib/constants";
 
-/* ── Feed: compact thumbnail card for a pending material ── */
+/* ── Feed: compact thumbnail card for a pending material unit ── */
 
 interface FeedVisualCardProps {
   task: ChecklistTask;
@@ -24,7 +31,9 @@ interface FeedVisualCardProps {
 
 function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
   const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
-  const key = getTaskVisualKey(task.id, ref_.src);
+  const key = getTaskVisualKey(task.id, ref_.id);
+  const coverImage = ref_.images[0];
+  const photoCount = ref_.images.length;
 
   return (
     <motion.div
@@ -35,26 +44,40 @@ function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
       transition={{ type: "spring", stiffness: 420, damping: 30 }}
       className="group relative rounded-xl border border-border/80 bg-zinc-50 dark:bg-zinc-900/40 overflow-hidden shadow-2xs hover:border-brand/40 transition-colors select-none"
     >
-      {/* Click image → open full-height inspection drawer */}
+      {/* Click image/body → open full-height inspection drawer */}
       <button
         type="button"
         onClick={onOpen}
         className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-        aria-label={`Ver imagen completa: ${ref_.caption}`}
+        aria-label={`Ver material: ${ref_.title}`}
       >
-        <div className="aspect-[16/10] w-full flex items-center justify-center p-1.5 bg-muted/20">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ref_.src}
-            alt={ref_.alt}
-            className="w-full h-full object-contain select-none transition-transform group-hover:scale-[1.02]"
-            loading="lazy"
-          />
+        <div className="aspect-[16/10] w-full flex items-center justify-center p-1.5 bg-muted/20 relative">
+          {coverImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImage.src}
+              alt={coverImage.alt}
+              className="w-full h-full object-contain select-none transition-transform group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex items-center justify-center text-muted-foreground">
+              <ImageIcon className="h-6 w-6" />
+            </div>
+          )}
+
+          {/* Badge indicating multiple reference photos */}
+          {photoCount > 1 && (
+            <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-background/90 backdrop-blur-xs border border-border text-[9px] font-mono font-bold text-foreground shadow-2xs">
+              <Layers className="h-2.5 w-2.5 text-brand" />
+              <span>{photoCount} fotos</span>
+            </span>
+          )}
         </div>
 
         <div className="px-2 py-1.5 bg-background/90 backdrop-blur-xs border-t border-border/60">
           <p className="text-[10px] sm:text-[11px] font-bold text-foreground truncate">
-            {ref_.caption}
+            {ref_.title}
           </p>
         </div>
       </button>
@@ -66,7 +89,7 @@ function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
           e.stopPropagation();
           toggleVisualRef(key);
         }}
-        aria-label={`Marcar verificado: ${ref_.caption}`}
+        aria-label={`Marcar verificado: ${ref_.title}`}
         className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full bg-background/95 dark:bg-zinc-800/95 border border-border/90 shadow-xs flex items-center justify-center hover:scale-110 active:scale-90 transition-all hover:border-emerald-500"
       >
         <Check
@@ -78,7 +101,7 @@ function FeedVisualCard({ task, ref_, onOpen }: FeedVisualCardProps) {
   );
 }
 
-/* ── Drawer: full-inspection card with 100% visible image ── */
+/* ── Drawer: full-inspection card with carousel support ── */
 
 interface DrawerInspectionCardProps {
   task: ChecklistTask;
@@ -92,7 +115,20 @@ function DrawerInspectionCard({
   isDone,
 }: DrawerInspectionCardProps) {
   const toggleVisualRef = useCopilotoStore((s) => s.toggleVisualRef);
-  const key = getTaskVisualKey(task.id, ref_.src);
+  const key = getTaskVisualKey(task.id, ref_.id);
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  const images = ref_.images;
+  const currentImage = images[slideIndex] ?? images[0];
+  const totalSlides = images.length;
+
+  const nextSlide = () => {
+    setSlideIndex((prev) => (prev + 1 < totalSlides ? prev + 1 : prev));
+  };
+
+  const prevSlide = () => {
+    setSlideIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  };
 
   return (
     <motion.div
@@ -107,34 +143,108 @@ function DrawerInspectionCard({
           : "bg-card border-border/80 shadow-xs"
       }`}
     >
-      {/* 100% visible image container: object-contain with max-height constraint */}
-      <div className="w-full rounded-xl overflow-hidden border border-border/70 bg-zinc-100 dark:bg-zinc-900/60 p-2 sm:p-3 flex items-center justify-center min-h-[160px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={ref_.src}
-          alt={ref_.alt}
-          className="w-full h-auto max-h-[42vh] object-contain select-none"
-          loading="eager"
-        />
+      {/* Title & subtitle */}
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <h4 className="text-sm sm:text-base font-bold text-foreground">
+            {ref_.title}
+          </h4>
+          {ref_.description && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+              {ref_.description}
+            </p>
+          )}
+        </div>
+
+        {totalSlides > 1 && (
+          <span className="shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
+            {slideIndex + 1} de {totalSlides}
+          </span>
+        )}
       </div>
 
-      {/* Control row with caption and prominent verify button */}
-      <div className="flex items-center justify-between gap-3 pt-1">
-        <div className="min-w-0 flex-1">
-          <h4 className="text-xs sm:text-sm font-bold text-foreground">
-            {ref_.caption}
-          </h4>
-          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
-            {isDone
-              ? "✓ Material revisado y conforme"
-              : "Verifica el contenido físico antes de marcar"}
-          </p>
+      {/* 100% visible image viewer (object-contain with zero crop) */}
+      <div className="relative w-full rounded-xl overflow-hidden border border-border/70 bg-zinc-100 dark:bg-zinc-900/60 p-2 sm:p-3 flex items-center justify-center min-h-[170px]">
+        {currentImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={currentImage.src}
+            src={currentImage.src}
+            alt={currentImage.alt}
+            className="w-full h-auto max-h-[42vh] object-contain select-none"
+            loading="eager"
+          />
+        )}
+
+        {/* Carousel controls if more than 1 image */}
+        {totalSlides > 1 && (
+          <>
+            {slideIndex > 0 && (
+              <button
+                type="button"
+                onClick={prevSlide}
+                aria-label="Foto anterior"
+                className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/90 dark:bg-zinc-800/90 border border-border shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+
+            {slideIndex < totalSlides - 1 && (
+              <button
+                type="button"
+                onClick={nextSlide}
+                aria-label="Foto siguiente"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/90 dark:bg-zinc-800/90 border border-border shadow-md flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Slide dots and specific slide caption */}
+      {totalSlides > 1 && (
+        <div className="flex items-center justify-center gap-1.5 py-0.5">
+          {images.map((img, idx) => (
+            <button
+              key={img.src}
+              type="button"
+              onClick={() => setSlideIndex(idx)}
+              aria-label={`Ir a foto ${idx + 1}`}
+              className={`h-1.5 rounded-full transition-all ${
+                slideIndex === idx
+                  ? "w-6 bg-brand"
+                  : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"
+              }`}
+            />
+          ))}
         </div>
+      )}
+
+      {/* Current photo caption */}
+      {currentImage && currentImage.caption && (
+        <div className="rounded-lg bg-muted/40 border border-border/50 px-2.5 py-1.5 text-xs text-foreground font-medium leading-relaxed flex items-start gap-2">
+          <span className="text-[10px] font-mono font-bold text-brand uppercase tracking-wider shrink-0 mt-0.5">
+            {totalSlides > 1 ? `Foto ${slideIndex + 1}:` : "Detalle:"}
+          </span>
+          <span className="text-muted-foreground">{currentImage.caption}</span>
+        </div>
+      )}
+
+      {/* Control row with prominent verify button */}
+      <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/40">
+        <p className="text-[11px] text-muted-foreground font-mono">
+          {isDone
+            ? "✓ Material revisado y verificado"
+            : "Verifica el contenido físico antes de marcar"}
+        </p>
 
         <button
           type="button"
           onClick={() => toggleVisualRef(key)}
-          className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border ${
+          className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all active:scale-95 border ${
             isDone
               ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
               : "bg-background hover:bg-muted text-foreground border-border hover:border-zinc-400"
@@ -155,7 +265,7 @@ function DrawerInspectionCard({
               }`}
             />
           </div>
-          <span>{isDone ? "Verificado" : "Marcar"}</span>
+          <span>{isDone ? "Verificado" : "Marcar ✓"}</span>
         </button>
       </div>
     </motion.div>
@@ -176,7 +286,7 @@ function TaskVisualDrawer({ task, open, onOpenChange }: TaskVisualDrawerProps) {
 
   const refs = task.visualRefs ?? [];
   const entries = refs.map((ref_) => {
-    const key = getTaskVisualKey(task.id, ref_.src);
+    const key = getTaskVisualKey(task.id, ref_.id);
     return { ref_, key, isDone: !!completedVisualRefs[key] };
   });
 
@@ -332,12 +442,11 @@ export function TaskVisualRefs({ task }: TaskVisualRefsProps) {
   if (refs.length === 0) return null;
 
   const entries = refs.map((ref_) => {
-    const key = getTaskVisualKey(task.id, ref_.src);
+    const key = getTaskVisualKey(task.id, ref_.id);
     return { ref_, key, isDone: !!completedVisualRefs[key] };
   });
 
   const pending = entries.filter((e) => !e.isDone);
-  // done count not needed in root trigger
 
   // Maximum 3 pending thumbnails shown in the feed (anti-clutter rule)
   const visiblePending = pending.slice(0, 3);
