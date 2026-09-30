@@ -520,7 +520,7 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
       {
         id: "cie-02",
         phaseId: "cierre",
-        title: "Sello o marcado de 'NO VOTÓ' a ausentes",
+        title: "Marcado de 'NO VOTÓ' a ausentes",
         description:
           "Revisar la Lista de Electores página por página. Escribir o sellar 'NO VOTÓ' en el espacio de firma de cada ciudadano que no acudió (Pág. 2 PDF).",
         isCritical: true,
