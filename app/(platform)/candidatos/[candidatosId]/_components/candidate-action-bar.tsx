@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Share2, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface CandidateActionBarProps {
   candidateName: string;
@@ -15,6 +15,14 @@ export function CandidateActionBar({
   shareUrl,
 }: CandidateActionBarProps) {
   const [copied, setCopied] = useState(false);
+
+  // Ocultar MobileBottomNav global mientras esta barra fija de acciones esté activa
+  useEffect(() => {
+    document.documentElement.classList.add("hide-mobile-bottom-nav");
+    return () => {
+      document.documentElement.classList.remove("hide-mobile-bottom-nav");
+    };
+  }, []);
 
   const handleShare = async () => {
     const shareData = {
@@ -43,7 +51,7 @@ export function CandidateActionBar({
 
   return (
     <aside
-      className="fixed bottom-0 inset-x-0 z-40 p-3 bg-background/95 backdrop-blur-md border-t border-border/70 sm:hidden"
+      className="fixed bottom-0 inset-x-0 z-50 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-background/95 backdrop-blur-md border-t border-border/70 lg:hidden shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.3)]"
       aria-label="Acciones de la ficha"
     >
       <div className="flex items-center gap-2 max-w-md mx-auto">
