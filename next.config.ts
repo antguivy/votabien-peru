@@ -1,6 +1,26 @@
+import fs from "fs";
 import path from "path";
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+
+// Solución arquitectónica para el bug de Next.js 16.2 con proxy.ts + standalone + webpack:
+// En la fase post-compilación, Next.js renombra proxy.js y proxy.js.nft.json a middleware.js,
+// pero el empaquetador de standalone conserva referencias al nombre original en los manifiestos.
+// Al clonar de vuelta el archivo a la ruta original tras el rename, standalone los copia sin error ENOENT.
+const originalRename = fs.promises.rename;
+fs.promises.rename = async function (oldPath, newPath) {
+  await originalRename.call(this, oldPath, newPath);
+  if (
+    typeof oldPath === "string" &&
+    typeof newPath === "string" &&
+    oldPath.includes("proxy.js") &&
+    newPath.includes("middleware.js")
+  ) {
+    try {
+      await fs.promises.copyFile(newPath, oldPath);
+    } catch {}
+  }
+};
 
 const isProduction = process.env.NEXT_PUBLIC_ENVIRONMENT === "production";
 
