@@ -6,7 +6,6 @@ import { PHASES_CONFIG } from "../_lib/constants";
 import { ExitGuardDialog } from "./exit-guard-dialog";
 import { ProtocolsSheet } from "./protocols-sheet";
 import { RoleSelectorDialog } from "./role-selector-dialog";
-import { QrSyncDialog } from "./qr-sync-dialog";
 import {
   Dialog,
   DialogContent,
@@ -16,13 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronLeft,
-  RotateCcw,
-  HelpCircle,
-  UserCheck,
-  QrCode,
-} from "lucide-react";
+import { ChevronLeft, RotateCcw, HelpCircle, UserCheck } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
   presidente: "Presidente",
@@ -36,7 +29,6 @@ export function CopilotoHeader() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showProtocolsSheet, setShowProtocolsSheet] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
-  const [showQrModal, setShowQrModal] = useState(false);
 
   const selectedRole = useCopilotoStore((s) => s.selectedRole);
   const setSelectedRole = useCopilotoStore((s) => s.setSelectedRole);
@@ -67,20 +59,8 @@ export function CopilotoHeader() {
             <span className="hidden sm:inline ml-1">al menú</span>
           </Button>
 
-          {/* Derecha: QR Sync + Rol + Contador 0/27 + Ayuda (?) */}
+          {/* Derecha: Rol + Contador 0/27 + Ayuda (?) */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Botón QR Sync */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowQrModal(true)}
-              className="h-7 sm:h-8 px-2 text-[10.5px] sm:text-xs font-mono font-bold border-border/80 text-foreground hover:bg-muted rounded-lg flex items-center gap-1 shrink-0"
-              title="Sincronizar mesa con otro miembro vía QR"
-            >
-              <QrCode className="h-3.5 w-3.5 text-brand" />
-              <span className="hidden sm:inline">QR Sync</span>
-            </Button>
-
             {/* Rol de mesa con color sutil según cargo */}
             <button
               type="button"
@@ -120,9 +100,6 @@ export function CopilotoHeader() {
           </div>
         </div>
       </header>
-
-      {/* QR Sync Modal */}
-      <QrSyncDialog open={showQrModal} onOpenChange={setShowQrModal} />
 
       {/* Role Selection Modal */}
       <RoleSelectorDialog

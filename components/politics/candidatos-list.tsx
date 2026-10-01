@@ -658,6 +658,10 @@ const CandidatosList = ({
     }
   }, []);
 
+  const handleOpenLocation = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("open-location-modal"));
+  }, []);
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 font-manrope">
@@ -719,7 +723,7 @@ const CandidatosList = ({
               cargar las listas oficiales correspondientes a tu cédula.
             </p>
             <button
-              onClick={handleOpenFilters}
+              onClick={handleOpenLocation}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/20 hover:bg-brand/90 transition-all active:scale-95"
             >
               <MapPin className="w-4 h-4" />
@@ -739,7 +743,7 @@ const CandidatosList = ({
               ubicación seleccionada.
             </p>
             <button
-              onClick={handleOpenFilters}
+              onClick={handleOpenLocation}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold border border-border/60 transition-all"
             >
               <MapPin className="w-3.5 h-3.5" />

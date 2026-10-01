@@ -2,7 +2,8 @@ export type PhaseId =
   | "instalacion"
   | "sufragio"
   | "cierre"
-  | "escrutinio"
+  | "escrutinio_regional"
+  | "escrutinio_municipal"
   | "entrega";
 
 export type MemberRole =
@@ -20,6 +21,28 @@ export type RoleResponsible =
   | "Coordinación Interna"
   | "Todos";
 
+export interface VisualImage {
+  src: string;
+  alt: string;
+  /** Detailed caption of what is shown in this specific screenshot */
+  caption: string;
+  /** If true, this item is conditional (e.g. "si un miembro no puede firmar") and does NOT block 100% completion */
+  isOptional?: boolean;
+  /** Label shown in the pill badge, e.g. "Solo si aplica", "Excepción" */
+  optionalBadge?: string;
+}
+
+export interface VisualRef {
+  /** Unique stable identifier for checklist tracking (e.g. "recep-utiles") */
+  id: string;
+  /** Primary label of this package or verification unit (e.g. "Paquete de Instalación") */
+  title: string;
+  /** Optional summary or instruction */
+  description?: string;
+  /** One or more reference screenshots belonging to this verification unit */
+  images: VisualImage[];
+}
+
 export interface ChecklistTask {
   id: string;
   phaseId: PhaseId;
@@ -29,6 +52,8 @@ export interface ChecklistTask {
   irreversibleWarning?: string;
   roleResponsible?: RoleResponsible;
   legalNote?: string;
+  /** ONPE reference screenshots acting as the task's visual checklist */
+  visualRefs?: VisualRef[];
 }
 
 export interface PhaseDefinition {
@@ -43,20 +68,10 @@ export interface PhaseDefinition {
 
 export type ElectionType = "5A" | "5B" | "5C" | "5D";
 
-export interface ElectionOption {
+export interface TallyItem {
   id: string;
-  name: string;
-  votes: number;
-}
-
-export interface ElectionSheetState {
-  type: ElectionType;
-  title: string;
-  subtitle: string;
-  options: ElectionOption[];
-  whiteVotes: number;
-  nullVotes: number;
-  impugnedVotes: number;
+  value: number;
+  label?: string;
 }
 
 export interface ReconciliationResult {
@@ -98,9 +113,6 @@ export type EnvelopeColor =
 export interface SecurityEnvelope {
   color: EnvelopeColor;
   name: string;
-  badgeColorClass: string;
-  bgClass: string;
-  borderClass: string;
   recipient: string;
   priority: string;
   contents: {

@@ -375,9 +375,11 @@ export function NewFilterPanel({
 
     window.addEventListener("toggle-filter-panel", handleToggle);
     window.addEventListener("open-desktop-region", handleOpenLoc);
+    window.addEventListener("open-location-modal", handleOpenLoc);
     return () => {
       window.removeEventListener("toggle-filter-panel", handleToggle);
       window.removeEventListener("open-desktop-region", handleOpenLoc);
+      window.removeEventListener("open-location-modal", handleOpenLoc);
     };
   }, []);
 

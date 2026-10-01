@@ -1,5 +1,26 @@
+import fs from "fs";
+import path from "path";
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+
+// Solución arquitectónica para el bug de Next.js 16.2 con proxy.ts + standalone + webpack:
+// En la fase post-compilación, Next.js renombra proxy.js y proxy.js.nft.json a middleware.js,
+// pero el empaquetador de standalone conserva referencias al nombre original en los manifiestos.
+// Al clonar de vuelta el archivo a la ruta original tras el rename, standalone los copia sin error ENOENT.
+const originalRename = fs.promises.rename;
+fs.promises.rename = async function (oldPath, newPath) {
+  await originalRename.call(this, oldPath, newPath);
+  if (
+    typeof oldPath === "string" &&
+    typeof newPath === "string" &&
+    oldPath.includes("proxy.js") &&
+    newPath.includes("middleware.js")
+  ) {
+    try {
+      await fs.promises.copyFile(newPath, oldPath);
+    } catch {}
+  }
+};
 
 const isProduction = process.env.NEXT_PUBLIC_ENVIRONMENT === "production";
 
@@ -9,12 +30,25 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
-  // exclude: [/\/api\/stats\/.*/, /cloudflareinsights\.com/],
+  // Precachea solo los activos esenciales de la raíz de public (manifest, icons, logos),
+  // excluyendo subcarpetas pesadas como miembros_mesa/ del bundle del Service Worker.
+  globPublicPatterns: ["*"],
 });
 
+const isStandalone = process.env.BUILD_STANDALONE === "true";
+
 const nextConfig: NextConfig = {
-  // Para Docker/Dokploy
-  output: "standalone",
+  // Standalone solo se activa para empaquetar el contenedor Docker de Dokploy.
+  // En verificación de PRs se omite el tracing para compilar en ~1m en vez de 10+ min.
+  ...(isStandalone && { output: "standalone" }),
+  // Fija la raíz del tracing a la raíz del proyecto para evitar que Next.js
+  // infiera lockfiles en directorios superiores del runner de CI o del host,
+  // lo cual provoca sobre-escaneo de decenas de miles de archivos, OOM y
+  // rutas de copia corruptas hacia standalone (ej. proxy.js).
+  outputFileTracingRoot: path.resolve("."),
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
   serverExternalPackages: [
     "@prisma/client",
     "prisma",

@@ -87,6 +87,9 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
     return pathname.startsWith(href);
   };
 
+  const isCandidateDetail =
+    pathname.startsWith("/candidatos/") && pathname !== "/candidatos";
+
   const gridItems = MAIN_NAV_ITEMS.flatMap((item: NavItem) => {
     if (item.type === "link") return [item];
     if (item.type === "dropdown" && item.children) {
@@ -106,6 +109,7 @@ export const MobileBottomNav = ({ user }: MobileBottomNavProps) => {
         className={cn(
           "fixed bottom-0 left-0 right-0 w-full z-40 lg:hidden",
           "[.hide-mobile-bottom-nav_&]:!hidden",
+          isCandidateDetail && "!hidden",
           // eslint-disable-next-line react-hooks/refs
           !hasAnimated.current &&
             "animate-in slide-in-from-bottom-10 duration-500",

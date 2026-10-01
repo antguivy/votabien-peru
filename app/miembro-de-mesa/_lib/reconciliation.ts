@@ -1,39 +1,55 @@
-import {
-  ElectionSheetState,
-  ElectionType,
-  ReconciliationResult,
-} from "./types";
+import { ReconciliationResult, TallyItem } from "./types";
 
-export function createInitialElectionSheet(
-  type: ElectionType,
-  title: string,
-  subtitle: string,
-): ElectionSheetState {
-  return {
-    type,
-    title,
-    subtitle,
-    options: [],
-    whiteVotes: 0,
-    nullVotes: 0,
-    impugnedVotes: 0,
-  };
+const FIXED_TALLY_ROWS: { id: string; label: string }[] = [
+  { id: "tally-fixed-white", label: "Votos en blanco" },
+  { id: "tally-fixed-null", label: "Votos nulos" },
+  { id: "tally-fixed-impugned", label: "Votos impugnados" },
+];
+
+const FIXED_TALLY_IDS = new Set(FIXED_TALLY_ROWS.map((row) => row.id));
+
+export function isFixedTallyId(id: string): boolean {
+  return FIXED_TALLY_IDS.has(id);
 }
 
-export function calculateElectionTotals(sheet: ElectionSheetState): {
-  validVotes: number;
-  totalVotes: number;
-} {
-  const validVotes = sheet.options.reduce(
-    (acc, opt) => acc + Math.max(0, Number(opt.votes) || 0),
+function tallyLabelKey(label?: string): string {
+  return (label ?? "").trim().toLowerCase();
+}
+
+/** Parties stay on top. Blancos, nulos and impugnados always close the sheet. */
+export function normalizeTallies(items: TallyItem[] = []): TallyItem[] {
+  const consumed = new Set<string>();
+  const fixed = FIXED_TALLY_ROWS.map((row) => {
+    const match = items.find((item) => {
+      if (consumed.has(item.id)) return false;
+      return (
+        item.id === row.id ||
+        tallyLabelKey(item.label) === tallyLabelKey(row.label)
+      );
+    });
+    if (match) consumed.add(match.id);
+    return {
+      id: row.id,
+      label: row.label,
+      value: Math.max(0, Number(match?.value) || 0),
+    };
+  });
+
+  const parties = items.filter(
+    (item) => !consumed.has(item.id) && !isFixedTallyId(item.id),
+  );
+  return [...parties, ...fixed];
+}
+
+export function emptyTallySheet(): TallyItem[] {
+  return normalizeTallies([]);
+}
+
+export function calculateTallyTotal(items: TallyItem[] = []): number {
+  return normalizeTallies(items).reduce(
+    (acc, it) => acc + Math.max(0, Number(it.value) || 0),
     0,
   );
-  const white = Math.max(0, Number(sheet.whiteVotes) || 0);
-  const nulled = Math.max(0, Number(sheet.nullVotes) || 0);
-  const impugned = Math.max(0, Number(sheet.impugnedVotes) || 0);
-
-  const totalVotes = validVotes + white + nulled + impugned;
-  return { validVotes, totalVotes };
 }
 
 export function reconcileElection(

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
-import { PHASES_CONFIG } from "../_lib/constants";
+import { PHASES_CONFIG, getTaskVisualRequiredKeys } from "../_lib/constants";
+import { TaskVisualRefs } from "./task-visual-refs";
 import { ChecklistTask, MemberRole, AgreementAssignee } from "../_lib/types";
 import { useScrollSpy } from "../_lib/use-scroll-spy";
 import {
@@ -13,7 +14,6 @@ import {
   Calculator,
   Filter,
   UserCheck,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,10 +49,15 @@ const SECTION_IDS = PHASES_CONFIG.map((p) => `sec-${p.id}`);
 export function TabChecklist() {
   const selectedRole = useCopilotoStore((s) => s.selectedRole);
   const completedTasks = useCopilotoStore((s) => s.completedTasks);
+  const completedVisualRefs = useCopilotoStore((s) => s.completedVisualRefs);
   const toggleTask = useCopilotoStore((s) => s.toggleTask);
+  const setTaskVisualCompletion = useCopilotoStore(
+    (s) => s.setTaskVisualCompletion,
+  );
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
   const assignAgreement = useCopilotoStore((s) => s.assignAgreement);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
+  const setCalculadoraSheet = useCopilotoStore((s) => s.setCalculadoraSheet);
 
   const [onlyMyTasks, setOnlyMyTasks] = useState(true);
   const chipsContainerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +67,20 @@ export function TabChecklist() {
     sectionIds: SECTION_IDS,
     offsetPx: 110,
   });
+
+  // Tasks with a visual checklist auto-complete when all required reference images are verified
+  useEffect(() => {
+    PHASES_CONFIG.forEach((phase) => {
+      phase.tasks.forEach((task) => {
+        const requiredKeys = getTaskVisualRequiredKeys(task);
+        if (requiredKeys.length === 0) return;
+        const derived = requiredKeys.every((key) => completedVisualRefs[key]);
+        if (!!completedTasks[task.id] !== derived) {
+          setTaskVisualCompletion(task.id, derived);
+        }
+      });
+    });
+  }, [completedVisualRefs, completedTasks, setTaskVisualCompletion]);
 
   // Auto-scroll active chip into horizontal view when activeId changes
   useEffect(() => {
@@ -219,6 +238,7 @@ export function TabChecklist() {
               <div className="space-y-2.5">
                 {filteredTasks.map((task, index) => {
                   const isDone = !!completedTasks[task.id];
+                  const hasVisualChecklist = (task.visualRefs?.length ?? 0) > 0;
                   const isSharedAgreement =
                     task.roleResponsible === "Coordinación Interna";
                   const assignedTo = internalAgreements[task.id];
@@ -251,9 +271,13 @@ export function TabChecklist() {
                         {/* Large Clean Checkbox Target */}
                         <button
                           type="button"
-                          onClick={() => toggleTask(task.id)}
+                          onClick={() => {
+                            if (hasVisualChecklist) return;
+                            toggleTask(task.id);
+                          }}
                           className="pt-0.5 focus:outline-none"
                           aria-label={`Marcar tarea ${task.title}`}
+                          aria-disabled={hasVisualChecklist}
                         >
                           <div
                             className={`h-5 w-5 rounded-lg flex items-center justify-center border transition-all ${
@@ -270,7 +294,10 @@ export function TabChecklist() {
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex flex-wrap items-start justify-between gap-1.5">
                             <h3
-                              onClick={() => toggleTask(task.id)}
+                              onClick={() => {
+                                if (hasVisualChecklist) return;
+                                toggleTask(task.id);
+                              }}
                               className={`text-xs sm:text-sm font-bold leading-snug cursor-pointer ${
                                 isDone
                                   ? "line-through text-muted-foreground"
@@ -294,10 +321,7 @@ export function TabChecklist() {
                                     <span>{assignedTo}</span>
                                   </>
                                 ) : (
-                                  <>
-                                    <Users className="h-2.5 w-2.5" />
-                                    <span>Acuerdo Interno</span>
-                                  </>
+                                  <span>Acuerdo Interno</span>
                                 )
                               ) : (
                                 <span>{task.roleResponsible}</span>
@@ -305,12 +329,20 @@ export function TabChecklist() {
                             </span>
                           </div>
 
-                          <p
-                            onClick={() => toggleTask(task.id)}
-                            className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer"
-                          >
-                            {task.description}
-                          </p>
+                          {/* For visual-checklist tasks the description lives in the gallery credenza */}
+                          {!hasVisualChecklist && (
+                            <p
+                              onClick={() => toggleTask(task.id)}
+                              className="text-xs text-muted-foreground leading-relaxed font-medium cursor-pointer whitespace-pre-line"
+                            >
+                              {task.description}
+                            </p>
+                          )}
+
+                          {/* ONPE reference screenshots with checkable items */}
+                          {task.visualRefs && task.visualRefs.length > 0 && (
+                            <TaskVisualRefs task={task} />
+                          )}
 
                           {/* Interactive Role Assignment for Internal Coordination Tasks */}
                           {isSharedAgreement && !isDone && (
@@ -364,7 +396,7 @@ export function TabChecklist() {
                             <div className="mt-2.5 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5 flex items-start gap-2 text-destructive text-xs">
                               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                               <div>
-                                <strong className="block uppercase text-[10px] font-mono tracking-wider mb-0.5">
+                                <strong className="block text-[10px] font-mono tracking-wider mb-0.5">
                                   ¡Punto de no retorno!
                                 </strong>
                                 <span className="leading-snug">
@@ -380,16 +412,25 @@ export function TabChecklist() {
                 })}
               </div>
 
-              {/* At the end of Escrutinio phase: quick jump to Cuadre */}
-              {phase.id === "escrutinio" && (
+              {(phase.id === "escrutinio_regional" ||
+                phase.id === "escrutinio_municipal") && (
                 <div className="pt-2">
                   <Button
                     type="button"
-                    onClick={() => setActiveTab("calculadora")}
+                    onClick={() => {
+                      setCalculadoraSheet(
+                        phase.id === "escrutinio_regional" ? "5A" : "5C",
+                      );
+                      setActiveTab("calculadora");
+                    }}
                     className="w-full bg-brand text-brand-foreground font-bold flex items-center justify-center gap-2 shadow-xs rounded-xl py-5 text-xs font-mono"
                   >
                     <Calculator className="h-4 w-4" />
-                    <span>Abrir Calculadora de Cuadre de Actas</span>
+                    <span>
+                      {phase.id === "escrutinio_regional"
+                        ? "Cuadrar hojas 5A y 5B"
+                        : "Cuadrar hojas 5C y 5D"}
+                    </span>
                   </Button>
                 </div>
               )}

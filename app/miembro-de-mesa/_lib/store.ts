@@ -1,106 +1,71 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import {
-  PhaseId,
   ElectionType,
-  ElectionSheetState,
-  EnvelopeColor,
   MemberRole,
   AgreementAssignee,
+  TallyItem,
 } from "./types";
-import { createInitialElectionSheet } from "./reconciliation";
-import { OFFICIAL_ERM_2026_PARTIES } from "./constants";
+import {
+  emptyTallySheet,
+  isFixedTallyId,
+  normalizeTallies,
+} from "./reconciliation";
 
-export type CopilotoTab =
-  | "checklist"
-  | "calculadora"
-  | "arbitro"
-  | "sobres"
-  | "protocolos";
+export type CopilotoTab = "checklist" | "calculadora" | "arbitro" | "sobres";
 
 interface CopilotoState {
   activeTab: CopilotoTab;
-  activePhase: PhaseId;
   selectedRole: MemberRole | null;
   internalAgreements: Record<string, AgreementAssignee>;
   completedTasks: Record<string, boolean>;
+  completedVisualRefs: Record<string, boolean>;
   votersTarget: number;
-  sheets: Record<ElectionType, ElectionSheetState>;
-  sealedEnvelopes: Record<EnvelopeColor, boolean>;
+  /** Currently open sheet in the cuadre tab. */
+  calculadoraSheet: ElectionType;
+  tallies: Record<ElectionType, TallyItem[]>;
 
   // Actions
   setActiveTab: (tab: CopilotoTab) => void;
-  setActivePhase: (phase: PhaseId) => void;
   setSelectedRole: (role: MemberRole | null) => void;
   assignAgreement: (taskId: string, assignee: AgreementAssignee) => void;
-  syncStateFromQR: (data: Partial<CopilotoState>) => void;
   toggleTask: (taskId: string) => void;
+  toggleVisualRef: (key: string) => void;
+  setTaskVisualCompletion: (taskId: string, done: boolean) => void;
   setVotersTarget: (target: number) => void;
-  updateOptionVotes: (
+  setCalculadoraSheet: (type: ElectionType) => void;
+  addTallyItem: (type: ElectionType, value: number, label?: string) => void;
+  updateTallyItem: (
     type: ElectionType,
-    optionId: string,
-    votes: number,
+    itemId: string,
+    value: number,
+    label?: string,
   ) => void;
-  addSheetOption: (type: ElectionType, name: string) => void;
-  removeSheetOption: (type: ElectionType, optionId: string) => void;
-  loadOfficialPartiesPreset: (type: ElectionType) => void;
-  copyOptionsToAllSheets: (sourceType: ElectionType) => void;
-  setSheetOptions: (
-    type: ElectionType,
-    options: { id: string; name: string; votes: number }[],
-  ) => void;
-  updateSpecialVotes: (
-    type: ElectionType,
-    field: "whiteVotes" | "nullVotes" | "impugnedVotes",
-    count: number,
-  ) => void;
-  toggleEnvelopeSealed: (color: EnvelopeColor) => void;
+  removeTallyItem: (type: ElectionType, itemId: string) => void;
+  clearTally: (type: ElectionType) => void;
   resetAllData: () => void;
 }
 
-const initialSheets: Record<ElectionType, ElectionSheetState> = {
-  "5A": createInitialElectionSheet(
-    "5A",
-    "Gobernador y Vicegobernador Regional",
-    "Hoja Borrador 5A y Acta Sección C",
-  ),
-  "5B": createInitialElectionSheet(
-    "5B",
-    "Consejeros Regionales",
-    "Hoja Borrador 5B y Acta Sección C",
-  ),
-  "5C": createInitialElectionSheet(
-    "5C",
-    "Alcalde y Regidores Provinciales",
-    "Hoja Borrador 5C y Acta Sección C",
-  ),
-  "5D": createInitialElectionSheet(
-    "5D",
-    "Alcalde y Regidores Distritales",
-    "Hoja Borrador 5D y Acta Sección C",
-  ),
+const initialTallies: Record<ElectionType, TallyItem[]> = {
+  "5A": emptyTallySheet(),
+  "5B": emptyTallySheet(),
+  "5C": emptyTallySheet(),
+  "5D": emptyTallySheet(),
 };
 
 export const useCopilotoStore = create<CopilotoState>()(
   persist(
     (set, _get) => ({
       activeTab: "checklist",
-      activePhase: "instalacion",
       selectedRole: null,
       internalAgreements: {},
       completedTasks: {},
+      completedVisualRefs: {},
       votersTarget: 0,
-      sheets: initialSheets,
-      sealedEnvelopes: {
-        plomo: false,
-        rojo: false,
-        verde: false,
-        celeste: false,
-        anaranjado: false,
-      },
+      calculadoraSheet: "5A",
+      tallies: initialTallies,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
-      setActivePhase: (phase) => set({ activePhase: phase }),
       setSelectedRole: (role) => set({ selectedRole: role }),
 
       assignAgreement: (taskId, assignee) =>
@@ -111,29 +76,6 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
         })),
 
-      syncStateFromQR: (data) =>
-        set((state) => ({
-          ...state,
-          ...(data.internalAgreements
-            ? { internalAgreements: data.internalAgreements }
-            : {}),
-          ...(data.votersTarget !== undefined
-            ? { votersTarget: data.votersTarget }
-            : {}),
-          ...(data.completedTasks
-            ? {
-                completedTasks: {
-                  ...state.completedTasks,
-                  ...data.completedTasks,
-                },
-              }
-            : {}),
-          ...(data.sheets ? { sheets: data.sheets } : {}),
-          ...(data.sealedEnvelopes
-            ? { sealedEnvelopes: data.sealedEnvelopes }
-            : {}),
-        })),
-
       toggleTask: (taskId) =>
         set((state) => ({
           completedTasks: {
@@ -142,162 +84,91 @@ export const useCopilotoStore = create<CopilotoState>()(
           },
         })),
 
-      setVotersTarget: (target) => set({ votersTarget: Math.max(0, target) }),
-
-      updateOptionVotes: (type, optionId, votes) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          const updatedOptions = currentSheet.options.map((opt) =>
-            opt.id === optionId ? { ...opt, votes: Math.max(0, votes) } : opt,
-          );
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                options: updatedOptions,
-              },
-            },
-          };
-        }),
-
-      addSheetOption: (type, name) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          const newOption = {
-            id: `opt-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-            name:
-              name.trim() || `Organización ${currentSheet.options.length + 1}`,
-            votes: 0,
-          };
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                options: [...currentSheet.options, newOption],
-              },
-            },
-          };
-        }),
-
-      removeSheetOption: (type, optionId) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                options: currentSheet.options.filter((o) => o.id !== optionId),
-              },
-            },
-          };
-        }),
-
-      loadOfficialPartiesPreset: (type) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          const officialOptions = OFFICIAL_ERM_2026_PARTIES.map(
-            (name, idx) => ({
-              id: `erm-${idx + 1}-${name.toLowerCase().replace(/\s+/g, "-")}`,
-              name,
-              votes: 0,
-            }),
-          );
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                options: officialOptions,
-              },
-            },
-          };
-        }),
-
-      copyOptionsToAllSheets: (sourceType) =>
-        set((state) => {
-          const sourceOptions = state.sheets[sourceType]?.options || [];
-          const newSheets = { ...state.sheets };
-          (Object.keys(newSheets) as ElectionType[]).forEach((t) => {
-            if (t !== sourceType) {
-              newSheets[t] = {
-                ...newSheets[t],
-                options: sourceOptions.map((opt) => ({
-                  ...opt,
-                  votes: 0,
-                })),
-              };
-            }
-          });
-          return { sheets: newSheets };
-        }),
-
-      setSheetOptions: (type, options) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                options,
-              },
-            },
-          };
-        }),
-
-      updateSpecialVotes: (type, field, count) =>
-        set((state) => {
-          const currentSheet = state.sheets[type];
-          if (!currentSheet) return state;
-
-          return {
-            sheets: {
-              ...state.sheets,
-              [type]: {
-                ...currentSheet,
-                [field]: Math.max(0, count),
-              },
-            },
-          };
-        }),
-
-      toggleEnvelopeSealed: (color) =>
+      toggleVisualRef: (key) =>
         set((state) => ({
-          sealedEnvelopes: {
-            ...state.sealedEnvelopes,
-            [color]: !state.sealedEnvelopes[color],
+          completedVisualRefs: {
+            ...state.completedVisualRefs,
+            [key]: !state.completedVisualRefs[key],
+          },
+        })),
+
+      setTaskVisualCompletion: (taskId, done) =>
+        set((state) => ({
+          completedTasks: {
+            ...state.completedTasks,
+            [taskId]: done,
+          },
+        })),
+
+      setVotersTarget: (target) => set({ votersTarget: Math.max(0, target) }),
+      setCalculadoraSheet: (type) => set({ calculadoraSheet: type }),
+
+      addTallyItem: (type, value, label) =>
+        set((state) => {
+          const currentList = normalizeTallies(state.tallies?.[type]);
+          const parties = currentList.filter(
+            (item) => !isFixedTallyId(item.id),
+          );
+          const fixed = currentList.filter((item) => isFixedTallyId(item.id));
+          const newItem: TallyItem = {
+            id: `tally-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            value: Math.max(0, Number(value) || 0),
+            label: label?.trim() || `Fila ${parties.length + 1}`,
+          };
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: [...parties, newItem, ...fixed],
+            },
+          };
+        }),
+
+      updateTallyItem: (type, itemId, value, label) =>
+        set((state) => {
+          const currentList = normalizeTallies(state.tallies?.[type]);
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: currentList.map((item) =>
+                item.id === itemId
+                  ? {
+                      ...item,
+                      value: Math.max(0, Number(value) || 0),
+                      ...(label !== undefined ? { label } : {}),
+                    }
+                  : item,
+              ),
+            },
+          };
+        }),
+
+      removeTallyItem: (type, itemId) =>
+        set((state) => {
+          if (isFixedTallyId(itemId)) return state;
+          const currentList = normalizeTallies(state.tallies?.[type]);
+          return {
+            tallies: {
+              ...(state.tallies ?? initialTallies),
+              [type]: currentList.filter((item) => item.id !== itemId),
+            },
+          };
+        }),
+
+      clearTally: (type) =>
+        set((state) => ({
+          tallies: {
+            ...(state.tallies ?? initialTallies),
+            [type]: emptyTallySheet(),
           },
         })),
 
       resetAllData: () =>
         set({
           completedTasks: {},
+          completedVisualRefs: {},
           votersTarget: 0,
-          sheets: initialSheets,
-          sealedEnvelopes: {
-            plomo: false,
-            rojo: false,
-            verde: false,
-            celeste: false,
-            anaranjado: false,
-          },
-          activePhase: "instalacion",
+          calculadoraSheet: "5A",
+          tallies: initialTallies,
           selectedRole: null,
           internalAgreements: {},
         }),

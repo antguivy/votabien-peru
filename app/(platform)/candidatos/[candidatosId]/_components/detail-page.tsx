@@ -82,7 +82,7 @@ export default function DetailCandidato({
   );
 
   return (
-    <article className="w-full max-w-4xl mx-auto px-4 pb-24 sm:pb-12 text-foreground">
+    <article className="w-full max-w-4xl mx-auto px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-12 text-foreground">
       {/* ── 1. Hero Editorial Asimétrico ── */}
       <CandidateHero candidate={candidate} />
 

@@ -39,6 +39,30 @@ export function ProtocolsSheet({
         </DrawerHeader>
 
         <div className="overflow-y-auto space-y-4 py-3 pr-1">
+          {/* Acción destacada para reiniciar datos de simulación/práctica */}
+          <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-center justify-between gap-3">
+            <div className="space-y-0.5 pr-1">
+              <span className="text-xs font-bold text-foreground block">
+                ¿Usaste la app para practicar?
+              </span>
+              <span className="text-[11px] text-muted-foreground block leading-tight">
+                Borra los datos de práctica para iniciar la mesa en blanco.
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onOpenChange(false);
+                onOpenResetModal();
+              }}
+              className="text-xs text-destructive border-destructive/40 hover:bg-destructive hover:text-white shrink-0 rounded-xl h-8 px-2.5 font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reiniciar mesa</span>
+            </Button>
+          </div>
+
           {/* Ley 32231 Highlight */}
           <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
             <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
@@ -92,22 +116,6 @@ export function ProtocolsSheet({
               </div>
             </div>
           ))}
-
-          {/* Action to reset */}
-          <div className="pt-2 border-t border-border/60">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                onOpenChange(false);
-                onOpenResetModal();
-              }}
-              className="w-full text-xs text-destructive border-destructive/30 hover:bg-destructive/10 flex items-center justify-center gap-2"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Reiniciar datos de práctica de la mesa
-            </Button>
-          </div>
         </div>
       </DrawerContent>
     </Drawer>
