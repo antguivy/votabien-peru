@@ -71,9 +71,6 @@ jobs:
         run: pnpm run build
         env:
           NEXT_PUBLIC_ENVIRONMENT: "staging"
-          # El trace de output:standalone recorre ~71k archivos y supera el heap
-          # por defecto de Node (~4 GB). Sin esto el job muere por OOM.
-          NODE_OPTIONS: "--max-old-space-size=6144"
           # Valores dummy para que Better Auth no use su secreto por defecto
           # al prerenderizar. En Docker ya se definen igual.
           BETTER_AUTH_URL: "http://localhost:3000"

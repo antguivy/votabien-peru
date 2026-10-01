@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 
@@ -15,6 +16,11 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   // Para Docker/Dokploy
   output: "standalone",
+  // Fija la raíz del tracing a la raíz del proyecto para evitar que Next.js
+  // infiera lockfiles en directorios superiores del runner de CI o del host,
+  // lo cual provoca sobre-escaneo de decenas de miles de archivos, OOM y
+  // rutas de copia corruptas hacia standalone (ej. proxy.js).
+  outputFileTracingRoot: path.resolve("."),
   serverExternalPackages: [
     "@prisma/client",
     "prisma",
