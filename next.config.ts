@@ -30,12 +30,17 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
-  // exclude: [/\/api\/stats\/.*/, /cloudflareinsights\.com/],
+  // Precachea solo los activos esenciales de la raíz de public (manifest, icons, logos),
+  // excluyendo subcarpetas pesadas como miembros_mesa/ del bundle del Service Worker.
+  globPublicPatterns: ["*"],
 });
 
+const isStandalone = process.env.BUILD_STANDALONE === "true";
+
 const nextConfig: NextConfig = {
-  // Para Docker/Dokploy
-  output: "standalone",
+  // Standalone solo se activa para empaquetar el contenedor Docker de Dokploy.
+  // En verificación de PRs se omite el tracing para compilar en ~1m en vez de 10+ min.
+  ...(isStandalone && { output: "standalone" }),
   // Fija la raíz del tracing a la raíz del proyecto para evitar que Next.js
   // infiera lockfiles en directorios superiores del runner de CI o del host,
   // lo cual provoca sobre-escaneo de decenas de miles de archivos, OOM y
