@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ImageIcon, ArrowRight, Layers, Sparkles } from "lucide-react";
+import { Check, ImageIcon, ArrowRight, Layers, Info } from "lucide-react";
 import {
   Credenza,
   CredenzaContent,
@@ -199,7 +199,7 @@ function DrawerStepItem({ task, image, stepNumber }: DrawerStepItemProps) {
 
             {image.isOptional && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                <Sparkles className="h-2.5 w-2.5 text-amber-500" />
+                <Info className="h-2.5 w-2.5 text-amber-500" />
                 <span>{image.optionalBadge ?? "Solo si aplica"}</span>
               </span>
             )}
@@ -231,7 +231,7 @@ function DrawerStepItem({ task, image, stepNumber }: DrawerStepItemProps) {
               }`}
             />
           </div>
-          <span>{isDone ? "Listo" : "Marcar ✓"}</span>
+          <span>{isDone ? "Listo" : "Marcar"}</span>
         </button>
       </div>
 

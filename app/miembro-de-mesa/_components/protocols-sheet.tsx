@@ -46,8 +46,7 @@ export function ProtocolsSheet({
                 ¿Usaste la app para practicar?
               </span>
               <span className="text-[11px] text-muted-foreground block leading-tight">
-                Borre votos de prueba, acuerdos y checklist para iniciar la mesa
-                en blanco.
+                Borra los datos de práctica para iniciar la mesa en blanco.
               </span>
             </div>
             <Button

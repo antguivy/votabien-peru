@@ -66,10 +66,8 @@ export function ExitGuardDialog({ open, onOpenChange }: ExitGuardDialogProps) {
               <span>Tus datos quedan guardados</span>
             </div>
             <p className="text-muted-foreground">
-              Tus tareas marcadas, acuerdos y números de escrutinio permanecen
-              en la memoria de este teléfono. Sin embargo, te recomendamos{" "}
-              <strong>no salir durante una fase crítica</strong> (como el conteo
-              de votos o el cuadre de actas).
+              Tus datos siguen guardados en este teléfono, pero evita salir
+              durante una fase crítica.
             </p>
           </div>
         </CredenzaBody>

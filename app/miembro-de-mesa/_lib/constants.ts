@@ -7,21 +7,6 @@ import {
   VisualRef,
 } from "./types";
 
-export const OFFICIAL_ERM_2026_PARTIES = [
-  "Alianza para el Progreso",
-  "Somos Perú",
-  "Renovación Popular",
-  "Fuerza Popular",
-  "Juntos por el Perú",
-  "Perú Libre",
-  "Podemos Perú",
-  "Avanza País",
-  "Partido Morado",
-  "Frente de la Esperanza",
-  "Acción Popular",
-  "Partido Patriótico del Perú",
-];
-
 /* ── ONPE reference visual units (public/miembros_mesa/) ── */
 
 const RECEP_UTILES: VisualRef = {
@@ -29,7 +14,7 @@ const RECEP_UTILES: VisualRef = {
   title: "Paquete de Útiles",
   images: [
     {
-      src: "/miembros_mesa/paquete_utiles.png",
+      src: "/miembros_mesa/paquete_utiles.webp",
       alt: "Paquete de útiles: lapiceros, tampón para huella y cinta de embalaje ONPE",
       caption: "3 lapiceros, 1 tampón para huella y 1 cinta de embalaje",
     },
@@ -42,29 +27,29 @@ const RECEP_INSTALACION: VisualRef = {
   description: "Bolsa sellada con el material para instalar y abrir la mesa",
   images: [
     {
-      src: "/miembros_mesa/paquete_instalacion_1.jpeg",
+      src: "/miembros_mesa/paquete_instalacion_1.webp",
       alt: "Manual de miembros de mesa, cartilla de personeros y etiqueta de restos",
       caption:
         "Manual de miembros, cartilla de personeros y etiqueta de restos",
     },
     {
-      src: "/miembros_mesa/paquete_instalacion_2.jpeg",
+      src: "/miembros_mesa/paquete_instalacion_2.webp",
       alt: "Cédulas de sufragio y Hoja de control de asistencia",
       caption: "Cédulas de sufragio y Hoja de control de asistencia (3a)",
     },
     {
-      src: "/miembros_mesa/paquete_instalacion_3.jpeg",
+      src: "/miembros_mesa/paquete_instalacion_3.webp",
       alt: "Actas electorales de instalación, sufragio y escrutinio",
       caption:
         "Actas de instalación, sufragio y escrutinio (Secciones A, B y C)",
     },
     {
-      src: "/miembros_mesa/paquete_instalacion_4.jpeg",
+      src: "/miembros_mesa/paquete_instalacion_4.webp",
       alt: "Hojas borrador y certificados de participación",
       caption: "Hojas borrador (5a-5d) y certificados de participación",
     },
     {
-      src: "/miembros_mesa/paquete_instalacion_5.jpeg",
+      src: "/miembros_mesa/paquete_instalacion_5.webp",
       alt: "Lista de electores y sobre anaranjado para la ODPE",
       caption:
         "Lista de electores (padrón de firmas) y sobre plástico anaranjado",
@@ -78,29 +63,29 @@ const RECEP_ESCRUTINIO: VisualRef = {
   description: "Bolsa con material para el conteo final de votos y repliegue",
   images: [
     {
-      src: "/miembros_mesa/paquete_escrutinio_1.png",
+      src: "/miembros_mesa/paquete_escrutinio_1.webp",
       alt: "Sobres plásticos de colores para actas y bolsa de repliegue",
       caption:
         "Sobres de colores (Plomo, Rojo, Verde, Celeste) y bolsa de repliegue",
     },
     {
-      src: "/miembros_mesa/paquete_escrutinio_2.png",
+      src: "/miembros_mesa/paquete_escrutinio_2.webp",
       alt: "Láminas autoadhesivas transparentes de protección",
       caption:
         "Láminas de protección para casilleros de resultados y observaciones",
     },
     {
-      src: "/miembros_mesa/paquete_escrutinio_3.png",
+      src: "/miembros_mesa/paquete_escrutinio_3.webp",
       alt: "Sobre y formulario para impugnaciones",
       caption: "Sobre y formulario de impugnación de votos e identidad",
     },
     {
-      src: "/miembros_mesa/paquete_escrutinio_4.png",
+      src: "/miembros_mesa/paquete_escrutinio_4.webp",
       alt: "Cargo de entrega oficial al coordinador de la ONPE",
       caption: "Cargo de entrega de actas y material electoral oficial",
     },
     {
-      src: "/miembros_mesa/paquete_escrutinio_5.png",
+      src: "/miembros_mesa/paquete_escrutinio_5.webp",
       alt: "Bolsa para reciclaje y restos",
       caption: "Bolsa para restos electorales y reciclaje",
     },
@@ -113,12 +98,12 @@ const REV_AULA_CAMARA: VisualRef = {
   description: "Verificación de la puerta del aula y la cámara de votación",
   images: [
     {
-      src: "/miembros_mesa/1_2_revision_aula.png",
+      src: "/miembros_mesa/1_2_revision_aula.webp",
       alt: "Relación de electores pegada en la puerta exterior del aula",
       caption: "Puerta exterior: pegar la 'Relación de electores'",
     },
     {
-      src: "/miembros_mesa/1_2_revision_camara_secreta.png",
+      src: "/miembros_mesa/1_2_revision_camara_secreta.webp",
       alt: "Cámara secreta con carteles de candidatos instalados",
       caption: "Cámara secreta: sin visibilidad exterior y carteles instalados",
     },
@@ -130,7 +115,7 @@ const ROT_RESTOS: VisualRef = {
   title: "Caja de Restos Electorales",
   images: [
     {
-      src: "/miembros_mesa/1_3_rotulado_restos_electorales.png",
+      src: "/miembros_mesa/1_3_rotulado_restos_electorales.webp",
       alt: "Pegar la etiqueta oficial Restos Electorales en la caja vacía",
       caption:
         "Pegar la etiqueta oficial 'Restos Electorales' en la caja vacía de material",
@@ -144,13 +129,13 @@ const CONTEO_CEDULAS: VisualRef = {
   description: "Verificar rótulo y contar cédulas sin abrir la mesa",
   images: [
     {
-      src: "/miembros_mesa/1_4_cantidad_electores.png",
+      src: "/miembros_mesa/1_4_cantidad_electores.webp",
       alt: "Rótulo del paquete con la cantidad de electores hábiles",
       caption:
         "Paso 1: Verificar en el rótulo el total de electores hábiles de la mesa",
     },
     {
-      src: "/miembros_mesa/1_4_conteo_cedulas.png",
+      src: "/miembros_mesa/1_4_conteo_cedulas.webp",
       alt: "Conteo físico de las cédulas de sufragio",
       caption:
         "Paso 2: Contar las cédulas constatando que coincidan con el rótulo",
@@ -163,7 +148,7 @@ const FIRMA_CEDULAS: VisualRef = {
   title: "Firma en Reverso de Cédulas",
   images: [
     {
-      src: "/miembros_mesa/1_5_firma_cedulas.png",
+      src: "/miembros_mesa/1_5_firma_cedulas.webp",
       alt: "Firma de los miembros de mesa en el reverso de cada cédula",
       caption:
         "Los tres miembros firman en el reverso antes de entregarla al elector",
@@ -178,24 +163,24 @@ const CONTROL_ASISTENCIA: VisualRef = {
     "Llamado en voz alta, firmas de miembros y resguardo en sobre anaranjado",
   images: [
     {
-      src: "/miembros_mesa/1_6_desglozar_asistencia.png",
+      src: "/miembros_mesa/1_6_desglozar_asistencia.webp",
       alt: "Desglosar la hoja de control de asistencia 3a",
       caption: "Paso 1: Desglosar la Hoja de Control de Asistencia (3a)",
     },
     {
-      src: "/miembros_mesa/1_6_firma_asistencia_miembros.png",
+      src: "/miembros_mesa/1_6_firma_asistencia_miembros.webp",
       alt: "Firma y huella de los miembros presentes",
       caption:
         "Paso 2: Miembros firman y colocan huella (escribir FALTÓ a ausentes)",
     },
     {
-      src: "/miembros_mesa/1_6_firma_presidente.png",
+      src: "/miembros_mesa/1_6_firma_presidente.webp",
       alt: "Firma del Presidente y constancia de refrigerios",
       caption:
         "Paso 3: El Presidente marca recepción de refrigerios y firma al pie",
     },
     {
-      src: "/miembros_mesa/1_6_guardar_asistencia.png",
+      src: "/miembros_mesa/1_6_guardar_asistencia.webp",
       alt: "Guardar la hoja de control en el sobre plástico anaranjado",
       caption: "Paso 4: Guardar la hoja en el sobre plástico anaranjado",
     },
@@ -208,23 +193,23 @@ const ACTAS_INSTALACION: VisualRef = {
   description: "Llenado con letra clara en las actas regionales y municipales",
   images: [
     {
-      src: "/miembros_mesa/1_7_desglozar_actas_regionales.png",
+      src: "/miembros_mesa/1_7_desglozar_actas_regionales.webp",
       alt: "Desglose de actas regionales",
       caption: "Desglosar las 4 actas electorales regionales",
     },
     {
-      src: "/miembros_mesa/1_7_desglozar_actas_municipales.png",
+      src: "/miembros_mesa/1_7_desglozar_actas_municipales.webp",
       alt: "Desglose de actas municipales",
       caption: "Desglosar las 4 actas electorales municipales",
     },
     {
-      src: "/miembros_mesa/1_7_completar_acta_instalacion.png",
+      src: "/miembros_mesa/1_7_completar_acta_instalacion.webp",
       alt: "Llenar la Sección A del Acta de Instalación",
       caption:
         "Llenar hora de inicio, estado del material y cantidad de cédulas",
     },
     {
-      src: "/miembros_mesa/1_7_si_no_puede_firmar.png",
+      src: "/miembros_mesa/1_7_si_no_puede_firmar.webp",
       alt: "Procedimiento si un miembro no puede firmar",
       caption:
         "Si un miembro no puede firmar: imprime huella digital y se anota en observaciones",
@@ -234,117 +219,196 @@ const ACTAS_INSTALACION: VisualRef = {
   ],
 };
 
-const _REF_LISTA_ELECTORES: VisualRef = {
-  id: "lista-electores",
-  title: "Lista de Electores",
-  images: [
-    {
-      src: "/miembros_mesa/paquete_instalacion_5.jpeg",
-      alt: "Cuadernillo de lista de electores y material para marcado de cédulas",
-      caption: "Lista de electores con fotos, espacios de firma y huella",
-    },
-  ],
-};
-
-const _REF_ACTAS_ESCRUTINIO: VisualRef = {
+const REF_ACTAS_ESCRUTINIO: VisualRef = {
   id: "actas-escrutinio",
   title: "Actas de Escrutinio (Sección C)",
   images: [
     {
-      src: "/miembros_mesa/paquete_instalacion_3.jpeg",
-      alt: "Actas de escrutinio anverso y reverso",
-      caption: "Actas de escrutinio para registro oficial de votos",
+      src: "/miembros_mesa/4_7_llenar_seccion_C.webp",
+      alt: "Paso de la hoja borrador al acta electoral: copiar los resultados a la sección C",
+      caption:
+        "Copiar a la sección C del acta: hora de inicio, cada columna de votos, votos en blanco y nulos, y el total de votos emitidos",
     },
   ],
 };
 
-const _REF_IMPUGNACIONES: VisualRef = {
-  id: "sobre-impugnaciones",
-  title: "Sobre de Impugnaciones",
-  images: [
-    {
-      src: "/miembros_mesa/paquete_escrutinio_3.png",
-      alt: "Sobre y formulario para impugnaciones de identidad o voto",
-      caption: "Sobre y formulario oficial para impugnaciones",
-    },
-  ],
-};
-
-const _REF_HOJAS_BORRADOR: VisualRef = {
+const REF_MESA_ESCRUTINIO: VisualRef = {
   id: "hojas-borrador",
-  title: "Hojas Borrador (5a-5d)",
+  title: "Hojas Borrador (5a-5b)",
   images: [
     {
-      src: "/miembros_mesa/paquete_instalacion_4.jpeg",
-      alt: "Hojas borrador para conteo con palotes",
-      caption: "Hojas borrador 5a, 5b, 5c y 5d para palotes de 5 en 5",
+      src: "/miembros_mesa/4_1_despejar_mesa_solo_dejar_anfora.webp",
+      alt: "Despejar mesa y dejar anfora",
+      caption: "Despejar mesa y dejar anfora",
+    },
+    {
+      src: "/miembros_mesa/4_1_hora_inicio_escrutinio_y_guardar.webp",
+      alt: "Hora de inicio del escrutinio",
+      caption: "Colocar hora de inicio (5a y 5b) y guardar",
     },
   ],
 };
 
-const _REF_LAMINAS: VisualRef = {
-  id: "laminas-proteccion",
+const REF_LAMINAS_REGIONAL: VisualRef = {
+  id: "laminas-proteccion-regional",
   title: "Láminas Autoadhesivas",
   images: [
     {
-      src: "/miembros_mesa/paquete_escrutinio_2.png",
-      alt: "Láminas autoadhesivas de protección para resultados",
-      caption: "Láminas plásticas para proteger resultados y observaciones",
+      src: "/miembros_mesa/4_8_colocar_laminas_proteccion.webp",
+      alt: "Colocación de la lámina autoadhesiva sobre los resultados y observaciones del acta",
+      caption:
+        "Pegar la lámina sobre los resultados y sobre el campo de Observaciones, aunque esté vacío. Una vez pegada no se retira",
+    },
+  ],
+};
+
+const REF_CARTEL_REGIONAL: VisualRef = {
+  id: "cartel-regional",
+  title: "Cartel de Resultados Regional",
+  images: [
+    {
+      src: "/miembros_mesa/4_10_pegar_resultados.webp",
+      alt: "Colocación del cartel de resultados regional en la parte externa del aula",
+      caption:
+        "Llenar el cartel de resultados regional y pegarlo afuera del aula. Este paso cierra el escrutinio regional",
     },
   ],
 };
 
 const REF_CARTELES_RESULTADOS: VisualRef = {
   id: "carteles-resultados",
-  title: "Carteles de Resultados",
+  title: "Cartel de Resultados Municipal",
   images: [
     {
-      src: "/miembros_mesa/paquete_instalacion_4.jpeg",
-      alt: "Carteles de resultados para publicar fuera del aula",
-      caption: "Carteles de resultados regional y municipal",
+      src: "/miembros_mesa/5_9_pegar_resultado_municipal.webp",
+      alt: "Colocación del cartel de resultados municipal junto al cartel regional en la parte externa del aula",
+      caption:
+        "Llenar el cartel municipal y pegarlo afuera del aula, junto al cartel regional que ya está publicado",
     },
   ],
 };
 
-const REF_SOBRES_SEGURIDAD: VisualRef = {
-  id: "sobres-seguridad",
-  title: "Sobres de Seguridad",
+const REF_ACTAS_SUFRAGIO: VisualRef = {
+  id: "actas-sufragio",
+  title: "Acta de Sufragio (Sección B)",
   images: [
     {
-      src: "/miembros_mesa/paquete_escrutinio_1.png",
-      alt: "Sobres plásticos de colores para los 5 destinos",
+      src: "/miembros_mesa/3_4_actas_sufragio_B.webp",
+      alt: "Sección B del acta electoral: total de ciudadanos que votaron y total de cédulas no utilizadas, en letras y en números, con firmas y DNI de los miembros de mesa",
       caption:
-        "Sobres Plomo (ODPE), Rojo (ONPE), Verde (JNE), Celeste (JEE) y Anaranjado",
+        "En letras y en números: total de ciudadanos que votaron y total de cédulas no utilizadas. Además, hora de término, firmas, nombres, apellidos y DNI de los tres miembros, y firma de los personeros si desean",
+    },
+  ],
+};
+
+const REF_CONTAR_CEDULAS: VisualRef = {
+  id: "contar-cedulas",
+  title: "Contar las cédulas y revisar las firmas",
+  images: [
+    {
+      src: "/miembros_mesa/4_2_contar_cedulas_sin_desdoblar.webp",
+      alt: "Cédulas todavía dobladas contadas contra el total de ciudadanos que votaron del acta de sufragio",
+      caption:
+        "Paso 1: contar las cédulas dobladas, sin abrirlas. El resultado debe ser igual al total de ciudadanos que votaron del acta",
+    },
+    {
+      src: "/miembros_mesa/4_2_desdoblar_cedulas_firmas_arriba.webp",
+      alt: "Cédulas desdobladas mostrando las firmas de los miembros de mesa en el reverso",
+      caption:
+        "Paso 2: desdoblar y revisar que la cédula tenga las firmas de los miembros de mesa. Si no las tiene, es voto nulo",
+    },
+  ],
+};
+
+const REF_ENTREGA_SOBRES_REGIONAL: VisualRef = {
+  id: "entrega-sobres-regional",
+  title: "Guardar y entregar las actas en sobres",
+  images: [
+    {
+      src: "/miembros_mesa/4_9_guardar_en_sobres.webp",
+      alt: "Las cuatro actas regionales guardadas cada una en un sobre plástico de color",
+      caption:
+        "Paso 1: guardar un acta en cada sobre. Plomo para la ODPE, rojo para la ONPE, verde para el JNE y celeste para el JEE. Luego cerrarlos",
+    },
+    {
+      src: "/miembros_mesa/4_9_entregar_sobres.webp",
+      alt: "El presidente de mesa entrega los sobres cerrados al personal de la ONPE",
+      caption:
+        "Paso 2: el presidente entrega los sobres cerrados al personal de la ONPE. El sobre anaranjado todavía no se entrega",
+    },
+    {
+      src: "/miembros_mesa/4_9_cargo_de_entrega.webp",
+      alt: "Cargo de entrega de actas y material electoral marcado con aspa por cada sobre entregado",
+      caption:
+        "Paso 3: por cada sobre entregado, marcar con un aspa el cargo de entrega en la columna de acta regional",
+    },
+  ],
+};
+
+const REF_ENTREGA_SOBRES_MUNICIPAL: VisualRef = {
+  id: "entrega-sobres-municipal",
+  title: "Entregar los sobres municipales",
+  images: [
+    {
+      src: "/miembros_mesa/5_8_entregar_los_5_sobres.webp",
+      alt: "El presidente de mesa entrega los sobres municipales y el sobre anaranjado al personal de la ONPE",
+      caption:
+        "Paso 1: entregar al personal de la ONPE los cuatro sobres municipales cerrados y, ahora sí, el sobre anaranjado",
+    },
+    {
+      src: "/miembros_mesa/5_8_marcar_el_cargo.webp",
+      alt: "Cargo de entrega marcado con aspa en la columna de acta municipal",
+      caption:
+        "Paso 2: marcar con un aspa el cargo de entrega en la columna de acta municipal por cada sobre entregado",
     },
   ],
 };
 
 const REF_BOLSA_REPLIEGUE: VisualRef = {
   id: "bolsa-repliegue",
-  title: "Bolsa de Repliegue",
+  title: "Sobre de cédulas no impugnadas",
   images: [
     {
-      src: "/miembros_mesa/paquete_escrutinio_1.png",
-      alt: "Bolsa de repliegue para cédulas usadas no impugnadas",
-      caption: "Bolsa para repliegue de cédulas no impugnadas",
+      src: "/miembros_mesa/6_2_guardar_cedulas_no_impugnadas.webp",
+      alt: "Sobre de cédulas no impugnadas con la etiqueta completada",
+      caption:
+        "Paso 1: sacar el sobre de repliegue de la bolsa y guardar solo las cédulas utilizadas no impugnadas. Completar la etiqueta",
     },
     {
-      src: "/miembros_mesa/paquete_escrutinio_5.png",
-      alt: "Bolsa para reciclaje y restos",
-      caption: "Bolsa para restos electorales y reciclaje",
+      src: "/miembros_mesa/6_2_entregar_sobre_cedulas.webp",
+      alt: "Entrega del sobre de cédulas no impugnadas al personal de la ONPE",
+      caption:
+        "Paso 2: cerrar el sobre y entregarlo al personal de la ONPE. No van aquí las cédulas no utilizadas",
     },
   ],
 };
 
 const REF_CARGO_ENTREGA: VisualRef = {
   id: "cargo-entrega",
-  title: "Cargo de Entrega Oficial",
+  title: "Entrega final y cargo firmado",
   images: [
     {
-      src: "/miembros_mesa/paquete_escrutinio_4.png",
-      alt: "Cargo de entrega de actas y material al coordinador de la ONPE",
+      src: "/miembros_mesa/6_4_entregar_caja_restos.webp",
+      alt: "Entrega de la caja de restos electorales al personal de la ONPE",
       caption:
-        "Cargo oficial de entrega: firmar y conservar copia del Presidente",
+        "Paso 1: entregar al personal de la ONPE la caja de restos electorales cerrada",
+    },
+    {
+      src: "/miembros_mesa/6_4_entregar_anfora_cabinas.webp",
+      alt: "Entrega del ánfora electoral al personal de la ONPE",
+      caption: "Paso 2: entregar el ánfora y las cabinas de votación",
+    },
+    {
+      src: "/miembros_mesa/6_4_completar_el_cargo_de_entrega.webp",
+      alt: "Cargo de entrega completado con aspa por cada material entregado",
+      caption:
+        "Paso 3: marcar el cargo por la caja de restos, el ánfora y las cabinas",
+    },
+    {
+      src: "/miembros_mesa/6_4_recibir_cargo_de_entrega_firmado.webp",
+      alt: "Cargo de entrega firmado que conserva el presidente de mesa",
+      caption:
+        "Paso 4: el presidente firma y recibe su copia del cargo. Consérvala, es tu comprobante",
     },
   ],
 };
@@ -354,9 +418,35 @@ const REF_CERTIFICADOS: VisualRef = {
   title: "Certificados de Participación",
   images: [
     {
-      src: "/miembros_mesa/paquete_instalacion_4.jpeg",
-      alt: "Certificado de participación de miembros de mesa",
-      caption: "Certificados para tramitar descanso remunerado (Ley 32231)",
+      src: "/miembros_mesa/6_1_certificado_participacion.webp",
+      alt: "Certificados de participación de los miembros de mesa",
+      caption:
+        "Escribir el nombre y el DNI de cada miembro en su certificado y entregarlo. Sirve para el descanso de la Ley 32231",
+    },
+  ],
+};
+
+const REF_CAJA_RESTOS: VisualRef = {
+  id: "caja-restos",
+  title: "Caja de restos electorales",
+  images: [
+    {
+      src: "/miembros_mesa/6_3_destruir_cedulas_no_impugnadas.webp",
+      alt: "Destrucción de las cédulas no utilizadas y su depósito en la caja de restos",
+      caption:
+        "Paso 1: destruir las cédulas no utilizadas y ponerlas en la caja de restos electorales",
+    },
+    {
+      src: "/miembros_mesa/6_3_guardar_lapiceros_sobres_imp_no_usados.webp",
+      alt: "Lapiceros, tampón y sobres de impugnación no usados dentro de la bolsa de reciclaje",
+      caption:
+        "Paso 2: en la bolsa de reciclaje van lapiceros, tampón y sobres de impugnación no usados",
+    },
+    {
+      src: "/miembros_mesa/6_3_cerrar_caja_de_restos.webp",
+      alt: "Cierre de la caja de restos electorales con cinta de embalaje",
+      caption:
+        "Paso 3: cerrar la bolsa de reciclaje y cerrar la caja de restos electorales",
     },
   ],
 };
@@ -538,161 +628,302 @@ export const PHASES_CONFIG: PhaseDefinition[] = [
       {
         id: "cie-04",
         phaseId: "cierre",
-        title: "Llenado de Actas de Sufragio (Sección B)",
+        title: "Llenado de las 8 actas de sufragio (sección B)",
         description:
           "Llenar las 8 actas (4 regionales y 4 municipales) con: Total de ciudadanos que votaron, cédulas no usadas, hora y firmas de miembros (Pág. 2 PDF).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_ACTAS_SUFRAGIO],
       },
     ],
   },
   {
-    id: "escrutinio",
-    title: "4. Escrutinio (Conteo)",
-    subtitle: "Conteo en hojas borrador, verificación y actas",
-    timeframe: "05:30 PM en adelante",
+    id: "escrutinio_regional",
+    title: "4. Escrutinio regional",
+    subtitle: "Gobernador y consejeros: hojas 5A y 5B, actas, sobres y cartel",
+    timeframe: "Primero. No abrir 5C ni 5D",
     color: "from-purple-600 to-violet-700",
     warningAlert:
-      "¡PELIGRO DE ACTA OBSERVADA! El Total de Votos Emitidos DEBE ser exactamente igual al total de ciudadanos que votaron. Usa la calculadora de cuadre.",
+      "El escrutinio empieza solo con la Elección Regional. Las hojas 5C y 5D permanecen guardadas hasta pegar el cartel regional fuera del aula (Manual ONPE, págs. 18 y 24, pasos 1 y 4).",
     tasks: [
       {
-        id: "esc-01",
-        phaseId: "escrutinio",
-        title: "Organización de los 3 puestos de conteo",
+        id: "reg-01",
+        phaseId: "escrutinio_regional",
+        title: "Dejar solo el ánfora y anotar la hora de inicio",
         description:
-          "Presidente al centro: cédulas por escrutar.\nSecretario: a cargo de las Hojas Borrador (5a, 5b, 5c, 5d).\nTercer miembro: a cargo de las cédulas escrutadas.",
+          "Guardar el material y dejar solo el ánfora.\nDesglosar únicamente las hojas borrador regionales 5A (gobernador, anverso) y 5B (consejero, reverso).\nAnotar en cada una la hora de inicio. No desglosar 5C ni 5D (Manual pág. 18, paso 1).",
         isCritical: true,
         roleResponsible: "Todos",
+        visualRefs: [REF_MESA_ESCRUTINIO],
       },
       {
-        id: "esc-02",
-        phaseId: "escrutinio",
-        title: "Apertura de ánfora y verificación de firmas",
+        id: "reg-02",
+        phaseId: "escrutinio_regional",
+        title: "Contar las cédulas y revisar la firma del reverso",
         description:
-          "Abrir ánfora y contar cédulas sin desdoblar. Deben ser iguales al Acta de Sufragio. Al desdoblar, verificar firma de miembros en el reverso (Pág. 24 y 25).",
+          "Contar las cédulas sin abrirlas. Deben coincidir con el total de ciudadanos que votaron del Acta de Sufragio.\nSi sobran, destruir al azar las excedentes sin ver el voto. Si faltan, continuar y anotarlo en Observaciones.\nAl abrir, separar las que no tengan la firma del presidente: son nulas (Manual págs. 19, pasos 2 y 3).",
         isCritical: true,
         irreversibleWarning:
-          "Cédula sin firma en el reverso es declarada nula obligatoriamente.",
+          "Cédula sin firma del presidente en el reverso es voto nulo.",
         roleResponsible: "Todos",
-        // visualRefs: [FIRMA_CEDULAS],
+        visualRefs: [REF_CONTAR_CEDULAS],
       },
       {
-        id: "esc-03",
-        phaseId: "escrutinio",
-        title: "Calificación y canto de votos a personeros",
+        id: "reg-03",
+        phaseId: "escrutinio_regional",
+        title: "Repartir los tres puestos de conteo",
         description:
-          "El Presidente lee cada voto en voz alta y muestra la cédula a los personeros. Toda duda se resuelve en la mesa por mayoría simple (Art. 283 LOE / Pág. 25, paso 6).",
+          "Presidente al centro: cédulas por escrutar.\nUn miembro: hojas borrador 5A y 5B.\nOtro miembro: cédulas ya escrutadas.\nSobre la mesa van solo esas dos hojas, anverso y reverso (Manual pág. 24, pasos 4 y 5).",
+        isCritical: true,
+        roleResponsible: "Todos",
+      },
+      {
+        id: "reg-04",
+        phaseId: "escrutinio_regional",
+        title: "Calificar cada cédula en voz alta con los personeros",
+        description:
+          "Revisar cada cédula en conjunto y mostrarla a los personeros.\nCalificar primero la columna de gobernador y vicegobernador. Después, la de consejero regional.\nLas dudas se resuelven en la mesa por mayoría (Art. 283 LOE / Manual pág. 25, paso 6).",
         isCritical: true,
         roleResponsible: "Presidente",
-        // visualRefs: [REF_IMPUGNACIONES],
       },
       {
-        id: "esc-04",
-        phaseId: "escrutinio",
-        title: "Trazado de palotes de 5 en 5 en Hoja Borrador",
+        id: "reg-05",
+        phaseId: "escrutinio_regional",
+        title: "Anotar los palotes en 5A y luego en 5B",
         description:
-          "El miembro a cargo de la hoja borrador escucha y traza un palote por voto agrupados de cinco en cinco. Repetir en 5A, 5B, 5C y 5D (Pág. 25, paso 7).",
+          "El encargado de las hojas escucha cada voto y traza un palote, agrupado de cinco en cinco.\nPrimero la hoja 5A (gobernador). Luego la misma acción en la 5B (consejero). No anotar aún votos municipales (Manual pág. 25, paso 7).",
         isCritical: true,
         roleResponsible: "Secretario",
-        // visualRefs: [REF_HOJAS_BORRADOR],
       },
       {
-        id: "esc-05",
-        phaseId: "escrutinio",
-        title: "VERIFICACIÓN MATEMÁTICA CON CALCULADORA",
+        id: "reg-06",
+        phaseId: "escrutinio_regional",
+        title: "Sumar y verificar el cuadre de 5A y 5B",
         description:
-          "Sumar palotes y registrar Total Votos Emitidos. La ONPE autoriza usar la calculadora del celular (Pág. 26). El total DEBE ser igual al Acta de Sufragio (Pág. 27, paso 9).",
+          "En cada hoja regional: sumar palotes, anotar el total por opción y el Total de Votos Emitidos.\nEse total debe ser igual al Acta de Sufragio regional. La ONPE permite usar la calculadora del celular.\nSi no cuadra, revisar sumas. Si la diferencia persiste, anotarla en Observaciones. No copiar al acta oficial mientras el descuadre no esté revisado (Manual págs. 26-27, pasos 8 y 9).",
         isCritical: true,
         irreversibleWarning:
-          "PROHIBIDO transcribir al acta oficial si no cuadra. Si persiste diferencia, se anota en Observaciones.",
+          "Prohibido transcribir a la sección C si el total no fue verificado contra el Acta de Sufragio.",
         roleResponsible: "Todos",
       },
       {
-        id: "esc-06",
-        phaseId: "escrutinio",
-        title: "Traslado a Actas de Escrutinio (Sección C)",
+        id: "reg-07",
+        phaseId: "escrutinio_regional",
+        title: "Llenar la sección C de las 4 actas regionales",
         description:
-          "Copiar resultados a las 8 actas oficiales con letra clara. Firman los 3 miembros y personeros (Pág. 2 PDF).",
+          "Extraer las cuatro actas regionales y llenar la sección C con letras y números claros.\nCopiar hora de inicio, total de ciudadanos que votaron, columna de gobernador desde la 5A y columna de consejero desde la 5B.\nFirmar miembros de mesa. Los personeros firman si lo desean. Anotar hora de término (Manual págs. 28-29, paso 10).",
         isCritical: true,
         roleResponsible: "Secretario",
+        visualRefs: [REF_ACTAS_ESCRUTINIO],
+      },
+      {
+        id: "reg-08",
+        phaseId: "escrutinio_regional",
+        title: "Pegar las láminas de protección en las actas regionales",
+        description:
+          "Pegar las láminas regionales sobre los resultados y el campo de Observaciones de las cuatro actas regionales, aunque Observaciones esté vacío (Manual pág. 30, paso 11).",
+        isCritical: true,
+        irreversibleWarning:
+          "Punto de no retorno: la lámina pegada no se retira ni se enmienda.",
+        roleResponsible: "Todos",
+        visualRefs: [REF_LAMINAS_REGIONAL],
+      },
+      {
+        id: "reg-09",
+        phaseId: "escrutinio_regional",
+        title: "Guardar las actas en sobres y entregarlas a la ONPE",
+        description:
+          "Separar un juego de sobres plomo (ODPE), rojo (ONPE), verde (JNE) y celeste (JEE).\nGuardar un acta regional en cada sobre y cerrarlos.\nEl presidente los entrega al personal de la ONPE y marca con aspa el cargo de entrega. El sobre anaranjado no se entrega todavía (Manual págs. 30-31, pasos 12 a 14).",
+        isCritical: true,
+        irreversibleWarning:
+          "No metas actas municipales en este primer juego. El anaranjado espera al cierre municipal.",
+        roleResponsible: "Presidente",
+        visualRefs: [REF_ENTREGA_SOBRES_REGIONAL],
+      },
+      {
+        id: "reg-10",
+        phaseId: "escrutinio_regional",
+        title: "Pegar el cartel regional fuera del aula",
+        description:
+          "Llenar el Cartel de resultados de la Elección Regional y pegarlo en la parte externa del aula.\nEste paso cierra el escrutinio regional. Solo después se abre el escrutinio municipal (Manual pág. 31, paso 15).",
+        isCritical: true,
+        irreversibleWarning:
+          "No desglosar las hojas 5C y 5D antes de pegar este cartel.",
+        roleResponsible: "Coordinación Interna",
+        visualRefs: [REF_CARTEL_REGIONAL],
+      },
+      {
+        id: "reg-11",
+        phaseId: "escrutinio_regional",
+        title: "Entregar copia del acta regional a los personeros",
+        description:
+          "Si un personero acreditado lo solicita, llenar, firmar y entregarle un acta electoral regional. Esa copia no lleva lámina ni va en sobre. Si nadie la pide, marcar la tarea como hecha (Manual pág. 31, paso 16).",
+        isCritical: false,
+        roleResponsible: "Presidente",
+      },
+    ],
+  },
+  {
+    id: "escrutinio_municipal",
+    title: "5. Escrutinio municipal",
+    subtitle: "Provincial y distrital: hojas 5C y 5D, actas, sobres y cartel",
+    timeframe: "Después del cartel regional",
+    color: "from-indigo-600 to-blue-700",
+    warningAlert:
+      "Recién ahora se desglosan 5C y 5D. El cuadre municipal se contrasta con el Acta de Sufragio municipal, no con las sumas regionales (Manual págs. 32 y 35, pasos 17 y 21).",
+    tasks: [
+      {
+        id: "mun-01",
+        phaseId: "escrutinio_municipal",
+        title: "Sacar las hojas 5C y 5D y anotar la hora",
+        description:
+          "Desglosar la hoja 5C (Elección Municipal Provincial, anverso) y la 5D (Elección Municipal Distrital, reverso).\nAnotar en cada una la hora de inicio de este segundo escrutinio.\nOrganizar los mismos tres puestos que en el regional (Manual pág. 32, paso 17).",
+        isCritical: true,
+        roleResponsible: "Todos",
+      },
+      {
+        id: "mun-02",
+        phaseId: "escrutinio_municipal",
+        title: "Calificar cada cédula: provincial y luego distrital",
+        description:
+          "Revisar otra vez cada cédula.\nCalificar primero la columna de la Elección Municipal Provincial. Después, la Distrital.\nMostrar la cédula a los personeros (Manual pág. 32, paso 18).",
+        isCritical: true,
+        roleResponsible: "Presidente",
+      },
+      {
+        id: "mun-03",
+        phaseId: "escrutinio_municipal",
+        title: "Anotar los palotes en 5C y luego en 5D",
+        description:
+          "Trazar palotes de cinco en cinco en la hoja 5C (provincial) y repetir la misma acción en la 5D (distrital). No reutilizar los palotes de 5A ni 5B (Manual pág. 33, paso 19).",
+        isCritical: true,
+        roleResponsible: "Secretario",
+      },
+      {
+        id: "mun-04",
+        phaseId: "escrutinio_municipal",
+        title: "Sumar y verificar el cuadre de 5C y 5D",
+        description:
+          "Sumar cada hoja municipal y registrar el Total de Votos Emitidos.\nDebe coincidir con el total de ciudadanos que votaron del Acta de Sufragio municipal.\nSi no cuadra, revisar antes de continuar. Si la diferencia persiste, anotarla en Observaciones (Manual págs. 34-35, pasos 20 y 21).",
+        isCritical: true,
+        irreversibleWarning:
+          "Prohibido transcribir a la sección C municipal si el total no fue verificado.",
+        roleResponsible: "Todos",
+      },
+      {
+        id: "mun-05",
+        phaseId: "escrutinio_municipal",
+        title: "Llenar la sección C de las 4 actas municipales",
+        description:
+          "Extraer las cuatro actas municipales y llenar la sección C.\nCopiar la columna provincial desde la 5C y la distrital desde la 5D, más hora de inicio, total de votantes, firmas y hora de término (Manual págs. 36-37, paso 22).",
+        isCritical: true,
+        roleResponsible: "Secretario",
+      },
+      {
+        id: "mun-06",
+        phaseId: "escrutinio_municipal",
+        title: "Pegar las láminas de protección en las actas municipales",
+        description:
+          "Pegar las láminas de la Elección Municipal sobre resultados y Observaciones de las cuatro actas municipales, aunque Observaciones esté vacío (Manual pág. 38, paso 23).",
+        isCritical: true,
+        irreversibleWarning:
+          "Punto de no retorno: la lámina municipal pegada no se retira.",
+        roleResponsible: "Todos",
         visualRefs: [],
       },
       {
-        id: "esc-07",
-        phaseId: "escrutinio",
-        title: "Colocación de láminas plásticas autoadhesivas",
+        id: "mun-07",
+        phaseId: "escrutinio_municipal",
+        title: "Guardar las actas municipales en el segundo juego de sobres",
         description:
-          "Colocar láminas de protección sobre casilleros de resultados y observaciones de las 8 actas. Una vez pegadas NO se pueden retirar (Pág. 27).",
+          "Separar el segundo juego: plomo (ODPE), rojo (ONPE), verde (JNE) y celeste (JEE).\nGuardar un acta municipal en cada sobre y cerrarlos.\nSi hubo impugnación de identidad o de voto, esos sobres van solo dentro del celeste municipal (Manual pág. 38, paso 24).",
         isCritical: true,
         irreversibleWarning:
-          "¡PUNTO DE NO RETORNO! Una vez pegada la lámina, no se puede enmendar.",
+          "No reutilices los sobres ya entregados en el escrutinio regional.",
         roleResponsible: "Todos",
         visualRefs: [],
+      },
+      {
+        id: "mun-08",
+        phaseId: "escrutinio_municipal",
+        title: "Entregar los sobres municipales y el sobre anaranjado",
+        description:
+          "El presidente entrega a la ONPE los cuatro sobres municipales cerrados y, ahora sí, el sobre anaranjado (lista de electores y hoja de asistencia).\nMarcar con aspa el cargo por cada sobre entregado (Manual pág. 39, pasos 25 y 26).",
+        isCritical: true,
+        roleResponsible: "Presidente",
+        visualRefs: [REF_ENTREGA_SOBRES_MUNICIPAL],
+      },
+      {
+        id: "mun-09",
+        phaseId: "escrutinio_municipal",
+        title: "Pegar el cartel municipal fuera del aula",
+        description:
+          "Llenar el Cartel de resultados de la Elección Municipal y pegarlo en la parte externa del aula, junto al cartel regional que ya está publicado (Manual pág. 40, paso 27).",
+        isCritical: true,
+        roleResponsible: "Coordinación Interna",
+        visualRefs: [REF_CARTELES_RESULTADOS],
+      },
+      {
+        id: "mun-10",
+        phaseId: "escrutinio_municipal",
+        title: "Entregar copia del acta municipal a los personeros",
+        description:
+          "Si un personero acreditado lo solicita, entregar un acta electoral municipal firmada, sin lámina y sin sobre. Si nadie la pide, marcar la tarea como hecha (Manual pág. 40, paso 28).",
+        isCritical: false,
+        roleResponsible: "Presidente",
       },
     ],
   },
   {
     id: "entrega",
-    title: "5. Entrega y Repliegue",
-    subtitle: "Sobres de seguridad, carteles de resultados y certificados",
-    timeframe: "Cierre de jornada",
+    title: "6. Cierre y repliegue",
+    subtitle: "Certificados, cédulas, restos y cargo final",
+    timeframe: "Después de los dos carteles",
     color: "from-rose-600 to-red-700",
     warningAlert:
-      "Cada sobre de seguridad va a una entidad diferente. No mezcles las actas ni selles sin revisar.",
+      "Los sobres de actas y los dos carteles ya se entregaron en su elección. Aquí solo queda el repliegue y el cargo final (Manual págs. 41-42, pasos 29 a 35).",
     tasks: [
       {
-        id: "ent-01",
+        id: "ent-05",
         phaseId: "entrega",
-        title: "Publicación de Carteles de Resultados",
+        title: "Certificados de participación",
         description:
-          "Llenar y pegar los carteles de resultados regional y municipal en la parte exterior del aula (Pág. 3 PDF).",
+          "Desglosar los certificados, escribir nombres y apellidos, y entregarlos a quien corresponda. Sirven para el descanso remunerado de la Ley 32231 (Manual pág. 41, paso 29).",
         isCritical: false,
-        roleResponsible: "Coordinación Interna",
-        visualRefs: [REF_CARTELES_RESULTADOS],
-      },
-      {
-        id: "ent-02",
-        phaseId: "entrega",
-        title: "Enfundado estricto en los 5 Sobres de Seguridad",
-        description:
-          "Sobre Plomo (ODPE), Sobre Rojo (JNE), Sobre Verde (JEE), Sobre Celeste (ONPE) y Sobre Anaranjado (Padrón/Asistencia). Revisar antes de sellar (Pág. 6 y 7).",
-        isCritical: true,
-        irreversibleWarning:
-          "Los sobres tienen adhesivo inviolable. No metas actas en el sobre anaranjado.",
         roleResponsible: "Todos",
-        visualRefs: [REF_SOBRES_SEGURIDAD],
+        visualRefs: [REF_CERTIFICADOS],
       },
       {
         id: "ent-03",
         phaseId: "entrega",
-        title: "Bolsa de repliegue de cédulas no impugnadas",
+        title: "Guardar las cédulas no impugnadas en su sobre",
         description:
-          "Guardar todas las cédulas usadas no impugnadas en la bolsa oficial y colocar cinta de embalaje (Pág. 7).",
+          "Sacar el sobre de repliegue de la bolsa de materiales.\nGuardar solo las cédulas utilizadas no impugnadas, completar la etiqueta, cerrar y entregar el sobre a la ONPE.\nNo colocar aquí las cédulas no utilizadas (Manual pág. 41, pasos 30 y 31).",
         isCritical: true,
         roleResponsible: "Coordinación Interna",
         visualRefs: [REF_BOLSA_REPLIEGUE],
       },
       {
-        id: "ent-04",
+        id: "ent-06",
         phaseId: "entrega",
-        title: "Entrega al personal ONPE y firma del Cargo",
+        title: "Destruir las cédulas no usadas y armar la caja de restos",
         description:
-          "El Presidente entrega los 5 sobres lacrados, bolsa de repliegue, caja de restos, ánfora y cabinas, y firma el Cargo de Entrega oficial (Pág. 7 y Pág. 3 PDF).",
+          "Destruir las cédulas no utilizadas y ponerlas en la caja de restos electorales.\nEn la bolsa de reciclaje van lapiceros, tampón y sobres de impugnación no usados. Cerrar esa bolsa y colocarla también en la caja de restos (Manual pág. 42, pasos 32 y 33).",
         isCritical: true,
-        irreversibleWarning:
-          "Guarda tu copia firmada del cargo. Es tu comprobante legal.",
-        roleResponsible: "Presidente",
-        visualRefs: [REF_CARGO_ENTREGA],
+        roleResponsible: "Todos",
+        visualRefs: [REF_CAJA_RESTOS],
       },
       {
-        id: "ent-05",
+        id: "ent-04",
         phaseId: "entrega",
-        title: "Certificado de Participación y Ley 32231",
+        title: "Entregar la caja de restos, el ánfora y las cabinas",
         description:
-          "Recibir constancia o certificado oficial para tramitar el día de descanso remunerado ante tu empleador (Ley 32231).",
-        isCritical: false,
-        roleResponsible: "Todos",
-        visualRefs: [REF_CERTIFICADOS],
+          "Entregar a la ONPE la caja de restos, el ánfora y las cabinas.\nMarcar el cargo de entrega y firmarlo. El presidente recibe su copia (Manual pág. 42, pasos 34 y 35).",
+        isCritical: true,
+        irreversibleWarning:
+          "Conserva la copia firmada del cargo. Es el comprobante de la entrega.",
+        roleResponsible: "Presidente",
+        visualRefs: [REF_CARGO_ENTREGA],
       },
     ],
   },
@@ -792,9 +1023,6 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
   {
     color: "plomo",
     name: "Sobre Plomo",
-    badgeColorClass: "bg-zinc-600 text-white",
-    bgClass: "bg-zinc-900/60",
-    borderClass: "border-zinc-500",
     recipient: "ODPE (Oficina Descentralizada de Procesos Electorales)",
     priority: "1er Ejemplar · Cómputo y Digitación Inmediata",
     contents: [
@@ -815,9 +1043,6 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
   {
     color: "rojo",
     name: "Sobre Rojo",
-    badgeColorClass: "bg-red-600 text-white",
-    bgClass: "bg-red-950/40",
-    borderClass: "border-red-500",
     recipient: "ONPE (Sede Central en Lima)",
     priority: "2do Ejemplar · Archivo y Custodia Nacional",
     contents: [
@@ -833,9 +1058,6 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
   {
     color: "verde",
     name: "Sobre Verde",
-    badgeColorClass: "bg-emerald-600 text-white",
-    bgClass: "bg-emerald-950/40",
-    borderClass: "border-emerald-500",
     recipient: "JNE (Jurado Nacional de Elecciones)",
     priority: "3er Ejemplar · Fiscalización Electoral Superior",
     contents: [
@@ -851,9 +1073,6 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
   {
     color: "celeste",
     name: "Sobre Celeste",
-    badgeColorClass: "bg-sky-600 text-white",
-    bgClass: "bg-sky-950/40",
-    borderClass: "border-sky-500",
     recipient: "JEE (Jurado Electoral Especial) + Impugnaciones",
     priority: "4to Ejemplar · Justicia Electoral Jurisdiccional",
     contents: [
@@ -874,14 +1093,11 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
       },
     ],
     warning:
-      "⚠️ REGLA CRÍTICA DE LA ONPE: Si hubo votos impugnados o impugnaciones de identidad durante el sufragio o escrutinio, sus sobres especiales van EXCLUSIVAMENTE dentro de este sobre celeste para que los resuelva el JEE. Nunca en el sobre plomo.",
+      "Regla crítica: si hubo votos impugnados o impugnaciones de identidad, esos sobres van dentro de este sobre celeste para que los resuelva el JEE. Nunca en el sobre plomo.",
   },
   {
     color: "anaranjado",
     name: "Sobre Anaranjado",
-    badgeColorClass: "bg-orange-600 text-white",
-    bgClass: "bg-orange-950/40",
-    borderClass: "border-orange-500",
     recipient: "ODPE (Lista de Electores y Asistencia)",
     priority: "Material Padronal · Control de Firmas y Asistencia",
     contents: [
@@ -902,7 +1118,7 @@ export const SECURITY_ENVELOPES: SecurityEnvelope[] = [
       },
     ],
     warning:
-      "⛔ PROHIBIDO: Nunca colocar actas electorales aquí. Este sobre es exclusivo para el padrón de firmas y el control de asistencia.",
+      "Prohibido: nunca colocar actas electorales aquí. Este sobre es solo para el padrón de firmas y el control de asistencia.",
   },
 ];
 
@@ -983,14 +1199,5 @@ export function getTaskVisualRequiredKeys(task: ChecklistTask): string[] {
     ref.images
       .filter((img) => !img.isOptional)
       .map((img) => getTaskVisualItemKey(task.id, img.src)),
-  );
-}
-
-/**
- * Returns all check keys attached to a task, including optional ones.
- */
-export function getAllTaskVisualKeys(task: ChecklistTask): string[] {
-  return (task.visualRefs ?? []).flatMap((ref) =>
-    ref.images.map((img) => getTaskVisualItemKey(task.id, img.src)),
   );
 }

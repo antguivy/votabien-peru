@@ -12,7 +12,7 @@ import {
   CredenzaClose,
 } from "@/components/ui/credenza";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, PenTool, Box, Users, Check, X } from "lucide-react";
+import { ShieldCheck, PenTool, Vote, Users, Check, X } from "lucide-react";
 
 interface RoleSelectorDialogProps {
   open: boolean;
@@ -71,7 +71,7 @@ const ROLES_INFO: {
       "Apila y clasifica las cédulas escrutadas leídas por el presidente.",
       "Inutiliza cédulas no usadas y embala la caja de restos electorales.",
     ],
-    icon: Box,
+    icon: Vote,
   },
   {
     id: "todos",

@@ -14,7 +14,6 @@ import {
   Calculator,
   Filter,
   UserCheck,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -58,6 +57,7 @@ export function TabChecklist() {
   const internalAgreements = useCopilotoStore((s) => s.internalAgreements);
   const assignAgreement = useCopilotoStore((s) => s.assignAgreement);
   const setActiveTab = useCopilotoStore((s) => s.setActiveTab);
+  const setCalculadoraSheet = useCopilotoStore((s) => s.setCalculadoraSheet);
 
   const [onlyMyTasks, setOnlyMyTasks] = useState(true);
   const chipsContainerRef = useRef<HTMLDivElement>(null);
@@ -321,10 +321,7 @@ export function TabChecklist() {
                                     <span>{assignedTo}</span>
                                   </>
                                 ) : (
-                                  <>
-                                    <Users className="h-2.5 w-2.5" />
-                                    <span>Acuerdo Interno</span>
-                                  </>
+                                  <span>Acuerdo Interno</span>
                                 )
                               ) : (
                                 <span>{task.roleResponsible}</span>
@@ -399,7 +396,7 @@ export function TabChecklist() {
                             <div className="mt-2.5 rounded-xl bg-destructive/10 border border-destructive/30 p-2.5 flex items-start gap-2 text-destructive text-xs">
                               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                               <div>
-                                <strong className="block uppercase text-[10px] font-mono tracking-wider mb-0.5">
+                                <strong className="block text-[10px] font-mono tracking-wider mb-0.5">
                                   ¡Punto de no retorno!
                                 </strong>
                                 <span className="leading-snug">
@@ -415,16 +412,25 @@ export function TabChecklist() {
                 })}
               </div>
 
-              {/* At the end of Escrutinio phase: quick jump to Cuadre */}
-              {phase.id === "escrutinio" && (
+              {(phase.id === "escrutinio_regional" ||
+                phase.id === "escrutinio_municipal") && (
                 <div className="pt-2">
                   <Button
                     type="button"
-                    onClick={() => setActiveTab("calculadora")}
+                    onClick={() => {
+                      setCalculadoraSheet(
+                        phase.id === "escrutinio_regional" ? "5A" : "5C",
+                      );
+                      setActiveTab("calculadora");
+                    }}
                     className="w-full bg-brand text-brand-foreground font-bold flex items-center justify-center gap-2 shadow-xs rounded-xl py-5 text-xs font-mono"
                   >
                     <Calculator className="h-4 w-4" />
-                    <span>Abrir Calculadora de Cuadre de Actas</span>
+                    <span>
+                      {phase.id === "escrutinio_regional"
+                        ? "Cuadrar hojas 5A y 5B"
+                        : "Cuadrar hojas 5C y 5D"}
+                    </span>
                   </Button>
                 </div>
               )}

@@ -1,58 +1,81 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useCopilotoStore } from "../_lib/store";
 import { ElectionType, TallyItem } from "../_lib/types";
-import { calculateTallyTotal, reconcileElection } from "../_lib/reconciliation";
 import {
-  Users,
-  Plus,
-  Trash2,
-  Check,
-  AlertTriangle,
-  RotateCcw,
-  Pencil,
-  FileSpreadsheet,
-} from "lucide-react";
+  calculateTallyTotal,
+  isFixedTallyId,
+  normalizeTallies,
+  reconcileElection,
+} from "../_lib/reconciliation";
+import { Plus, Trash2, Check, AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ELECTIONS_INFO: {
   type: ElectionType;
-  num: string;
   label: string;
   shortLabel: string;
   sheetCode: string;
+  group: "regional" | "municipal";
 }[] = [
   {
     type: "5A",
-    num: "01",
-    label: "5A: Gobernador y Vicegobernador",
+    label: "Gobernador y vicegobernador",
     shortLabel: "5A Gobernador",
-    sheetCode: "Hoja Borrador 5A",
+    sheetCode: "Hoja 5A",
+    group: "regional",
   },
   {
     type: "5B",
-    num: "02",
-    label: "5B: Consejeros Regionales",
+    label: "Consejeros regionales",
     shortLabel: "5B Consejeros",
-    sheetCode: "Hoja Borrador 5B",
+    sheetCode: "Hoja 5B",
+    group: "regional",
   },
   {
     type: "5C",
-    num: "03",
-    label: "5C: Alcalde Provincial",
+    label: "Municipal provincial",
     shortLabel: "5C Provincial",
-    sheetCode: "Hoja Borrador 5C",
+    sheetCode: "Hoja 5C",
+    group: "municipal",
   },
   {
     type: "5D",
-    num: "04",
-    label: "5D: Alcalde Distrital",
+    label: "Municipal distrital",
     shortLabel: "5D Distrital",
-    sheetCode: "Hoja Borrador 5D",
+    sheetCode: "Hoja 5D",
+    group: "municipal",
   },
 ];
+
+const GROUPS = [
+  { id: "regional" as const, label: "Regional", hint: "Primero" },
+  {
+    id: "municipal" as const,
+    label: "Municipal",
+    hint: "Después del cartel",
+  },
+];
+
+function sheetStatus(total: number, target: number) {
+  if (target <= 0) return "idle" as const;
+  if (total === target) return "match" as const;
+  if (total > target) return "surplus" as const;
+  if (total === 0) return "empty" as const;
+  return "short" as const;
+}
 
 export function TabCalculadora() {
   const votersTarget = useCopilotoStore((s) => s.votersTarget);
@@ -62,398 +85,358 @@ export function TabCalculadora() {
   const updateTallyItem = useCopilotoStore((s) => s.updateTallyItem);
   const removeTallyItem = useCopilotoStore((s) => s.removeTallyItem);
   const clearTally = useCopilotoStore((s) => s.clearTally);
+  const activeType = useCopilotoStore((s) => s.calculadoraSheet);
+  const setActiveType = useCopilotoStore((s) => s.setCalculadoraSheet);
 
-  const [activeType, setActiveType] = useState<ElectionType>("5A");
-  const [inputValue, setInputValue] = useState("");
-  const [customLabel, setCustomLabel] = useState("");
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState("");
+  const [addend, setAddend] = useState("");
+  const [confirmReset, setConfirmReset] = useState(false);
+  const addendRef = useRef<HTMLInputElement>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const currentItems: TallyItem[] = tallies?.[activeType] ?? [];
+  const currentItems = normalizeTallies(tallies?.[activeType]);
+  const partyRows = currentItems.filter((item) => !isFixedTallyId(item.id));
+  const fixedRows = currentItems.filter((item) => isFixedTallyId(item.id));
   const currentTotal = calculateTallyTotal(currentItems);
   const currentElection = ELECTIONS_INFO.find((e) => e.type === activeType)!;
   const reconciliation = reconcileElection(currentTotal, votersTarget);
+  const status = sheetStatus(currentTotal, votersTarget);
+  const progress =
+    votersTarget > 0
+      ? Math.min(100, Math.round((currentTotal / votersTarget) * 100))
+      : 0;
 
   const handleAdd = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const val = parseInt(inputValue, 10);
-    if (isNaN(val) || val < 0) return;
-
-    addTallyItem(activeType, val, customLabel.trim() || undefined);
-    setInputValue("");
-    setCustomLabel("");
-    inputRef.current?.focus();
+    const val = parseInt(addend, 10);
+    if (Number.isNaN(val) || val < 0) return;
+    addTallyItem(activeType, val);
+    setAddend("");
+    addendRef.current?.focus();
   };
 
-  const handleStartEdit = (item: TallyItem) => {
-    setEditingItemId(item.id);
-    setEditingValue(String(item.value));
-  };
-
-  const handleSaveEdit = (itemId: string) => {
-    const val = parseInt(editingValue, 10);
-    if (!isNaN(val) && val >= 0) {
-      updateTallyItem(activeType, itemId, val);
+  const setRowValue = (item: TallyItem, raw: string) => {
+    if (raw.trim() === "") {
+      updateTallyItem(activeType, item.id, 0);
+      return;
     }
-    setEditingItemId(null);
-  };
-
-  const handlePresetLabel = (label: string) => {
-    setCustomLabel(label);
-    inputRef.current?.focus();
+    const val = parseInt(raw, 10);
+    if (Number.isNaN(val) || val < 0) return;
+    updateTallyItem(activeType, item.id, val);
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-200">
-      {/* ── 1. Total de Ciudadanos que Votaron (Padrón de Firmas) ── */}
-      <section className="p-3.5 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-0.5 flex-1">
-            <h3 className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1.5">
-              <Users className="h-4 w-4 text-brand shrink-0" />
-              <span>¿Cuántos firmaron en la lista de electores?</span>
-            </h3>
-            <p className="text-[11px] text-muted-foreground leading-snug">
-              Total de firmas y huellas en el padrón a las 5:00 PM (Acta de
-              Sufragio Sección B).
-            </p>
-          </div>
-
-          <div className="p-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs shrink-0">
-            <Input
-              type="number"
-              min="0"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={votersTarget || ""}
-              onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
-              placeholder="0"
-              className="no-spinner w-24 h-11 text-center font-mono font-black text-xl bg-background border-border text-foreground focus:border-brand rounded-lg"
-            />
-          </div>
+    <div className="space-y-4 animate-in fade-in duration-200">
+      {/* Meta del cuadre */}
+      <section className="flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-border/80 bg-card">
+        <div className="min-w-0">
+          <h3 className="text-xs sm:text-sm font-bold text-foreground">
+            Ciudadanos que votaron
+          </h3>
+          <p className="text-[11px] text-muted-foreground leading-snug">
+            Firmas del padrón. Es lo que debe dar cada hoja.
+          </p>
         </div>
+        <Input
+          type="number"
+          min="0"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          aria-label="Total de ciudadanos que votaron"
+          value={votersTarget || ""}
+          onChange={(e) => setVotersTarget(parseInt(e.target.value) || 0)}
+          placeholder="0"
+          className="no-spinner w-24 h-12 text-center font-mono font-black text-xl bg-background border-border text-foreground focus:border-brand rounded-xl shrink-0"
+        />
       </section>
 
-      {/* ── 2. Chips de Selección de Elección (5A, 5B, 5C, 5D) ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
-        {ELECTIONS_INFO.map((info) => {
-          const items = tallies?.[info.type] ?? [];
-          const total = calculateTallyTotal(items);
-          const isMatched = votersTarget > 0 && total === votersTarget;
-          const isPending = votersTarget > 0 && total > 0 && !isMatched;
-          const isCurrent = activeType === info.type;
-
-          let chipClass = "";
-          if (isMatched) {
-            chipClass = isCurrent
-              ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
-              : "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-600/40 hover:bg-emerald-500/25";
-          } else if (isPending) {
-            chipClass = isCurrent
-              ? "bg-amber-600 text-white border-amber-700 shadow-xs"
-              : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25";
-          } else {
-            chipClass = isCurrent
-              ? "bg-foreground text-background border-foreground shadow-xs"
-              : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground";
-          }
-
-          return (
-            <button
-              key={info.type}
-              type="button"
-              onClick={() => setActiveType(info.type)}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all border select-none active:scale-95 ${chipClass}`}
-            >
-              <span
-                className={`text-[10px] font-bold ${
-                  isCurrent && (isMatched || isPending)
-                    ? "text-white/80"
-                    : isCurrent
-                      ? "text-background/70"
-                      : "text-brand"
-                }`}
-              >
-                {info.num}
+      {/* Selector de hoja */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {GROUPS.map((group) => (
+          <div key={group.id} className="space-y-1.5">
+            <div className="flex items-baseline justify-between px-0.5">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                {group.label}
               </span>
-              <span>{info.shortLabel}</span>
-              <span className="text-[10px] opacity-85 inline-flex items-center gap-0.5">
-                (
-                {isMatched ? (
-                  <Check className="h-2.5 w-2.5 text-current stroke-[3]" />
-                ) : isPending ? (
-                  <span className="inline-flex items-center gap-0.5 font-bold">
-                    {total}
-                    <AlertTriangle className="h-2.5 w-2.5" />
-                  </span>
-                ) : (
-                  total
-                )}
-                )
+              <span className="text-[10px] text-muted-foreground">
+                {group.hint}
               </span>
-            </button>
-          );
-        })}
+            </div>
+            <div className="flex gap-2">
+              {ELECTIONS_INFO.filter((info) => info.group === group.id).map(
+                (info) => {
+                  const total = calculateTallyTotal(tallies?.[info.type]);
+                  const chipStatus = sheetStatus(total, votersTarget);
+                  const isCurrent = activeType === info.type;
+                  const chipClass =
+                    chipStatus === "match"
+                      ? isCurrent
+                        ? "bg-emerald-600 text-white border-emerald-700"
+                        : "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-600/40"
+                      : chipStatus === "surplus"
+                        ? isCurrent
+                          ? "bg-destructive text-white border-destructive"
+                          : "bg-destructive/10 text-destructive border-destructive/40"
+                        : chipStatus === "short"
+                          ? isCurrent
+                            ? "bg-amber-600 text-white border-amber-700"
+                            : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40"
+                          : isCurrent
+                            ? "bg-foreground text-background border-foreground"
+                            : "bg-muted/30 text-muted-foreground border-border/70 hover:bg-muted/60 hover:text-foreground";
+
+                  return (
+                    <button
+                      key={info.type}
+                      type="button"
+                      onClick={() => setActiveType(info.type)}
+                      className={`flex-1 min-w-0 inline-flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] ${chipClass}`}
+                      aria-pressed={isCurrent}
+                    >
+                      <span className="truncate">{info.shortLabel}</span>
+                      <span className="font-mono text-[10px] shrink-0 inline-flex items-center gap-0.5">
+                        {chipStatus === "match" ? (
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        ) : (
+                          total
+                        )}
+                      </span>
+                    </button>
+                  );
+                },
+              )}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* ── 3. Veredicto Matemático de Cuadre en Vivo ── */}
-      {votersTarget === 0 ? (
-        <div className="p-3.5 rounded-xl bg-muted/30 border border-border/70 text-center text-xs font-medium text-muted-foreground">
-          Ingresa arriba cuántos electores firmaron en el padrón para contrastar
-          si la suma de la mesa cuadra.
-        </div>
-      ) : reconciliation.status === "match" ? (
-        <section className="p-4 rounded-2xl border border-emerald-600/40 bg-emerald-500/10 shadow-xs flex items-center justify-between gap-3 animate-in fade-in">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Check className="h-5 w-5 stroke-[3]" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-black text-emerald-900 dark:text-emerald-200 tracking-tight">
-                ¡CUADRE EXACTO! ({currentTotal} = {votersTarget})
-              </h3>
-              <p className="text-xs text-emerald-800/80 dark:text-emerald-300 font-medium leading-snug">
-                La suma de los votos emitidos coincide perfectamente con el
-                padrón. Ya puedes transcribir estos resultados al Acta Oficial
-                con lapicero.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="p-3.5 sm:p-4 rounded-2xl border border-destructive/40 bg-destructive/10 shadow-xs flex items-center justify-between gap-3 animate-in fade-in">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-destructive text-white flex items-center justify-center shrink-0 shadow-xs">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-black text-destructive tracking-tight">
-                {reconciliation.status === "surplus"
-                  ? `SOBRAN ${reconciliation.difference} VOTOS (${currentTotal} de ${votersTarget} sumados)`
-                  : `FALTAN ${Math.abs(reconciliation.difference)} VOTOS (${currentTotal} de ${votersTarget} sumados)`}
-              </h3>
-              <p className="text-xs text-destructive/85 font-medium leading-snug">
-                {reconciliation.status === "surplus"
-                  ? "Hay más votos sumados que electores en el padrón. Revisa si sumaste una fila dos veces o si hubo error al sumar los palotes."
-                  : "La suma es menor que los electores del padrón. Revisa si olvidaste sumar alguna fila de la Hoja Borrador o los votos en blanco y nulos."}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Cuadre */}
+      <SheetVerdict
+        status={status}
+        total={currentTotal}
+        target={votersTarget}
+        progress={progress}
+        difference={reconciliation.difference}
+      />
 
-      {/* ── 4. Entrada Rápida de Sumandos (Hoja Borrador) ── */}
-      <section className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card shadow-xs space-y-3">
-        <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-border/60">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4 text-brand shrink-0" />
-            <h3 className="text-xs sm:text-sm font-bold text-foreground">
-              {currentElection.label}
-            </h3>
-          </div>
-          <span className="text-[10px] font-mono text-muted-foreground font-bold">
+      {/* Suma de la hoja */}
+      <section className="rounded-2xl border border-border/80 bg-card overflow-hidden">
+        <header className="px-4 py-2.5 border-b border-border/60 flex items-baseline justify-between gap-2">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-brand">
             {currentElection.sheetCode}
           </span>
+          <span className="text-xs font-semibold text-foreground truncate">
+            {currentElection.label}
+          </span>
+        </header>
+
+        <form
+          onSubmit={handleAdd}
+          className="flex items-center gap-2 px-3 sm:px-4 py-3 border-b border-border/60"
+        >
+          <Input
+            ref={addendRef}
+            type="number"
+            min="0"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={addend}
+            onChange={(e) => setAddend(e.target.value)}
+            placeholder="Cantidad"
+            aria-label="Cantidad a sumar"
+            className="no-spinner h-11 flex-1 font-mono text-base rounded-xl bg-background"
+          />
+          <Button
+            type="submit"
+            disabled={!addend.trim()}
+            className="h-11 px-4 rounded-xl bg-brand text-brand-foreground font-semibold shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Sumar</span>
+          </Button>
+        </form>
+
+        <div className="divide-y divide-border/50">
+          {partyRows.length === 0 ? (
+            <p className="px-4 py-5 text-xs text-muted-foreground">
+              Agrega cada subtotal de la hoja.
+            </p>
+          ) : (
+            partyRows.map((item, idx) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2"
+              >
+                <span className="w-6 text-[10px] font-mono font-bold text-muted-foreground shrink-0">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <span className="flex-1" />
+                <Input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  aria-label={`Sumando ${idx + 1}`}
+                  value={item.value === 0 ? "" : String(item.value)}
+                  placeholder="0"
+                  onChange={(e) => setRowValue(item, e.target.value)}
+                  className="no-spinner w-[4.75rem] h-10 text-center font-mono font-bold text-base rounded-lg bg-background"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeTallyItem(activeType, item.id)}
+                  className="w-8 h-8 inline-flex items-center justify-center text-muted-foreground hover:text-destructive rounded-lg shrink-0"
+                  aria-label={`Quitar sumando ${idx + 1}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
-        {/* Input form */}
-        <form onSubmit={handleAdd} className="space-y-2.5">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
+        <div className="bg-muted/30 border-t border-border/70">
+          <p className="px-4 pt-3 pb-1 text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
+            Cierre de la hoja
+          </p>
+          {fixedRows.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2"
+            >
+              <span className="flex-1 min-w-0 text-sm text-foreground truncate">
+                {item.label}
+              </span>
               <Input
-                ref={inputRef}
                 type="number"
                 min="0"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder={
-                  customLabel
-                    ? `Votos para ${customLabel}...`
-                    : `Votos fila #${currentItems.length + 1}...`
-                }
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="h-11 font-mono text-base bg-background border-border text-foreground rounded-xl"
+                aria-label={`Votos de ${item.label}`}
+                value={item.value === 0 ? "" : String(item.value)}
+                placeholder="0"
+                onChange={(e) => setRowValue(item, e.target.value)}
+                className="no-spinner w-[4.75rem] h-10 text-center font-mono font-bold text-base rounded-lg bg-background"
               />
+              <span className="w-8 shrink-0" />
             </div>
-
-            <Button
-              type="submit"
-              disabled={!inputValue.trim()}
-              className="h-11 px-4 sm:px-5 text-xs font-mono font-bold bg-brand text-brand-foreground rounded-xl shrink-0 flex items-center gap-1.5 shadow-xs"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Sumar</span>
-            </Button>
-          </div>
-
-          {/* Quick preset pills for special rows */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            <span className="text-[10px] font-mono uppercase text-muted-foreground font-bold mr-1">
-              Atajos:
-            </span>
-            {["Votos en Blanco", "Votos Nulos", "Votos Impugnados"].map(
-              (preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => handlePresetLabel(preset)}
-                  className={`text-[10.5px] font-mono font-medium px-2 py-0.5 rounded-md border transition-all ${
-                    customLabel === preset
-                      ? "bg-brand/10 text-brand border-brand/40 font-bold"
-                      : "bg-muted/40 text-muted-foreground border-border hover:bg-muted/70 hover:text-foreground"
-                  }`}
-                >
-                  + {preset}
-                </button>
-              ),
-            )}
-
-            {customLabel && (
-              <button
-                type="button"
-                onClick={() => setCustomLabel("")}
-                className="text-[10px] font-mono text-muted-foreground hover:text-destructive underline ml-1"
-              >
-                Limpiar etiqueta
-              </button>
-            )}
-          </div>
-        </form>
-
-        {/* ── 5. Tira de Auditoría (Historial de Sumandos Editable) ── */}
-        <div className="pt-2 space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground font-bold px-1">
-            <span>TIRA DE SUMANDOS ({currentItems.length} filas)</span>
-            <span>TOTAL: {currentTotal}</span>
-          </div>
-
-          {currentItems.length === 0 ? (
-            <div className="p-6 rounded-xl border border-dashed border-border/80 text-center space-y-1 bg-muted/10">
-              <p className="text-xs font-medium text-foreground">
-                Aún no has sumado votos en esta elección.
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                Mira las filas con palotes de tu {currentElection.sheetCode} e
-                ingresa cada total arriba.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">
-              {currentItems.map((item, idx) => {
-                const isEditing = editingItemId === item.id;
-
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl border border-border/70 bg-background hover:border-border transition-colors text-xs"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className="h-5 w-6 rounded bg-muted/60 text-muted-foreground font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
-                        #{idx + 1}
-                      </span>
-                      <span className="font-medium text-foreground truncate">
-                        {item.label || `Fila ${idx + 1}`}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {isEditing ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            min="0"
-                            inputMode="numeric"
-                            autoFocus
-                            value={editingValue}
-                            onChange={(e) => setEditingValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSaveEdit(item.id);
-                              if (e.key === "Escape") setEditingItemId(null);
-                            }}
-                            className="w-16 h-7 font-mono font-bold text-center text-xs p-1"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => handleSaveEdit(item.id)}
-                            className="h-7 px-2 text-[10px] font-mono font-bold bg-emerald-600 text-white"
-                          >
-                            OK
-                          </Button>
-                        </div>
-                      ) : (
-                        <span
-                          onClick={() => handleStartEdit(item)}
-                          className="font-mono font-black text-sm sm:text-base text-foreground cursor-pointer hover:underline px-1.5"
-                          title="Toca para editar este número"
-                        >
-                          {item.value}
-                        </span>
-                      )}
-
-                      {!isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => handleStartEdit(item)}
-                          className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-                          title="Editar valor"
-                          aria-label={`Editar valor de fila ${idx + 1}`}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => removeTallyItem(activeType, item.id)}
-                        className="p-1 text-muted-foreground hover:text-destructive rounded transition-colors"
-                        title="Eliminar este sumando"
-                        aria-label={`Eliminar fila ${idx + 1}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Running total footer & Clear button */}
-          {currentItems.length > 0 && (
-            <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    confirm(
-                      `¿Reiniciar la suma de ${currentElection.shortLabel}?`,
-                    )
-                  ) {
-                    clearTally(activeType);
-                  }
-                }}
-                className="text-[10.5px] font-mono text-muted-foreground hover:text-destructive inline-flex items-center gap-1 transition-colors"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span>Reiniciar suma de esta hoja</span>
-              </button>
-
-              <div className="text-right">
-                <span className="text-[11px] text-muted-foreground font-mono mr-2">
-                  Total Emitidos:
-                </span>
-                <span className="text-base sm:text-lg font-mono font-black text-foreground">
-                  {currentTotal}
-                </span>
-              </div>
-            </div>
-          )}
+          ))}
+          <p className="px-4 pb-3 text-[11px] text-muted-foreground leading-snug">
+            No anotes aquí un impugnado que la mesa ya resolvió.
+          </p>
         </div>
+
+        <footer className="px-4 py-3 border-t border-border/70 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setConfirmReset(true)}
+            className="text-[11px] font-mono text-muted-foreground hover:text-destructive inline-flex items-center gap-1"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reiniciar hoja
+          </button>
+          <p className="font-mono font-black text-lg leading-none text-foreground">
+            {currentTotal}
+            {votersTarget > 0 && (
+              <span className="text-sm font-semibold text-muted-foreground">
+                {" "}
+                / {votersTarget}
+              </span>
+            )}
+          </p>
+        </footer>
       </section>
+
+      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {`¿Reiniciar ${currentElection.sheetCode}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Se borran los sumandos de esta hoja y blancos, nulos e impugnados
+              vuelven a cero. Las demás hojas no cambian. Esta acción no se
+              puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearTally(activeType)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Reiniciar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function SheetVerdict({
+  status,
+  total,
+  target,
+  progress,
+  difference,
+}: {
+  status: "idle" | "empty" | "short" | "match" | "surplus";
+  total: number;
+  target: number;
+  progress: number;
+  difference: number;
+}) {
+  if (status === "idle") {
+    return (
+      <p className="text-[11px] text-muted-foreground px-1">
+        Anota el padrón para poder cuadrar.
+      </p>
+    );
+  }
+
+  const barClass =
+    status === "match"
+      ? "bg-emerald-600"
+      : status === "surplus"
+        ? "bg-destructive"
+        : status === "short"
+          ? "bg-amber-500"
+          : "bg-muted-foreground/30";
+
+  const copy =
+    status === "match"
+      ? "Cuadra. Ya puedes copiar la hoja al acta."
+      : status === "surplus"
+        ? `Sobran ${difference}. Revisa un sumando repetido.`
+        : status === "empty"
+          ? `Faltan ${target}.`
+          : `Faltan ${target - total}.`;
+
+  return (
+    <div className="space-y-1.5 px-0.5">
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span
+          className={`font-medium inline-flex items-center gap-1 ${
+            status === "match"
+              ? "text-emerald-700 dark:text-emerald-300"
+              : status === "surplus"
+                ? "text-destructive"
+                : "text-muted-foreground"
+          }`}
+        >
+          {status === "match" && <Check className="h-3.5 w-3.5" />}
+          {status === "surplus" && <AlertTriangle className="h-3.5 w-3.5" />}
+          {copy}
+        </span>
+        <span className="font-mono font-bold text-foreground shrink-0">
+          {total}/{target}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${barClass}`}
+          style={{ width: `${status === "empty" ? 0 : progress}%` }}
+        />
+      </div>
     </div>
   );
 }

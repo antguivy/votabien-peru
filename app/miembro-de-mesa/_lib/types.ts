@@ -2,7 +2,8 @@ export type PhaseId =
   | "instalacion"
   | "sufragio"
   | "cierre"
-  | "escrutinio"
+  | "escrutinio_regional"
+  | "escrutinio_municipal"
   | "entrega";
 
 export type MemberRole =
@@ -73,22 +74,6 @@ export interface TallyItem {
   label?: string;
 }
 
-export interface ElectionOption {
-  id: string;
-  name: string;
-  votes: number;
-}
-
-export interface ElectionSheetState {
-  type: ElectionType;
-  title: string;
-  subtitle: string;
-  options: ElectionOption[];
-  whiteVotes: number;
-  nullVotes: number;
-  impugnedVotes: number;
-}
-
 export interface ReconciliationResult {
   totalBallotsCounted: number;
   targetVoters: number;
@@ -128,9 +113,6 @@ export type EnvelopeColor =
 export interface SecurityEnvelope {
   color: EnvelopeColor;
   name: string;
-  badgeColorClass: string;
-  bgClass: string;
-  borderClass: string;
   recipient: string;
   priority: string;
   contents: {
