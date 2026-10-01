@@ -71,6 +71,9 @@ jobs:
         run: pnpm run build
         env:
           NEXT_PUBLIC_ENVIRONMENT: "staging"
+          # Next.js con Webpack, Serwist y tracing standalone supera los 4 GB por defecto de Node
+          # al recopilar trazas de AST en memoria. En el runner de CI (16 GB RAM) se habilita 6 GB.
+          NODE_OPTIONS: "--max-old-space-size=6144"
           # Valores dummy para que Better Auth no use su secreto por defecto
           # al prerenderizar. En Docker ya se definen igual.
           BETTER_AUTH_URL: "http://localhost:3000"

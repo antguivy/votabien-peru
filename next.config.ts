@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   // lo cual provoca sobre-escaneo de decenas de miles de archivos, OOM y
   // rutas de copia corruptas hacia standalone (ej. proxy.js).
   outputFileTracingRoot: path.resolve("."),
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
   serverExternalPackages: [
     "@prisma/client",
     "prisma",
