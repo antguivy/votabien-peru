@@ -71,6 +71,13 @@ jobs:
         run: pnpm run build
         env:
           NEXT_PUBLIC_ENVIRONMENT: "staging"
+          # El trace de output:standalone recorre ~71k archivos y supera el heap
+          # por defecto de Node (~4 GB). Sin esto el job muere por OOM.
+          NODE_OPTIONS: "--max-old-space-size=6144"
+          # Valores dummy para que Better Auth no use su secreto por defecto
+          # al prerenderizar. En Docker ya se definen igual.
+          BETTER_AUTH_URL: "http://localhost:3000"
+          BETTER_AUTH_SECRET: "build_time_dummy_secret_for_prerendering_123456"
 
   # ========================================================
   # STAGE 2: Build & Push Docker Image to GHCR
